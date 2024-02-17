@@ -64,7 +64,7 @@
                     </div>
                     <div data-simplebar>
                         @foreach (getNotificationLimit(auth()->id()) as $notification)
-                            <a href="{{ route('notification.status', $notification->id) }}" class="notification-item">
+                            <a href="{{ route('notification.status', ['id'=>$notification->id,'role'=>auth()->user()->role ])}}" class="notification-item">
                                 <div class="d-flex">
                                     <img src="{{ getFileUrl($notification->folder_name, $notification->file_name) }}"
                                         class="me-3 rounded-circle avatar-xs" alt="user-pic">

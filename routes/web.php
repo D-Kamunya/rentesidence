@@ -55,7 +55,7 @@ Route::group(['middleware' => ['auth', 'version.update']], function () {
         Route::post('change-password', [ProfileController::class, 'changePasswordUpdate'])->name('change-password.update');
         Route::post('delete-my-account', [ProfileController::class, 'deleteMyAccount'])->name('delete-my-account');
 
-        Route::get('notification-status/{id}', [NotificationController::class, 'status'])->name('notification.status');
+        Route::get('notification-status/{id}/{role}', [NotificationController::class, 'status'])->name('notification.status');
     });
 });
 
