@@ -482,6 +482,7 @@ function getNotificationLimit($user_id)
             $query->where('notifications.user_id', $user_id)
                 ->orWhere('notifications.user_id', null);
         })
+        ->where('notifications.is_seen', DEACTIVATE) 
         ->take(10)
         ->latest()
         ->get();
