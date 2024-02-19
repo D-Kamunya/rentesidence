@@ -179,7 +179,7 @@ class AddonUpdateController extends Controller
                                     $latestVersion = $data->data->bv;
                                     $this->logger->log('Response status', 'Success');
                                     $this->logger->log('Checking if updatable code', 'START');
-                                    if ($latestVersion == $codeVersion) {
+                                    // if ($latestVersion == $codeVersion) {
                                         $this->logger->log('Checking if updatable code', 'True');
                                         $this->logger->log('Move file', 'START');
 
@@ -224,10 +224,10 @@ class AddonUpdateController extends Controller
                                         Artisan::call('route:clear');
                                         Artisan::call('config:clear');
                                         Artisan::call('cache:clear');
-                                    } else {
-                                        $returnResponse['message'] = 'Your code is not up to date';
-                                        $this->logger->log('Version', 'Not matched');
-                                    }
+                                    // } else {
+                                    //     $returnResponse['message'] = 'Your code is not up to date';
+                                    //     $this->logger->log('Version', 'Not matched');
+                                    // }
                                 } else {
                                     $returnResponse['message'] = $data->message;
                                     $this->logger->log('Response Status', 'Failed');

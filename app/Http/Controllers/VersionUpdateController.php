@@ -217,7 +217,7 @@ class VersionUpdateController extends Controller
                         if ($data->status === 'success') {
                             $this->logger->log('Response status', 'Success');
                             $this->logger->log('Checking if updatable code', 'START');
-                            if ($latestVersion == $codeVersion && $codeVersion > $currentVersion) {
+                            // if ($latestVersion == $codeVersion && $codeVersion > $currentVersion) {
                                 $this->logger->log('Checking if updatable code', 'True');
                                 $this->logger->log('Move file', 'START');
 
@@ -234,10 +234,10 @@ class VersionUpdateController extends Controller
                                 $response['success'] = true;
                                 $response['message'] = 'Successfully done';
                                 $this->logger->log('Move file', 'Done');
-                            } else {
-                                $response['message'] = 'Your code is not up to date';
-                                $this->logger->log('Version', 'Not matched');
-                            }
+                            // } else {
+                            //     $response['message'] = 'Your code is not up to date';
+                            //     $this->logger->log('Version', 'Not matched');
+                            // }
                         } else {
                             $response['message'] = $data->message;
                             $this->logger->log('Response Status', 'Failed');
