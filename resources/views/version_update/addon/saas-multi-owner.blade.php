@@ -159,7 +159,6 @@
                                 </div>
                             </div>
 
-                            @if (getCustomerAddonBuildVersion($code) < $buildVersion && $requiredVersion <= $appBuildVersion)
                                 <div class="col-md-8 offset-md-2">
                                     <div class="alert alert-danger" type="danger">
                                         <ol class="mb-0">
@@ -265,7 +264,6 @@
                                         </table>
                                     </div>
                                 </div>
-                            @endif
                         </div>
                     </div>
                 </div>
