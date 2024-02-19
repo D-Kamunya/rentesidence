@@ -49,7 +49,9 @@
                 <button type="button" class="header-item noti-icon" id="page-header-notifications-dropdown"
                     data-bs-toggle="dropdown" aria-expanded="false">
                     <i class="ri-notification-2-fill"></i>
-                    <span class="noti-dot pulse"></span>
+                    @if (count(getNotificationLimit(auth()->id())) > 0)
+                        <span class="noti-dot pulse"></span>
+                    @endif
                 </button>
                 <div class="dropdown-menu dropdown-menu-lg {{ selectedLanguage()->rtl == 1 ? 'dropdown-menu-start' : 'dropdown-menu-end' }} p-0"
                     aria-labelledby="page-header-notifications-dropdown">
