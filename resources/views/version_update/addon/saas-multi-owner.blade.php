@@ -85,7 +85,7 @@
                                 </div>
                                 <div class="page-title-right">
                                     <ol class="breadcrumb mb-0">
-                                        <li class="breadcrumb-item"><a href="{{ route('owner.dashboard') }}"
+                                        <li class="breadcrumb-item"><a href="{{ route('admin.dashboard') }}"
                                                 title="{{ __('Dashboard') }}">{{ __('Dashboard') }}</a></li>
                                         <li class="breadcrumb-item active" aria-current="page">{{ $pageTitle }}</li>
                                     </ol>
