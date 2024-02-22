@@ -111,6 +111,16 @@
                                                     @if (getCustomerAddonBuildVersion($code) == $buildVersion)
                                                         {{ getOption($code . '_current_version') }} <i
                                                             class="fa fa-check-circle text-success"></i>
+                                                            <i data-bs-toggle="tooltip" data-bs-placement="top"
+                                                            title="Addon Current Version"
+                                                            class="fa fa-warning text-danger"></i>
+                                                        <a data-url="{{ route('admin.addon.uninstall', ['code' => $code]) }}"
+                                                                                            class="addon-uninstall-btn btn btn-outline-danger p-2 rounded-3 delete-btn">
+                                                                                            <i
+                                                                                                class="fa fa-trash mr-1"></i>
+                                                                                            {{ __('Uninstall') }}
+                                                                                        </a>
+
                                                     @else
                                                         {{ getOption($code . '_current_version', 'Not installed') }}
                                                         <i data-bs-toggle="tooltip" data-bs-placement="top"
@@ -321,6 +331,39 @@
             </div>
         </div>
     </div>
+
+    <div class="modal fade" id="addonUninstallModal" tabindex="-1" aria-labelledby="addonUninstallModal" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <form class="ajax" action="{{ route('admin.addon.uninstall', ['code' => $code]) }}" method="POST"
+                    data-handler="getUninstallMessage">
+                    @csrf
+                    <input type="hidden" name="code" value="{{ $code }}">
+                    <input type="hidden" name="licenseStatus" value="{{ $licenseStatus ? 1 : 0 }}">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="addonUpdateModalLabel">{{ __('Addon Uninstall') }}</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"
+                            aria-label="Close">&#x2716;</button>
+                    </div>
+                    <div class="row g-3">
+                                <div class="col-md-12">
+                                    <div class="alert alert-danger" type="danger">
+                                        <ol class="mb-0">
+                                            <li>{{ __('Do not click uninstall button if you are unsure. The AddOn') }} {{ $code }} {{ __('will be deleted permanently.') }}
+                                            </li>
+                                        </ol>
+                                    </div>
+                                </div>
+                            </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary p-1"
+                            data-bs-dismiss="modal">{{ __('Close') }}</button>
+                        <button type="submit" class="btn btn-primary p-1">{{ __('Uninstall') }}</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
 @endsection
 @push('script')
     <script src="https://unpkg.com/dropzone@5/dist/min/dropzone.min.js"></script>
@@ -337,6 +380,22 @@
                 toastr.success('Addon Installed Successfully')
                 location.reload()
             } else {
+                commonHandler(response)
+            }
+        }
+        function getUninstallMessage(response) {
+            var output = '';
+            var type = 'error';
+            $('.error-message').remove();
+            $('.is-invalid').removeClass('is-invalid');
+            if (response['status'] == 200 || response['status'] == true) {
+                output = output + response['message'];
+                type = 'success';
+                toastr.success('Addon UnInstalled Successfully')
+                location.reload()
+                console.log('Successfully');
+            } else {
+                console.log(response);
                 commonHandler(response)
             }
         }
@@ -396,6 +455,11 @@
 
         $(document).on('click', '.update-execute-btn', function() {
             var selector = $('#addonUpdateModal');
+            selector.modal('show');
+        })
+
+        $(document).on('click', '.addon-uninstall-btn', function() {
+            var selector = $('#addonUninstallModal');
             selector.modal('show');
         })
     </script>

@@ -7,9 +7,18 @@ use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
 use File;
+use App\Models\Setting;
+use App\Models\Faq;
+use App\Models\CorePage;
+use App\Models\Feature;
+use App\Models\HowItWork;
+use App\Models\Package;
+use App\Models\Testimonial;
+use App\Models\Gateway;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Auth;
 use ZipArchive;
+use Illuminate\Support\Facades\DB;
 
 class AddonUpdateController extends Controller
 {
@@ -97,7 +106,173 @@ class AddonUpdateController extends Controller
             return $this->error([], $e->getMessage());
         }
     }
+    
+    public function addonSaasUninstall($code)
+    {
+        $returnResponse['status'] = false;
+        $returnResponse['message'] = 'Addon not uninstalled successfully';
+        $this->logger->log('Uninstalling Started', '==========');
 
+        if ($code == 'PROTYSAAS') {
+            try {
+                // DB::beginTransaction();
+
+                // Delete files, configurations, and records
+                $this->deleteFiles('PR0TYSAAS');
+                $this->deleteConfigurations($code);
+                $this->deleteRecords($code);
+
+                // Commit the transaction
+                // DB::commit();
+
+                $returnResponse['status'] = true;
+                $returnResponse['message'] = 'Addon uninstalled successfully';
+
+                // Clear various caches
+                $this->clearCaches();
+            } catch (Exception $e) {
+                // Rollback the transaction on exception
+                DB::rollBack();
+                $returnResponse['message'] = $e->getMessage();
+            }
+        }elseif ($code == 'PROTYLISTING') {
+            try {
+                // Delete files, configurations, and records
+                $this->deleteFiles('PR0TYSAAS');
+                $this->deleteConfigurations($code);
+                $returnResponse['status'] = true;
+                $returnResponse['message'] = 'Addon uninstalled successfully';
+            } catch (Exception $e) {
+                // Rollback the transaction on exception
+                DB::rollBack();
+                $returnResponse['message'] = $e->getMessage();
+            }
+        }elseif ($code == 'PROTYAGREEMENT') {
+            try {
+                // Delete files, configurations, and records
+                $this->deleteFiles('PROTYAGREEMENT');
+                $this->deleteConfigurations($code);
+                $returnResponse['status'] = true;
+                $returnResponse['message'] = 'Addon uninstalled successfully';
+            } catch (Exception $e) {
+                // Rollback the transaction on exception
+                DB::rollBack();
+                $returnResponse['message'] = $e->getMessage();
+            }
+        }elseif ($code == 'PROTYSMS') {
+            try {
+                // Delete files, configurations, and records
+                $this->deleteFiles('PROTYSMS');
+                $this->deleteConfigurations($code);
+                $returnResponse['status'] = true;
+                $returnResponse['message'] = 'Addon uninstalled successfully';
+            } catch (Exception $e) {
+                // Rollback the transaction on exception
+                DB::rollBack();
+                $returnResponse['message'] = $e->getMessage();
+            }
+        }
+
+        return $returnResponse;
+    }
+
+    // Helper methods for better readability
+
+    private function deleteFiles($code)
+    {
+        if ($code == 'PROTYSAAS') {
+            // Delete files in app/Http/Controllers/Saas/
+            File::deleteDirectory(app_path('Http/Controllers/Saas'));
+
+            // Delete file known as addon.php in config directory
+            File::delete(config_path('addon.php'));
+
+            // Delete directory resources/views/saas/
+            File::deleteDirectory(resource_path('views/saas'));
+
+            // Delete file in the routes directory known as saas.php
+            File::delete(base_path('routes/saas.php'));
+        }elseif ($code == 'PROTYLISTING') {
+            // Delete files in app/Http/Controllers/Listing/
+            File::deleteDirectory(app_path('Http/Controllers/Listing'));
+
+            // Delete files in app/Services/Listing/
+            File::deleteDirectory(app_path('Services/Listing'));
+
+            // Delete file known as listing.php in config directory
+            File::delete(config_path('listing.php'));
+
+            // Delete directory resources/views/listing/
+            File::deleteDirectory(resource_path('views/listing'));
+
+            // Delete file in the routes directory known as listing.php
+            File::delete(base_path('routes/listing.php'));
+        }elseif ($code == 'PROTYAGREEMENT') {
+            // Delete files in app/Http/Controllers/Agreement/
+            File::deleteDirectory(app_path('Http/Controllers/Agreement'));
+
+            // Delete files in app/Services/Agreement/
+            File::deleteDirectory(app_path('Services/Agreement'));
+
+            // Delete file known as agreement.php in config directory
+            File::delete(config_path('agreement.php'));
+
+            // Delete directory resources/views/agreement/
+            File::deleteDirectory(resource_path('views/agreement'));
+
+            // Delete file in the routes directory known as agreement.php
+            File::delete(base_path('routes/agreement.php'));
+        }elseif ($code == 'PROTYSMS') {
+            // Delete files in app/Http/Controllers/SmsMail/
+            File::deleteDirectory(app_path('Http/Controllers/SmsMail'));
+
+            // Delete files in app/Services/SmsMail/
+            File::deleteDirectory(app_path('Services/SmsMail'));
+
+            // Delete file known as smsmail.php in config directory
+            File::delete(config_path('smsmail.php'));
+
+            // Delete directory resources/views/sms-mail/
+            File::deleteDirectory(resource_path('views/sms-mail'));
+
+            // Delete file in the routes directory known as bulk-sms-mail.php
+            File::delete(base_path('routes/bulk-sms-mail.php'));
+        }
+    }
+
+    private function deleteConfigurations($code)
+    {
+        // Delete records in the db table settings where column option_key starts with $code
+        Setting::where('option_key', 'like', $code . '_%')->delete();
+
+        if ($code == 'PROTYSAAS') {
+            // Delete the 'gateway_settings' record, leaving one record
+            Setting::where('option_key', 'gateway_settings')->delete();
+        }
+    }
+
+    private function deleteRecords($code)
+    {
+        // Delete records in other tables
+        Faq::truncate();
+        CorePage::truncate();
+        Feature::truncate();
+        HowItWork::truncate();
+        Package::truncate();
+        Testimonial::truncate();
+
+        // Delete records in the 'gateways' table where column 'status' is 0
+        Gateway::where('status', 0)->forceDelete();
+    }
+
+    private function clearCaches()
+    {
+        // Clear various caches
+        Artisan::call('view:clear');
+        Artisan::call('route:clear');
+        Artisan::call('config:clear');
+        Artisan::call('cache:clear');
+    }
     public function addonSaasFileExecuteUpdate($code, $purchase_code, $email, $fullUrl)
     {
         set_time_limit(1200);
