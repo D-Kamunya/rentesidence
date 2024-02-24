@@ -4,6 +4,7 @@ namespace App\Http\Controllers\SmsMail;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\MailSendRequest;
+use App\Models\EmailTemplate;
 use App\Models\Maintainer;
 use App\Models\Property;
 use App\Models\PropertyUnit;
@@ -75,10 +76,10 @@ class MailController extends Controller
                             ->pluck('users.email')
                             ->toArray();
                     } else {
-                        throw new Exception('Select Unit');
+                        throw new Exception(__('Select Unit'));
                     }
                 } else {
-                    throw new Exception('Select Property');
+                    throw new Exception(__('Select Property'));
                 }
             } elseif ($request->target_audience == TARGET_AUDIENCE_USER) {
                 if ($request->user_type == USER_TYPE_TENANT) {
@@ -93,7 +94,7 @@ class MailController extends Controller
                             ->pluck('users.email')
                             ->toArray();
                     } else {
-                        throw new Exception('Select Tenant');
+                        throw new Exception(__('Select Tenant'));
                     }
                 } elseif ($request->user_type == USER_TYPE_MAINTAINER) {
                     if (!is_null($request->maintainer_id)) {
@@ -106,7 +107,7 @@ class MailController extends Controller
                             ->pluck('users.email')
                             ->toArray();
                     } else {
-                        throw new Exception('Select Maintainer');
+                        throw new Exception(__('Select Maintainer'));
                     }
                 }
             } elseif ($request->target_audience == TARGET_AUDIENCE_CUSTOM) {
@@ -119,14 +120,27 @@ class MailController extends Controller
                         ->pluck('email')
                         ->toArray();
                 } else {
-                    throw new Exception('Select Users');
+                    throw new Exception(__('Select Users'));
                 }
             } else {
                 throw new Exception(__(SOMETHING_WENT_WRONG));
             }
             $message = $request->message;
             $subject = $request->subject;
-            $sendMail = $this->mailService->sendMail($emails, $subject, $message, auth()->id());
+
+
+            $template = EmailTemplate::where('owner_user_id', auth()->id())->where('category', EMAIL_TEMPLATE_CUSTOM)->where('status', ACTIVE)->first();
+            if ($template) {
+                $customizedFieldsArray = [
+                    '{{app_name}}' => getOption('app_name'),
+                ];
+                $content = getEmailTemplate($template->body, $customizedFieldsArray);
+                $sendMail = $this->mailService->sendCustomizeMail($emails, $template->subject, $content);
+            } else {
+                $sendMail = $this->mailService->sendMail($emails, $subject, $message, auth()->id());
+            }
+
+
             if ($sendMail == 'success') {
                 return $this->success([], __(SENT_SUCCESSFULLY));
             } else {
