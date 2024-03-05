@@ -166,6 +166,7 @@ const MERCADOPAGO = 'mercadopago';
 const FLUTTERWAVE = 'flutterwave';
 const BANK = 'bank';
 const WALLET = 'wallet';
+const MPESA = 'mpesa';
 
 // email templates
 const EMAIL_TEMPLATE_CUSTOM = 1;

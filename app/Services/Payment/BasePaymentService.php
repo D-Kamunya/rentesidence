@@ -21,6 +21,12 @@ class BasePaymentService
     {
         if (isset($object['id'])) {
             $this->callbackUrl = $object['callback_url'] . '?id=' . $object['id'];
+            $newCallbackUrl = env('MPESA_CALLBACK_URL') . '?id=' . $object['id'];
+            config(['MPESA_CALLBACK_URL' => $newCallbackUrl]);
+        }
+
+        if (isset($object['gateway'])) {
+            $this->callbackUrl = $object['callback_url'] . '?id=' . $object['id'] . '&gateway=' . $object['gateway'];
         }
 
         if (isset($object['currency'])) {

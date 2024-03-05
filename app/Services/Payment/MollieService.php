@@ -20,9 +20,9 @@ class MollieService extends BasePaymentService
         $this->apiClient->setApiKey($this->gateway->key);
     }
 
-    public function makePayment($amount)
+    public function makePayment($paymentData)
     {
-        $this->setAmount($amount);
+        $this->setAmount($paymentData['amount']);
         $data['success'] = false;
         $data['redirect_url'] = '';
         $data['payment_id'] = '';

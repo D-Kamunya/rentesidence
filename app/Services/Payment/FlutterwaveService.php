@@ -25,9 +25,9 @@ class FlutterwaveService extends BasePaymentService
         $this->hash = $this->gateway->url;
     }
 
-    public function makePayment($amount)
+    public function makePayment($paymentData)
     {
-        $this->setAmount($amount);
+        $this->setAmount($paymentData['amount']);
 
         $data['success'] = false;
         $data['redirect_url'] = '';

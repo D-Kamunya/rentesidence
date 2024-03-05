@@ -40,9 +40,9 @@ class SslCommerzService extends BasePaymentService
     }
 
 
-    public function makePayment($amount)
+    public function makePayment($paymentData)
     {
-        $this->setAmount($amount);
+        $this->setAmount($paymentData['amount']);
         $order = Order::find($this->orderId);
         $requestData = array();
         $requestData['tran_id'] = $order->id; // tran_id must be unique

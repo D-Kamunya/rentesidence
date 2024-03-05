@@ -6,8 +6,11 @@ use App\Http\Controllers\Controller;
 use App\Services\GatewayService;
 use App\Services\InvoiceService;
 use App\Services\TenantService;
+use App\Models\Order;
+use App\Models\Gateway;
 use App\Traits\ResponseTrait;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Session;
 
 class InvoiceController extends Controller
 {
@@ -25,6 +28,19 @@ class InvoiceController extends Controller
     public function index()
     {
         $data['pageTitle'] = __('Invoices');
+        // Retrieve records from the SubscriptionOrder model
+        $latestMpesaOrder = Order::whereNotNull('payment_id')
+            ->where('payment_id', 'LIKE', 'ws%')
+            ->latest() // Order by created_at in descending order
+            ->first(); // Retrieve only the latest record
+        // Handle any pending mpesa subscription transactions
+        if($latestMpesaOrder && $latestMpesaOrder->payment_status == ORDER_PAYMENT_STATUS_PENDING) {
+            $gateway = Gateway::find($latestMpesaOrder->gateway_id);
+            // Clear specific flash messages
+            Session::forget('success');
+            Session::forget('error');
+            handlePaymentConfirmation($latestMpesaOrder, null,$gateway->slug);
+        }
         $data['invoices'] = $this->invoiceService->getByTenantId(auth()->user()->tenant->id);
         return view('tenant.invoices.index', $data);
     }

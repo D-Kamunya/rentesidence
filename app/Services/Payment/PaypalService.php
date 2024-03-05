@@ -23,9 +23,9 @@ class PaypalService extends BasePaymentService
         }
     }
 
-    public function makePayment($amount)
+    public function makePayment($paymentData)
     {
-        $this->setAmount($amount);
+        $this->setAmount($paymentData['amount']);
         $response = $this->omniPay->purchase(array(
             'amount' => $this->amount,
             'currency' => $this->currency,

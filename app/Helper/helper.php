@@ -4,6 +4,7 @@ use App\Models\CorePage;
 use App\Models\Currency;
 use App\Models\FileManager;
 use App\Models\Gateway;
+use App\Models\Package;
 use App\Models\Invoice;
 use App\Models\InvoiceItem;
 use App\Models\InvoiceRecurringSetting;
@@ -13,10 +14,12 @@ use App\Models\Notification;
 use App\Models\OwnerPackage;
 use App\Models\Property;
 use App\Models\PropertyUnit;
+use App\Models\SubscriptionOrder;
 use App\Models\Setting;
 use App\Models\TaxSetting;
 use App\Models\Tenant;
 use App\Models\User;
+use App\Services\Payment\Payment;
 use Illuminate\Support\Facades\App;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
@@ -60,7 +63,12 @@ function assetUrl($path)
 
 function gatewaySettings()
 {
-    return '{"paypal":[{"label":"Url","name":"url","is_show":0},{"label":"Client ID","name":"key","is_show":1},{"label":"Secret","name":"secret","is_show":1}],"stripe":[{"label":"Url","name":"url","is_show":0},{"label":"Secret Key","name":"key","is_show":1},{"label":"Secret Key","name":"secret","is_show":0}],"razorpay":[{"label":"Url","name":"url","is_show":0},{"label":"Key","name":"key","is_show":1},{"label":"Secret","name":"secret","is_show":1}],"instamojo":[{"label":"Url","name":"url","is_show":0},{"label":"Api Key","name":"key","is_show":1},{"label":"Auth Token","name":"secret","is_show":1}],"mollie":[{"label":"Url","name":"url","is_show":0},{"label":"Mollie Key","name":"key","is_show":1},{"label":"Secret","name":"secret","is_show":0}],"paystack":[{"label":"Url","name":"url","is_show":0},{"label":"Public Key","name":"key","is_show":1},{"label":"Secret Key","name":"secret","is_show":0}],"mercadopago":[{"label":"Url","name":"url","is_show":0},{"label":"Client ID","name":"key","is_show":1},{"label":"Client Secret","name":"secret","is_show":1}],"sslcommerz":[{"label":"Url","name":"url","is_show":0},{"label":"Store ID","name":"key","is_show":1},{"label":"Store Password","name":"secret","is_show":1}],"flutterwave":[{"label":"Hash","name":"url","is_show":1},{"label":"Public Key","name":"key","is_show":1},{"label":"Client Secret","name":"secret","is_show":1}],"coinbase":[{"label":"Hash","name":"url","is_show":0},{"label":"API Key","name":"key","is_show":1},{"label":"Client Secret","name":"secret","is_show":0}],"bank":[{"label":"Hash","name":"url","is_show":0},{"label":"API Key","name":"key","is_show":0},{"label":"Client Secret","name":"secret","is_show":0}],"cash":[{"label":"Hash","name":"url","is_show":0},{"label":"API Key","name":"key","is_show":0},{"label":"Client Secret","name":"secret","is_show":0}]}';
+    return '{"paypal":[{"label":"Url","name":"url","is_show":0},{"label":"Client ID","name":"key","is_show":1},{"label":"Secret","name":"secret","is_show":1}],"stripe":[{"label":"Url","name":"url","is_show":0},{"label":"Secret Key","name":"key","is_show":1},{"label":"Secret Key","name":"secret","is_show":0}],"razorpay":[{"label":"Url","name":"url","is_show":0},{"label":"Key","name":"key","is_show":1},{"label":"Secret","name":"secret","is_show":1}],"instamojo":[{"label":"Url","name":"url","is_show":0},{"label":"Api Key","name":"key","is_show":1},{"label":"Auth Token","name":"secret","is_show":1}],"mollie":[{"label":"Url","name":"url","is_show":0},{"label":"Mollie Key","name":"key","is_show":1},{"label":"Secret","name":"secret","is_show":0}],"paystack":[{"label":"Url","name":"url","is_show":0},{"label":"Public Key","name":"key","is_show":1},{"label":"Secret Key","name":"secret","is_show":0}],"mercadopago":[{"label":"Url","name":"url","is_show":0},{"label":"Client ID","name":"key","is_show":1},{"label":"Client Secret","name":"secret","is_show":1}],"sslcommerz":[{"label":"Url","name":"url","is_show":0},{"label":"Store ID","name":"key","is_show":1},{"label":"Store Password","name":"secret","is_show":1}],"flutterwave":[{"label":"Hash","name":"url","is_show":1},{"label":"Public Key","name":"key","is_show":1},{"label":"Client Secret","name":"secret","is_show":1}],"coinbase":[{"label":"Hash","name":"url","is_show":0},{"label":"API Key","name":"key","is_show":1},{"label":"Client Secret","name":"secret","is_show":0}],"bank":[{"label":"Hash","name":"url","is_show":0},{"label":"API Key","name":"key","is_show":0},{"label":"Client Secret","name":"secret","is_show":0}],"cash":[{"label":"Hash","name":"url","is_show":0},{"label":"API Key","name":"key","is_show":0},{"label":"Client Secret","name":"secret","is_show":0}], "mpesa": [
+        {"label": "Url", "name": "url", "is_show": 0},
+        {"label": "API Key", "name": "key", "is_show": 1},
+        {"label": "Public Key", "name": "public_key", "is_show": 1},
+        {"label": "Secret", "name": "secret", "is_show": 1}
+    ]}';
 }
 
 function getSettingImage($option_key)
@@ -593,6 +601,7 @@ if (!function_exists('setOwnerGateway')) {
             ['owner_user_id' => $userId, 'title' => 'Mercadopago', 'slug' => 'mercadopago', 'status' => DEACTIVATE, 'mode' => GATEWAY_MODE_SANDBOX, 'url' => '', 'key' => '', 'secret' => '', 'image' => 'assets/images/gateway-icon/mercadopago.jpg'],
             ['owner_user_id' => $userId, 'title' => 'Bank', 'slug' => 'bank', 'status' => DEACTIVATE, 'mode' => GATEWAY_MODE_SANDBOX, 'url' => '', 'key' => '', 'secret' => '', 'image' => 'assets/images/gateway-icon/bank.jpg'],
             ['owner_user_id' => $userId, 'title' => 'Cash', 'slug' => 'cash', 'status' => DEACTIVATE, 'mode' => GATEWAY_MODE_SANDBOX, 'url' => '', 'key' => '', 'secret' => '', 'image' => 'assets/images/gateway-icon/cash.jpg'],
+            ['owner_user_id' => $userId, 'title' => 'Mpesa', 'slug' => 'mpesa', 'status' => DEACTIVATE, 'mode' => GATEWAY_MODE_SANDBOX, 'url' => '', 'key' => '', 'secret' => '', 'image' => 'assets/images/gateway-icon/mpesa.jpg'],
         ];
         Gateway::insert($data);
     }
@@ -628,6 +637,144 @@ if (!function_exists('setUserPackage')) {
         ]);
     }
 }
+
+if (!function_exists('handleSubscriptionPaymentConfirmation')) {
+    function handleSubscriptionPaymentConfirmation($order, $payerId = null, $gateway_slug)
+    {
+        try {
+            $gateway = Gateway::find($order->gateway_id);
+            DB::beginTransaction();
+            if ($order->gateway_id == $gateway->id && $gateway->slug == MERCADOPAGO) {
+                $order->payment_id = $payment_id;
+                $order->save();
+            }
+
+            $payment_id = $order->payment_id;
+
+            $gatewayBasePayment = new Payment($gateway->slug, ['currency' => $order->gateway_currency, 'type' => 'subscription']);
+            $payment_data = $gatewayBasePayment->paymentConfirmation($payment_id, $payerId);
+            
+            if ($payment_data['success']) {
+                if ($payment_data['data']['payment_status'] == 'success') {
+                    $order->payment_status = ORDER_PAYMENT_STATUS_PAID;
+                    $order->transaction_id = str_replace('-', '', uuid_create());
+                    $order->save();
+
+                    $package = Package::find($order->package_id);
+                    $duration = 0;
+                    if ($order->duration_type == PACKAGE_DURATION_TYPE_MONTHLY) {
+                        $duration = 30;
+                    } elseif ($order->duration_type == PACKAGE_DURATION_TYPE_YEARLY) {
+                        $duration = 365;
+                    }
+
+                    setUserPackage(auth()->id(), $package, $duration, $order->quantity, $order->id);
+
+                    DB::commit();
+                    
+                    $title = __("You have a new invoice");
+                    $body = __("Subscription payment verify successfully");
+                    $adminUser = User::where('role', USER_ROLE_ADMIN)->first();
+                    addNotification($title, $body, null, null, $adminUser->id, auth()->id());
+
+                    if (getOption('send_email_status', 0) == ACTIVE) {
+                        $emails = [$order->user->email];
+                        $subject = __('Payment Successful!');
+                        $title = __('Congratulations!');
+                        $message = __('You have successfully made the payment');
+                        $ownerUserId = auth()->id();
+                        $method = $gateway->slug;
+                        $status = 'Paid';
+                        $amount = $order->amount;
+
+                        $mailService = new MailService;
+                        $template = EmailTemplate::where('owner_user_id', $ownerUserId)->where('category', EMAIL_TEMPLATE_SUBSCRIPTION_SUCCESS)->where('status', ACTIVE)->first();
+
+                        if ($template) {
+                            $customizedFieldsArray = [
+                                '{{amount}}' => $order->total,
+                                '{{status}}' => $status,
+                                '{{duration}}' => $duration,
+                                '{{gateway}}' => $method,
+                                '{{app_name}}' => getOption('app_name')
+                            ];
+                            $content = getEmailTemplate($template->body, $customizedFieldsArray);
+                            $mailService->sendCustomizeMail($emails, $template->subject, $content);
+                        } else {
+                            $mailService->sendSubscriptionSuccessMail($emails, $subject, $message, $ownerUserId, $title, $method, $status, $amount, $duration);
+                        }
+                    }
+
+                    if ($gateway_slug == 'mpesa') {
+                        return redirect()->route('owner.subscription.index')->with('success', __('Mpesa Payment Successful!'));
+                    }
+
+                    return redirect()->route('owner.subscription.index')->with('success', __('Payment Successful!'));
+                }
+            } else {
+                if ($gateway_slug == 'mpesa') {
+                    return redirect()->route('owner.subscription.index')->with('error', __('Mpesa Payment Failed!'));
+                }
+
+                return redirect()->route('owner.subscription.index')->with('error', __('Payment Failed!'));
+            }
+        } catch (\Exception $e) {
+            dd($e);
+            DB::rollBack();
+            return redirect()->route('owner.subscription.index')->with('error', __('Payment Failed!'));
+        }
+    }
+}
+
+
+if (!function_exists('handlePaymentConfirmation')) {
+    function handlePaymentConfirmation($order, $payerId = null, $gateway_slug)
+    {
+        try {
+            $gateway = Gateway::find($order->gateway_id);
+            DB::beginTransaction();
+            if ($order->gateway_id == $gateway->id && $gateway->slug == MERCADOPAGO) {
+                $order->payment_id = $payment_id;
+                $order->save();
+            }
+
+            $payment_id = $order->payment_id;
+
+            $gatewayBasePayment = new Payment($gateway->slug, ['currency' => $order->gateway_currency]);
+            $payment_data = $gatewayBasePayment->paymentConfirmation($payment_id, $payerId);
+            
+            if ($payment_data['success']) {
+                if ($payment_data['data']['payment_status'] == 'success') {
+                    $order->payment_status = INVOICE_STATUS_PAID;
+                    $order->save();
+                    $invoice = Invoice::find($order->invoice_id);
+                    $invoice->status = INVOICE_STATUS_PAID;
+                    $invoice->order_id = $order->id;
+                    $invoice->save();
+                    DB::commit();
+
+                    if ($gateway_slug == 'mpesa') {
+                        return redirect()->route('tenant.invoice.index')->with('success', __('Mpesa Payment Successful!'));
+                    }
+
+                    return redirect()->route('tenant.invoice.index')->with('success', __('Payment Successful!'));
+                }
+            } else {
+                if ($gateway_slug == 'mpesa') {
+                    return redirect()->route('tenant.invoice.index')->with('error', __('Mpesa Payment Failed!'));
+                }
+
+                return redirect()->route('tenant.invoice.index')->with('error', __('Payment Failed!'));
+            }
+        } catch (\Exception $e) {
+            dd($e);
+            DB::rollBack();
+            return redirect()->route('tenant.invoice.index')->with('error', __('Payment Failed!'));
+        }
+    }
+}
+
+
 
 if (!function_exists('corePages')) {
     function corePages($take = null)

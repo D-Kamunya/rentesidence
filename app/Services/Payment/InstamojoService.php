@@ -21,9 +21,9 @@ class InstamojoService extends BasePaymentService
         $this->apiToken = $this->gateway->secret;
     }
 
-    public function makePayment($amount)
+    public function makePayment($paymentData)
     {
-        $this->setAmount($amount);
+        $this->setAmount($paymentData['amount']);
 
         $payload = array(
             'purpose' => 'Course Purchase',

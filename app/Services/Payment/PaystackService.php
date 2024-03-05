@@ -24,9 +24,9 @@ class PaystackService extends BasePaymentService
         $this->merchantEmail = env('MERCHANT_EMAIL', 'marchant@gmail.com');
     }
 
-    public function makePayment($amount)
+    public function makePayment($paymentData)
     {
-        $this->setAmount($amount);
+        $this->setAmount($paymentData['amount']);
         $payload = array(
             "callback_url" => $this->callbackUrl,
             "amount" => $this->amount * 100,

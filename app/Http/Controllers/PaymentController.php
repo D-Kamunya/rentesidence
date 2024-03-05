@@ -71,6 +71,7 @@ class PaymentController extends Controller
 
         $object = [
             'id' => $order->id,
+            'gateway' => $gateway->slug,
             'callback_url' => route('payment.verify'),
             'currency' => $gatewayCurrency->currency
         ];
@@ -80,6 +81,10 @@ class PaymentController extends Controller
         if ($responseData['success']) {
             $order->payment_id = $responseData['payment_id'];
             $order->save();
+            if($gateway->slug=='mpesa'){
+                $url=$responseData['redirect_url'] . '&merchant_id=' . $responseData['merchant_request_id']. '&checkout_id=' . $responseData['checkout_request_id'];
+                return redirect($url);
+            }
             return redirect($responseData['redirect_url']);
         } else {
             return redirect()->back()->with('error', $responseData['message']);
@@ -112,44 +117,23 @@ class PaymentController extends Controller
     {
         $order_id = $request->get('id', '');
         $payerId = $request->get('PayerID', NULL);
-        $payment_id = $request->get('payment_id', NULL);
+        $payment_id = $request->get('paymentId', NULL);
+        $gateway_slug = $request->get('gateway', NULL);
+        $merchant_id = $request->get('merchant_id', NULL);
+        $checkout_id = $request->get('checkout_id', NULL);
+
+
+        if($gateway_slug=='mpesa'){
+            sleep(5);
+        }
 
         $order = Order::findOrFail($order_id);
         if ($order->status == INVOICE_STATUS_PAID) {
             return redirect()->route('tenant.invoice.index')->with('error', __('Your order has been paid!'));
         }
 
-        $gateway = Gateway::find($order->gateway_id);
-        DB::beginTransaction();
-        try {
-            if ($order->gateway_id == $gateway->id && $gateway->slug == MERCADOPAGO) {
-                $order->payment_id = $payment_id;
-                $order->save();
-            }
-
-            $payment_id = $order->payment_id;
-
-            $gatewayBasePayment = new Payment($gateway->slug, ['currency' => $order->gateway_currency]);
-            $payment_data = $gatewayBasePayment->paymentConfirmation($payment_id, $payerId);
-
-            if ($payment_data['success']) {
-                if ($payment_data['data']['payment_status'] == 'success') {
-                    $order->payment_status = INVOICE_STATUS_PAID;
-                    $order->save();
-                    $invoice = Invoice::find($order->invoice_id);
-                    $invoice->status = INVOICE_STATUS_PAID;
-                    $invoice->order_id = $order->id;
-                    $invoice->save();
-                    DB::commit();
-                    return redirect()->route('tenant.invoice.index')->with('success', __('Payment Successful!'));
-                }
-            } else {
-                return redirect()->route('tenant.invoice.index')->with('error', __('Payment Failed!'));
-            }
-        } catch (\Exception $e) {
-            DB::rollBack();
-            return redirect()->route('tenant.invoice.index')->with('error', __('Payment Failed!'));
-        }
+        
+        return handlePaymentConfirmation($order,$payerId,$gateway_slug);
     }
 
     public function verifyRedirect($type = 'error')

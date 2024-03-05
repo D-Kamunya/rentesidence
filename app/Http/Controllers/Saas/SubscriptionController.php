@@ -4,6 +4,8 @@ namespace App\Http\Controllers\Saas;
 
 use App\Http\Controllers\Controller;
 use App\Models\Bank;
+use App\Models\SubscriptionOrder;
+use App\Models\Gateway;
 use App\Models\User;
 use App\Services\GatewayService;
 use App\Services\SubscriptionService;
@@ -11,6 +13,7 @@ use App\Traits\ResponseTrait;
 use Carbon\Carbon;
 use Exception;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class SubscriptionController extends Controller
 {
@@ -25,6 +28,19 @@ class SubscriptionController extends Controller
     public function index(Request $request)
     {
         $data['pageTitle'] = __('My Subscription');
+        // Retrieve records from the SubscriptionOrder model
+        $latestMpesaSubscriptionOrder = SubscriptionOrder::whereNotNull('payment_id')
+            ->where('payment_id', 'LIKE', 'ws%')
+            ->latest() // Order by created_at in descending order
+            ->first(); // Retrieve only the latest record
+        // Handle any pending mpesa subscription transactions
+        if($latestMpesaSubscriptionOrder && $latestMpesaSubscriptionOrder->payment_status == ORDER_PAYMENT_STATUS_PENDING) {
+            $gateway = Gateway::find($latestMpesaSubscriptionOrder->gateway_id);
+            // Clear specific flash messages
+            Session::forget('success');
+            Session::forget('error');
+            handleSubscriptionPaymentConfirmation($latestMpesaSubscriptionOrder, null,$gateway->slug);
+        }
         $data['userPlan'] = $this->subscriptionService->getCurrentPlan();
         if (!is_null($request->id)) {
             $data['gateways'] = $this->order($request);

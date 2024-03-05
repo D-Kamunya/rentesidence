@@ -72,16 +72,24 @@ class PaymentSubscriptionController extends Controller
             }
             $object = [
                 'id' => $order->id,
+                'gateway' => $gateway->slug,
                 'callback_url' => route('payment.subscription.verify'),
                 'currency' => $gatewayCurrency->currency,
                 'type' => 'subscription'
             ];
 
             $payment = new Payment($gateway->slug, $object);
-            $responseData = $payment->makePayment($order->total);
+            $paymentData = [
+                'amount' => $order->total,
+            ];
+            $responseData = $payment->makePayment($paymentData);
             if ($responseData['success']) {
                 $order->payment_id = $responseData['payment_id'];
                 $order->save();
+                if($gateway->slug=='mpesa'){
+                    $url=$responseData['redirect_url'] . '&merchant_id=' . $responseData['merchant_request_id']. '&checkout_id=' . $responseData['checkout_request_id'];
+                    return redirect($url);
+                }
                 return redirect($responseData['redirect_url']);
             } else {
                 return redirect()->back()->with('error', $responseData['message']);
@@ -132,81 +140,21 @@ class PaymentSubscriptionController extends Controller
     {
         $order_id = $request->get('id', '');
         $payerId = $request->get('PayerID', NULL);
-        $payment_id = $request->get('payment_id', NULL);
+        $payment_id = $request->get('paymentId', NULL);
+        $gateway_slug = $request->get('gateway', NULL);
+        $merchant_id = $request->get('merchant_id', NULL);
+        $checkout_id = $request->get('checkout_id', NULL);
 
+        if($gateway_slug=='mpesa'){
+            sleep(15);
+        }
+        
         $order = SubscriptionOrder::findOrFail($order_id);
         if ($order->status == ORDER_PAYMENT_STATUS_PAID) {
             return redirect()->route('owner.subscription.index')->with('error', __('Your order has been paid!'));
         }
-
-        $gateway = Gateway::find($order->gateway_id);
-        DB::beginTransaction();
-        try {
-            if ($order->gateway_id == $gateway->id && $gateway->slug == MERCADOPAGO) {
-                $order->payment_id = $payment_id;
-                $order->save();
-            }
-
-            $payment_id = $order->payment_id;
-
-            $gatewayBasePayment = new Payment($gateway->slug, ['currency' => $order->gateway_currency, 'type' => 'subscription']);
-            $payment_data = $gatewayBasePayment->paymentConfirmation($payment_id, $payerId);
-
-            if ($payment_data['success']) {
-                if ($payment_data['data']['payment_status'] == 'success') {
-                    $order->payment_status = ORDER_PAYMENT_STATUS_PAID;
-                    $order->transaction_id = str_replace('-', '', uuid_create());
-                    $order->save();
-                    $package = Package::find($order->package_id);
-                    $duration = 0;
-                    if ($order->duration_type == PACKAGE_DURATION_TYPE_MONTHLY) {
-                        $duration = 30;
-                    } elseif ($order->duration_type == PACKAGE_DURATION_TYPE_YEARLY) {
-                        $duration = 365;
-                    }
-
-                    setUserPackage(auth()->id(), $package, $duration, $order->quantity, $order->id);
-
-                    DB::commit();
-                    $title = __("You have a new invoice");
-                    $body = __("Subscription payment verify successfully");
-                    $adminUser = User::where('role', USER_ROLE_ADMIN)->first();
-                    addNotification($title, $body, null, null, $adminUser->id, auth()->id());
-
-                    if (getOption('send_email_status', 0) == ACTIVE) {
-                        $emails = [$order->user->email];
-                        $subject = __('Payment Successful!');
-                        $title = __('Congratulations!');
-                        $message = __('You have successfully been payment');
-                        $ownerUserId = auth()->id();
-                        $method = $gateway->slug;
-                        $status = 'Paid';
-                        $amount = $order->amount;
-
-                        $mailService = new MailService;
-                        $template = EmailTemplate::where('owner_user_id', $ownerUserId)->where('category', EMAIL_TEMPLATE_SUBSCRIPTION_SUCCESS)->where('status', ACTIVE)->first();
-                        if ($template) {
-                            $customizedFieldsArray = [
-                                '{{amount}}' => $order->total,
-                                '{{status}}' => $status,
-                                '{{duration}}' => $duration,
-                                '{{gateway}}' => $method,
-                                '{{app_name}}' => getOption('app_name')
-                            ];
-                            $content = getEmailTemplate($template->body, $customizedFieldsArray);
-                            $mailService->sendCustomizeMail($emails, $template->subject, $content);
-                        } else {
-                            $mailService->sendSubscriptionSuccessMail($emails, $subject, $message, $ownerUserId, $title, $method, $status, $amount, $duration);
-                        }
-                    }
-                    return redirect()->route('owner.subscription.index')->with('success', __('Payment Successful!'));
-                }
-            } else {
-                return redirect()->route('owner.subscription.index')->with('error', __('Payment Failed!'));
-            }
-        } catch (\Exception $e) {
-            DB::rollBack();
-            return redirect()->route('owner.subscription.index')->with('error', __('Payment Failed!'));
-        }
+        
+        return handleSubscriptionPaymentConfirmation($order,$payerId,$gateway_slug);
     }
+    
 }

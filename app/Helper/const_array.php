@@ -141,6 +141,7 @@ function getPaymentServiceClass($input = null)
         SSLCOMMERZ => 'App\Services\Payment\SslCommerzService',
         MERCADOPAGO => 'App\Services\Payment\MercadoPagoService',
         FLUTTERWAVE => 'App\Services\Payment\FlutterwaveService',
+        MPESA => 'App\Services\Payment\MpesaService',
     );
     if (is_null($input)) {
         return $output;

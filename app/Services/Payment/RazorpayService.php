@@ -19,9 +19,9 @@ class RazorpayService extends BasePaymentService
         $this->api = new Api($this->gatewayKeyId, $this->gatewayKeySecret);
     }
 
-    public function makePayment($amount)
+    public function makePayment($paymentData)
     {
-        $this->setAmount($amount);
+        $this->setAmount($paymentData['amount']);
         $data['success'] = false;
         $data['redirect_url'] = '';
         $data['payment_id'] = '';

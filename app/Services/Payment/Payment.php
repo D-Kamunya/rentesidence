@@ -12,9 +12,9 @@ class Payment
         $this->provider = new $classPath($method, $object);
     }
 
-    public function makePayment($amount)
+    public function makePayment($paymentData)
     {
-        $res = $this->provider->makePayment($amount);
+        $res = $this->provider->makePayment($paymentData);
         return $res;
     }
 
