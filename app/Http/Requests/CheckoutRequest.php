@@ -31,7 +31,8 @@ class CheckoutRequest extends FormRequest
             'gateway' => 'required',
             'currency' => 'required',
             'bank_id' => 'required_if:gateway,bank',
-            'bank_slip' => 'required_if:gateway,bank'
+            'bank_slip' => 'required_if:gateway,bank',
+            'mpesa_account_id' => 'required_if:gateway,mpesa'
         ];
     }
 
@@ -39,7 +40,8 @@ class CheckoutRequest extends FormRequest
     {
         return [
             'bank_id.required_if' => 'The bank field is required.',
-            'bank_slip.required_if' => 'The bank slip field is required.'
+            'bank_slip.required_if' => 'The bank slip field is required.',
+            'mpesa_account_id.required_if' => 'Mpesa Account is required.'
         ];
     }
 

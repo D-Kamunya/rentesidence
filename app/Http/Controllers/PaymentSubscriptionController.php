@@ -8,6 +8,7 @@ use App\Models\Currency;
 use App\Models\EmailTemplate;
 use App\Models\FileManager;
 use App\Models\Gateway;
+use App\Models\MpesaAccount;
 use App\Models\GatewayCurrency;
 use App\Models\Package;
 use App\Models\SubscriptionOrder;
@@ -66,6 +67,14 @@ class PaymentSubscriptionController extends Controller
                 $order->save();
                 DB::commit();
                 return redirect()->route('owner.subscription.index')->with('success', __('Cash Payment Request Sent Successfully! Wait for approval'));
+            } elseif ($gateway->slug == 'mpesa'){
+                $mpesaAccount = MpesaAccount::where(['owner_user_id' => $user->id, 'gateway_id' => $gateway->id, 'id' => $request->mpesa_account_id])->first();
+                if (is_null($mpesaAccount)) {
+                    throw new Exception('Mpesa Account not found');
+                }
+                $paymentData['mpesaAccount'] = $mpesaAccount;
+                $order = $this->placeOrder($package, $durationType, $quantity, $gateway, $gatewayCurrency);
+                DB::commit();
             } else {
                 $order = $this->placeOrder($package, $durationType, $quantity, $gateway, $gatewayCurrency); // new order create
                 DB::commit();
@@ -79,9 +88,7 @@ class PaymentSubscriptionController extends Controller
             ];
 
             $payment = new Payment($gateway->slug, $object);
-            $paymentData = [
-                'amount' => $order->total,
-            ];
+            $paymentData['amount'] = $order->total;
             $responseData = $payment->makePayment($paymentData);
             if ($responseData['success']) {
                 $order->payment_id = $responseData['payment_id'];

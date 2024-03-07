@@ -19,6 +19,7 @@ class MpesaService extends BasePaymentService
     public function makePayment($paymentData)
     {
         $this->setAmount($paymentData['amount']);
+        $mpesaAccount=$paymentData['mpesaAccount'];
         $amount = $this->amount;
         $phoneno = '0705075111';
         $account_number = 'TEST';

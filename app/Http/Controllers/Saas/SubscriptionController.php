@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Saas;
 
 use App\Http\Controllers\Controller;
 use App\Models\Bank;
+use App\Models\MpesaAccount;
 use App\Models\SubscriptionOrder;
 use App\Models\Gateway;
 use App\Models\User;
@@ -68,6 +69,7 @@ class SubscriptionController extends Controller
             $data['durationType'] = $request->duration_type ?? 1;
             $data['quantity'] = $request->quantity ?? 1;
             $data['banks'] = Bank::where('owner_user_id', $user->id)->where('status', ACTIVE)->get();
+            $data['mpesaAccounts'] = MpesaAccount::where('owner_user_id', $user->id)->where('status', ACTIVE)->get();
             $data['startDate'] = now();
             if ($request->duration_type == PACKAGE_DURATION_TYPE_MONTHLY) {
                 $data['endDate'] = Carbon::now()->addMonth();

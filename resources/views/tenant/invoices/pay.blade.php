@@ -170,6 +170,42 @@
                                                     </div>
                                                 </div>
                                             </div>
+
+                                            <div class="tab-pane fade" id="mpesa" role="tabpanel"
+                                                aria-labelledby="invoicempesa" tabindex="0">
+                                                <div class="invoice-payment-card-box bg-white radius-4 theme-border mb-25">
+                                                    <div
+                                                        class="d-flex justify-content-between align-items-center border-bottom p-20">
+                                                        <h4>{{ __('Make Mpesa Payment') }}</h4>
+                                                    </div>
+                                                    <div class="p-20 pb-0">
+                                                        <div class="row">
+                                                            <div class="col-md-12 mb-20">
+                                                                <label
+                                                                    class="label-text-title color-heading font-medium mb-2">{{ __('Mpesa Account') }}</label>
+                                                                <select name="mpesa_account_id" id="mpesa_account_id" class="form-control mb-2">
+                                                                    <option value="">{{ __('Select Option') }}</option>
+                                                                    @foreach ($mpesaAccounts as $mpesaAccount)
+                                                                        <option value="{{ $mpesaAccount->id }}"
+                                                                            data-details="{{ nl2br($mpesaAccount->account_type) }}">
+                                                                                {{ $mpesaAccount->account_type }}
+
+                                                                                @if ($mpesaAccount->account_type === 'PAYBILL')
+                                                                                    - Paybill: {{ $mpesaAccount->paybill }}, Account Name: {{ $mpesaAccount->account_name }}
+                                                                                @elseif ($mpesaAccount->account_type === 'TILLNUMBER')
+                                                                                    - Till Number: {{ $mpesaAccount->till_number }}
+                                                                                @endif
+                                                                        </option>
+                                                                    @endforeach
+                                                                </select>
+                                                                @error('mpesa_account_id')
+                                                                    <span class="text-danger">{{ $message }}</span>
+                                                                @enderror
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
                                         </div>
                                     </div>
                                     <div class="col-md-12">

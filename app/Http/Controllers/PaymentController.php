@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\CheckoutRequest;
 use App\Models\Bank;
+use App\Models\MpesaAccount;
 use App\Models\Currency;
 use App\Models\FileManager;
 use App\Models\Gateway;
@@ -59,7 +60,14 @@ class PaymentController extends Controller
                 DB::rollBack();
                 return redirect()->route('tenant.invoice.index')->with('error', __('Payment Failed!'));
             }
-        } elseif ($gateway->slug == 'cash') {
+        } elseif ($gateway->slug == 'mpesa'){
+            $mpesaAccount = MpesaAccount::where(['gateway_id' => $gateway->id, 'id' => $request->mpesa_account_id])->first();
+            if (is_null($mpesaAccount)) {
+                throw new Exception('Mpesa Account not found');
+            }
+            $paymentData['mpesaAccount'] = $mpesaAccount;
+            $order = $this->placeOrder($invoice, $gateway, $gatewayCurrency); 
+        }elseif ($gateway->slug == 'cash') {
             $order = $this->placeOrder($invoice, $gateway, $gatewayCurrency); // new order create
             $invoice->order_id = $order->id;
             $invoice->save();
@@ -77,7 +85,8 @@ class PaymentController extends Controller
         ];
 
         $payment = new Payment($gateway->slug, $object);
-        $responseData = $payment->makePayment($order->total);
+        $paymentData['amount'] = $order->total;
+        $responseData = $payment->makePayment($paymentData);
         if ($responseData['success']) {
             $order->payment_id = $responseData['payment_id'];
             $order->save();
@@ -124,7 +133,7 @@ class PaymentController extends Controller
 
 
         if($gateway_slug=='mpesa'){
-            sleep(5);
+            sleep(15);
         }
 
         $order = Order::findOrFail($order_id);

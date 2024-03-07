@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\Bank;
+use App\Models\MpesaAccount;
 use App\Models\Gateway;
 use App\Models\GatewayCurrency;
 use App\Traits\ResponseTrait;
@@ -41,6 +42,12 @@ class GatewayService
         return $data?->makeHidden(['created_at', 'deleted_at', 'updated_at', 'owner_user_id']);
     }
 
+    public function getActiveMpesaAccounts()
+    {
+        $data = MpesaAccount::where('owner_user_id', auth()->user()->owner_user_id)->where('status', ACTIVE)->get();
+        return $data?->makeHidden(['created_at', 'deleted_at', 'updated_at', 'owner_user_id']);
+    }
+
     public function getInfo($id)
     {
         return Gateway::findOrFail($id);
@@ -51,6 +58,8 @@ class GatewayService
         $data['gateway'] = $this->getInfo($id);
         if ($data['gateway']->slug == 'bank') {
             $data['banks'] = $this->banks();
+        }elseif ($data['gateway']->slug == 'mpesa') {
+           $data['mpesaAccounts'] = $this->mpesaAccounts();
         }
         $data['image'] = $data['gateway']->icon;
         $currencies = GatewayCurrency::where('owner_user_id', auth()->id())->where('gateway_id', $id)->get();
@@ -64,6 +73,11 @@ class GatewayService
     public function banks()
     {
         return Bank::where('owner_user_id', auth()->id())->get();
+    }
+
+    public function mpesaAccounts()
+    {
+        return MpesaAccount::where('owner_user_id', auth()->id())->get();
     }
 
     public function store($request)
@@ -96,6 +110,49 @@ class GatewayService
                         array_push($bankIds, $bank->id);
                     }
                     Bank::where('owner_user_id', $ownerUserId)->whereNotIn('id', $bankIds)->delete();
+                }
+            }elseif ($gateway->slug == 'mpesa') {
+                if ($request->status == ACTIVE) {
+                    $mpesaAccountIds = [];
+                    
+                    for ($i = 0; $i < count($request->mpesaAccount['passkey']); $i++) {
+                        $accountType = $request->mpesaAccount['account_type'][$i];
+                        // Set default values for fields
+                        $paybill = null;
+                        $accountName = null;
+                        $tillNumber = null;
+                        // Check account type and set values accordingly
+                        if ($accountType === 'PAYBILL') {
+                            $paybill = $request->mpesaAccount['paybill_number'][$i];
+                            $accountName = $request->mpesaAccount['account_name'][$i];
+                        } else if ($accountType === 'TILLNUMBER') {
+                            $tillNumber = $request->mpesaAccount['till_number'][$i];
+                        }
+                        
+                        // Update or create MpesaAccount records
+                        $mpesaAccount = MpesaAccount::updateOrCreate(
+                            [
+                                'id' => $request->mpesaAccount['id'][$i],
+                                'owner_user_id' => $ownerUserId
+                            ],
+                            [
+                                'gateway_id' => $gateway->id,
+                                'owner_user_id' => $ownerUserId,
+                                'account_type' => $accountType,
+                                'status' => $request->mpesaAccount['status'][$i],
+                                'paybill' => $paybill,
+                                'account_name' => $accountName,
+                                'till_number' => $tillNumber,
+                                'passkey' => $request->mpesaAccount['passkey'][$i],
+                            ]
+                        );
+                        
+                        // Store the IDs for later use
+                        array_push($mpesaAccountIds, $mpesaAccount->id);
+                    }
+                    
+                    // Delete removed MpesaAccount records
+                    MpesaAccount::where('owner_user_id', $ownerUserId)->whereNotIn('id', $mpesaAccountIds)->delete();
                 }
             } else {
                 $gateway->mode = $request->mode;

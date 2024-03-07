@@ -182,6 +182,18 @@
                                 </div>
                             </div>
 
+                            <div class="mpesa-div">
+                                <div class="mpesa-div-append">
+
+                                </div>
+                                <div class="row mb-20">
+                                    <div class="col-12 text-end"><button type="button" class="green-color add-mpesa"
+                                            title="{{ __('Add Mpesa Account') }}"><span class="iconify"
+                                                data-icon="material-symbols:add"></span> {{ __('Add Mpesa Account') }}</button>
+                                    </div>
+                                </div>
+                            </div>
+
                             <div class="row url-div">
                                 <div class="col-md-12 mb-25 gateway-input" id="gateway-url">
                                     <label
@@ -220,7 +232,7 @@
                     <div class="modal-footer justify-content-start">
                         <button type="button" class="theme-btn-back me-3" data-bs-dismiss="modal"
                             title="{{ __('Back') }}">{{ __('Back') }}</button>
-                        <button type="submit" class="theme-btn me-3"
+                        <button type="submit" class="theme-btn me-3 update"
                             title="{{ __('Submit') }}">{{ __('Update') }}</button>
                     </div>
                 </form>

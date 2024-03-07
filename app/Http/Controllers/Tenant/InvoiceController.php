@@ -63,6 +63,7 @@ class InvoiceController extends Controller
         $data['invoice'] = $this->invoiceService->getByIdCheckTenantAuthId($id);
         $data['gateways'] = $this->gatewayService->getActiveAll(auth()->user()->owner_user_id);
         $data['banks'] = $this->gatewayService->getActiveBanks();
+        $data['mpesaAccounts'] = $this->gatewayService->getActiveMpesaAccounts();
         return view('tenant.invoices.pay', $data);
     }
 

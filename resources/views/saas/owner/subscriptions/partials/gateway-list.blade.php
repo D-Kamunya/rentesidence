@@ -117,6 +117,35 @@
                             </tr>
                         </tbody>
                     </table>
+
+                    <table class="table theme-border p-20 d-none" id="mpesaAccountAppend">
+                        <tbody>
+                            <tr>
+                                <td>{{ __('Make Mpesa Payment') }}</td>
+                            </tr>
+                            <tr>
+                                <td>
+                                    <label
+                                        class="label-text-title color-heading font-medium mb-2">{{ __('Mpesa Account') }}</label>
+                                    <select name="mpesa_account_id" id="mpesa_account_id" class="form-control mb-2">
+                                        <option value="">{{ __('Select Option') }}</option>
+                                        @foreach ($mpesaAccounts as $mpesaAccount)
+                                            <option value="{{ $mpesaAccount->id }}"
+                                                data-details="{{ nl2br($mpesaAccount->account_type) }}">
+                                                    {{ $mpesaAccount->account_type }}
+
+                                                    @if ($mpesaAccount->account_type === 'PAYBILL')
+                                                        - Paybill: {{ $mpesaAccount->paybill }}, Account Name: {{ $mpesaAccount->account_name }}
+                                                    @elseif ($mpesaAccount->account_type === 'TILLNUMBER')
+                                                        - Till Number: {{ $mpesaAccount->till_number }}
+                                                    @endif
+                                            </option>
+                                        @endforeach
+                                    </select>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
                 </div>
             </div>
         </div>
