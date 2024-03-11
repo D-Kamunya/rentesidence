@@ -59,7 +59,7 @@ class GatewayService
         if ($data['gateway']->slug == 'bank') {
             $data['banks'] = $this->banks();
         }elseif ($data['gateway']->slug == 'mpesa') {
-           $data['mpesaAccounts'] = $this->mpesaAccounts();
+            $data['mpesaAccounts'] = $this->mpesaAccounts();
         }
         $data['image'] = $data['gateway']->icon;
         $currencies = GatewayCurrency::where('owner_user_id', auth()->id())->where('gateway_id', $id)->get();
@@ -92,8 +92,8 @@ class GatewayService
                 $gateway = new Gateway();
             }
             if ($gateway->slug == 'bank') {
-                if ($request->status == ACTIVE) {
-                    $bankIds = [];
+                $bankIds = [];
+                if (isset($request->bank['name']) && is_array($request->bank['name'])) {
                     for ($i = 0; $i < count($request->bank['name']); $i++) {
                         $bank = Bank::updateOrCreate([
                             'id' => $request->bank['id'][$i],
@@ -109,12 +109,11 @@ class GatewayService
                         ]);
                         array_push($bankIds, $bank->id);
                     }
-                    Bank::where('owner_user_id', $ownerUserId)->whereNotIn('id', $bankIds)->delete();
                 }
+                Bank::where('owner_user_id', $ownerUserId)->whereNotIn('id', $bankIds)->delete();
             }elseif ($gateway->slug == 'mpesa') {
-                if ($request->status == ACTIVE) {
-                    $mpesaAccountIds = [];
-                    
+                $mpesaAccountIds = [];
+                if (isset($request->mpesaAccount['passkey']) && is_array($request->mpesaAccount['passkey'])) {
                     for ($i = 0; $i < count($request->mpesaAccount['passkey']); $i++) {
                         $accountType = $request->mpesaAccount['account_type'][$i];
                         // Set default values for fields
@@ -150,10 +149,10 @@ class GatewayService
                         // Store the IDs for later use
                         array_push($mpesaAccountIds, $mpesaAccount->id);
                     }
-                    
-                    // Delete removed MpesaAccount records
-                    MpesaAccount::where('owner_user_id', $ownerUserId)->whereNotIn('id', $mpesaAccountIds)->delete();
                 }
+                
+                // Delete removed MpesaAccount records
+                MpesaAccount::where('owner_user_id', $ownerUserId)->whereNotIn('id', $mpesaAccountIds)->delete();
             } else {
                 $gateway->mode = $request->mode;
                 $gateway->url = $request->url;

@@ -23,22 +23,25 @@ class GatewayRequest extends FormRequest
      */
     public function rules()
     {
-        if($this->get('status') == ACTIVE){
-            $rules = [
+        
+        
+        $rules = [
+            
+            'key' => 'required_unless:slug,bank,cash,mpesa',
+            'url' => 'required_if:slug,flutterwave',
+            'secret' => 'required_unless:slug,bank,cash,mollie,paystack,stripe,coinbase,mpesa',
+            'currency.*' => 'required',
+            'conversion_rate.*' => 'required',
+        ];
+        if (is_array($this->get('bank'))) {
+            $rules = array_merge($rules, [
                 'bank.name.0' => 'required_if:slug,bank|max:255',
                 'bank.name.*' => 'required_if:slug,bank|max:255',
                 'bank.account_name.*' => 'required_if:slug,bank|max:255',
                 'bank.account_number.*' => 'required_if:slug,bank|max:255',
                 'bank.status.*' => 'required_if:slug,bank',
-                'key' => 'required_unless:slug,bank,cash',
-                'url' => 'required_if:slug,flutterwave',
-                'secret' => 'required_unless:slug,bank,cash,mollie,paystack,stripe,coinbase',
-                'currency.*' => 'required',
-                'conversion_rate.*' => 'required',
-            ];
-        }
-        else{
-            $rules = [];
+                'bank.bank_details.*' => 'required_if:slug,bank',
+            ]);
         }
 
         return $rules;

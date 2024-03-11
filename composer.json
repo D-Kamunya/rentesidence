@@ -54,7 +54,6 @@
             "app/Helper/const.php",
             "app/Helper/const_array.php",
             "app/Helper/langHelper.php"
-
         ]
     },
     "autoload-dev": {
@@ -93,5 +92,6 @@
         }
     },
     "minimum-stability": "dev",
-    "prefer-stable": true
+    "prefer-stable": true,
+    "platform-check": false
 }

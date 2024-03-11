@@ -19,7 +19,6 @@ $(document).on("click", ".update", function (e) {
                 return $(this).val();
             })
             .get();
-
         for (var i = 0; i < allMpesaAccountsType.length; i++) {
             var accountType = allMpesaAccountsType[i];
             var passkeyInput = $(".passkey").eq(i);
@@ -149,27 +148,6 @@ function getDataEditRes(response) {
                                 </div>
                             </div>`;
             });
-        } else {
-            bankHtml += `<div class="multi-bank bg-white radius-4 theme-border p-20 pb-0 mb-25">
-            <div class="row">
-                <div class="col-6 mb-20">
-                    <input type="hidden" name="bank[id][]" value="">
-                    <label for="name" class="label-text-title color-heading font-medium mb-2">Bank Name</label>
-                    <input type="text" name="bank[name][]" class="form-control bank-name" id="name" placeholder="Bank Name" value="">
-                </div>
-                <div class="col-6 mb-20">
-                    <label for="name" class="label-text-title color-heading font-medium mb-2">Status</label>
-                    <select name="bank[status][]" class="form-control bank-status" id="status">
-                        <option value="1">Active</option>
-                        <option value="0">Deactive</option>
-                    </select>
-                </div>
-                <div class="col-12 mb-20">
-                    <label for="name" class="label-text-title color-heading font-medium mb-2">Bank Details</label>
-                    <textarea name="bank[details][]" id="bank_details" class="form-control"></textarea>
-                </div>
-            </div>
-        </div>`;
         }
 
         $(".bank-div-append").html(bankHtml);
@@ -178,7 +156,7 @@ function getDataEditRes(response) {
         selector.find(".url-div").hide();
         selector.find(".key-secret-div").hide();
         selector.find(".bank-div").hide();
-        selector.find(".mpesaa-div").show();
+        selector.find(".mpesa-div").show();
 
         var mpesaAccounts = response.data.mpesaAccounts;
         var mpesaHtml = "";
@@ -256,45 +234,6 @@ function getDataEditRes(response) {
                     </div>
                 </div>`;
             });
-        } else {
-            // Display fields for adding a new Mpesa account
-            // Display fields for adding a new Mpesa account
-            mpesaHtml += `<div class="multi-mpesa-accounts bg-white radius-4 theme-border p-20 pb-0 mb-25">
-                <div class="row mb-20">
-                    <div class="col-6 mb-20">
-                        <input type="hidden" name="mpesaAccount[id][]" value="">
-                        <label for="name" class="label-text-title color-heading font-medium mb-2">Account Type</label>
-                        <select name="mpesaAccount[account_type][]" class="form-control mpesa-account-type" id="account-type">
-                            <option value="PAYBILL">PAYBILL</option>
-                            <option value="TILLNUMBER">TILL NUMBER</option>
-                        </select>
-                    </div>
-                    <div class="col-6 mb-20">
-                        <label for="name" class="label-text-title color-heading font-medium mb-2">Status</label>
-                        <select name="mpesaAccount[status][]" class="form-control mpesa-account-status" id="mpesa-account-status">
-                            <option value="1" >Active</option>
-                            <option value="0" >Deactive</option>
-                        </select>
-                    </div>
-                    <div class="col-6 mb-20 paybill-fields">
-                        <label for="name" class="label-text-title color-heading font-medium mb-2">Paybill Number</label>
-                            <input type="text" name="mpesaAccount[paybill_number][]" class="form-control paybill-number" id="paybill-number" placeholder="Paybill Number" value="">
-                    </div>
-                    <div class="col-6 mb-20 paybill-fields">
-                        <label for="name" class="label-text-title color-heading font-medium mb-2">Account Name</label>
-                            <input type="text" name="mpesaAccount[account_name][]" class="form-control account-name" id="account-name" placeholder="Account Name" value="">
-                    </div>
-                    <div class="col-6 mb-20 till-number-fields" style="display: none;">
-                        <label for="name" class="label-text-title color-heading font-medium mb-2">Till Number</label>
-                                <input type="text" name="mpesaAccount[till_number][]" class="form-control till-number" id="till-number" placeholder="Till Number" value="">
-                    </div>`;
-
-            mpesaHtml += `<div class="col-6 mb-20">
-                            <label for="name" class="label-text-title color-heading font-medium mb-2">Pass Key</label>
-                            <input type="text" name="mpesaAccount[passkey][]" class="form-control passkey" id="passkey" placeholder="Passkey" value="">
-                        </div>
-                    </div>`;
-            mpesaHtml += `</div>`;
         }
 
         $(".mpesa-div-append").html(mpesaHtml);
