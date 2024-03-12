@@ -174,7 +174,7 @@
                             @else
                                 <div class="card">
                                     <div class="card-body">
-                                        <h4 class="mb-20">{{ __("Currently you doesn't have any subscription") }}</h4>
+                                        <h4 class="mb-20">{{ __("Currently you have no subscription") }}</h4>
                                         <button type="button" class="theme-btn" id="chooseAPlan"
                                             title="{{ __('Choose a plan') }}">{{ __('Choose a plan') }}</button>
                                     </div>

@@ -28,7 +28,7 @@
                         <i class="fas fa-exclamation-circle"></i>
                     </button>
                     <div class="text-center exclamation-area">
-                        {{ __('Currently you doesn\'t have any subscription!') }} <a
+                        {{ __('Currently you have no subscription!') }} <a
                             href="{{ route('owner.subscription.index', ['current_plan' => 'no']) }}"
                             class="text-danger px-1" title="{{ __('Choose a plan') }}">{{ __('Choose a plan') }}</a>
                     </div>
