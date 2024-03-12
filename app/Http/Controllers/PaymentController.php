@@ -133,7 +133,7 @@ class PaymentController extends Controller
 
 
         if($gateway_slug=='mpesa'){
-            sleep(15);
+            sleep(45);
         }
 
         $order = Order::findOrFail($order_id);

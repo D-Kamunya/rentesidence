@@ -3,7 +3,17 @@
 @section('content')
     <!-- Right Content Start -->
     <div class="main-content">
-
+        <div id="mpesa-preloader" style="display: none;">
+            <div id="mpesa-preloaderInner">
+                <img src="{{asset('assets/images/gateway-icon/mpesa.jpg')}}" alt="M-PESA Image">
+                <div>
+                    <p>Sending M-PESA payment notification to your phone. <br>
+                        Dear Customer, <br> Shortly you will receive an M-PESA prompt on your phone <br> requesting you to enter your M-PESA PIN to complete your payment. <br> Please ensure your phone is on and unlocked to enable you to complete the process. Thank you.</p>
+                    <p id="countdown">Make payment in <span id="countdownTimer">50</span> seconds.</p>
+                </div>
+                <img src="{{asset('assets/images/loading.svg')}}" alt="M-PESA Image">
+            </div>
+        </div>
         <div class="page-content">
             <div class="container-fluid">
 

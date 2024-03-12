@@ -55,6 +55,10 @@ $(document).on("click", ".gatewayCurrencyAmount", function () {
     $("#selectCurrency").val($(this).text().replace(/\s+/g, ""));
 });
 
+function showMpesaPreloader() {
+    document.getElementById("mpesa-preloader").style.display = "block";
+}
+
 $("#payBtn").on("click", function () {
     var gateway = $("#selectGateway").val();
     var currency = $("#selectCurrency").val();
@@ -67,6 +71,25 @@ $("#payBtn").on("click", function () {
             $("#payBtn").attr("type", "button");
         } else {
             $("#payBtn").attr("type", "submit");
+            if (gateway == "mpesa") {
+                showMpesaPreloader();
+                var countdown = 50; // Set the initial countdown time in seconds
+
+                // Update the countdown every second
+                var countdownInterval = setInterval(function () {
+                    document.getElementById("countdownTimer").textContent =
+                        countdown;
+                    countdown--;
+
+                    // Hide preloader when countdown reaches 0
+                    if (countdown < 0) {
+                        document.getElementById(
+                            "mpesa-preloader"
+                        ).style.display = "none";
+                        clearInterval(countdownInterval);
+                    }
+                }, 1000);
+            }
         }
     }
 });

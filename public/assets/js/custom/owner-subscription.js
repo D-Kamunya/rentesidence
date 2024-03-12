@@ -176,8 +176,13 @@ $(document).on("change", "#bank_id", function () {
     $("#bankDetails p").html($(this).find(":selected").data("details"));
 });
 
+function showMpesaPreloader() {
+    document.getElementById("mpesa-preloader").style.display = "block";
+}
+
 $("#payBtn").on("click", function () {
     var gateway = $("#selectGateway").val();
+
     var currency = $("#selectCurrency").val();
     if (gateway == "") {
         toastr.error("Select Gateway");
@@ -188,6 +193,25 @@ $("#payBtn").on("click", function () {
             $("#payBtn").attr("type", "button");
         } else {
             $("#payBtn").attr("type", "submit");
+            if (gateway == "mpesa") {
+                showMpesaPreloader();
+                var countdown = 50; // Set the initial countdown time in seconds
+
+                // Update the countdown every second
+                var countdownInterval = setInterval(function () {
+                    document.getElementById("countdownTimer").textContent =
+                        countdown;
+                    countdown--;
+
+                    // Hide preloader when countdown reaches 0
+                    if (countdown < 0) {
+                        document.getElementById(
+                            "mpesa-preloader"
+                        ).style.display = "none";
+                        clearInterval(countdownInterval);
+                    }
+                }, 1000);
+            }
         }
     }
 });

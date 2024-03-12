@@ -1463,6 +1463,34 @@ button:focus {
     justify-content: center;
 }
 
+#mpesa-preloader {
+    background-color: #fff;
+    position: fixed;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    z-index: 9999999999999999;
+}
+
+#mpesa-preloaderInner {
+    width: 100%;
+    display: flex;
+    flex-direction: column; /* Stack elements vertically */
+    align-items: center;
+    justify-content: center;
+    height: 100vh; /* Use 100vh to make it cover the full viewport height */
+}
+
+#mpesa-preloaderInner div {
+    margin-top: 20px; /* Adjust the value based on your design */
+    text-align: center; /* Center the content within the div */
+}
+
+#mpesa-preloaderInner p {
+    margin: 0;
+}
+
 /*-------------------------------------------
     4. Preloader Area End
 -------------------------------------------*/

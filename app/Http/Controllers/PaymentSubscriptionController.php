@@ -153,7 +153,7 @@ class PaymentSubscriptionController extends Controller
         $checkout_id = $request->get('checkout_id', NULL);
 
         if($gateway_slug=='mpesa'){
-            sleep(15);
+            sleep(45);
         }
         
         $order = SubscriptionOrder::findOrFail($order_id);
