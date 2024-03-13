@@ -29,14 +29,15 @@ class SubscriptionController extends Controller
 
     public function index(Request $request)
     {
+        $ownerId = auth()->user()->owner_user_id;
         $data['pageTitle'] = __('My Subscription');
         // Retrieve records from the SubscriptionOrder model
         $latestMpesaSubscriptionOrder = SubscriptionOrder::whereNotNull('payment_id')
-            ->where('payment_id', 'LIKE', 'ws%')
+            ->where('user_id', $ownerId) // Filter by user_id
             ->latest() // Order by created_at in descending order
             ->first(); // Retrieve only the latest record
         // Handle any pending mpesa subscription transactions
-        if($latestMpesaSubscriptionOrder && $latestMpesaSubscriptionOrder->payment_status == ORDER_PAYMENT_STATUS_PENDING) {
+        if($latestMpesaSubscriptionOrder && strpos($latestMpesaSubscriptionOrder->payment_id, 'ws') === 0 && $latestMpesaSubscriptionOrder->payment_status == ORDER_PAYMENT_STATUS_PENDING) {
             $gateway = Gateway::find($latestMpesaSubscriptionOrder->gateway_id);
             // Clear specific flash messages
             Session::forget('success');

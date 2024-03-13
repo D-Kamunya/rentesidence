@@ -27,14 +27,15 @@ class InvoiceController extends Controller
     }
     public function index()
     {
+        $tenantId = auth()->user()->tenant->user_id;
         $data['pageTitle'] = __('Invoices');
         // Retrieve records from the SubscriptionOrder model
         $latestMpesaOrder = Order::whereNotNull('payment_id')
-            ->where('payment_id', 'LIKE', 'ws%')
+            ->where('user_id', $tenantId) // Filter by user_id
             ->latest() // Order by created_at in descending order
             ->first(); // Retrieve only the latest record
         // Handle any pending mpesa subscription transactions
-        if($latestMpesaOrder && $latestMpesaOrder->payment_status == ORDER_PAYMENT_STATUS_PENDING) {
+        if($latestMpesaOrder && strpos($latestMpesaOrder->payment_id, 'ws') === 0 && $latestMpesaOrder->payment_status == ORDER_PAYMENT_STATUS_PENDING) {
             $gateway = Gateway::find($latestMpesaOrder->gateway_id);
             // Clear specific flash messages
             Session::forget('success');
