@@ -78,17 +78,25 @@
                                     <label
                                         class="label-text-title color-heading font-medium mb-2">{{ __('Pricing Type') }}<span
                                             class="text-danger">*</span></label>
-                                    <select name="pricing_type" class="form-control pricing_type">
-                                        <option value="1">{{ __('Properties') }}</option>
-                                        <option value="2">{{ __('Units') }}</option>
-                                        <option value="3">{{ __('Tenants') }}</option>
+                                    <select name="pricing_type" class="form-control pricing_type" readonly>
+                                        <option value="1" disabled>{{ __('Properties') }}</option>
+                                        <option value="2" selected>{{ __('Units') }}</option>
+                                        <option value="3" disabled>{{ __('Tenants') }}</option>
                                     </select>
                                 </div>
                                 <div class="col-md-6 mb-25">
                                     <label class="label-text-title color-heading font-medium mb-2">
+                                        <span class="max_unit">{{ __('Package Maximum Units') }}</span>
+                                        <span class="text-danger">*</span>
+                                    </label>
+                                    <input type="number" min="0" step="any" name="max_unit"
+                                        class="form-control max_unit" placeholder="10">
+                                </div>
+                                <div class="col-md-6 mb-25">
+                                    <label class="label-text-title color-heading font-medium mb-2">
+                                        <span class="unit_type_price d-none">{{ __('Per Unit Monthly Price') }}</span>
                                         <span
                                             class="property_type_price d-none">{{ __('Per Property Monthly Price') }}</span>
-                                        <span class="unit_type_price d-none">{{ __('Per Unit Monthly Price') }}</span>
                                         <span class="tenant_type_price d-none">{{ __('Per Tenant Monthly Price') }}</span>
                                         <span class="text-danger">*</span>
                                     </label>
@@ -97,9 +105,9 @@
                                 </div>
                                 <div class="col-md-6 mb-25">
                                     <label class="label-text-title color-heading font-medium mb-2">
+                                        <span class="unit_type_price d-none">{{ __('Per Unit Yearly Price') }}</span>
                                         <span
                                             class="property_type_price d-none">{{ __('Per Property Yearly Price') }}</span>
-                                        <span class="unit_type_price d-none">{{ __('Per Unit Yearly Price') }}</span>
                                         <span class="tenant_type_price d-none">{{ __('Per Tenant Yearly Price') }}</span>
                                         <span class="text-danger">*</span>
                                     </label>
@@ -115,10 +123,10 @@
                                         class="label-text-title color-heading font-medium mb-2">{{ __('Max Maintainer') }}</label>
                                     <div class="input-group">
                                         <input type="number" min="0" step="any" name="max_maintainer"
-                                            class="form-control" placeholder="5">
-                                        <select name="maintainer_limit_type" class="form-control" fdprocessedid="bgzg6e">
-                                            <option value="1">{{ __('Limited') }}</option>
-                                            <option value="2">{{ __('Unlimited') }}</option>
+                                            class="form-control" placeholder="Unlimited" disabled>
+                                        <select name="maintainer_limit_type" class="form-control" fdprocessedid="bgzg6e" readonly>
+                                            <option disabled value="1">{{ __('Limited') }}</option>
+                                            <option selected value="2">{{ __('Unlimited') }}</option>
                                         </select>
                                     </div>
                                 </div>
@@ -127,10 +135,10 @@
                                         class="label-text-title color-heading font-medium mb-2">{{ __('Max Invoice') }}</label>
                                     <div class="input-group">
                                         <input type="number" min="0" step="any" name="max_invoice"
-                                            class="form-control" placeholder="5000">
-                                        <select name="invoice_limit_type" class="form-control" fdprocessedid="bgzg6e">
-                                            <option value="1">{{ __('Limited') }}</option>
-                                            <option value="2">{{ __('Unlimited') }}</option>
+                                            class="form-control" placeholder="Unlimited" disabled>
+                                        <select name="invoice_limit_type" class="form-control" fdprocessedid="bgzg6e" readonly>
+                                            <option disabled value="1">{{ __('Limited') }}</option>
+                                            <option selected value="2">{{ __('Unlimited') }}</option>
                                         </select>
                                     </div>
                                 </div>
@@ -139,28 +147,28 @@
                                         class="label-text-title color-heading font-medium mb-2">{{ __('Max Auto Invoice') }}</label>
                                     <div class="input-group">
                                         <input type="number" min="0" step="any" name="max_auto_invoice"
-                                            class="form-control" placeholder="5000">
+                                            class="form-control" placeholder="Unlimited" disabled>
                                         <select name="auto_invoice_limit_type" class="form-control"
-                                            fdprocessedid="bgzg6e">
-                                            <option value="1">{{ __('Limited') }}</option>
-                                            <option value="2">{{ __('Unlimited') }}</option>
+                                            fdprocessedid="bgzg6e" readonly>
+                                            <option disabled value="1">{{ __('Limited') }}</option>
+                                            <option selected value="2">{{ __('Unlimited') }}</option>
                                         </select>
                                     </div>
                                 </div>
                                 <div class="col-md-6 mb-25">
                                     <label
                                         class="label-text-title color-heading font-medium mb-2">{{ __('Ticket Support') }}</label>
-                                    <select name="ticket_support" id="ticket_support" class="form-control">
-                                        <option value="0">{{ __('No') }}</option>
-                                        <option value="1">{{ __('Yes') }}</option>
+                                    <select name="ticket_support" id="ticket_support" class="form-control" readonly>
+                                        <option disabled value="0">{{ __('No') }}</option>
+                                        <option selected value="1">{{ __('Yes') }}</option>
                                     </select>
                                 </div>
                                 <div class="col-md-6 mb-25">
                                     <label
                                         class="label-text-title color-heading font-medium mb-2">{{ __('Notice Support') }}</label>
-                                    <select name="notice_support" id="notice_support" class="form-control">
-                                        <option value="0">{{ __('No') }}</option>
-                                        <option value="1">{{ __('Yes') }}</option>
+                                    <select name="notice_support" id="notice_support" class="form-control" readonly>
+                                        <option disabled value="0">{{ __('No') }}</option>
+                                        <option selected value="1">{{ __('Yes') }}</option>
                                     </select>
                                 </div>
                                 <div class="col-md-6 mb-25">
@@ -200,14 +208,14 @@
                                         class="label-text-title color-heading font-medium mb-2">{{ __('Monthly Price') }}
                                         <span class="text-danger">*</span></label>
                                     <input type="number" min="0" step="any" name="monthly_price"
-                                        class="form-control" placeholder="10">
+                                        class="form-control monthly_price" placeholder="10" readonly>
                                 </div>
                                 <div class="col-md-6 mb-25">
                                     <label
                                         class="label-text-title color-heading font-medium mb-2">{{ __('Yearly Price') }}
                                         <span class="text-danger">*</span></label>
                                     <input type="number" min="0" step="any" name="yearly_price"
-                                        class="form-control" placeholder="10">
+                                        class="form-control yearly_price" placeholder="10" readonly>
                                 </div>
                             </div>
                         </div>
@@ -248,17 +256,25 @@
                                     <label
                                         class="label-text-title color-heading font-medium mb-2">{{ __('Pricing Type') }}<span
                                             class="text-danger">*</span></label>
-                                    <select name="pricing_type" class="form-control pricing_type">
-                                        <option value="1">{{ __('Properties') }}</option>
-                                        <option value="2">{{ __('Units') }}</option>
-                                        <option value="3">{{ __('Tenants') }}</option>
+                                    <select name="pricing_type" class="form-control pricing_type" readonly>
+                                        <option value="1" disabled>{{ __('Properties') }}</option>
+                                        <option value="2" selected>{{ __('Units') }}</option>
+                                        <option value="3" disabled>{{ __('Tenants') }}</option>
                                     </select>
                                 </div>
                                 <div class="col-md-6 mb-25">
                                     <label class="label-text-title color-heading font-medium mb-2">
+                                        <span class="max_unit">{{ __('Package Maximum Units') }}</span>
+                                        <span class="text-danger">*</span>
+                                    </label>
+                                    <input type="number" min="0" step="any" name="max_unit"
+                                        class="form-control max_unit" placeholder="10">
+                                </div>
+                                <div class="col-md-6 mb-25">
+                                    <label class="label-text-title color-heading font-medium mb-2">
+                                        <span class="unit_type_price d-none">{{ __('Per Unit Monthly Price') }}</span>
                                         <span
                                             class="property_type_price d-none">{{ __('Per Property Monthly Price') }}</span>
-                                        <span class="unit_type_price d-none">{{ __('Per Unit Monthly Price') }}</span>
                                         <span class="tenant_type_price d-none">{{ __('Per Tenant Monthly Price') }}</span>
                                         <span class="text-danger">*</span>
                                     </label>
@@ -267,9 +283,9 @@
                                 </div>
                                 <div class="col-md-6 mb-25">
                                     <label class="label-text-title color-heading font-medium mb-2">
+                                        <span class="unit_type_price d-none">{{ __('Per Unit Yearly Price') }}</span>
                                         <span
                                             class="property_type_price d-none">{{ __('Per Property Yearly Price') }}</span>
-                                        <span class="unit_type_price d-none">{{ __('Per Unit Yearly Price') }}</span>
                                         <span class="tenant_type_price d-none">{{ __('Per Tenant Yearly Price') }}</span>
                                         <span class="text-danger">*</span>
                                     </label>
@@ -285,10 +301,10 @@
                                         class="label-text-title color-heading font-medium mb-2">{{ __('Max Maintainer') }}</label>
                                     <div class="input-group">
                                         <input type="number" min="0" step="any" name="max_maintainer"
-                                            class="form-control" placeholder="5">
-                                        <select name="maintainer_limit_type" class="form-control" fdprocessedid="bgzg6e">
-                                            <option value="1">{{ __('Limited') }}</option>
-                                            <option value="2">{{ __('Unlimited') }}</option>
+                                            class="form-control" placeholder="Unlimited" disabled>
+                                        <select name="maintainer_limit_type" class="form-control" fdprocessedid="bgzg6e" readonly>
+                                            <option disabled value="1">{{ __('Limited') }}</option>
+                                            <option selected value="2">{{ __('Unlimited') }}</option>
                                         </select>
                                     </div>
                                 </div>
@@ -297,10 +313,10 @@
                                         class="label-text-title color-heading font-medium mb-2">{{ __('Max Invoice') }}</label>
                                     <div class="input-group">
                                         <input type="number" min="0" step="any" name="max_invoice"
-                                            class="form-control" placeholder="5000">
-                                        <select name="invoice_limit_type" class="form-control" fdprocessedid="bgzg6e">
-                                            <option value="1">{{ __('Limited') }}</option>
-                                            <option value="2">{{ __('Unlimited') }}</option>
+                                            class="form-control" placeholder="Unlimited" disabled>
+                                        <select name="invoice_limit_type" class="form-control" fdprocessedid="bgzg6e" readonly>
+                                            <option disabled value="1">{{ __('Limited') }}</option>
+                                            <option selected value="2">{{ __('Unlimited') }}</option>
                                         </select>
                                     </div>
                                 </div>
@@ -309,28 +325,28 @@
                                         class="label-text-title color-heading font-medium mb-2">{{ __('Max Auto Invoice') }}</label>
                                     <div class="input-group">
                                         <input type="number" min="0" step="any" name="max_auto_invoice"
-                                            class="form-control" placeholder="5000">
+                                            class="form-control" placeholder="Unlimited" disabled>
                                         <select name="auto_invoice_limit_type" class="form-control"
-                                            fdprocessedid="bgzg6e">
-                                            <option value="1">{{ __('Limited') }}</option>
-                                            <option value="2">{{ __('Unlimited') }}</option>
+                                            fdprocessedid="bgzg6e" readonly>
+                                            <option disabled value="1">{{ __('Limited') }}</option>
+                                            <option selected value="2">{{ __('Unlimited') }}</option>
                                         </select>
                                     </div>
                                 </div>
                                 <div class="col-md-6 mb-25">
                                     <label
                                         class="label-text-title color-heading font-medium mb-2">{{ __('Ticket Support') }}</label>
-                                    <select name="ticket_support" id="ticket_support" class="form-control">
-                                        <option value="0">{{ __('No') }}</option>
-                                        <option value="1">{{ __('Yes') }}</option>
+                                    <select name="ticket_support" id="ticket_support" class="form-control" readonly>
+                                        <option disabled value="0">{{ __('No') }}</option>
+                                        <option selected value="1">{{ __('Yes') }}</option>
                                     </select>
                                 </div>
                                 <div class="col-md-6 mb-25">
                                     <label
                                         class="label-text-title color-heading font-medium mb-2">{{ __('Notice Support') }}</label>
-                                    <select name="notice_support" id="notice_support" class="form-control">
-                                        <option value="0">{{ __('No') }}</option>
-                                        <option value="1">{{ __('Yes') }}</option>
+                                    <select name="notice_support" id="notice_support" class="form-control" readonly>
+                                        <option disabled value="0">{{ __('No') }}</option>
+                                        <option selected value="1">{{ __('Yes') }}</option>
                                     </select>
                                 </div>
                                 <div class="col-md-6 mb-25">
@@ -370,14 +386,14 @@
                                         class="label-text-title color-heading font-medium mb-2">{{ __('Monthly Price') }}
                                         <span class="text-danger">*</span></label>
                                     <input type="number" min="0" step="any" name="monthly_price"
-                                        class="form-control" placeholder="10">
+                                        class="form-control monthly_price" placeholder="10" readonly>
                                 </div>
                                 <div class="col-md-6 mb-25">
                                     <label
                                         class="label-text-title color-heading font-medium mb-2">{{ __('Yearly Price') }}
                                         <span class="text-danger">*</span></label>
                                     <input type="number" min="0" step="any" name="yearly_price"
-                                        class="form-control" placeholder="10">
+                                        class="form-control yearly_price" placeholder="10" readonly>
                                 </div>
                             </div>
                         </div>

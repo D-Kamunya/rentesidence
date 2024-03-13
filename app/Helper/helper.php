@@ -610,7 +610,7 @@ if (!function_exists('setUserPackage')) {
             'user_id' => $userId,
             'package_id' => $package->id,
             'package_type' => $package->type ?? PACKAGE_TYPE_UNIT,
-            'quantity' => $quantity,
+            'quantity' => $package->max_unit,
             'name' => $package->name,
             'max_maintainer' => $package->max_maintainer,
             'max_property' => $package->max_property,

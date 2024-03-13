@@ -14,12 +14,6 @@
                         class="font-13 font-medium">/{{ __('monthly') }}</span></h2>
                 <h2 class="price-title d-none price-yearly">{{ currencyPrice($plan->yearly_price) }}<span
                         class="font-13 font-medium">/{{ __('yearly') }}</span></h2>
-                @if (in_array($plan->type, [PACKAGE_TYPE_PROPERTY, PACKAGE_TYPE_UNIT, PACKAGE_TYPE_TENANT]))
-                    <p class="font-13 font-medium price-monthly per_monthly_price">
-                        {{ currencyPrice($plan->per_monthly_price) }}*1={{ $plan->per_monthly_price * 1 }}</p>
-                    <p class="font-13 font-medium d-none price-yearly per_yearly_price">
-                        {{ currencyPrice($plan->per_yearly_price) }}*1={{ $plan->per_yearly_price * 1 }}</p>
-                @endif
                 <h4 class="font-18 font-medium mt-2">{{ __('What’s included') }}</h4>
                 <ul class="pricing-features">
                     @if ($plan->type == PACKAGE_TYPE_PROPERTY)
@@ -41,9 +35,7 @@
                                 <span class="iconify font-16" data-icon="material-symbols:check-small-rounded"></span>
                             </span>
                             <span
-                                class="font-13 price-monthly">{{ __('Add ') . currencyPrice($plan->per_monthly_price) . __(' Per Units') }}</span>
-                            <span
-                                class="font-13 price-yearly d-none">{{ __('Add ') . currencyPrice($plan->per_yearly_price) . __(' Per Units') }}</span>
+                                class="font-13 price-monthly">{{ __('Add Upto ') . $plan->max_unit . __(' Units') }}</span>
                         </li>
                     @endif
                     @if ($plan->type == PACKAGE_TYPE_TENANT)
@@ -98,16 +90,6 @@
                                 <span class="iconify font-16" data-icon="material-symbols:check-small-rounded"></span>
                             </span>
                             <span class="font-13">{{ __('Notice Support') }}</span>
-                        </li>
-                    @endif
-                    @if (in_array($plan->type, [PACKAGE_TYPE_PROPERTY, PACKAGE_TYPE_UNIT, PACKAGE_TYPE_TENANT]))
-                        <li class="d-flex align-items-center mb-3">
-                            <div class="input-group mb-3">
-                                <input type="number" min="0" step="any"
-                                    class="form-control rounded-0 rounded-start quantity" name="quantity" value="1"
-                                    placeholder="{{ __('Quantity') }}">
-                                <span class="input-group-text">{{ __('Quantity') }}</span>
-                            </div>
                         </li>
                     @endif
                 </ul>
