@@ -36,16 +36,6 @@
                                         </h6>
                                     </td>
                                 </tr>
-                                <tr>
-                                    <td>{{ currencyPrice($plan->per_monthly_price) }}*{{ $quantity }}</td>
-                                    <td>
-                                        <h6 class="tenant-invoice-tbl-right-text text-end">
-                                            <input type="hidden" id="planPerAmount"
-                                                value="{{ $plan->per_monthly_price * $quantity }}">
-                                            {{ currencyPrice($plan->per_monthly_price * $quantity) }}
-                                        </h6>
-                                    </td>
-                                </tr>
                             @else
                                 <tr>
                                     <td>{{ __('Amount') }}</td>
@@ -53,16 +43,6 @@
                                         <h6 class="tenant-invoice-tbl-right-text text-end">
                                             <input type="hidden" id="planAmount" value="{{ $plan->yearly_price }}">
                                             {{ currencyPrice($plan->yearly_price) }}
-                                        </h6>
-                                    </td>
-                                </tr>
-                                <tr>
-                                    <td>{{ currencyPrice($plan->per_yearly_price) }}*{{ $quantity }}</td>
-                                    <td>
-                                        <h6 class="tenant-invoice-tbl-right-text text-end">
-                                            <input type="hidden" id="planPerAmount"
-                                                value="{{ $plan->per_yearly_price * $quantity }}">
-                                            {{ currencyPrice($plan->per_yearly_price * $quantity) }}
                                         </h6>
                                     </td>
                                 </tr>

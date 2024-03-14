@@ -132,11 +132,8 @@ $(document).on("click", ".paymentGateway", function (e) {
 function getCurrencyRes(response) {
     var html = "";
     var planAmount = parseFloat($("#planAmount").val()).toFixed(2);
-    var planPerAmount = parseFloat($("#planPerAmount").val()).toFixed(2);
     Object.entries(response.data).forEach((currency) => {
-        let currencyAmount =
-            currency[1].conversion_rate * Number(planAmount) +
-            Number(planPerAmount);
+        let currencyAmount = currency[1].conversion_rate * Number(planAmount);
         html += `<tr>
                     <td>
                         <div class="custom-radiobox gatewayCurrencyAmount">
@@ -152,8 +149,7 @@ function getCurrencyRes(response) {
                         </div>
                     </td>
                     <td><h6 class="tenant-invoice-tbl-right-text text-end">${gatewayCurrencyPrice(
-                        Number(planAmount).toFixed(2) +
-                            Number(planPerAmount).toFixed(2)
+                        Number(planAmount).toFixed(2)
                     )} * ${
             currency[1].conversion_rate
         } = ${gatewayCurrencyPrice(
