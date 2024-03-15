@@ -9,6 +9,7 @@
                     <p>Sending M-PESA payment notification to your phone. <br>
                         Dear Customer, <br> Shortly you will receive an M-PESA prompt on your phone <br> requesting you to enter your M-PESA PIN to complete your payment. <br> Please ensure your phone is on and unlocked to enable you to complete the process. Thank you.</p>
                     <p id="countdown">Make payment in <span id="countdownTimer">50</span> seconds.</p>
+                    <p id="trans-message" style="display:none">Please wait for a few seconds for the transaction to be verified.</p>
                 </div>
                 <img src="{{asset('assets/images/loading.svg')}}" alt="M-PESA Image">
             </div>
@@ -102,7 +103,7 @@
                         <div class="col-lg-6">
                             <div
                                 class="tenant-portal-invoice-details-rightside bg-off-white theme-border p-20 radius-4 mb-25">
-                                <form class="" action="{{ route('payment.checkout') }}" method="POST"
+                                <form id="pay-invoice-form" class="" action="{{ route('payment.checkout') }}" method="POST"
                                     enctype="multipart/form-data">
                                     @csrf
                                     <input type="hidden" name="invoice_id" value="{{ $invoice->id }}">

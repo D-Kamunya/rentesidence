@@ -10,6 +10,7 @@
                     <p>Sending M-PESA payment notification to your phone. <br>
                         Dear Customer, <br> Shortly you will receive an M-PESA prompt on your phone <br> requesting you to enter your M-PESA PIN to complete your payment. <br> Please ensure your phone is on and unlocked to enable you to complete the process. Thank you.</p>
                     <p id="countdown">Make payment in <span id="countdownTimer">50</span> seconds.</p>
+                    <p id="trans-message" style="display:none">Please wait for a few seconds for the transaction to be verified.</p>
                 </div>
                 <img src="{{asset('assets/images/loading.svg')}}" alt="M-PESA Image">
             </div>

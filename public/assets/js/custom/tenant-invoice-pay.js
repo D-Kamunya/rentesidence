@@ -70,25 +70,30 @@ $("#payBtn").on("click", function () {
             toastr.error("Select Currency");
             $("#payBtn").attr("type", "button");
         } else {
+            var payment_form = document.getElementById("pay-invoice-form");
             $("#payBtn").attr("type", "submit");
-            if (gateway == "mpesa") {
-                showMpesaPreloader();
-                var countdown = 50; // Set the initial countdown time in seconds
+            if (payment_form.checkValidity()) {
+                if (gateway == "mpesa") {
+                    showMpesaPreloader();
+                    var countdown = 50; // Set the initial countdown time in seconds
 
-                // Update the countdown every second
-                var countdownInterval = setInterval(function () {
-                    document.getElementById("countdownTimer").textContent =
-                        countdown;
-                    countdown--;
+                    // Update the countdown every second
+                    var countdownInterval = setInterval(function () {
+                        document.getElementById("countdownTimer").textContent =
+                            countdown;
+                        countdown--;
 
-                    // Hide preloader when countdown reaches 0
-                    if (countdown < 0) {
-                        document.getElementById(
-                            "mpesa-preloader"
-                        ).style.display = "none";
-                        clearInterval(countdownInterval);
-                    }
-                }, 1000);
+                        // Hide preloader when countdown reaches 0
+                        if (countdown < 0) {
+                            document.getElementById(
+                                "trans-message"
+                            ).style.display = "block";
+                            clearInterval(countdownInterval);
+                            document.getElementById("countdown").textContent =
+                                "Oops!Time is Up!!!!";
+                        }
+                    }, 1000);
+                }
             }
         }
     }

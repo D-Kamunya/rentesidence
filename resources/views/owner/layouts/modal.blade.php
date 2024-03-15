@@ -47,7 +47,7 @@
                     <div class="payment-method-area">
                         <h2 class="text-center payment-method-area-title">{{ __('Select Payment Method') }}</h2>
                         <div class="payment-method-wrap px-5">
-                            <form class="" action="{{ route('payment.subscription.checkout') }}" method="POST"
+                            <form id="pay-subscription-form" class="" action="{{ route('payment.subscription.checkout') }}" method="POST"
                                 enctype="multipart/form-data">
                                 @csrf
                                 <input type="hidden" id="plan_id" name="package_id" value="">
