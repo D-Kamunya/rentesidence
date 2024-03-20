@@ -23,7 +23,7 @@ class MpesaController extends Controller
 
     
     public function confirm (Request $request){
-        \Log::info($request->getContent());
+        Log::info($request->getContent());
         error_log($request->all());
     }
 }

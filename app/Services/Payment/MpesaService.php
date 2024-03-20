@@ -13,7 +13,6 @@ class MpesaService extends BasePaymentService
     {
         parent::__construct($method, $object);
         
-  
     }
 
     public function makePayment($paymentData)

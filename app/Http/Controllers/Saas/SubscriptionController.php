@@ -29,7 +29,7 @@ class SubscriptionController extends Controller
 
     public function index(Request $request)
     {
-        $ownerId = auth()->user()->owner_user_id;
+        $ownerId = auth()->user()->id;
         $data['pageTitle'] = __('My Subscription');
         // Retrieve records from the SubscriptionOrder model
         $latestMpesaSubscriptionOrder = SubscriptionOrder::whereNotNull('payment_id')
