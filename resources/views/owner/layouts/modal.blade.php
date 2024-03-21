@@ -55,6 +55,7 @@
                                 <input type="hidden" id="selectCurrency" name="currency">
                                 <input type="hidden" id="duration_type" name="duration_type">
                                 <input type="hidden" id="quantity" name="quantity">
+                                <input type="hidden" id="default-currency" name="default-currency" value="{{ json_encode(session('default_currency')) }}">
                                 <div class="row" id="gatewayListBlock">
                                 </div>
                                 <div class="row">

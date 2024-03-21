@@ -87,6 +87,17 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Application Default Currency Configuration
+    |--------------------------------------------------------------------------
+    |
+    | The application default currency determines the default currency
+    | to be used throughout the application
+    */
+
+    'default_currency' => 'KSH',
+
+    /*
+    |--------------------------------------------------------------------------
     | Application Fallback Locale
     |--------------------------------------------------------------------------
     |

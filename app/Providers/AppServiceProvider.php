@@ -4,6 +4,7 @@ namespace App\Providers;
 
 use App\Models\Language;
 use App\Models\Setting;
+use App\Models\Currency;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\App;
 use Illuminate\Support\Facades\DB;
@@ -39,6 +40,16 @@ class AppServiceProvider extends ServiceProvider
                 $allOptions['settings'] = Setting::all()->pluck('option_value', 'option_key')->toArray();
                 config($allOptions);
                 config(['app.name' => getOption('app_name')]);
+
+                // Fetch the default currency from the database
+                $defaultCurrencySetting = getOption('currency_id');
+                session(['default_currency' => config('app.default_currency')]);
+                if ($defaultCurrencySetting) {
+                    $currency = Currency::where('id', $defaultCurrencySetting)->first();
+                    $defaultCurrency = $currency->symbol;
+                    config(['app.default_currency' => $defaultCurrency]);
+                    session(['default_currency' => $defaultCurrency]);
+                }
             }
         } catch (\Exception $e) {
             //

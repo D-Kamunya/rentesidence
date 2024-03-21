@@ -130,6 +130,9 @@ $(document).on("click", ".paymentGateway", function (e) {
 });
 
 function getCurrencyRes(response) {
+    var defaultCurrency = JSON.parse(
+        document.getElementById("default-currency").value
+    );
     var html = "";
     var planAmount = parseFloat($("#planAmount").val()).toFixed(2);
     Object.entries(response.data).forEach((currency) => {
@@ -149,7 +152,8 @@ function getCurrencyRes(response) {
                         </div>
                     </td>
                     <td><h6 class="tenant-invoice-tbl-right-text text-end">${gatewayCurrencyPrice(
-                        Number(planAmount).toFixed(2)
+                        Number(planAmount).toFixed(2),
+                        defaultCurrency
                     )} * ${
             currency[1].conversion_rate
         } = ${gatewayCurrencyPrice(
