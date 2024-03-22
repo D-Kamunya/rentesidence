@@ -49,7 +49,8 @@ class PaystackService extends BasePaymentService
             Log::info(json_encode($response));
             return $data;
         } catch (\Exception $ex) {
-            return $data['message'] = $ex->getMessage();
+            $data['message'] = $ex->getMessage();
+            return $data;
         }
     }
 

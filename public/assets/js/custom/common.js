@@ -165,7 +165,7 @@ function deleteItem(url, id) {
                     Swal.fire({
                         title: "Deleted",
                         html: ' <span style="color:red">Item has been deleted</span> ',
-                        timer: 2000,
+                        timer: 6000,
                         icon: "success",
                     });
                     toastr.success(data.message);
@@ -244,7 +244,7 @@ $(document).on("click", "a.delete", function () {
                     Swal.fire({
                         title: "Deleted",
                         html: ' <span style="color:red">Deleted Successfully</span> ',
-                        timer: 2000,
+                        timer: 6000,
                         icon: "success",
                     });
 
@@ -279,7 +279,7 @@ $(document).on("click", ".statusChange", function () {
                     Swal.fire({
                         title: "Changed",
                         html: ' <span style="color:red">Status has been Changed</span> ',
-                        timer: 2000,
+                        timer: 6000,
                         icon: "success",
                     });
                     toastr.success(data.message);

@@ -710,7 +710,7 @@ if (!function_exists('handleSubscriptionPaymentConfirmation')) {
                 }
             } else {
                 if ($gateway_slug == 'mpesa') {
-                    return redirect()->route('owner.subscription.index')->with('error', __('Mpesa Payment Failed!'));
+                    return redirect()->route('owner.subscription.index')->with('error', __('Mpesa Payment failed!! Please try again after a few minutes. If the problem persists, contact the System Admin.'));
                 }
 
                 return redirect()->route('owner.subscription.index')->with('error', __('Payment Failed!'));
@@ -758,7 +758,7 @@ if (!function_exists('handlePaymentConfirmation')) {
                 }
             } else {
                 if ($gateway_slug == 'mpesa') {
-                    return redirect()->route('tenant.invoice.index')->with('error', __('Mpesa Payment Failed!'));
+                    return redirect()->route('tenant.invoice.index')->with('error', __('Mpesa Payment failed!! Please try again after a few minutes. If the problem persists, contact the System Admin.'));
                 }
 
                 return redirect()->route('tenant.invoice.index')->with('error', __('Payment Failed!'));

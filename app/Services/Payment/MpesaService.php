@@ -31,13 +31,12 @@ class MpesaService extends BasePaymentService
         //     'merchant_request_id' =>  $result['MerchantRequestID'],
         //     'checkout_request_id' =>  $result['CheckoutRequestID']
         // ]);
-    
         $data['success'] = false;
         $data['redirect_url'] = $callbackurl;
         $data['payment_id'] = '';
         $data['message'] = __(SOMETHING_WENT_WRONG);
         try {
-            if ($result['ResponseCode']==DEACTIVATE) { 
+            if (isset($result['ResponseCode']) && $result['ResponseCode']==DEACTIVATE) { 
                 $data['merchant_request_id'] = $result['MerchantRequestID'];
                 $data['checkout_request_id'] =  $result['CheckoutRequestID'];
                 $data['payment_id'] = $result['CheckoutRequestID'];
@@ -46,7 +45,8 @@ class MpesaService extends BasePaymentService
             Log::info(json_encode($data));
             return $data;
         } catch (\Exception $ex) {
-            return $data['message'] = $ex->getMessage();
+            $data['message'] = $ex->getMessage();
+            return $data;
         }
     }
 

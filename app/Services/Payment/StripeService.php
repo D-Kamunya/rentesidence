@@ -50,7 +50,8 @@ class StripeService extends BasePaymentService
 
             return $data;
         } catch (\Exception $ex) {
-            return $data['message'] = $ex->getMessage();
+            $data['message'] = $ex->getMessage();
+            return $data;
         }
         return $data;
     }

@@ -82,7 +82,7 @@ const EMAIL_VERIFICATION_STATUS_ACTIVE = 1;
 const EMAIL_VERIFICATION_STATUS_DEACTIVATE = 0;
 
 //Message
-const SOMETHING_WENT_WRONG = "Something went wrong! Please try again";
+const SOMETHING_WENT_WRONG = "Something went wrong! Please try again after a few minutes. If the problem persists, contact the System Admin.";
 const CREATED_SUCCESSFULLY = "Created Successfully";
 const UPDATED_SUCCESSFULLY = "Updated Successfully";
 const STATUS_UPDATED_SUCCESSFULLY = "Status Updated Successfully";
