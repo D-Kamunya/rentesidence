@@ -428,7 +428,7 @@ class InvoiceService
     private function getOrCreateInvoice($request, $id, $tenant)
     {
         if ($id != '') {
-            return Invoice::findOrFail($request->id);
+            $invoice = Invoice::findOrFail($request->id);
         } else {
             if (!getOwnerLimit(RULES_INVOICE) > 0) {
                 throw new Exception(__('Your Invoice Limit finished'));
