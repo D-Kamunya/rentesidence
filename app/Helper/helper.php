@@ -904,7 +904,7 @@ if (!function_exists('getOwnerLimit')) {
                     $remain = $remain < 0 ? 0 : $remain;
                     $remain;
                 } else {
-                    $remain = true;
+                    $remain = PHP_INT_MAX;
                 }
                 if ($ownerPlan->package_type == PACKAGE_TYPE_PROPERTY) {
                     if ($type != RULES_PROPERTY) {

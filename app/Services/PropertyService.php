@@ -16,7 +16,7 @@ class PropertyService
 {
     use ResponseTrait;
 
-    public function getAll()
+    public function getAll($paginate=true)
     {
         $data = Property::query()
             ->leftJoin('tenants', ['properties.id' => 'tenants.property_id', 'tenants.status' => (DB::raw(TENANT_STATUS_ACTIVE))])
@@ -25,8 +25,13 @@ class PropertyService
             })
             ->selectRaw('properties.number_of_unit - (COUNT(users.id)) as available_unit,properties.*')
             ->groupBy('properties.id')
-            ->where('properties.owner_user_id', auth()->id())
-            ->paginate(1);
+            ->where('properties.owner_user_id', auth()->id());
+            if ($paginate){
+                return $data->paginate(10);
+            }else{
+                return $data->get();
+            }
+            
         // return $data?->makeHidden(['updated_at', 'created_at', 'deleted_at']);
         return $data;
     }

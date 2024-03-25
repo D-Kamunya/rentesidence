@@ -32,9 +32,9 @@ class InvoiceController extends Controller
         if ($request->ajax()) {
             return $this->invoiceService->getAllInvoicesData($request);
         }
-         else {
+        else {
             $responseData  = $this->invoiceService->getAllInvoices();
-            $responseData['properties'] = $this->propertyService->getAll();
+            $responseData['properties'] = $this->propertyService->getAll(false);
             return view('owner.invoice.index')->with($responseData);
         }
     }

@@ -208,6 +208,7 @@
                                         class="label-text-title color-heading font-medium mb-2">{{ __('Property') }}</label>
                                     <select class="form-select flex-shrink-0 property_id" name="property_id">
                                         <option value="">--{{ __('Select Property') }}--</option>
+                                        <option value="All">--{{ __('All Properties') }}--</option>
                                         @foreach ($properties as $property)
                                             <option value="{{ $property->id }}">{{ $property->name }}</option>
                                         @endforeach
@@ -219,6 +220,7 @@
                                     <select class="form-select flex-shrink-0 propertyUnitSelectOption"
                                         name="property_unit_id">
                                         <option value="">--{{ __('Select Unit') }}--</option>
+                                        <option value="All">--{{ __('All Units') }}--</option>
                                     </select>
                                 </div>
                             </div>

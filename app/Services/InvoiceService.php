@@ -13,6 +13,7 @@ use App\Models\Owner;
 use App\Models\Property;
 use App\Models\Tenant;
 use App\Services\SmsMail\MailService;
+use App\Services\TenantService;
 use App\Traits\ResponseTrait;
 use Exception;
 use Illuminate\Support\Facades\DB;
@@ -334,113 +335,14 @@ class InvoiceService
     {
         DB::beginTransaction();
         try {
-            $tenant = Tenant::where('owner_user_id', auth()->id())->where('unit_id', $request->property_unit_id)->where('status', TENANT_STATUS_ACTIVE)->first();
-            if (!$tenant) {
-                throw new Exception(__('Tenant Not Found'));
-            }
             $id = $request->get('id', '');
-            $invoiceExist = Invoice::query()
-                ->where('property_id', $request->property_id)
-                ->where('property_unit_id', $request->property_unit_id)
-                ->where('owner_user_id', auth()->id())
-                ->where('month', $request->month)
-                ->whereYear('created_at', '=', date('Y'))
-                ->where(function ($q) use ($id) {
-                    if ($id != '') {
-                        $q->whereNot('id', $id);
-                    }
-                })
-                ->exists();
-            if ($invoiceExist) {
-                throw new Exception(__('Invoice Already Generated'));
+            if ($request->property_id !== 'All' && $request->property_unit_id !== 'All') {
+                $this->storeSingleInvoice($request, $id);
+            } elseif ($request->property_id === 'All') {
+                $this->storeInvoicesForAllProperties($request, $id);
+            } elseif ($request->property_unit_id === 'All') {
+                $this->storeInvoicesForAllUnits($request, $id);
             }
-            if ($id != '') {
-                $invoice = Invoice::findOrFail($request->id);
-            } else {
-                if (!getOwnerLimit(RULES_INVOICE) > 0) {
-                    throw new Exception(__('Your Invoice Limit finished'));
-                }
-                $invoice = new Invoice();
-            }
-            $invoice->name = $request->name;
-            $invoice->tenant_id = $tenant->id;
-            $invoice->owner_user_id = auth()->id();
-            $invoice->property_id = $request->property_id;
-            $invoice->property_unit_id = $request->property_unit_id;
-            $invoice->month = $request->month;
-            $invoice->due_date = $request->due_date;
-            $invoice->save();
-
-            $totalAmount = 0;
-            $totalTax = 0;
-            $now = now();
-            $tax = taxSetting(auth()->id());
-            if (is_null($request->invoiceItem)) {
-                throw new Exception(__('Add invoice item at least one'));
-            }
-            if ($request->invoiceItem['invoice_type_id'] > 0) {
-                for ($i = 0; $i < count($request->invoiceItem['invoice_type_id']); $i++) {
-                    if ($request->invoiceItem['id'][$i]) {
-                        $invoiceItem = InvoiceItem::findOrFail($request->invoiceItem['id'][$i]);
-                    } else {
-                        $invoiceItem = new InvoiceItem();
-                    }
-                    $invoiceItem->invoice_id = $invoice->id;
-                    $invoiceItem->invoice_type_id = $request->invoiceItem['invoice_type_id'][$i];
-                    $invoiceItem->amount = $request->invoiceItem['amount'][$i];
-                    $invoiceItem->description = $request->invoiceItem['description'][$i];
-                    $invoiceItem->updated_at = $now;
-                    $invoiceType = InvoiceType::findOrFail($request->invoiceItem['invoice_type_id'][$i]);
-                    if (isset($tax) && $tax->type == TAX_TYPE_PERCENTAGE) {
-                        $invoiceItem->tax_amount = $invoiceItem->amount * $invoiceType->tax * 0.01;
-                    } else {
-                        $invoiceItem->tax_amount = $invoiceType->tax;
-                    }
-                    $invoiceItem->save();
-                    $totalAmount += $invoiceItem->amount + $invoiceItem->tax_amount;
-                    $totalTax += $invoiceItem->tax_amount;
-                }
-                InvoiceItem::where('invoice_id', $invoice->id)->where('updated_at', '!=', $now)->get()->map(function ($q) {
-                    $q->delete();
-                });
-            }
-            $invoice->amount = $totalAmount;
-            $invoice->tax_amount = $totalTax;
-            $invoice->save();
-            $title = __("You have a new invoice");
-            $body = __("Please check the invoice and response as soon as possible.");
-            addNotification($title, $body, null, null, $tenant->user_id, auth()->user()->id);
-
-            if (getOption('send_email_status', 0) == ACTIVE) {
-                $emails = [$tenant->user->email];
-                $subject = __('Invoice') . ' ' . $invoice->invoice_no . ' ' . __('due on date') . ' ' . $request->due_date;
-                $title = __('A new invoice was generated!');
-                $message = __('You have a new invoice');
-                $ownerUserId = auth()->id();
-                $amount = $totalAmount;
-                $dueDate = $request->due_date;
-                $month = $request->month;
-                $invoiceNo = $invoice->invoice_no;
-                $status = __('Pending');
-
-                // send mail
-                $mailService = new MailService;
-                $template = EmailTemplate::where('owner_user_id', $ownerUserId)->where('category', EMAIL_TEMPLATE_INVOICE)->where('status', ACTIVE)->first();
-                if ($template) {
-                    $customizedFieldsArray = [
-                        '{{amount}}' => $invoice->amount,
-                        '{{due_date}}' => $invoice->due_date,
-                        '{{month}}' => $invoice->month,
-                        '{{invoice_no}}' => $invoice->invoice_no,
-                        '{{app_name}}' => getOption('app_name')
-                    ];
-                    $content = getEmailTemplate($template->body, $customizedFieldsArray);
-                    $mailService->sendCustomizeMail($emails, $template->subject, $content);
-                } else {
-                    $mailService->sendInvoiceMail($emails, $subject, $message, $ownerUserId, $title, $amount, $dueDate, $month, $invoiceNo, $status);
-                }
-            }
-
             DB::commit();
             $message = $request->id ? __(UPDATED_SUCCESSFULLY) : __(CREATED_SUCCESSFULLY);
             return $this->success([], $message);
@@ -450,6 +352,231 @@ class InvoiceService
             return $this->error([], $message);
         }
     }
+
+    private function storeSingleInvoice($request, $id, $tenant=null)
+    {
+        if ($tenant==null){
+            $tenant = $this->getTenant($request->property_unit_id);
+            $this->validateInvoiceExistence($request, $id);
+        }else{
+            $tenant=$tenant;
+        }
+        
+        $invoice = $this->getOrCreateInvoice($request, $id, $tenant);
+        $totalAmountAndTax = $this->calculateTotalAmount($request, $invoice);
+        $this->saveInvoiceItems($request, $invoice, $totalAmountAndTax['totalAmount'], $totalAmountAndTax['totalTax']);
+        $this->sendInvoiceNotificationAndEmail($invoice, $tenant);
+    }
+
+    private function storeInvoicesForAllProperties($request, $id)
+    {
+        $tenantsToInvoice = $this->getTenantsToInvoice($request);
+
+        foreach ($tenantsToInvoice as $tenant) {
+            $this->storeSingleInvoice($request, $id, $tenant);
+        }
+    }
+
+    private function storeInvoicesForAllUnits($request, $id)
+    {
+        $tenantsToInvoice = $this->getTenantsToInvoice($request, true);
+
+        foreach ($tenantsToInvoice as $tenant) {
+            $this->storeSingleInvoice($request, $id, $tenant);
+        }
+    }
+
+    private function saveInvoiceItems($request, $invoice, $totalAmount,$totalTax)
+    {
+        $invoice->amount = $totalAmount;
+        $invoice->tax_amount = $totalTax;
+        $invoice->save();
+    }
+
+    private function getTenant($unitId)
+    {
+        $tenant = Tenant::where('owner_user_id', auth()->id())
+            ->where('unit_id', $unitId)
+            ->where('status', TENANT_STATUS_ACTIVE)
+            ->firstOrFail();
+        if (!$tenant) {
+            throw new Exception(__('Tenant Not Found'));
+        }
+        return $tenant;
+    }
+
+    private function validateInvoiceExistence($request, $id)
+    {
+        $invoiceExist = Invoice::query()
+            ->where('property_id', $request->property_id)
+            ->where('property_unit_id', $request->property_unit_id)
+            ->where('owner_user_id', auth()->id())
+            ->where('month', $request->month)
+            ->whereYear('created_at', '=', date('Y'))
+            ->where(function ($q) use ($id) {
+                if ($id != '') {
+                    $q->whereNot('id', $id);
+                }
+            })
+            ->exists();
+
+        if ($invoiceExist) {
+            throw new Exception(__('Invoice Already Generated'));
+        }
+    }
+
+    private function getOrCreateInvoice($request, $id, $tenant)
+    {
+        if ($id != '') {
+            return Invoice::findOrFail($request->id);
+        } else {
+            if (!getOwnerLimit(RULES_INVOICE) > 0) {
+                throw new Exception(__('Your Invoice Limit finished'));
+            }
+            $invoice = new Invoice();
+        }
+
+        $invoice->name = $request->name;
+        $invoice->tenant_id = $tenant->id;
+        $invoice->owner_user_id = auth()->id();
+        $invoice->property_id = $tenant->property_id;
+        $invoice->property_unit_id = $tenant->unit_id;
+        $invoice->month = $request->month;
+        $invoice->due_date = $request->due_date;
+        $invoice->save();
+
+        return $invoice;
+    }
+
+    private function calculateTotalAmount($request, $invoice)
+    {
+        $totalAmount = 0;
+        $totalTax = 0;
+        $now = now();
+        $tax = taxSetting(auth()->id());
+
+        if (is_null($request->invoiceItem)) {
+            throw new Exception(__('Add invoice item at least one'));
+        }
+
+        foreach ($request->invoiceItem['invoice_type_id'] as $index => $invoiceTypeId) {
+            $invoiceItem = $this->getOrCreateInvoiceItem($request, $invoice, $index);
+            $totalAmount += $invoiceItem->amount + $invoiceItem->tax_amount;
+            $totalTax += $invoiceItem->tax_amount;
+        }
+
+        InvoiceItem::where('invoice_id', $invoice->id)->where('updated_at', '!=', $now)->get()->map(function ($q) {
+            $q->delete();
+                    });
+
+        return ['totalAmount'=>$totalAmount,'totalTax'=>$totalTax];
+    }
+
+    private function getOrCreateInvoiceItem($request, $invoice, $index)
+    {
+        if ($request->invoiceItem['id'][$index]) {
+            $invoiceItem = InvoiceItem::findOrFail($request->invoiceItem['id'][$index]);
+        } else {
+            $invoiceItem = new InvoiceItem();
+        }
+
+        $invoiceItem->invoice_id = $invoice->id;
+        $invoiceItem->invoice_type_id = $request->invoiceItem['invoice_type_id'][$index];
+        $invoiceItem->amount = $request->invoiceItem['amount'][$index];
+        $invoiceItem->description = $request->invoiceItem['description'][$index];
+        $invoiceItem->updated_at = now();
+        $invoiceType = InvoiceType::findOrFail($request->invoiceItem['invoice_type_id'][$index]);
+
+        if (isset($tax) && $tax->type == TAX_TYPE_PERCENTAGE) {
+            $invoiceItem->tax_amount = $invoiceItem->amount * $invoiceType->tax * 0.01;
+        } else {
+            $invoiceItem->tax_amount = $invoiceType->tax;
+        }
+
+        $invoiceItem->save();
+
+        return $invoiceItem;
+    }
+
+    private function sendInvoiceNotificationAndEmail($invoice, $tenant)
+    {
+        $title = __("You have a new invoice");
+        $body = __("Please check the invoice and response as soon as possible.");
+        addNotification($title, $body, null, null, $tenant->id, auth()->user()->id);
+
+        if (getOption('send_email_status', 0) == ACTIVE) {
+            $emails = [$tenant->user->email];
+            $subject = __('Invoice') . ' ' . $invoice->invoice_no . ' ' . __('due on date') . ' ' . $invoice->due_date;
+            $title = __('A new invoice was generated!');
+            $message = __('You have a new invoice');
+            $ownerUserId = auth()->id();
+            $amount = $invoice->amount;
+            $dueDate = $invoice->due_date;
+            $month = $invoice->month;
+            $invoiceNo = $invoice->invoice_no;
+            $status = __('Pending');
+
+            // send mail
+            $mailService = new MailService;
+            $template = EmailTemplate::where('owner_user_id', $ownerUserId)
+                ->where('category', EMAIL_TEMPLATE_INVOICE)
+                ->where('status', ACTIVE)
+                ->first();
+
+            if ($template) {
+                $customizedFieldsArray = [
+                '{{amount}}' => $invoice->amount,
+                '{{due_date}}' => $invoice->due_date,
+                '{{month}}' => $invoice->month,
+                '{{invoice_no}}' => $invoice->invoice_no,
+                '{{app_name}}' => getOption('app_name')
+            ];
+            $content = getEmailTemplate($template->body, $customizedFieldsArray);
+            $mailService->sendCustomizeMail($emails, $template->subject, $content);
+            } else {
+                $mailService->sendInvoiceMail($emails, $subject, $message, $ownerUserId, $title, $amount, $dueDate, $month, $invoiceNo, $status);
+            }
+        }
+    }
+    private function getTenantsToInvoice($request, $units=false)
+    {
+        if ($units){
+            $tenants = Tenant::query()
+                    ->leftJoin('users', 'tenants.user_id', '=', 'users.id')
+                    ->select(['tenants.*', 'users.first_name', 'users.last_name', 'users.contact_number', 'users.email'])
+                    ->where('tenants.status', TENANT_STATUS_ACTIVE)
+                    ->where('tenants.property_id', $request->property_id)
+                    ->where('tenants.owner_user_id', auth()->id())
+                    ->get();
+        }else{
+            $tenantService = new TenantService;
+            $tenants = $tenantService->getActiveAll();
+        }
+
+        if (count($tenants) === 0) {
+            throw new Exception(__('No Active Tenants Found for All Properties'));
+        }
+        $tenantsToInvoice = [];
+
+        foreach ($tenants as $tenant) {
+            $invoiceExist = Invoice::where('property_id', $tenant->property_id)
+                ->where('property_unit_id', $tenant->unit_id)
+                ->where('owner_user_id', auth()->id())
+                ->where('month', $request->month)
+                ->whereYear('created_at', '=', date('Y'))
+                ->exists();
+
+            if (!$invoiceExist) {
+                $tenantsToInvoice[] = $tenant;
+            }
+        }
+        if (empty($tenantsToInvoice)) {
+            throw new Exception(__('Invoices Already Generated for that Month'));
+        }
+
+        return $tenantsToInvoice;
+    }
+
 
     public function sendSingleNotification($request)
     {
