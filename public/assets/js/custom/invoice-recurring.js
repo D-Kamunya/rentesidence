@@ -1,25 +1,27 @@
 (function ($) {
-    "use strict"
+    "use strict";
     var stateSelector;
-    var invoiceTypes = JSON.parse($('.invoiceTypes').val());
-    var typesHtml = '';
+    var invoiceTypes = JSON.parse($(".invoiceTypes").val());
+    var typesHtml = "";
     Object.entries(invoiceTypes).forEach((type) => {
-        typesHtml += '<option value="' + type[1].id + '">' + type[1].name + '</option>';
+        typesHtml +=
+            '<option value="' + type[1].id + '">' + type[1].name + "</option>";
     });
 
-
-
-    $('#add').on('click', function () {
-        var selector = $('#addModal');
-        selector.find('.is-invalid').removeClass('is-invalid');
-        selector.find('.error-message').remove();
-        selector.modal('show')
-        selector.find('form').trigger('reset');
+    $("#add").on("click", function () {
+        var selector = $("#addModal");
+        selector.find(".is-invalid").removeClass("is-invalid");
+        selector.find(".error-message").remove();
+        selector.modal("show");
+        selector.find("form").trigger("reset");
     });
 
     $(document).on("click", ".add-field", function () {
-        $(this).closest('form').find('.multi-fields').append(
-            `<div class="multi-field border-bottom pb-25 mb-25">
+        $(this)
+            .closest("form")
+            .find(".multi-fields")
+            .append(
+                `<div class="multi-field border-bottom pb-25 mb-25">
                 <input type="hidden" name="invoiceItem[id][]" class="" value="">
                 <!-- Modal Inner Form Box Start -->
                 <div class="modal-inner-form-box bg-off-white theme-border radius-4 p-20 mb-20">
@@ -46,58 +48,92 @@
                 <!-- Modal Inner Form Box End -->
                 <button type="button" class="remove-field red-color">Remove</button>
             </div>`
-        )
+            );
     });
 
     $(document).on("click", ".remove-field", function () {
         $(this).parent(".multi-field").remove();
     });
 
-    $('.recurring_type').on('change', function () {
+    $(".recurring_type").on("change", function () {
         var selector = $(this);
         if (selector.val() == 3) {
-            selector.closest('.modal').find('.recurring_day').removeClass('d-none');
+            selector
+                .closest(".modal")
+                .find(".recurring_day")
+                .removeClass("d-none");
         } else {
-            selector.closest('.modal').find('.recurring_day').addClass('d-none');
+            selector
+                .closest(".modal")
+                .find(".recurring_day")
+                .addClass("d-none");
         }
     });
 
     $(document).on("click", ".edit", function () {
-        stateSelector = $('#editInvoiceModal');
-        let detailsUrl = $(this).data('detailsurl');
-        commonAjax('GET', detailsUrl, getDataEditRes, getDataEditRes);
-    })
+        stateSelector = $("#editInvoiceModal");
+        let detailsUrl = $(this).data("detailsurl");
+        commonAjax("GET", detailsUrl, getDataEditRes, getDataEditRes);
+    });
 
     function getDataEditRes(response) {
-        var selector = $('#editInvoiceModal');
-        selector.find('.is-invalid').removeClass('is-invalid');
-        selector.find('.error-message').remove();
-        selector.modal('show')
-        selector.find('input[name=id]').val(response.data.invoice.id)
-        selector.find('input[name=invoice_prefix]').val(response.data.invoice.invoice_prefix)
-        selector.find('select[name=property_id]').val(response.data.invoice.property_id)
-        getPropertyUnits(response.data.invoice.property_id)
+        var selector = $("#editInvoiceModal");
+        selector.find(".is-invalid").removeClass("is-invalid");
+        selector.find(".error-message").remove();
+        selector.modal("show");
+        selector.find("input[name=id]").val(response.data.invoice.id);
+        selector
+            .find("input[name=invoice_prefix]")
+            .val(response.data.invoice.invoice_prefix);
+        selector
+            .find("select[name=property_id]")
+            .val(response.data.invoice.property_id);
+        getPropertyUnits(response.data.invoice.property_id);
         setTimeout(() => {
-            selector.find('select[name=property_unit_id]').val(response.data.invoice.property_unit_id)
+            selector
+                .find("select[name=property_unit_id]")
+                .val(response.data.invoice.property_unit_id);
         }, 2000);
-        selector.find('select[name=recurring_type]').val(response.data.invoice.recurring_type)
-        selector.find('input[name=cycle_day]').val(response.data.invoice.cycle_day)
-        selector.find('input[name=due_day_after]').val(response.data.invoice.due_day_after)
+        selector
+            .find("select[name=recurring_type]")
+            .val(response.data.invoice.recurring_type);
+        selector
+            .find("input[name=cycle_day]")
+            .val(response.data.invoice.cycle_day);
+        selector
+            .find("input[name=due_day_after]")
+            .val(response.data.invoice.due_day_after);
         if (response.data.invoice.recurring_type == 3) {
-            selector.closest('.modal').find('.recurring_day').removeClass('d-none');
+            selector
+                .closest(".modal")
+                .find(".recurring_day")
+                .removeClass("d-none");
         } else {
-            selector.closest('.modal').find('.recurring_day').addClass('d-none');
+            selector
+                .closest(".modal")
+                .find(".recurring_day")
+                .addClass("d-none");
         }
-        selector.find('select[name=status]').val(response.data.invoice.status)
+        selector.find("select[name=status]").val(response.data.invoice.status);
 
-        var html = '';
+        var html = "";
         Object.entries(response.data.items).forEach((item) => {
-            var typesHtml = '';
+            var typesHtml = "";
             Object.entries(invoiceTypes).forEach((type) => {
                 if (type[1].id == item[1].invoice_type_id) {
-                    typesHtml += '<option value="' + type[1].id + '" selected>' + type[1].name + '</option>';
+                    typesHtml +=
+                        '<option value="' +
+                        type[1].id +
+                        '" selected>' +
+                        type[1].name +
+                        "</option>";
                 } else {
-                    typesHtml += '<option value="' + type[1].id + '">' + type[1].name + '</option>';
+                    typesHtml +=
+                        '<option value="' +
+                        type[1].id +
+                        '">' +
+                        type[1].name +
+                        "</option>";
                 }
             });
             html += `<div class="multi-field border-bottom pb-25 mb-25">
@@ -126,41 +162,47 @@
                         </div>
                         <!-- Modal Inner Form Box End -->
                         <button type="button" class="remove-field red-color">Remove</button>
-                    </div>`
+                    </div>`;
         });
-        selector.find('.multi-fields').html(html);
+        selector.find(".multi-fields").html(html);
     }
 
-    $(document).on('click', '.view', function () {
-        let detailsUrl = $(this).data('detailsurl');
-        commonAjax('GET', detailsUrl, getDetailsViewRes, getDetailsViewRes);
+    $(document).on("click", ".view", function () {
+        let detailsUrl = $(this).data("detailsurl");
+        commonAjax("GET", detailsUrl, getDetailsViewRes, getDetailsViewRes);
     });
 
     function getDetailsViewRes(response) {
-        var selector = $('#invoicePreviewModal');
-        selector.modal('show')
-        selector.find('.invoiceNo').text(response.data.invoice.invoice_no)
-        var status = 'Deactivate';
-        if (response.data.invoice.status == '1') {
-            status = "Active"
+        var selector = $("#invoicePreviewModal");
+        selector.modal("show");
+        selector.find(".invoiceNo").text(response.data.invoice.invoice_no);
+        var status = "Deactivate";
+        if (response.data.invoice.status == "1") {
+            status = "Active";
         }
-        selector.find('.invoiceStatus').html(status)
+        selector.find(".invoiceStatus").html(status);
 
-        selector.find('.tenantName').html(response.data.tenant.first_name + ' ' + response.data.tenant.last_name)
-        selector.find('.tenantEmail').html(response.data.tenant.email)
-        selector.find('.propertyName').html(response.data.tenant.property_name)
-        selector.find('.unitName').html(response.data.tenant.unit_name)
-        var recurring = '';
+        selector
+            .find(".tenantName")
+            .html(
+                response.data.tenant.first_name +
+                    " " +
+                    response.data.tenant.last_name
+            );
+        selector.find(".tenantEmail").html(response.data.tenant.email);
+        selector.find(".propertyName").html(response.data.tenant.property_name);
+        selector.find(".unitName").html(response.data.tenant.unit_name);
+        var recurring = "";
         if (response.data.invoice.recurring_type == 1) {
-            recurring = 'Monthly';
+            recurring = "Monthly";
         } else if (response.data.invoice.recurring_type == 2) {
-            recurring = 'Yearly';
+            recurring = "Yearly";
         } else if (response.data.invoice.recurring_type == 3) {
-            recurring = 'After ' + response.data.invoice.cycle_day + ' Days';
+            recurring = "After " + response.data.invoice.cycle_day + " Days";
         }
-        selector.find('.recurring').html(recurring)
+        selector.find(".recurring").html(recurring);
 
-        var html = '';
+        var html = "";
         Object.entries(response.data.items).forEach((item) => {
             var typeName;
             Object.entries(invoiceTypes).forEach((type) => {
@@ -171,75 +213,101 @@
             html += `<tr>
                         <td>${typeName}</td>
                         <td>${item[1].description}</td>
-                        <td class="invoice-tbl-last-field">${currencyPrice(item[1].amount)}</td>
+                        <td class="invoice-tbl-last-field">${currencyPrice(
+                            item[1].amount
+                        )}</td>
                     </tr>`;
         });
-        selector.find('#invoiceItems').html(html);
-        selector.find('.total').html(currencyPrice(response.data.invoice.amount));
+        selector.find("#invoiceItems").html(html);
+        selector
+            .find(".total")
+            .html(currencyPrice(response.data.invoice.amount));
     }
 
-    $(document).on('change', '.property_id', function () {
+    $(document).on("change", ".property_id", function () {
         stateSelector = $(this);
-        getPropertyUnits(stateSelector.val());
+        if (stateSelector.val() == "All") {
+            var html =
+                '<option value="All" selected readonly>All Tenants</option>';
+            stateSelector
+                .closest(".modal")
+                .find(".propertyUnitSelectOption")
+                .html(html);
+        } else {
+            getPropertyUnits(stateSelector.val());
+        }
     });
 
     function getPropertyUnits(property_id) {
-        var getPropertyUnitsRoute = $('#getPropertyUnitsRoute').val();
-        commonAjax('GET', getPropertyUnitsRoute, getPropertyUnitsRes, getPropertyUnitsRes, { "property_id": property_id });
+        var getPropertyUnitsRoute = $("#getPropertyUnitsRoute").val();
+        commonAjax(
+            "GET",
+            getPropertyUnitsRoute,
+            getPropertyUnitsRes,
+            getPropertyUnitsRes,
+            { property_id: property_id }
+        );
     }
 
     function getPropertyUnitsRes(response) {
-        var html = '<option value="">--Select Unit--</option>';
+        var html =
+            '<option value="">--Select Unit--</option><option value="All">--All Units--</option>';
         response.data.forEach(function (opt) {
-            html += '<option value="' + opt.id + '">' + opt.unit_name + '</option>';
+            html +=
+                '<option value="' + opt.id + '">' + opt.unit_name + "</option>";
         });
-        stateSelector.closest('.modal').find('.propertyUnitSelectOption').html(html);
+        stateSelector
+            .closest(".modal")
+            .find(".propertyUnitSelectOption")
+            .html(html);
     }
 
     // datatable
-    $('#search_property').on('change', function () {
-        var oTable = $('#allInvoiceDataTable').DataTable();
+    $("#search_property").on("change", function () {
+        var oTable = $("#allInvoiceDataTable").DataTable();
         oTable.search($(this).val()).draw();
-    })
-    $('#allInvoiceDataTable').DataTable({
+    });
+    $("#allInvoiceDataTable").DataTable({
         processing: true,
         serverSide: true,
         pageLength: 25,
         responsive: true,
-        ajax: $('#invoiceRecurring').val(),
-        order: [1, 'desc'],
+        ajax: $("#invoiceRecurring").val(),
+        order: [1, "desc"],
         ordering: false,
         autoWidth: false,
         drawCallback: function () {
-            $(".dataTables_length select").addClass("form-select form-select-sm");
+            $(".dataTables_length select").addClass(
+                "form-select form-select-sm"
+            );
         },
         language: {
-            'paginate': {
-                'previous': '<span class="iconify" data-icon="icons8:angle-left"></span>',
-                'next': '<span class="iconify" data-icon="icons8:angle-right"></span>'
-            }
+            paginate: {
+                previous:
+                    '<span class="iconify" data-icon="icons8:angle-left"></span>',
+                next: '<span class="iconify" data-icon="icons8:angle-right"></span>',
+            },
         },
-        columns: [{
-            "data": "prefix",
-        },
-        {
-            "data": "property",
-            "name": 'properties.name'
-        },
-        {
-            "data": "type"
-        },
-        {
-            "data": "amount"
-        },
-        {
-            "data": "status"
-        },
-        {
-            "data": "action"
-        },
-        ]
+        columns: [
+            {
+                data: "prefix",
+            },
+            {
+                data: "property",
+                name: "properties.name",
+            },
+            {
+                data: "type",
+            },
+            {
+                data: "amount",
+            },
+            {
+                data: "status",
+            },
+            {
+                data: "action",
+            },
+        ],
     });
-
-})(jQuery)
-
+})(jQuery);

@@ -76,57 +76,15 @@ class InvoiceRecurringService
     {
         DB::beginTransaction();
         try {
-            $tenant = Tenant::where('unit_id', $request->property_unit_id)->where('status', TENANT_STATUS_ACTIVE)->first();
-            if (!$tenant) {
-                throw new Exception('Tenant Not Found');
-            }
             $id = $request->get('id', '');
-            if ($id != '') {
-                $invoiceRecurring = InvoiceRecurringSetting::where('owner_user_id', auth()->id())->findOrFail($request->id);
-            } else {
-                if (!getOwnerLimit(RULES_AUTO_INVOICE) > 0) {
-                    throw new Exception('Your Auto Invoice Settings Limit finished');
-                }
-                $invoiceRecurring = new InvoiceRecurringSetting();
+            if ($request->property_id !== 'All' && $request->property_unit_id !== 'All') {
+                $this->storeSingleRecurringSetting($request, $id);
+            } elseif ($request->property_id === 'All') {
+                $this->storeRecurringSettingForAllProperties($request, $id);
+            } elseif ($request->property_unit_id === 'All') {
+                $this->storeRecurringSettingForAllUnits($request, $id);
             }
-            $invoiceRecurring->invoice_prefix = $request->invoice_prefix;
-            $invoiceRecurring->tenant_id = $tenant->id;
-            $invoiceRecurring->owner_user_id = auth()->id();
-            $invoiceRecurring->property_id = $request->property_id;
-            $invoiceRecurring->property_unit_id = $request->property_unit_id;
-            $invoiceRecurring->start_date = $request->start_date ?? now();
-            $invoiceRecurring->recurring_type = $request->recurring_type;
-            $invoiceRecurring->cycle_day = $request->cycle_day;
-            $invoiceRecurring->due_day_after = $request->due_day_after;
-            $invoiceRecurring->status = $request->status;
-            $invoiceRecurring->save();
-            $totalAmount = 0;
-            $now = now();
-            if (!is_null($request->invoiceItem)) {
-                if (count($request->invoiceItem['invoice_type_id']) > 0) {
-                    for ($i = 0; $i < count($request->invoiceItem['invoice_type_id']); $i++) {
-                        if ($request->invoiceItem['id'][$i]) {
-                            $invoiceRecurringItem = InvoiceRecurringSettingItem::findOrFail($request->invoiceItem['id'][$i]);
-                        } else {
-                            $invoiceRecurringItem = new InvoiceRecurringSettingItem();
-                        }
-                        $invoiceRecurringItem->invoice_recurring_setting_id = $invoiceRecurring->id;
-                        $invoiceRecurringItem->invoice_type_id = $request->invoiceItem['invoice_type_id'][$i];
-                        $invoiceRecurringItem->amount = $request->invoiceItem['amount'][$i];
-                        $invoiceRecurringItem->description = $request->invoiceItem['description'][$i];
-                        $invoiceRecurringItem->updated_at = $now;
-                        $invoiceRecurringItem->save();
-                        $totalAmount += $invoiceRecurringItem->amount;
-                    }
-                    InvoiceRecurringSettingItem::where('invoice_recurring_setting_id', $invoiceRecurring->id)->where('updated_at', '!=', $now)->get()->map(function ($q) {
-                        $q->delete();
-                    });
-                }
-            } else {
-                throw new Exception('No Item Add');
-            }
-            $invoiceRecurring->amount = $totalAmount;
-            $invoiceRecurring->save();
+
             DB::commit();
             $message = $request->id ? __(UPDATED_SUCCESSFULLY) : __(CREATED_SUCCESSFULLY);
             return $this->success([], $message);
@@ -135,6 +93,144 @@ class InvoiceRecurringService
             $message = getErrorMessage($e, $e->getMessage());
             return $this->error([],  $message);
         }
+    }
+
+    private function storeSingleRecurringSetting($request, $id, $tenant=null)
+    {
+        if ($tenant==null){
+            $tenant = $this->getTenant($request->property_unit_id);
+        }else{
+            $tenant=$tenant;
+        }
+
+        $invoiceRecurring = $this->getOrCreateRecurringSetting($request, $id, $tenant);
+        $totalAmount = $this->calculateTotalAmount($request, $invoiceRecurring);
+        $this->saveInvoiceRecurring($request, $invoiceRecurring, $totalAmount['totalAmount']);
+    }
+
+    private function storeRecurringSettingForAllProperties($request, $id)
+    {
+        $tenantsToInvoice = $this->getTenantsToInvoice($request);
+
+        foreach ($tenantsToInvoice as $tenant) {
+            $this->storeSingleRecurringSetting($request, $id, $tenant);
+        }
+    }
+
+    private function storeRecurringSettingForAllUnits($request, $id)
+    {
+        $tenantsToInvoice = $this->getTenantsToInvoice($request, true);
+
+        foreach ($tenantsToInvoice as $tenant) {
+            $this->storeSingleRecurringSetting($request, $id, $tenant);
+        }
+    }
+
+    private function getTenant($unitId)
+    {
+        $tenant = Tenant::where('owner_user_id', auth()->id())
+            ->where('unit_id', $unitId)
+            ->where('status', TENANT_STATUS_ACTIVE)
+            ->first();
+        if (!$tenant) {
+            throw new Exception(__('Tenant Not Found'));
+        }
+        return $tenant;
+    }
+
+    private function getOrCreateRecurringSetting($request, $id, $tenant)
+    {
+        if ($id != '') {
+            $invoiceRecurring = $invoiceRecurring = InvoiceRecurringSetting::where('owner_user_id', auth()->id())->findOrFail($request->id);
+        } else {
+            if (!getOwnerLimit(RULES_AUTO_INVOICE) > 0) {
+                throw new Exception('Your Auto Invoice Settings Limit finished');
+            }
+            $invoiceRecurring = new InvoiceRecurringSetting();
+        }
+
+        $invoiceRecurring->invoice_prefix = $request->invoice_prefix;
+        $invoiceRecurring->tenant_id = $tenant->id;
+        $invoiceRecurring->owner_user_id = auth()->id();
+        $invoiceRecurring->property_id = $tenant->property_id;
+        $invoiceRecurring->property_unit_id = $tenant->unit_id;
+        $invoiceRecurring->start_date = $request->start_date ?? now();
+        $invoiceRecurring->recurring_type = $request->recurring_type;
+        $invoiceRecurring->cycle_day = $request->cycle_day;
+        $invoiceRecurring->due_day_after = $request->due_day_after;
+        $invoiceRecurring->status = $request->status;
+        $invoiceRecurring->save();
+
+        return $invoiceRecurring;
+    }
+
+    private function calculateTotalAmount($request, $invoiceRecurring)
+    {
+        $totalAmount = 0;
+        $now = now();
+
+        if (is_null($request->invoiceItem)) {
+            throw new Exception(__('No Item Add'));
+        }
+
+        foreach ($request->invoiceItem['invoice_type_id'] as $index => $invoiceTypeId) {
+            $invoiceRecurringItem = $this->getOrCreateInvoiceRecurringItem($request, $invoiceRecurring, $index);
+            $totalAmount += $invoiceRecurringItem->amount;
+        }
+
+        InvoiceRecurringSettingItem::where('invoice_recurring_setting_id', $invoiceRecurring->id)->where('updated_at', '!=', $now)->get()->map(function ($q) {
+            $q->delete();
+        });
+
+        return ['totalAmount'=>$totalAmount];
+    }
+    
+
+    private function getOrCreateInvoiceRecurringItem($request, $invoiceRecurring, $index)
+    {
+        if ($request->invoiceItem['id'][$index]) {
+            $invoiceRecurringItem = InvoiceRecurringSettingItem::findOrFail($request->invoiceItem['id'][$index]);
+        } else {
+            $invoiceRecurringItem = new InvoiceRecurringSettingItem();
+        }
+
+        $invoiceRecurringItem->invoice_recurring_setting_id = $invoiceRecurring->id;
+        $invoiceRecurringItem->invoice_type_id = $request->invoiceItem['invoice_type_id'][$index];
+        $invoiceRecurringItem->amount = $request->invoiceItem['amount'][$index];
+        $invoiceRecurringItem->description = $request->invoiceItem['description'][$index];
+        $invoiceRecurringItem->updated_at = now();
+        $invoiceRecurringItem->save();
+
+        return $invoiceRecurringItem;
+    }
+
+    private function saveInvoiceRecurring($request, $invoiceRecurring, $totalAmount)
+    {
+        $invoiceRecurring->amount = $totalAmount;
+        $invoiceRecurring->save();
+    }
+
+    private function getTenantsToInvoice($request, $units=false)
+    {
+        if ($units){
+            $tenants = Tenant::query()
+                    ->leftJoin('users', 'tenants.user_id', '=', 'users.id')
+                    ->select(['tenants.*', 'users.first_name', 'users.last_name', 'users.contact_number', 'users.email'])
+                    ->where('tenants.status', TENANT_STATUS_ACTIVE)
+                    ->where('tenants.property_id', $request->property_id)
+                    ->where('tenants.owner_user_id', auth()->id())
+                    ->get();
+        }else{
+            $tenantService = new TenantService;
+            $tenants = $tenantService->getActiveAll();
+        }
+
+        if (count($tenants) === 0) {
+            throw new Exception(__('No Active Tenants Found for All Properties'));
+        }
+        $tenantsToInvoice = $tenants;
+
+        return $tenantsToInvoice;
     }
 
     public function destroy($id)
