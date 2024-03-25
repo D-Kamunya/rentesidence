@@ -34,7 +34,7 @@ class ListingService
         return $data->makeHidden(['created_at', 'updated_at', 'deleted_at']);
     }
 
-    public function getAllActive($request)
+    public function getAllActive($request, $paginate=true)
     {
         $data = Listing::query()
             ->leftJoin('listing_images', function ($q) {
@@ -69,9 +69,13 @@ class ListingService
             ->whereNot('listings.status', LISTING_STATUS_CLOSED)
             ->select('listings.*', 'file_managers.file_name', 'file_managers.folder_name')
             ->groupBy('listings.id')
-            ->orderByDesc('listings.id')
-            ->paginate(12);
-        return $data;
+            ->orderByDesc('listings.id');
+            
+        if ($paginate){
+            return $data->paginate(10);
+        }else{
+            return $data->get();
+        }
     }
 
     public function getAllContactByOwner()

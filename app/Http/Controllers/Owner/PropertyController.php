@@ -106,7 +106,7 @@ class PropertyController extends Controller
         $units = collect($unitsResponse->getData()->data);
 
         // Paginate the collection
-        $perPage = 1; // Set your desired number of items per page
+        $perPage = 10; // Set your desired number of items per page
         $currentPage = request()->get('page', 1);
         
         $paginator = new LengthAwarePaginator(

@@ -26,14 +26,12 @@ class PropertyService
             ->selectRaw('properties.number_of_unit - (COUNT(users.id)) as available_unit,properties.*')
             ->groupBy('properties.id')
             ->where('properties.owner_user_id', auth()->id());
-            if ($paginate){
-                return $data->paginate(10);
-            }else{
-                return $data->get();
-            }
-            
-        // return $data?->makeHidden(['updated_at', 'created_at', 'deleted_at']);
-        return $data;
+
+        if ($paginate){
+            return $data->paginate(10);
+        }else{
+            return $data->get();
+        }
     }
 
     public function getAllData()
@@ -74,7 +72,7 @@ class PropertyService
             ->make(true);
     }
 
-    public function allUnit()
+    public function allUnit($paginate=true)
     {
         $data = PropertyUnit::query()
             ->join('properties', ['property_units.property_id' => 'properties.id'])
@@ -85,10 +83,13 @@ class PropertyService
             ->leftJoin('file_managers', ['property_units.id' => 'file_managers.origin_id', 'file_managers.origin_type' => (DB::raw("'App\\\Models\\\PropertyUnit'"))])
             ->select('property_units.*', 'properties.name as property_name', 'users.first_name', 'users.last_name', 'file_managers.file_name', 'file_managers.folder_name')
             ->orderBy('properties.id', 'asc')
-            ->where('properties.owner_user_id', auth()->id())
-            ->paginate(1);
-        return $data;
+            ->where('properties.owner_user_id', auth()->id());
 
+        if ($paginate){
+            return $data->paginate(10);
+        }else{
+            return $data->get();
+        }
     }
 
     public function getAllCount()
@@ -117,28 +118,28 @@ class PropertyService
             ->leftJoin('users', 'properties.maintainer_id', '=', 'users.id')
             ->leftJoin('tenants', ['properties.id' => 'tenants.property_id', 'tenants.status' => (DB::raw(TENANT_STATUS_ACTIVE))])
             ->selectRaw('properties.number_of_unit - (COUNT(tenants.id)) as available_unit,
-             (avg(tenants.general_rent)) as avg_general_rent,
-             sum(tenants.security_deposit) as total_security_deposit,
-             sum(tenants.late_fee) as total_late_fee,properties.*,
-             property_details.lease_amount,
-             property_details.lease_start_date,
-             property_details.lease_end_date,
-             property_details.country_id,
-             property_details.state_id,
-             property_details.city_id,
-             property_details.zip_code,
-             property_details.address,
-             property_details.map_link,users.first_name,
-             users.last_name')
+            (avg(tenants.general_rent)) as avg_general_rent,
+            sum(tenants.security_deposit) as total_security_deposit,
+            sum(tenants.late_fee) as total_late_fee,properties.*,
+            property_details.lease_amount,
+            property_details.lease_start_date,
+            property_details.lease_end_date,
+            property_details.country_id,
+            property_details.state_id,
+            property_details.city_id,
+            property_details.zip_code,
+            property_details.address,
+            property_details.map_link,users.first_name,
+            users.last_name')
             ->groupBy('properties.id')
             ->where('properties.owner_user_id', auth()->id())
             ->findOrFail($id);
         return $data?->makeHidden(['updated_at', 'created_at', 'deleted_at']);
     }
 
-    public function getByType($type)
+    public function getByType($type, $paginate=true)
     {
-        return Property::query()
+        $data = Property::query()
             ->leftJoin('tenants', ['properties.id' => 'tenants.property_id', 'tenants.status' => (DB::raw(TENANT_STATUS_ACTIVE))])
             ->leftJoin('users', function ($q) {
                 $q->on('tenants.user_id', 'users.id')->whereNull('users.deleted_at');
@@ -146,8 +147,13 @@ class PropertyService
             ->selectRaw('properties.number_of_unit - (COUNT(users.id)) as available_unit,properties.*')
             ->groupBy('properties.id')
             ->where('properties.property_type', $type)
-            ->where('properties.owner_user_id', auth()->id())
-            ->paginate(1);
+            ->where('properties.owner_user_id', auth()->id());
+        
+        if ($paginate){
+            return $data->paginate(10);
+        }else{
+            return $data->get();
+        }
     }
 
     public function getByTypeCount($type)
