@@ -53,9 +53,8 @@ class ProfileController extends Controller
             $user->contact_number = $request->contact_number;
             $user->date_of_birth = $request->date_of_birth;
             $user->nid_number = $request->nid_number;
-            if (auth()->user()->role == USER_ROLE_ADMIN || auth()->user()->role == USER_ROLE_OWNER) {
-                $user->email = $request->email;
-            }
+            $user->email = $request->email;
+
             $user->save();
             if (auth()->user()->role == USER_ROLE_OWNER) {
                 $owner = Owner::where('user_id', auth()->id())->first();

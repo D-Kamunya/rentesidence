@@ -103,8 +103,7 @@
                                                                     class="label-text-title color-heading font-medium mb-2">{{ __('Email') }}</label>
                                                                 <input type="email" class="form-control" name="email"
                                                                     placeholder="{{ __('Email') }}"
-                                                                    value="{{ auth()->user()->email }}"
-                                                                    {{ auth()->user()->role == USER_ROLE_ADMIN || auth()->user()->role == USER_ROLE_OWNER ? '' : 'readonly' }}>
+                                                                    value="{{ auth()->user()->email }}">
                                                                 @error('email')
                                                                     <span class="text-danger">{{ $message }}</span>
                                                                 @enderror
