@@ -7,6 +7,7 @@ use App\Models\Gateway;
 use App\Models\Package;
 use App\Models\Invoice;
 use App\Models\InvoiceItem;
+use App\Models\InvoiceType;
 use App\Models\InvoiceRecurringSetting;
 use App\Models\Language;
 use App\Models\Maintainer;
@@ -632,6 +633,18 @@ if (!function_exists('setUserPackage')) {
             'end_date' => Carbon::now()->addDays($duration),
             'status' => ACTIVE,
         ]);
+    }
+}
+
+if (!function_exists('setOwnerInvoiceType')) {
+    function setOwnerInvoiceType($userId)
+    {   
+        $invoiceType= new InvoiceType;
+        $invoiceType->name='Rent';
+        $invoiceType->tax='0.00';
+        $invoiceType->owner_user_id=$userId;
+        $invoiceType->status=ACTIVE;
+        $invoiceType->save();
     }
 }
 

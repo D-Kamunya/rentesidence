@@ -60,6 +60,8 @@ class OwnerAuthController extends Controller
             }
 
             setOwnerGateway($user->id);
+            
+            setOwnerInvoiceType($user->id);
 
             DB::commit();
             if (getOption('send_email_status', 0) == ACTIVE) {
