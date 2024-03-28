@@ -71,11 +71,13 @@
                                                                                 title="Edit"><span class="iconify"
                                                                                     data-icon="clarity:note-edit-solid"></span>
                                                                             </a>
+                                                                            @if ($invoiceType->name != 'Rent')
                                                                             <a href="#"
                                                                                 class="p-1 tbl-action-btn deleteItem"
                                                                                 data-formid="delete_row_form_{{ $invoiceType->id }}"
                                                                                 title="Delete"><span class="iconify"
                                                                                     data-icon="ep:delete-filled"></span></a>
+                                                                            @endif
                                                                             <form
                                                                                 action="{{ route('owner.setting.invoice-type.destroy', [$invoiceType->id]) }}"
                                                                                 method="post"
