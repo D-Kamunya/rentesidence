@@ -482,11 +482,15 @@ class InvoiceService
 
         $invoiceItem->invoice_id = $invoice->id;
         $invoiceItem->invoice_type_id = $request->invoiceItem['invoice_type_id'][$index];
-        $invoiceItem->amount = $request->invoiceItem['amount'][$index];
         $invoiceItem->description = $request->invoiceItem['description'][$index];
         $invoiceItem->updated_at = now();
         $invoiceType = InvoiceType::findOrFail($request->invoiceItem['invoice_type_id'][$index]);
 
+        if ($invoiceType->name == 'Rent'){
+            $invoiceItem->amount = $invoice->propertyUnit->general_rent;
+        }else{
+            $invoiceItem->amount = $request->invoiceItem['amount'][$index];
+        }
         if (isset($tax) && $tax->type == TAX_TYPE_PERCENTAGE) {
             $invoiceItem->tax_amount = $invoiceItem->amount * $invoiceType->tax * 0.01;
         } else {

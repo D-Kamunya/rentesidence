@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\InvoiceRecurringSetting;
 use App\Models\InvoiceRecurringSettingItem;
+use App\Models\InvoiceType;
 use App\Models\Tenant;
 use App\Traits\ResponseTrait;
 use Exception;
@@ -196,9 +197,16 @@ class InvoiceRecurringService
 
         $invoiceRecurringItem->invoice_recurring_setting_id = $invoiceRecurring->id;
         $invoiceRecurringItem->invoice_type_id = $request->invoiceItem['invoice_type_id'][$index];
-        $invoiceRecurringItem->amount = $request->invoiceItem['amount'][$index];
         $invoiceRecurringItem->description = $request->invoiceItem['description'][$index];
         $invoiceRecurringItem->updated_at = now();
+        $invoiceType = InvoiceType::findOrFail($request->invoiceItem['invoice_type_id'][$index]);
+
+        if ($invoiceType->name == 'Rent'){
+            $invoiceRecurringItem->amount = $invoiceRecurring->propertyUnit->general_rent;
+        }else{
+            $invoiceRecurringItem->amount = $request->invoiceItem['amount'][$index];
+        }
+
         $invoiceRecurringItem->save();
 
         return $invoiceRecurringItem;

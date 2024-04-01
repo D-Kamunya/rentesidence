@@ -10,19 +10,18 @@
                         <div class="col-md-6 mb-25">
                             <label
                                 class="label-text-title color-heading font-medium mb-2">{{ __('Invoice Type') }}</label>
-                            <select class="form-select flex-shrink-0" name="invoiceItem[invoice_type_id][]" required>
+                            <select class="invoiceItem-invoice_type_id form-select flex-shrink-0" name="invoiceItem[invoice_type_id][]" required>
                                 <option value="">{{ __('Select Option') }}</option>
                                 @foreach ($invoiceTypes as $invoiceType)
                                     <option value="{{ $invoiceType->id }}"
-                                        {{ $invoiceType->id == $invoiceItem->invoice_type_id ? 'selected' : '' }}>
-                                        {{ $invoiceType->name }}</option>
+                                        {{ $invoiceType->id == $invoiceItem->invoice_type_id ? 'selected' : '' }}>{{ $invoiceType->name }}</option>
                                 @endforeach
                             </select>
                         </div>
                         <div class="col-md-6 mb-25">
-                            <label class="label-text-title color-heading font-medium mb-2">{{ __('Amount') }}</label>
+                            <label class="amount-label label-text-title color-heading font-medium mb-2">{{ __('Amount') }}</label>
                             <input type="text" name="invoiceItem[amount][]" value="{{ $invoiceItem->amount }}"
-                                class="form-control" placeholder="{{ __('Enter Amount') }}" required>
+                                class="form-control invoiceItem-amount" placeholder="{{ __('Enter Amount') }}" required>
                         </div>
                     </div>
                     <div class="row">
@@ -45,7 +44,7 @@
                 <div class="row">
                     <div class="col-md-6 mb-25">
                         <label class="label-text-title color-heading font-medium mb-2">{{ __('Invoice Type') }}</label>
-                        <select class="form-select flex-shrink-0" name="invoiceItem[invoice_type_id][]" required>
+                        <select class="invoiceItem-invoice_type_id form-select flex-shrink-0" name="invoiceItem[invoice_type_id][]" required>
                             <option value="">{{ __('Select Option') }}</option>
                             @foreach ($invoiceTypes as $invoiceType)
                                 <option value="{{ $invoiceType->id }}">{{ $invoiceType->name }}</option>
@@ -53,8 +52,8 @@
                         </select>
                     </div>
                     <div class="col-md-6 mb-25">
-                        <label class="label-text-title color-heading font-medium mb-2">{{ __('Amount') }}</label>
-                        <input type="text" name="invoiceItem[amount][]" class="form-control"
+                        <label class="amount-label label-text-title color-heading font-medium mb-2">{{ __('Amount') }}</label>
+                        <input type="text" name="invoiceItem[amount][]" class="form-control invoiceItem-amount"
                             placeholder="{{ __('Enter Amount') }}" required>
                     </div>
                 </div>

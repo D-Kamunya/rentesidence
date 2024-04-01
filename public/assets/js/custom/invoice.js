@@ -37,7 +37,7 @@
                             </select>
                         </div>
                         <div class="col-md-6 mb-25">
-                            <label class="label-text-title color-heading font-medium mb-2">Amount</label>
+                            <label class="amount-label label-text-title color-heading font-medium mb-2">Amount</label>
                             <input type="text" name="invoiceItem[amount][]" class="form-control invoiceItem-amount" placeholder="Amount">
                         </div>
                     </div>
@@ -118,7 +118,7 @@
                                     </select>
                                 </div>
                                 <div class="col-md-6 mb-25">
-                                    <label class="label-text-title color-heading font-medium mb-2">Amount</label>
+                                    <label class="amount-label label-text-title color-heading font-medium mb-2">Amount</label>
                                     <input type="text" name="invoiceItem[amount][]" class="form-control invoiceItem-amount" placeholder="Amount" value="${item[1].amount}">
                                 </div>
                             </div>
@@ -293,6 +293,31 @@
             .find(".propertyUnitSelectOption")
             .html(html);
     }
+
+    $(document).ready(function () {
+        // Event delegation for dynamically added select fields
+        $(document).on("change", ".invoiceItem-invoice_type_id", function () {
+            var selectedOption = $(this).find("option:selected");
+            var optionText = selectedOption.text();
+            var amountLabel = $(this)
+                .closest(".multi-field")
+                .find(".amount-label");
+            var amountField = $(this)
+                .closest(".multi-field")
+                .find(".invoiceItem-amount");
+
+            if (optionText === "Rent") {
+                amountLabel.hide();
+                amountField.hide().val(1);
+            } else {
+                amountLabel.show();
+                amountField.show().val("");
+            }
+        });
+
+        // Handle initial select fields
+        $(".invoiceItem-invoice_type_id").trigger("change");
+    });
 
     $(document).on("click", ".reminder", function () {
         let id = $(this).data("id");

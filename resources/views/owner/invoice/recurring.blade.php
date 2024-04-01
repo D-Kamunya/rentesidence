@@ -164,14 +164,13 @@
                                                     name="invoiceItem[invoice_type_id][]">
                                                     <option value="">--{{ __('Select Type') }}--</option>
                                                     @foreach ($invoiceTypes as $invoiceType)
-                                                        <option value="{{ $invoiceType->id }}">{{ $invoiceType->name }}
-                                                        </option>
+                                                        <option value="{{ $invoiceType->id }}">{{ $invoiceType->name }}</option>
                                                     @endforeach
                                                 </select>
                                             </div>
                                             <div class="col-md-6 mb-25">
                                                 <label
-                                                    class="label-text-title color-heading font-medium mb-2">{{ __('Amount') }}</label>
+                                                    class="amount-label label-text-title color-heading font-medium mb-2">{{ __('Amount') }}</label>
                                                 <input type="number" name="invoiceItem[amount][]"
                                                     class="form-control invoiceItem-amount"
                                                     placeholder="{{ __('Amount') }}">
