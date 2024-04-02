@@ -46,12 +46,12 @@
                                                             class="ri-delete-back-2-line"></i></span>{{ __('Close Tenant') }}
                                                 </button>
                                             @endif
-                                            <button type="button" class="account-settings-menu-item red-color"
+                                            <!-- <button type="button" class="account-settings-menu-item red-color"
                                                 data-bs-toggle="modal" data-bs-target="#tenantDeleteModal"
                                                 title="{{ __('Delete Tenant') }}">
                                                 <span class="bg-red-transparent radius-4 overflow-hidden px-2 me-2"><i
                                                         class="ri-delete-bin-2-line"></i></span>{{ __('Delete Tenant') }}
-                                            </button>
+                                            </button> -->
                                         </div>
                                     </div>
                                 </div>
