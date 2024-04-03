@@ -172,9 +172,7 @@ function deleteItem(url, id) {
                     if (id == "allDataTableDoc") {
                         location.reload();
                     } else {
-                        $("#" + id)
-                            .DataTable()
-                            .ajax.reload();
+                        location.reload();
                     }
                 },
                 error: function (error) {
