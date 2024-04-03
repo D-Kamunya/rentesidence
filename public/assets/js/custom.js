@@ -6,6 +6,18 @@
         $("#preloaderInner").fadeOut();
         $("#preloader").delay(350).fadeOut("slow");
         $("body").delay(350);
+
+        $(document).ajaxStart(function () {
+            $("#ajaxLoader").show();
+            $("#preloaderInner").show();
+            $("#preloader").show();
+        });
+
+        // Hide loader on global Ajax complete
+        $(document).ajaxComplete(function () {
+            $("#ajaxLoader").hide();
+            $("#preloader").hide();
+        });
     });
     // Preloader End
 

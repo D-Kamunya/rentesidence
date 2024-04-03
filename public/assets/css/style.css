@@ -1449,12 +1449,17 @@ button:focus {
     z-index: 9999999999999999;
 }
 
+#ajaxLoader {
+    display: none;
+}
+
 #preloaderInner {
     width: 100%;
     display: -webkit-box;
     display: -ms-flexbox;
     display: flex;
     -webkit-box-align: center;
+    flex-direction: column; /* Stack elements vertically */
     -ms-flex-align: center;
     align-items: center;
     height: 100%;

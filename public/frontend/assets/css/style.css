@@ -955,6 +955,7 @@ button:focus {
     display: -webkit-box;
     display: -ms-flexbox;
     display: flex;
+    flex-direction: column; /* Stack elements vertically */
     -webkit-box-align: center;
     -ms-flex-align: center;
     align-items: center;
@@ -962,6 +963,9 @@ button:focus {
     -webkit-box-pack: center;
     -ms-flex-pack: center;
     justify-content: center;
+}
+#ajaxLoader {
+    display: none;
 }
 
 #mpesa-preloader {
