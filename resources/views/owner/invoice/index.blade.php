@@ -459,10 +459,8 @@
                             </div>
                             <div class="invoice-address-part-right">
                                 <h4 class="invoice-generate-title">{{ __('Pay To') }}</h4>
-                                <div class="invoice-address">
-                                    <h5>{{ getOption('app_name') }}</h5>
-                                    <h6>{{ getOption('app_location') }}</h6>
-                                    <small>{{ getOption('app_contact_number') }}</small>
+                                <div class="pay-invoice-address">
+                            
                                 </div>
                             </div>
                         </div>

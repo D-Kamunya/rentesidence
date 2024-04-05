@@ -71,8 +71,19 @@ class InvoiceController extends Controller
     {
         $data['invoice'] = $this->invoiceService->getById($id);
         $data['items'] = $this->invoiceService->getItemsByInvoiceId($id);
+        $data['owner'] = $this->invoiceService->ownerInfo(auth()->id());
         $data['tenant'] = $this->tenantService->getDetailsById($data['invoice']->tenant_id);
         $data['order'] = $this->invoiceService->getOrderById($data['invoice']->order_id);
+
+        if ($data['owner'] && empty($data['owner']->print_name)) {
+            $data['owner']->print_name = getOption('app_name');
+        } 
+        if ($data['owner'] && empty($data['owner']->print_address)) {
+            $data['owner']->print_address= getOption('app_location');
+        } 
+        if ($data['owner'] && empty($data['owner']->print_contact)) {
+            $data['owner']->print_contact = getOption('app_contact_number');
+        } 
         return $this->success($data);
     }
 

@@ -185,6 +185,13 @@
                     " " +
                     response.data.tenant.last_name
             );
+        var invoiceAddHtml = "";
+
+        invoiceAddHtml += ` <h5>${response.data.owner.print_name}</h5>
+                            <h6>${response.data.owner.print_address}</h6>
+                            <small>${response.data.owner.print_contact}</small>
+                            `;
+        selector.find(".pay-invoice-address").html(invoiceAddHtml);
         selector.find(".tenantEmail").html(response.data.tenant.email);
         selector.find(".propertyName").html(response.data.tenant.property_name);
         selector.find(".unitName").html(response.data.tenant.unit_name);
