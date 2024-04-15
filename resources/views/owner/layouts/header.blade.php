@@ -23,17 +23,31 @@
         </div>
         @if (isAddonInstalled('PROTYSAAS') > 1)
             @if (!ownerCurrentPackage(auth()->id()))
-                <div class="d-flex exclamation">
-                    <button class="text-danger exclamation-btu">
-                        <i class="fas fa-exclamation-circle"></i>
-                    </button>
-                    <div class="text-center exclamation-area">
-                        {{ __('Currently you have no subscription!') }} <a
-                            href="{{ route('owner.subscription.index', ['current_plan' => 'no']) }}"
-                            class="text-danger px-1" title="{{ __('Choose a plan') }}">{{ __('Choose a plan') }}</a>
+                @if (!checkExpiredOwnerPackage(auth()->id()))
+                    <div class="d-flex exclamation">
+                        <button class="text-danger exclamation-btu">
+                            <i class="fas fa-exclamation-circle"></i>
+                        </button>
+                        <div class="text-center exclamation-area">
+                            {{ __('Currently you have no subscription!') }} <a
+                                href="{{ route('owner.subscription.index', ['current_plan' => 'no']) }}"
+                                class="text-danger px-1" title="{{ __('Choose a plan') }}">{{ __('Choose a plan') }}</a>
+                        </div>
+                        <button type="button" class="close topBannerClose ms-2"><span>&times;</span></button>
                     </div>
-                    <button type="button" class="close topBannerClose ms-2"><span>&times;</span></button>
-                </div>
+                @else
+                    <div class="d-flex exclamation">
+                        <button class="text-danger exclamation-btu">
+                            <i class="fas fa-exclamation-circle"></i>
+                        </button>
+                        <div class="text-center exclamation-area">
+                            {{ __('Currently your subcription has expired!') }} <a
+                                href="{{ route('owner.subscription.index', ['current_plan' => 'no']) }}"
+                                class="text-danger px-1" title="{{ __('Renew plan') }}">{{ __('Renew plan') }}</a>
+                        </div>
+                        <button type="button" class="close topBannerClose ms-2"><span>&times;</span></button>
+                    </div>
+                @endif
             @endif
         @endif
         <div class="d-flex">

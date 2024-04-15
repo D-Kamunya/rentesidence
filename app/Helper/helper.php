@@ -885,6 +885,17 @@ if (!function_exists('ownerCurrentPackage')) {
     }
 }
 
+if (!function_exists('checkExpiredOwnerPackage')) {
+    function checkExpiredOwnerPackage($userId)
+    {   
+        return OwnerPackage::latest()
+            ->where('status', ACTIVE)
+            ->where('user_id', $userId)
+            ->whereDate('end_date', '<=', now()->toDateTimeString())
+            ->first();
+    }
+}
+
 if (!function_exists('getOwnerLimit')) {
     function getOwnerLimit($type, $userId = NULL)
     {
