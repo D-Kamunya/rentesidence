@@ -371,6 +371,10 @@ class PropertyService
                     throw new Exception($upload['message']);
                 }
             }
+            if (!isset($request->unit_id)){
+                $property->number_of_unit = $property->number_of_unit+1;
+                $property->save();
+            }
 
             DB::commit();
 
