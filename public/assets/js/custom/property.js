@@ -185,6 +185,7 @@ function getCitiesByState(state_id) {
 document
     .querySelector("#default-profile-img-file-input")
     .addEventListener("change", function () {
+        console.log("de");
         var o = document.querySelector(".default-user-profile-image"),
             e = document.querySelector(".default-profile-img-file-input")
                 .files[0],
@@ -199,9 +200,35 @@ document
             e && i.readAsDataURL(e);
     });
 
+document
+    .querySelector("#default-unit-img-file-input")
+    .addEventListener("change", function () {
+        var o = document.querySelector(".default-unit-profile-image"),
+            e = document.querySelector(".default-unit-img-file-input").files[0],
+            i = new FileReader();
+        i.addEventListener(
+            "load",
+            function () {
+                o.src = i.result;
+            },
+            !1
+        ),
+            e && i.readAsDataURL(e);
+    });
+
 $(document).on("click", ".unit-edit", function () {
     let detailsUrl = $(this).data("detailsurl");
     commonAjax("GET", detailsUrl, getDataEditRes, getDataEditRes);
+});
+
+$(document).on("click", ".add-unit", function () {
+    var selector = $("#addUnitModal");
+    selector.find(".is-invalid").removeClass("is-invalid");
+    selector.find(".error-message").remove();
+    selector.find(".select_rent_type").removeClass("active");
+    selector.find(".add-tab-pane").removeClass("active");
+    selector.find("form").trigger("reset");
+    selector.modal("show");
 });
 
 function getDataEditRes(response) {
@@ -458,6 +485,11 @@ $(document).on("click", ".select_rent_type", function () {
     var select_rent_type = $(this).data("rent_type");
     var id = $(this).data("id");
     $("#rent_type" + id).val(select_rent_type);
+});
+
+$(document).on("click", ".add-select_rent_type", function () {
+    var select_rent_type = $(this).data("add-rent_type");
+    $("#add_rent_type").val(select_rent_type);
 });
 
 // Thumbnail image upload

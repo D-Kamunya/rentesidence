@@ -43,6 +43,7 @@ class PropertyController extends Controller
         $data['subNavAllUnitMMActiveClass'] = 'mm-active';
         $data['subNavAllUnitActiveClass'] = 'active';
         $data['units'] = $this->propertyService->allUnit();
+        $data['properties'] = $this->propertyService->getAll(false);
         return view('owner.property.all-unit-list')->with($data);
     }
 

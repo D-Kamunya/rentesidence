@@ -316,10 +316,16 @@ class PropertyService
         DB::beginTransaction();
         try {
             $property = Property::where('owner_user_id', auth()->id())->findOrFail($request->property_id);
-
-            $property_unit = PropertyUnit::find((int) $request->unit_id);
-            if (!$property_unit) {
-                throw new Exception(__('Selected Unit not found'));
+            if (isset($request->unit_id)){
+                $property_unit = PropertyUnit::find((int) $request->unit_id);
+                if (!$property_unit) {
+                    throw new Exception(__('Selected Unit not found'));
+                }
+            }else{
+                if (getOwnerLimit(RULES_UNIT) < 1) {
+                    throw new Exception(__('Your unit Limit finished'));
+                }
+                $property_unit = new PropertyUnit();
             }
             $property_unit->property_id = $property->id;
             $property_unit->unit_name = $request->unit_name;
@@ -368,7 +374,7 @@ class PropertyService
 
             DB::commit();
 
-            $message = __(UPDATED_SUCCESSFULLY);
+            $message = $request->unit_id ? __(UPDATED_SUCCESSFULLY) : __(CREATED_SUCCESSFULLY);
             return $this->success([], $message);
         } catch (\Exception $e) {
             DB::rollBack();
