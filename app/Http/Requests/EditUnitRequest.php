@@ -4,7 +4,7 @@ namespace App\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
 
-class UnitRequest extends FormRequest
+class EditUnitRequest extends FormRequest
 {
     /**
      * Determine if the user is authorized to make this request.
@@ -24,10 +24,11 @@ class UnitRequest extends FormRequest
     public function rules()
     {
         return [
-            'multiple.unit_name.*' => 'required',
-            'multiple.bedroom.*' => 'required',
-            'multiple.bath.*' => 'required',
-            'multiple.kitchen.*' => 'required',
+            'property_id' => 'required',
+            'unit_name' => 'required',
+            'bedroom' => 'required',
+            'bath' => 'required',
+            'kitchen' => 'required',
         ];
     }
 }

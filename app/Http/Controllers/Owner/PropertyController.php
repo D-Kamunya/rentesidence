@@ -7,6 +7,7 @@ use App\Http\Requests\Owner\Property\LocationRequest;
 use App\Http\Requests\Owner\Property\PropertyInformationRequest;
 use App\Http\Requests\Owner\Property\RentChargeRequest;
 use App\Http\Requests\UnitRequest;
+use App\Http\Requests\EditUnitRequest;
 use App\Services\PropertyService;
 use App\Traits\ResponseTrait;
 use Illuminate\Http\Request;
@@ -148,7 +149,7 @@ class PropertyController extends Controller
         return $this->propertyService->unitStore($request);
     }
 
-    public function unitEdit(UnitRequest $request)
+    public function unitEdit(EditUnitRequest $request)
     {
         return $this->propertyService->unitEdit($request);
     }

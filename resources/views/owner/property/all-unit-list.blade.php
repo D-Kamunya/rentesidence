@@ -169,14 +169,14 @@
                                                         <label
                                                             class="label-text-title color-heading font-medium mb-2">{{ __('Bedroom') }}</label>
                                                         <input type="number" min="0" name="bedroom"
-                                                            value="0" class="form-control multiple-bedroom"
+                                                            value="" class="form-control multiple-bedroom"
                                                             placeholder="0">
                                                     </div>
                                                     <div class="col-md-4 mb-25">
                                                         <label
                                                             class="label-text-title color-heading font-medium mb-2">{{ __('Baths') }}</label>
                                                         <input type="number" min="0" name="bath"
-                                                            value="0" class="form-control multiple-bath"
+                                                            value="" class="form-control multiple-bath"
                                                             placeholder="0">
                                                     </div>
                                                     <div class="col-md-4 mb-25">
@@ -509,14 +509,14 @@
                                                         <label
                                                             class="label-text-title color-heading font-medium mb-2">{{ __('Bedroom') }}</label>
                                                         <input type="number" min="0" name="bedroom"
-                                                            value="0" class="form-control multiple-bedroom"
+                                                            value="" class="form-control multiple-bedroom"
                                                             placeholder="0">
                                                     </div>
                                                     <div class="col-md-4 mb-25">
                                                         <label
                                                             class="label-text-title color-heading font-medium mb-2">{{ __('Baths') }}</label>
                                                         <input type="number" min="0" name="bath"
-                                                            value="0" class="form-control multiple-bath"
+                                                            value="" class="form-control multiple-bath"
                                                             placeholder="0">
                                                     </div>
                                                     <div class="col-md-4 mb-25">
