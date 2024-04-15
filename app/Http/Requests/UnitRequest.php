@@ -28,6 +28,10 @@ class UnitRequest extends FormRequest
             'multiple.bedroom.*' => 'required',
             'multiple.bath.*' => 'required',
             'multiple.kitchen.*' => 'required',
+            'unit_name' => 'required',
+            'bedroom' => 'required',
+            'bath' => 'required',
+            'kitchen' => 'required',
         ];
     }
 }

@@ -43,6 +43,8 @@ Route::group(['prefix' => 'owner', 'as' => 'owner.', 'middleware' => ['auth', 'o
         Route::post('property-information/store', [PropertyController::class, 'propertyInformationStore'])->name('property-information.store');
         Route::post('location/store', [PropertyController::class, 'locationStore'])->name('location.store');
         Route::post('unit/store', [PropertyController::class, 'unitStore'])->name('unit.store');
+        Route::post('unit/edit', [PropertyController::class, 'unitEdit'])->name('unit.edit');
+        Route::get('unit/details/{id}', [PropertyController::class, 'unitDetails'])->name('unit.details');
         Route::delete('unit/delete/{id}', [PropertyController::class, 'unitDelete'])->name('unit.delete');
         Route::post('rent-charge/store', [PropertyController::class, 'rentChargeStore'])->name('rentCharge.store');
         Route::post('image/store/{id?}', [PropertyController::class, 'imageStore'])->name('image.store');

@@ -10,6 +10,7 @@ use App\Models\PropertyUnit;
 use App\Models\Tenant;
 use App\Traits\ResponseTrait;
 use Exception;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\DB;
 
 class PropertyService
@@ -310,6 +311,71 @@ class PropertyService
         }
     }
 
+    public function unitEdit($request)
+    {
+        DB::beginTransaction();
+        try {
+            $property = Property::where('owner_user_id', auth()->id())->findOrFail($request->property_id);
+
+            $property_unit = PropertyUnit::find((int) $request->unit_id);
+            if (!$property_unit) {
+                throw new Exception(__('Selected Unit not found'));
+            }
+            $property_unit->property_id = $property->id;
+            $property_unit->unit_name = $request->unit_name;
+            $property_unit->bedroom = $request->bedroom;
+            $property_unit->bath = $request->bath;
+            $property_unit->kitchen = $request->kitchen;
+            $property_unit->square_feet = $request->square_feet;
+            $property_unit->amenities = $request->amenities;
+            $property_unit->condition = $request->condition;
+            $property_unit->parking = $request->parking;
+
+            $property_unit->general_rent = $request->general_rent ?? 0;
+            $property_unit->security_deposit_type = $request->security_deposit_type ?? 0;
+            $property_unit->security_deposit = $request->security_deposit ?? 0;
+            $property_unit->late_fee_type = $request->late_fee_type ?? 0;
+            $property_unit->late_fee = $request->late_fee ?? 0;
+            $property_unit->incident_receipt = $request->incident_receipt ?? 0;
+            $property_unit->rent_type = $request->rent_type;
+            $property_unit->monthly_due_day = ($request->rent_type == PROPERTY_UNIT_RENT_TYPE_MONTHLY) ? $request->monthly_due_day : null;
+            $property_unit->yearly_due_day = ($request->rent_type == PROPERTY_UNIT_RENT_TYPE_YEARLY) ? $request->yearly_due_day : null;
+            $property_unit->lease_start_date = ($request->rent_type == PROPERTY_UNIT_RENT_TYPE_CUSTOM) ? date('Y-m-d', strtotime($request->lease_start_date)) : null;
+            $property_unit->lease_end_date = ($request->rent_type == PROPERTY_UNIT_RENT_TYPE_CUSTOM) ? date('Y-m-d', strtotime($request->lease_end_date)) : null;
+            $property_unit->lease_payment_due_date = ($request->rent_type == PROPERTY_UNIT_RENT_TYPE_CUSTOM) ? date('Y-m-d', strtotime($request->lease_payment_due_date)) : null;
+
+            $property_unit->description = $request->description;
+            $property_unit->save();
+
+            if (isset($request->unit_image)) {
+                $exitFile = FileManager::where('origin_type', 'App\Models\PropertyUnit')->where('origin_id', $property_unit->id)->first();
+                if ($exitFile) {
+                    $exitFile->removeFile();
+                    $upload = $exitFile->updateUpload($exitFile->id, 'PropertyUnit', $request->unit_image, $property_unit->id);
+                } else {
+                    $newFile = new FileManager();
+                    $upload = $newFile->upload('PropertyUnit', $request->unit_image, $property_unit->id);
+                }
+
+                if ($upload['status']) {
+                    $upload['file']->origin_id = $property_unit->id;
+                    $upload['file']->origin_type = "App\Models\PropertyUnit";
+                    $upload['file']->save();
+                } else {
+                    throw new Exception($upload['message']);
+                }
+            }
+
+            DB::commit();
+
+            $message = __(UPDATED_SUCCESSFULLY);
+            return $this->success([], $message);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return $this->error([], getErrorMessage($e));
+        }
+    }
+
     public function unitStore($request)
     {
         DB::beginTransaction();
@@ -378,7 +444,6 @@ class PropertyService
                     }
                 }
             }
-
             PropertyUnit::whereNotIn('id', $notDeletedIds)->where('property_id', $property->id)->get()->map(function ($q) {
                 $q->delete();
             });
@@ -560,6 +625,22 @@ class PropertyService
             $response['propertyUnits'] = PropertyUnit::where('property_id', $response['property']->id)->get();
             $response['view'] = view('owner.property.partial.render-unit', $response)->render();
             return $this->success($response);
+        } catch (\Exception $e) {
+            return $this->error([], getErrorMessage($e));
+        }
+    }
+
+    public function getUnitById($id)
+    {
+        try {
+            $data=[];
+            $data['unit'] = PropertyUnit::query()
+                        ->leftJoin('file_managers', ['property_units.id' => 'file_managers.origin_id', 'file_managers.origin_type' => (DB::raw("'App\\\Models\\\PropertyUnit'"))])
+                        ->select('property_units.*', 'file_managers.file_name', 'file_managers.folder_name')
+                        ->where('property_units.id', $id)
+                        ->first();
+            $data['property'] = Property::findOrFail($data['unit']->property_id);
+            return $data;
         } catch (\Exception $e) {
             return $this->error([], getErrorMessage($e));
         }

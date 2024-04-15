@@ -182,6 +182,122 @@ function getCitiesByState(state_id) {
         { state_id: state_id }
     );
 }
+document
+    .querySelector("#default-profile-img-file-input")
+    .addEventListener("change", function () {
+        var o = document.querySelector(".default-user-profile-image"),
+            e = document.querySelector(".default-profile-img-file-input")
+                .files[0],
+            i = new FileReader();
+        i.addEventListener(
+            "load",
+            function () {
+                o.src = i.result;
+            },
+            !1
+        ),
+            e && i.readAsDataURL(e);
+    });
+
+$(document).on("click", ".unit-edit", function () {
+    let detailsUrl = $(this).data("detailsurl");
+    commonAjax("GET", detailsUrl, getDataEditRes, getDataEditRes);
+});
+
+function getDataEditRes(response) {
+    var selector = $(".edit_modal");
+    selector.find(".is-invalid").removeClass("is-invalid");
+    selector.find(".error-message").remove();
+    selector.modal("show");
+
+    var imageUrl =
+        response.data.unit.folder_name + "/" + response.data.unit.file_name;
+    var domain = window.location.origin; // Get the current domain of the application
+    var unitImage = domain + "/storage/" + imageUrl; // Construct the full asset URL
+
+    if (
+        response.data.unit.file_name !== null &&
+        response.data.unit.file_name !== undefined
+    ) {
+        document.getElementById("unit-image").setAttribute("src", unitImage);
+    } else {
+        document
+            .getElementById("unit-image")
+            .setAttribute("src", domain + "/assets/images/no-image.jpg");
+    }
+    selector.find("input[name=property_id]").val(response.data.property.id);
+    selector.find("input[name=unit_id]").val(response.data.unit.id);
+    selector.find("input[name=unit_name]").val(response.data.unit.unit_name);
+    selector.find("input[name=bedroom]").val(response.data.unit.bedroom);
+    selector.find("input[name=bath]").val(response.data.unit.bath);
+    selector.find("input[name=kitchen]").val(response.data.unit.kitchen);
+    selector
+        .find("input[name=square_feet]")
+        .val(response.data.unit.square_feet);
+    selector.find("input[name=amenities]").val(response.data.unit.amenities);
+    selector.find("input[name=condition]").val(response.data.unit.condition);
+    selector.find("input[name=parking]").val(response.data.unit.parking);
+    selector
+        .find("input[name=general_rent]")
+        .val(response.data.unit.general_rent);
+    if (response.data.unit.security_deposit_type === 0) {
+        $('#security_deposit_type option[value="0"]').prop("selected", true);
+    } else if (response.data.unit.security_deposit_type === 1) {
+        $('#security_deposit_type option[value="1"]').prop("selected", true);
+    }
+    if (response.data.unit.late_fee_type === 0) {
+        $('#late_fee_type option[value="0"]').prop("selected", true);
+    } else if (response.data.unit.late_fee_type === 1) {
+        $('#late_fee_type option[value="1"]').prop("selected", true);
+    }
+
+    if (response.data.unit.rent_type === 1) {
+        // Add the 'active' class to the button
+        $("#monthly-unit-block-tab").addClass("active");
+        selector
+            .find("input[name=monthly_due_day]")
+            .val(response.data.unit.monthly_due_day);
+        selector
+            .find("input[name=rent_type]")
+            .val(response.data.unit.rent_type);
+        $("#monthly-unit-block-tab-pane").addClass("show active");
+    } else if (response.data.unit.rent_type === 2) {
+        $("#yearly-unit-block-tab").addClass("active");
+        selector
+            .find("input[name=yearly_due_day]")
+            .val(response.data.unit.yearly_due_day);
+        selector
+            .find("input[name=rent_type]")
+            .val(response.data.unit.rent_type);
+        $("#yearly-unit-block-tab-pane").addClass("show active");
+    } else if (response.data.unit.rent_type === 3) {
+        $("#custom-unit-block-tab").addClass("active");
+        selector
+            .find("input[name=lease_start_date]")
+            .val(response.data.unit.lease_start_date);
+        selector
+            .find("input[name=lease_end_date]")
+            .val(response.data.unit.lease_end_date);
+        selector
+            .find("input[name=lease_payment_due_date]")
+            .val(response.data.unit.lease_payment_due_date);
+        selector
+            .find("input[name=rent_type]")
+            .val(response.data.unit.rent_type);
+        $("#custom-unit-block-tab-pane").addClass("show active");
+    }
+    selector
+        .find("input[name=security_deposit]")
+        .val(response.data.unit.security_deposit);
+    selector.find("input[name=late_fee]").val(response.data.unit.late_fee);
+    selector
+        .find("input[name=incident_receipt]")
+        .val(response.data.unit.incident_receipt);
+
+    selector
+        .find("input[name=description]")
+        .val(response.data.unit.description);
+}
 
 function getCitiesByStateRes(response) {
     var cities = response.data.cities;

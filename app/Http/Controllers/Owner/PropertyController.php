@@ -147,9 +147,22 @@ class PropertyController extends Controller
         return $this->propertyService->unitStore($request);
     }
 
+    public function unitEdit(UnitRequest $request)
+    {
+        return $this->propertyService->unitEdit($request);
+    }
+
     public function unitDelete($id)
     {
         return $this->propertyService->unitDelete($id);
+    }
+
+    public function unitDetails($id)
+    {
+        $data['unit'] = $this->propertyService->getUnitById($id)['unit'];
+        $data['property'] = $this->propertyService->getUnitById($id)['property'];
+
+        return $this->success($data);
     }
 
     public function rentChargeStore(RentChargeRequest $request)
