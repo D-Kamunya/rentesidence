@@ -757,6 +757,9 @@ class PropertyService
 
             if ($unit) {
                 $unit->delete();
+                $property = Property::findOrFail($unit->property_id);
+                $property->number_of_unit = $property->number_of_unit-1;
+                $property->save();
             } else {
                 throw new Exception(__('No Data Found'));
             }
