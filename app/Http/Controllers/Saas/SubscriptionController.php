@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Bank;
 use App\Models\MpesaAccount;
 use App\Models\SubscriptionOrder;
+use App\Models\PaymentCheck;
 use App\Models\Gateway;
 use App\Models\User;
 use App\Services\GatewayService;
@@ -38,11 +39,45 @@ class SubscriptionController extends Controller
             ->first(); // Retrieve only the latest record
         // Handle any pending mpesa subscription transactions
         if($latestMpesaSubscriptionOrder && strpos($latestMpesaSubscriptionOrder->payment_id, 'ws') === 0 && $latestMpesaSubscriptionOrder->payment_status == ORDER_PAYMENT_STATUS_PENDING) {
-            $gateway = Gateway::find($latestMpesaSubscriptionOrder->gateway_id);
-            // Clear specific flash messages
-            Session::forget('success');
-            Session::forget('error');
-            handleSubscriptionPaymentConfirmation($latestMpesaSubscriptionOrder, null,$gateway->slug);
+            $paymentCheck = PaymentCheck::where('subscription_payment_id', $latestMpesaSubscriptionOrder->id)->first();
+            if (!$paymentCheck) {
+                $paymentCheck = new PaymentCheck();
+                $paymentCheck->subscription_payment_id = $latestMpesaSubscriptionOrder->id;
+                $paymentCheck->check_count=0;
+                $paymentCheck->last_check_at=now();
+                $paymentCheck->save();
+                $gateway = Gateway::find($latestMpesaSubscriptionOrder->gateway_id);
+                // Clear specific flash messages
+                Session::forget('success');
+                Session::forget('error');
+                handleSubscriptionPaymentConfirmation($latestMpesaSubscriptionOrder, null, $gateway->slug, $paymentCheck);
+            }else{
+                if($paymentCheck->check_count < 3){
+                    $gateway = Gateway::find($latestMpesaSubscriptionOrder->gateway_id);
+                    // Clear specific flash messages
+                    Session::forget('success');
+                    Session::forget('error');
+                    handleSubscriptionPaymentConfirmation($latestMpesaSubscriptionOrder, null, $gateway->slug, $paymentCheck);
+                }else {
+                    // Get the creation timestamp of the subscription order
+                    $subscriptionOrderCreatedAt = $latestMpesaSubscriptionOrder->created_at;
+                    // Add 5 hours to the subscription order creation timestamp
+                    $fiveHoursAfterSubscriptionOrderCreation = $subscriptionOrderCreatedAt->copy()->addHours(5);
+                    // Check if the last_check_at timestamp in the payment check is greater than or equal to 5 hours after subscription order creation
+                    $paymentCheckLastCheck = $paymentCheck->last_check_at;
+                    if ($paymentCheckLastCheck->greaterThanOrEqualTo($fiveHoursAfterSubscriptionOrderCreation)) {
+                        // Last check is more than or equal to 5 hours after subscription order creation
+                        // Your logic here
+                    } else {
+                        // Last check is less than 5 hours after subscription order creation
+                        $gateway = Gateway::find($latestMpesaSubscriptionOrder->gateway_id);
+                        // Clear specific flash messages
+                        Session::forget('success');
+                        Session::forget('error');
+                        handleSubscriptionPaymentConfirmation($latestMpesaSubscriptionOrder, null,$gateway->slug, $paymentCheck);
+                    }
+                }
+            }
         }
         $data['userPlan'] = $this->subscriptionService->getCurrentPlan();
         if (!is_null($request->id)) {

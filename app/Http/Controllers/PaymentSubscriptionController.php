@@ -159,7 +159,7 @@ class PaymentSubscriptionController extends Controller
             return redirect()->route('owner.subscription.index')->with('error', __('Your order has been paid!'));
         }
         
-        return handleSubscriptionPaymentConfirmation($order,$payerId,$gateway_slug);
+        return handleSubscriptionPaymentConfirmation($order, $payerId, $gateway_slug, null);
     }
     
 }

@@ -649,7 +649,7 @@ if (!function_exists('setOwnerInvoiceType')) {
 }
 
 if (!function_exists('handleSubscriptionPaymentConfirmation')) {
-    function handleSubscriptionPaymentConfirmation($order, $payerId = null, $gateway_slug)
+    function handleSubscriptionPaymentConfirmation($order, $payerId = null, $gateway_slug, $paymentCheck = null)
     {
         try {
             $gateway = Gateway::find($order->gateway_id);
@@ -723,13 +723,23 @@ if (!function_exists('handleSubscriptionPaymentConfirmation')) {
                 }
             } else {
                 if ($gateway_slug == 'mpesa') {
+                    if ($paymentCheck!==null){
+                        $paymentCheck->increment('check_count');
+                        $paymentCheck->last_check_at=now();
+                        $paymentCheck->save();
+                        DB::commit();
+                    }
                     return redirect()->route('owner.subscription.index')->with('error', __('Mpesa Payment failed!! Please try again after a few minutes. If the problem persists, contact the System Admin.'));
                 }
-
+                if ($paymentCheck!==null){
+                    $paymentCheck->increment('check_count');
+                    $paymentCheck->last_check_at=now();
+                    $paymentCheck->save();
+                    DB::commit();
+                }
                 return redirect()->route('owner.subscription.index')->with('error', __('Payment Failed!'));
             }
         } catch (\Exception $e) {
-            dd($e);
             DB::rollBack();
             return redirect()->route('owner.subscription.index')->with('error', __('Payment Failed!'));
         }
@@ -738,7 +748,7 @@ if (!function_exists('handleSubscriptionPaymentConfirmation')) {
 
 
 if (!function_exists('handlePaymentConfirmation')) {
-    function handlePaymentConfirmation($order, $payerId = null, $gateway_slug)
+    function handlePaymentConfirmation($order, $payerId = null, $gateway_slug, $paymentCheck = null)
     {
         try {
             $gateway = Gateway::find($order->gateway_id);
@@ -771,7 +781,19 @@ if (!function_exists('handlePaymentConfirmation')) {
                 }
             } else {
                 if ($gateway_slug == 'mpesa') {
+                    if ($paymentCheck!==null){
+                        $paymentCheck->increment('check_count');
+                        $paymentCheck->last_check_at=now();
+                        $paymentCheck->save();
+                        DB::commit();
+                    }
                     return redirect()->route('tenant.invoice.index')->with('error', __('Mpesa Payment failed!! Please try again after a few minutes. If the problem persists, contact the System Admin.'));
+                }
+                if ($paymentCheck!==null){
+                    $paymentCheck->increment('check_count');
+                    $paymentCheck->last_check_at=now();
+                    $paymentCheck->save();
+                    DB::commit();
                 }
 
                 return redirect()->route('tenant.invoice.index')->with('error', __('Payment Failed!'));

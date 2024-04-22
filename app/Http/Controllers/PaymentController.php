@@ -142,7 +142,7 @@ class PaymentController extends Controller
         }
 
         
-        return handlePaymentConfirmation($order,$payerId,$gateway_slug);
+        return handlePaymentConfirmation($order,$payerId,$gateway_slug,null);
     }
 
     public function verifyRedirect($type = 'error')
