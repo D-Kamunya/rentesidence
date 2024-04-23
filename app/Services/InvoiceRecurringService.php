@@ -145,7 +145,7 @@ class InvoiceRecurringService
             $invoiceRecurring = $invoiceRecurring = InvoiceRecurringSetting::where('owner_user_id', auth()->id())->findOrFail($request->id);
         } else {
             if (!getOwnerLimit(RULES_AUTO_INVOICE) > 0) {
-                throw new Exception('Your Auto Invoice Settings Limit finished');
+                throw new Exception('Your Auto Invoice Settings Limit is Finished. Choose or Renew Package Plan');
             }
             $invoiceRecurring = new InvoiceRecurringSetting();
         }

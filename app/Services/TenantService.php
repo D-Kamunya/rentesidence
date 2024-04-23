@@ -286,7 +286,7 @@ class TenantService
                 $details = TenantDetails::firstOrNew(['tenant_id' => $tenant->id]);
             } else {
                 if (!getOwnerLimit(RULES_TENANT) > 0) {
-                    throw new Exception(__('Your Tenant Limit finished'));
+                    throw new Exception(__('Your Tenant Limit is Finished. Choose or Renew Package Plan'));
                 }
                 $user = new User();
                 $tenant = new Tenant();

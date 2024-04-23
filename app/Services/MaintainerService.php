@@ -103,7 +103,7 @@ class MaintainerService
                 $user = User::where('owner_user_id', auth()->id())->findOrFail($maintainer->user_id);
             } else {
                 if (!getOwnerLimit(RULES_MAINTAINER) > 0) {
-                    throw new Exception(__('Your Maintainer Limit finished'));
+                    throw new Exception(__('Your Maintainer Limit is Finished. Choose or Renew Package Plan'));
                 }
                 $maintainer = new Maintainer();
                 $user = new User();

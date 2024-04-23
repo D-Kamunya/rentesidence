@@ -56,7 +56,7 @@ class TenantController extends Controller
     public function create()
     {
         if (getOwnerLimit(RULES_TENANT) < 1) {
-            return back()->with('error', __('Your Tenant Limit finished'));
+            return back()->with('error', __('Your Tenant Limit is Finished. Choose or Renew Package Plan'));
         }
         $data['pageTitle'] = __('Add Tenant');
         $data['subNavAllTenantMMActiveClass'] = 'mm-active';

@@ -83,7 +83,7 @@ class PropertyController extends Controller
     public function add()
     {
         if (getOwnerLimit(RULES_PROPERTY) < 1) {
-            return back()->with('error',  __("Your property Limit finished"));
+            return back()->with('error',  __("Your Property Limit is Finished. Choose or Renew Package Plan"));
         }
 
         $data['pageTitle'] = __("Add Property");

@@ -117,12 +117,8 @@ function getErrorMessage($e, $customMsg = null)
 {
     if ($customMsg != null) {
         return $customMsg;
-    }
-    if (env('APP_DEBUG')) {
-        return $e->getMessage() . $e->getLine();
-    } else {
-        return SOMETHING_WENT_WRONG;
-    }
+    } 
+    return $e->getMessage();
 }
 
 function set_local_timezone($timezone)

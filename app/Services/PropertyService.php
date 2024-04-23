@@ -246,7 +246,7 @@ class PropertyService
                 $property = Property::with('propertyDetail')->where('owner_user_id', auth()->id())->where('id', $request->property_id)->firstOrFail();
             } else {
                 if (getOwnerLimit(RULES_PROPERTY) < 1) {
-                    throw new Exception(__('Your property Limit finished'));
+                    throw new Exception(__('Your Property Limit is Finished. Choose or Renew Package Plan'));
                 }
                 $property = new Property();
             }
@@ -323,7 +323,7 @@ class PropertyService
                 }
             }else{
                 if (getOwnerLimit(RULES_UNIT) < 1) {
-                    throw new Exception(__('Your unit Limit finished'));
+                    throw new Exception(__('Your Unit Limit is Finished. Choose or Renew Package Plan'));
                 }
                 $property_unit = new PropertyUnit();
             }
@@ -401,7 +401,7 @@ class PropertyService
                     array_push($notDeletedIds, $request->single['id'][$i]);
                     if (!$property_unit) {
                         if (getOwnerLimit(RULES_UNIT) < 1) {
-                            throw new Exception(__('Your unit Limit finished'));
+                            throw new Exception(__('Your Unit Limit is Finished. Choose or Renew Package Plan'));
                         }
                         $property_unit = new PropertyUnit();
                     }
@@ -418,7 +418,7 @@ class PropertyService
                     array_push($notDeletedIds, $request->multiple['id'][$i]);
                     if (!$property_unit) {
                         if (getOwnerLimit(RULES_UNIT) < 1) {
-                            throw new Exception(__('Your unit Limit finished'));
+                            throw new Exception(__('Your Unit Limit is Finished. Choose or Renew Package Plan'));
                         }
                         $property_unit = new PropertyUnit();
                     }
