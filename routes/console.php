@@ -2,6 +2,8 @@
 
 use Illuminate\Foundation\Inspiring;
 use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\File;
 
 /*
 |--------------------------------------------------------------------------
@@ -13,6 +15,22 @@ use Illuminate\Support\Facades\Artisan;
 | simple approach to interacting with each command's IO methods.
 |
 */
+
+Artisan::command('db:run-setup-sql {file}', function ($file) {
+    $path = base_path($file);
+
+    if (!File::exists($path)) {
+        $this->error("File not found: {$path}");
+        return;
+    }
+
+    $sql = File::get($path);
+
+    DB::unprepared($sql);
+
+    $this->info('SQL file executed successfully.');
+})->describe('Run SQL queries from a specified file');
+
 
 Artisan::command('inspire', function () {
     $this->comment(Inspiring::quote());
