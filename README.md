@@ -11,13 +11,13 @@
 
 Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+-   [Simple, fast routing engine](https://laravel.com/docs/routing).
+-   [Powerful dependency injection container](https://laravel.com/docs/container).
+-   Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
+-   Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
+-   Database agnostic [schema migrations](https://laravel.com/docs/migrations).
+-   [Robust background job processing](https://laravel.com/docs/queues).
+-   [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
 
 Laravel is accessible, powerful, and provides tools required for large, robust applications.
 
@@ -33,21 +33,63 @@ If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Lar
 
 We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the Laravel [Patreon page](https://patreon.com/taylorotwell).
 
-### Premium Partners
+## Installing
 
-- **[Vehikl](https://vehikl.com/)**
-- **[Tighten Co.](https://tighten.co)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Cubet Techno Labs](https://cubettech.com)**
-- **[Cyber-Duck](https://cyber-duck.co.uk)**
-- **[Many](https://www.many.co.uk)**
-- **[Webdock, Fast VPS Hosting](https://www.webdock.io/en)**
-- **[DevSquad](https://devsquad.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel/)**
-- **[OP.GG](https://op.gg)**
-- **[WebReinvent](https://webreinvent.com/?utm_source=laravel&utm_medium=github&utm_campaign=patreon-sponsors)**
-- **[Lendio](https://lendio.com)**
+Setting up the local environment for this Laravel project is easy and straightforward. Just follow these steps:
+
+### Step 1: Clone the Repository
+
+Clone the repository from GitHub using the following command:
+
+`git clone https://github.com/D-Kamunya/rentesidence.git`
+
+### Step 2: Navigate into the Project Directory
+
+Change into the project directory:
+
+`cd rentesidence`
+
+### Step 3: Create the .env File
+
+Copy the .env.example file to create a new .env file:
+
+`cp .env.example .env`
+
+Update the necessary fields in the .env file, including the database configuration.
+
+### Step 4: Install Dependencies
+
+Install the project dependencies using Composer:
+
+`composer install`
+
+### Step 5: Obtain the Installed File
+
+Get the installed file from the developers and copy it to the storage folder located at the root of the project.
+
+### Step 6: Run Migrations
+
+Run the database migrations:
+
+`php artisan migrate`
+
+### Step 7: Link the Storage Folder
+
+Link the local storage folder:
+
+`php artisan storage:link`
+
+### Step 8: Dump Required Setup Data
+
+Dump the required setup data into your database:
+
+`php artisan db:run-setup-sql`
+
+### Step 9: Run the Project
+
+Start the Laravel development server:
+
+`php artisan serve`
 
 ## Contributing
 
