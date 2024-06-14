@@ -91,7 +91,7 @@ Start the Laravel development server:
 
 `php artisan serve`
 
-For Admin Panel: `Email admin@gmail.com, password 123456`
+For Admin Panel: `Email admin@gmail.com, password 123456` <br/>
 For Owners Panel: `Email owner@gmail.com, password 123456`
 
 ## Contributing
