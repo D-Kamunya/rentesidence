@@ -91,6 +91,9 @@ Start the Laravel development server:
 
 `php artisan serve`
 
+For Admin Panel: `Email admin@gmail.com, password 123456`
+For Owners Panel: `Email owner@gmail.com, password 123456`
+
 ## Contributing
 
 Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
