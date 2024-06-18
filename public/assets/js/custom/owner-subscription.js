@@ -125,7 +125,7 @@ $(document).on("click", ".paymentGateway", function (e) {
         $("#bank_id").attr("required", false);
         $("#mpesa_account_id").attr("required", false);
         $("#bankAppend").addClass("d-none");
-        "#mpesaAccountAppend".addClass("d-none");
+        $("#mpesaAccountAppend").addClass("d-none");
     }
 });
 
