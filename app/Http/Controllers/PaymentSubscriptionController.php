@@ -66,13 +66,21 @@ class PaymentSubscriptionController extends Controller
                 DB::commit();
                 return redirect()->route('owner.subscription.index')->with('success', __('Cash Payment Request Sent Successfully! Wait for approval'));
             } elseif ($gateway->slug == 'mpesa'){
-                $mpesaAccount = MpesaAccount::where(['owner_user_id' => $user->id, 'gateway_id' => $gateway->id, 'id' => $request->mpesa_account_id])->first();
-                if (is_null($mpesaAccount)) {
-                    throw new Exception('Mpesa Account not found');
-                }
-                $paymentData['mpesaAccount'] = $mpesaAccount;
-                $order = $this->placeOrder($package, $durationType, $quantity, $gateway, $gatewayCurrency);
-                DB::commit();
+                if ($request->has('mpesa_transaction_code')) {
+                    $order = $this->placeOrder($package, $durationType, $quantity, $gateway, $gatewayCurrency, null, null, null, null, null, $request->mpesa_transaction_code); // new order create
+                    $order->save();
+                    DB::commit();
+                    return redirect()->route('owner.subscription.index')->with('success', __('Mpesa Transaction Code Submitted Successfully! Wait for approval'));
+                }else{
+                    $mpesaAccount = MpesaAccount::where(['owner_user_id' => $user->id, 'gateway_id' => $gateway->id, 'id' => $request->mpesa_account_id])->first();
+                    if (is_null($mpesaAccount)) {
+                        throw new Exception('Mpesa Account not found');
+                    }
+                    $paymentData['mpesaAccount'] = $mpesaAccount;
+                    $order = $this->placeOrder($package, $durationType, $quantity, $gateway, $gatewayCurrency);
+                    DB::commit();
+                    }
+                
             } else {
                 $order = $this->placeOrder($package, $durationType, $quantity, $gateway, $gatewayCurrency); // new order create
                 DB::commit();
@@ -105,7 +113,7 @@ class PaymentSubscriptionController extends Controller
         }
     }
 
-    public function placeOrder($package, $durationType, $quantity, $gateway, $gatewayCurrency, $bank_id = null, $bank_name = null, $bank_account_number = null, $deposit_by = null, $deposit_slip_id = null)
+    public function placeOrder($package, $durationType, $quantity, $gateway, $gatewayCurrency, $bank_id = null, $bank_name = null, $bank_account_number = null, $deposit_by = null, $deposit_slip_id = null, $mpesa_transaction_code = null)
     {
         $price = 0;
         $perPrice = 0;
@@ -137,7 +145,8 @@ class PaymentSubscriptionController extends Controller
             'bank_name' => $bank_name,
             'bank_account_number' => $bank_account_number,
             'deposit_by' => $deposit_by,
-            'deposit_slip_id' => $deposit_slip_id
+            'deposit_slip_id' => $deposit_slip_id,
+            'mpesa_transaction_code' => $mpesa_transaction_code
         ]);
     }
 

@@ -91,10 +91,11 @@
                     <div class="payment-method-area">
                         <h2 class="text-center payment-method-area-title">{{ __('Mpesa Payment Details') }}</h2>
                         <div class="payment-method-wrap px-5">
-                            <form id="pay-subscription-form" class="" action="{{ route('payment.subscription.checkout') }}" method="POST"
+                            <form id="" class="" action="{{ route('payment.subscription.checkout') }}" method="POST"
                                 enctype="multipart/form-data">
                                 @csrf
                                 <input type="hidden" id="mpesa_plan_id" name="package_id" value="">
+                                <input type="hidden" id="mpesa_code_account_id" name="mpesa_account_id" value="">
                                 <input type="hidden" id="mpesa_selectGateway" name="gateway">
                                 <input type="hidden" id="mpesa_selectCurrency" name="currency">
                                 <input type="hidden" id="mpesa_duration_type" name="duration_type">
@@ -124,13 +125,12 @@
                                 <div class="col-md-12 mb-25">
                                     <label
                                         class="label-text-title color-heading font-medium mb-2">{{ __('Enter Mpesa Transaction Code') }}</label>
-                                    <input type="text" name="mpesa-transaction-code" class="form-control"
-                                        value="" placeholder="Mpesa Transaction Code">
+                                    <input type="text" id="mpesaTransactionCode" name="mpesa_transaction_code" class="form-control" placeholder="{{__('Mpesa Transaction Code')}}">
                                 </div>
                                 <div class="row">
                                     <div class="col-md-12 text-center">
                                         <button type="button" class="theme-btn me-2 mb-1 w-75"
-                                            id="mpesaCodeBtn">{{ __('Submit Code') }}
+                                            id="mpesaCodeSubmitBtn">{{ __('Submit Code') }}
                                             </button>
             
                                     </div>
