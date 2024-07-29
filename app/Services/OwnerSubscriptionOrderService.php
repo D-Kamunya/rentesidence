@@ -41,7 +41,17 @@ class OwnerSubscriptionOrderService
                 if ($order->gatewaySlug == 'bank') {
                     return '<a href="' . getFileUrl($order->folder_name, $order->file_name) . '" title="Bank slip download" download>' . $order->gatewayTitle . '</a>';
                 }
+                if ($order->gatewaySlug == 'mpesa') {
+                    if ($order->mpesa_transaction_code !== null) {
+                        return '<p> Mpesa Transaction Code</p>';
+                    }else{
+                        return '<p> Mpesa STK</p>';
+                    }
+                }
                 return $order->gatewayTitle;
+            })
+            ->addColumn('mpesa_transaction_code', function ($order) {
+                return $order->mpesa_transaction_code;
             })
             ->addColumn('status', function ($order) {
                 if ($order->payment_status == ORDER_PAYMENT_STATUS_PAID) {
@@ -58,6 +68,8 @@ class OwnerSubscriptionOrderService
                     $html .= '<button type="button" class="p-1 tbl-action-btn view" data-id="' . $order->id . '" title="View"><span class="iconify" data-icon="carbon:view-filled"></span></button>';
                     if ($order->gatewaySlug == 'bank') {
                         $html .= '<a href="' . getFileUrl($order->folder_name, $order->file_name) . '"  class="p-1 tbl-action-btn" title="' . __('Bank slip download') . '" download><span class="iconify" data-icon="fa6-solid:download"></span></a>';
+                    }
+                    if ($order->gatewaySlug == 'bank' || $order->gatewaySlug == 'cash' || ($order->gatewaySlug == 'mpesa' && $order->mpesa_transaction_code != null)){
                         $html .= '<button type="button" class="p-1 tbl-action-btn orderPayStatus" data-id="' . $order->id . '" title="' . __('Payment Status Change') . '"><span class="iconify" data-icon="fluent:text-change-previous-20-filled"></span></button>';
                     }
                 } elseif ($order->payment_status == ORDER_PAYMENT_STATUS_PAID) {
@@ -111,9 +123,19 @@ class OwnerSubscriptionOrderService
             })
             ->addColumn('gateway', function ($order) {
                 if ($order->gatewaySlug == 'bank') {
-                    return '<a href="' . getFileUrl($order->folder_name, $order->file_name) . '" title="' . __('Bank slip download') . '" download>' . $order->gatewayTitle . '</a>';
+                    return '<a href="' . getFileUrl($order->folder_name, $order->file_name) . '" title="Bank slip download" download>' . $order->gatewayTitle . '</a>';
+                }
+                if ($order->gatewaySlug == 'mpesa') {
+                    if ($order->mpesa_transaction_code !== null) {
+                        return '<p> Mpesa Transaction Code</p>';
+                    }else{
+                        return '<p> Mpesa STK</p>';
+                    }
                 }
                 return $order->gatewayTitle;
+            })
+            ->addColumn('mpesa_transaction_code', function ($order) {
+                return $order->mpesa_transaction_code;
             })
             ->addColumn('status', function ($order) {
                 if ($order->payment_status == ORDER_PAYMENT_STATUS_PAID) {
@@ -130,8 +152,8 @@ class OwnerSubscriptionOrderService
                     $html .= '<button type="button" class="p-1 tbl-action-btn view" data-id="' . $order->id . '" title="' . __('View') . '"><span class="iconify" data-icon="carbon:view-filled"></span></button>';
                     if ($order->gatewaySlug == 'bank') {
                         $html .= '<a href="' . getFileUrl($order->folder_name, $order->file_name) . '"  class="p-1 tbl-action-btn" title="' . __('Bank slip download') . '" download><span class="iconify" data-icon="fa6-solid:download"></span></a>';
-                        $html .= '<button type="button" class="p-1 tbl-action-btn orderPayStatus" data-id="' . $order->id . '" title="' . __('Payment Status Change') . '"><span class="iconify" data-icon="fluent:text-change-previous-20-filled"></span></button>';
-                    } elseif ($order->gatewaySlug == 'cash') {
+                    } 
+                    if ($order->gatewaySlug == 'bank' || $order->gatewaySlug == 'cash' || ($order->gatewaySlug == 'mpesa' && $order->mpesa_transaction_code != null)){
                         $html .= '<button type="button" class="p-1 tbl-action-btn orderPayStatus" data-id="' . $order->id . '" title="' . __('Payment Status Change') . '"><span class="iconify" data-icon="fluent:text-change-previous-20-filled"></span></button>';
                     }
                 } elseif ($order->payment_status == ORDER_PAYMENT_STATUS_PAID) {
@@ -162,7 +184,21 @@ class OwnerSubscriptionOrderService
     {
         DB::beginTransaction();
         try {
-            $order = SubscriptionOrder::findOrFail($request->id);
+            if ($request->has('mpesa_transaction_code')) {
+                try {
+                    // Retrieve the order by id and mpesa_transaction_code
+                    $order = SubscriptionOrder::where('id', $request->id)
+                        ->where('mpesa_transaction_code', $request->mpesa_transaction_code)
+                        ->firstOrFail();
+                } catch (Exception $e) {
+                    // Return error if the order does not exist
+                    DB::rollBack();
+                    $message = __("The submitted Mpesa transaction code does not match the order");
+                    return $this->error([], $message);
+                }
+            }else{
+                $order = SubscriptionOrder::findOrFail($request->id);
+            }
             if ($request->status == ORDER_PAYMENT_STATUS_PAID) {
                 $order->payment_status = ORDER_PAYMENT_STATUS_PAID;
                 $order->transaction_id = str_replace("-", "", uuid_create(UUID_TYPE_RANDOM));

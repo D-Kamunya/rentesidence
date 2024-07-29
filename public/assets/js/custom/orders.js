@@ -1,4 +1,6 @@
 $(document).on("click", ".orderPayStatus", function () {
+    const form = document.getElementById("payStatusChangeForm");
+    form.reset();
     commonAjax("GET", $("#ordersGetInfoRoute").val(), getInfoRes, getInfoRes, {
         id: $(this).data("id"),
     });
@@ -8,6 +10,13 @@ function getInfoRes(response) {
     const selector = $("#payStatusChangeModal");
     selector.find("input[name=id]").val(response.data.id);
     selector.find("select[name=status]").val(response.data.payment_status);
+    if (response.data.mpesa_transaction_code !== null) {
+        selector.find(".mpesa-trans-code-verify").removeClass("d-none");
+        $("#verifyMpesaTransactionCode").attr("required", true);
+    } else {
+        $("#verifyMpesaTransactionCode").attr("required", false);
+        selector.find(".mpesa-trans-code-verify").addClass("d-none");
+    }
     selector.modal("show");
 }
 
@@ -99,6 +108,7 @@ function getInfoViewRes(response) {
             { data: "package", name: "packages.name" },
             { data: "amount", name: "users.last_name" },
             { data: "gateway" },
+            { data: "mpesa_transaction_code" },
             { data: "date", name: "subscription_orders.created_at" },
             { data: "status" },
             { data: "action" },
@@ -137,6 +147,7 @@ function getInfoViewRes(response) {
             { data: "package", name: "packages.name" },
             { data: "amount", name: "users.last_name" },
             { data: "gateway" },
+            { data: "mpesa_transaction_code" },
             { data: "date", name: "subscription_orders.created_at" },
             { data: "status" },
             { data: "action" },
@@ -175,6 +186,7 @@ function getInfoViewRes(response) {
             { data: "package", name: "packages.name" },
             { data: "amount", name: "users.last_name" },
             { data: "gateway" },
+            { data: "mpesa_transaction_code" },
             { data: "date", name: "subscription_orders.created_at" },
             { data: "status" },
             { data: "action" },
@@ -252,6 +264,7 @@ function getInfoViewRes(response) {
             { data: "package", name: "packages.name" },
             { data: "amount", name: "users.last_name" },
             { data: "gateway" },
+            { data: "mpesa_transaction_code" },
             { data: "date", name: "subscription_orders.created_at" },
             { data: "status" },
             { data: "action" },

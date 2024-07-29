@@ -77,6 +77,7 @@
                                                     <th>{{ __('Package') }}</th>
                                                     <th>{{ __('Amount') }}</th>
                                                     <th>{{ __('Gateway') }}</th>
+                                                    <th>{{ __('Mpesa Transaction Code') }}</th>
                                                     <th>{{ __('Date') }}</th>
                                                     <th>{{ __('Status') }}</th>
                                                     <th>{{ __('Action') }}</th>
@@ -96,6 +97,7 @@
                                                     <th>{{ __('Package') }}</th>
                                                     <th>{{ __('Amount') }}</th>
                                                     <th>{{ __('Gateway') }}</th>
+                                                    <th>{{ __('Mpesa Transaction Code') }}</th>
                                                     <th>{{ __('Date') }}</th>
                                                     <th>{{ __('Status') }}</th>
                                                     <th>{{ __('Action') }}</th>
@@ -115,6 +117,7 @@
                                                     <th>{{ __('Package') }}</th>
                                                     <th>{{ __('Amount') }}</th>
                                                     <th>{{ __('Gateway') }}</th>
+                                                    <th>{{ __('Mpesa Transaction Code') }}</th>
                                                     <th>{{ __('Date') }}</th>
                                                     <th>{{ __('Status') }}</th>
                                                     <th>{{ __('Action') }}</th>
@@ -153,6 +156,7 @@
                                                     <th>{{ __('Package') }}</th>
                                                     <th>{{ __('Amount') }}</th>
                                                     <th>{{ __('Gateway') }}</th>
+                                                    <th>{{ __('Mpesa Transaction Code') }}</th>
                                                     <th>{{ __('Date') }}</th>
                                                     <th>{{ __('Status') }}</th>
                                                     <th>{{ __('Action') }}</th>
@@ -180,12 +184,17 @@
                         <span class="iconify" data-icon="akar-icons:cross"></span>
                     </button>
                 </div>
-                <form class="ajax" action="{{ route('admin.subscriptions.order.payment.status.change') }}"
+                <form id="payStatusChangeForm" class="ajax" action="{{ route('admin.subscriptions.order.payment.status.change') }}"
                     method="post" data-handler="getShowMessage">
                     <input type="hidden" name="id">
                     <div class="modal-body">
                         <div class="modal-inner-form-box bg-off-white theme-border radius-4 p-20 mb-20 pb-0">
                             <div class="row">
+                                <div class="col-md-12 mb-25 d-none mpesa-trans-code-verify">
+                                    <label
+                                        class="label-text-title color-heading font-medium mb-2">{{ __('Enter Mpesa Transaction Code') }}</label>
+                                    <input type="text" id="verifyMpesaTransactionCode" name="mpesa_transaction_code" class="form-control" placeholder="{{__('Mpesa Transaction Code')}}">
+                                </div>
                                 <div class="col-md-12 mb-25">
                                     <label
                                         class="label-text-title color-heading font-medium mb-2">{{ __('Status') }}</label>
