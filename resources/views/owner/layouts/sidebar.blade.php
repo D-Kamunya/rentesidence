@@ -13,6 +13,13 @@
                 </li>
 
                 <li>
+                    <a href="{{ route('owner.products.index') }}">
+                        <i class="ri-store-2-line"></i>
+                        <span>{{ __('My Shop') }}</span>
+                    </a>
+                </li>
+
+                <li>
                     <a href="javascript: void(0);" class="has-arrow">
                         <i class="ri-building-line"></i>
                         <span>{{ __('Properties') }}</span>

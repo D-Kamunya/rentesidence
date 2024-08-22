@@ -1601,7 +1601,7 @@ button:focus {
     }
 
     .logo span.logo-sm {
-        display: inline-block;
+        display: none;
     }
 }
 
@@ -2025,7 +2025,7 @@ button:focus {
 }
 
 .vertical-collpsed .navbar-brand-box {
-    /* width: 70px!important */
+    display: none;
 }
 
 .vertical-collpsed .logo span.logo-lg {
@@ -2033,7 +2033,7 @@ button:focus {
 }
 
 .vertical-collpsed .logo span.logo-sm {
-    display: block;
+    display: none;
 }
 
 .vertical-collpsed .vertical-menu {
@@ -4541,4 +4541,19 @@ select[readonly] {
     color: #555;
     cursor: not-allowed;
     pointer-events: none;
+}
+
+/* Results search box mobile responsive */
+@media (max-width: 991px) {
+    .form-control-sm {
+        width: 140px !important;
+    }
+}
+
+/* delete account button mobile responsive*/
+@media (max-width: 991px){
+    .theme-btn-red {
+        padding: 10px !important;
+        margin-left: 40px !important;
+    }
 }
