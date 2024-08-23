@@ -21,7 +21,7 @@ return new class extends Migration
             $table->decimal('price', 8, 2);
             $table->string('category');
             $table->string('type'); // 'product' or 'service'
-            $table->string('image')->nullable();
+            $table->json('images')->nullable();
             $table->timestamps();
 
             $table->foreign('owner_user_id')->references('id')->on('owners')->onDelete('cascade');

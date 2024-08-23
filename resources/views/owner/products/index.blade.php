@@ -3,7 +3,8 @@
 @section('content')
     <div class="main-content">
 
-        <div class="page-content">
+    <div class="page-content">
+        <div class="page-content-wrapper bg-white p-30 radius-20"> 
             <div class="container-fluid">
                 <!-- Page Content Wrapper Start -->
                 <div class="page-content-wrapper bg-white p-30 radius-20">
@@ -62,32 +63,42 @@
                         <!-- Products Top Bar End -->
 
                         <!-- Products/services Wrap Start -->
-                        <div class="products-wrap">
-                            <div class="row">
-                            @if($products->count() > 0) 
-                                @foreach ($products as $product)
-                                    <div>
-                                        <h2>{{ $product->name }}</h2>
-                                        <p>{{ $product->description }}</p>
-                                        <p>{{ $product->price }}</p>
-                                        <p>{{ $product->category }}</p>
-                                        <p>{{ $product->type }}</p>
-                                        <img src="{{ asset('storage/'.$product->image) }}" alt="{{ $product->name }}">
-                                        <a href="{{ route('owner.products.edit', $product->id) }}">Edit</a>
-                                        <form action="{{ route('owner.products.destroy', $product->id) }}" method="POST">
-                                            @csrf
-                                            @method('DELETE')
-                                            <button type="submit">Delete</button>
-                                        </form>
-                                    </div>
-                                @endforeach 
-
-                                {{ $products->links() }}
-                            @else
-                                <p>No products found.</p>
-                            @endif       
-                            </div>
-                        </div>
+                                            @if($products->count() > 0) 
+                                                <div class="row">
+                                                    @foreach ($products as $product)
+                                                                <div style="padding: 30px;">
+                                                                    @php
+                                                                        $images = json_decode($product->images, true); // Decode the JSON
+                                                                    @endphp
+                                                                    @if(is_array($images) && count($images) > 0)
+                                                                        @foreach($images as $image)
+                                                                                <img src="{{ asset('storage/' . $image) }}" alt="{{ $product->name }}" style="max-width: 150px;">
+                                                                                
+                                                                        @endforeach
+                                                                    @else
+                                                                        <p>No images available.</p>
+                                                                    @endif
+                                                                    <h2 style="font-size: 20px; font-weight:bold;">{{ $product->name }}</h2>
+                                                                    <p>{{ $product->description }}</p>
+                                                                    <div class="property-item-info d-flex mt-15 flex-wrap bg-white theme-border py-3 px-2 radius-4 p-5">
+                                                                            <p style="padding: 20px; color:blue; font-weight:bold;">Ksh.{{ $product->price }}</p>
+                                                                            <p style="padding: 20px;">Category: {{ $product->category }}</p>
+                                                                            <p style="padding: 20px;">Type: {{ $product->type }}</p>
+                                                                    </div>
+                                                                    <a href="{{ route('owner.products.edit', $product->id) }}" class="action-button theme-btn mt-25">Edit</a>
+                                                                    <form action="{{ route('owner.products.destroy', $product->id) }}" method="POST">
+                                                                    @csrf
+                                                                    @method('DELETE')
+                                                                    <button type="submit" class="action-button theme-btn mt-25">Delete</button>
+                                                                    </form> 
+                                                                </div>      
+                                                        </div>     
+                                                        @endforeach
+                                                            {{ $products->links() }}
+                                                        @else
+                                                            <p>No products found.</p>
+                                                        @endif
+                                                </div>              
                         <!-- Products/services Wrap End -->
                     </div>
                     <!-- All products Area row End -->
@@ -95,6 +106,7 @@
                 <!-- Page Content Wrapper End -->
             </div>
         </div>
+    </div>
         <!-- End Page-content -->
     </div>
     <input type="hidden" id="getAllTenantRoute" value="{{ route('owner.tenant.index', ['type' => 'all']) }}">

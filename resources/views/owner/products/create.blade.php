@@ -88,6 +88,32 @@
                                                                     </select>
                                                                 </div>
                                                             </div>
+
+                                                            <div class="row">
+                                                                <div class="col-md-12 mb-25">
+                                                                    <label
+                                                                        class="label-text-title color-heading font-medium mb-2">{{ __('Category') }}
+                                                                        <span class="text-danger">*</span></label>
+                                                                    <select name="category" name="category"
+                                                                         class="form-control">
+                                                                        <option value="foods">Foods</option>
+                                                                        <option value="gas">Gas</option>
+                                                                        <option value="water">Water</option>
+                                                                        <option value="clothes">Clothes</option>
+                                                                        <option value="shoes">Shoes</option>
+                                                                        <option value="bags">Bags</option>
+                                                                        <option value="electronics">Electronics</option>
+                                                                        <option value="beauty products">Beauty products</option>
+                                                                        <option value="kitchenware">Kitchenware</option>
+                                                                        <option value="detergents">Detergents</option>
+                                                                        <option value="furniture">Furniture</option>
+                                                                        <option value="sanitation">Sanitation</option>
+                                                                        <option value="toiletries">Toiletries</option>
+                                                                        <option value="hygiene">Hygiene</option>
+                                                                    </select>
+                                                                </div>
+                                                            </div>
+
                                                         </div>
                                                     </div>
 
@@ -121,7 +147,7 @@
                                                                     <label
                                                                         class="label-text-title color-heading font-medium mb-2">{{ __('Product image') }}
                                                                         <span class="text-danger">*</span></label>
-                                                                    <input type="file" name="image"
+                                                                    <input type="file" name="images[]"
                                                                         class="form-control" multiple required>
                                                                 </div>
                                                             </div>
