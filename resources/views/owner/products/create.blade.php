@@ -2,7 +2,6 @@
 
 @section('content')
     <div class="main-content">
-
         <div class="page-content">
             <div class="container-fluid">
                 <!-- Page Content Wrapper Start -->
@@ -103,7 +102,7 @@
                                                                         <option value="shoes">Shoes</option>
                                                                         <option value="bags">Bags</option>
                                                                         <option value="electronics">Electronics</option>
-                                                                        <option value="beauty products">Beauty products</option>
+                                                                        <option value="beautyproducts">Beauty products</option>
                                                                         <option value="kitchenware">Kitchenware</option>
                                                                         <option value="detergents">Detergents</option>
                                                                         <option value="furniture">Furniture</option>
@@ -151,9 +150,9 @@
                                                                         class="form-control" multiple required>
                                                                 </div>
                                                             </div>
+                                                        </div>
                                                     </div>
                                                 </div>
-                                                </fieldset>
                                                 <!-- Next/Previous Button Start -->
                                                 <input type="submit" class="action-button theme-btn mt-25"
                                                     value="Add Product/Service">
@@ -179,16 +178,6 @@
         <!-- End Page-content -->
 
     </div>
-    <input type="hidden" id="getStateListRoute" value="{{ route('owner.location.state.list') }}">
-    <input type="hidden" id="getCityListRoute" value="{{ route('owner.location.city.list') }}">
-    <input type="hidden" id="propertyShowRoute" value="{{ route('owner.property.show', 0) }}">
-    <input type="hidden" id="tenantStoreRoute" value="{{ route('owner.tenant.store') }}">
-    <input type="hidden" id="tenantListRoute" value="{{ route('owner.tenant.index') }}">
-    <input type="hidden" id="getPropertyWithUnitsByIdRoute"
-        value="{{ route('owner.property.getPropertyWithUnitsById') }}">
+
 @endsection
 
-@push('script')
-    <script src="{{ asset('/') }}assets/js/pages/profile-setting.init.js"></script>
-    <script src="{{ asset('assets/js/custom/tenant.js') }}"></script>
-@endpush

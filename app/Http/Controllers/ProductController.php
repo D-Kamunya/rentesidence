@@ -8,11 +8,34 @@ use Illuminate\Support\Facades\Storage;
 
 class ProductController extends Controller
 {
-    // For owners to list their products/services
-    public function index() {
-        $products = Product::where('owner_user_id', Auth::id())->paginate(10);
-        return view('owner.products.index', compact('products'));
-    }
+        // Start filter
+        public function index(Request $request)
+        {
+            
+            // query taking into account owner authentication
+            $query = Product::where('owner_user_id', Auth::id());
+        
+            //Retrieving any filter values from the request
+            $type = $request->input('type');
+            $category = $request->input('category');
+        
+            // type filter if selected
+            if (!empty($type)) {
+                $query->where('type', $type);
+            }
+        
+            // category filter if selected
+            if (!empty($category)) {
+                $query->where('category', $category);
+            }
+           
+            // Paginate the results with a limit of 10 per page
+            $products = $query->paginate(10)->appends(['type' => $type, 'category' => $category]);
+        
+            // Pass the products and filter values to the view
+            return view('owner.products.index', compact('products', 'type', 'category'));
+            
+        }
 
     // For owners to create a new product/service
     public function create() {
@@ -27,7 +50,7 @@ class ProductController extends Controller
             'price' => 'required|numeric',
             'category' => 'required|string',
             'type' => 'required|string',
-            'images' => 'required|array|min:2',
+            'images' => 'required|array|min:1',
             'images.*' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
         ]);
 
@@ -114,6 +137,7 @@ class ProductController extends Controller
         return redirect()->route('owner.products.index')->with('success', 'Product deleted successfully.');
     }
 
+
 // For tenants to view products/services
     public function showProductsForTenant(Request $request) {
         $tenant = Auth::user();
@@ -123,7 +147,10 @@ class ProductController extends Controller
                 ->when($request->category, function ($query) use ($request) {
                     return $query->where('category', $request->category);
                 })
-                ->paginate(10);
+                ->when($request->type, function ($query) use ($request) {
+                    return $query->where('type', $request->type);
+                })
+                ->paginate(10)->appends($request->only('category', 'type')); // To retain filters in pagination links
     
         return view('tenant.products.index', compact('products'));
     }
