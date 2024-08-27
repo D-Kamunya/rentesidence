@@ -54,3 +54,5 @@
 
 <!-- Select2 -->
 <link href="{{ asset('assets/css/select2.min.css') }}" rel="stylesheet" />
+
+<link rel="stylesheet" href="{{ asset('assets/css/product.css') }}">

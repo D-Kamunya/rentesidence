@@ -32,6 +32,7 @@
 <!-- Select2 -->
 <script src="{{ asset('assets/js/select2.min.js') }}"></script>
 
+<script src="{{ asset('assets/js/custom/product.js') }}"></script>
 <script>
     "use strict";
 

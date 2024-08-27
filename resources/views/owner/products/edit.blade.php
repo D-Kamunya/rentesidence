@@ -158,6 +158,7 @@
                                                                 <div class="form-group">
                                                                     <label for="images">Add New Images</label>
                                                                     <input type="file" name="images[]" id="images" class="form-control" multiple>
+                                                                    <div id="image-preview" class="image-preview-container"></div>
                                                                 </div>
                                                             </div>
                                                     </div>

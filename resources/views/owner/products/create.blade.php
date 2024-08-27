@@ -146,8 +146,9 @@
                                                                     <label
                                                                         class="label-text-title color-heading font-medium mb-2">{{ __('Product image') }}
                                                                         <span class="text-danger">*</span></label>
-                                                                    <input type="file" name="images[]"
+                                                                    <input type="file" name="images[]" id="images"
                                                                         class="form-control" multiple required>
+                                                                    <div id="image-preview" class="image-preview-container"></div>
                                                                 </div>
                                                             </div>
                                                         </div>
