@@ -83,54 +83,55 @@ class ProductController extends Controller
 
     // Update product/service
     public function update(Request $request, Product $product) {
+        // Validate the request data
         $request->validate([
             'name' => 'required|string|max:255',
             'description' => 'nullable|string',
             'price' => 'required|numeric',
             'category' => 'required|string',
             'type' => 'required|string',
-            'images.*' => 'image|mimes:jpeg,png,jpg,gif|max:2048',
+            'images.*' => 'image|mimes:jpeg,png,jpg,gif',
+            'delete_images' => 'array', // Add validation for images to delete
+            'delete_images.*' => 'string', // Ensure each item in delete_images is a string (the path of the image)
         ]);
 
-            $product->update($request->all());
+        // Update the product fields (excluding images for now)
+        $product->update($request->except(['images', 'delete_images']));
 
-            // Handle image deletion
-            if (is_string($product->images)) {
-                $existingImages = json_decode($product->images, true) ?: [];
-            } elseif (is_array($product->images)) {
-                $existingImages = $product->images;
-            } else {
-                $existingImages = [];
+        // Decode existing images if they exist
+        $existingImages = json_decode($product->images, true) ?: [];
+
+        // Handle image deletion
+        if ($request->has('delete_images')) {
+            foreach ($request->input('delete_images') as $deleteImage) {
+                // Check if the image exists in the existing images array
+                if (($key = array_search($deleteImage, $existingImages)) !== false) {
+                    // Remove the image from the array
+                    unset($existingImages[$key]);
+
+                    // Delete the image file from the storage
+                    \Storage::disk('public')->delete($deleteImage);
+                }
             }
+        }
 
-            // Handle new image uploads
-            if ($request->hasFile('images')) {
-                foreach ($request->file('images') as $image) {
-                    // Store each new image and add its path to the existing images array
-                    $existingImages[] = $image->store('products', 'public');
-    }
-}
-            // Handle image deletion
-            if ($request->has('delete_images')) {
-                foreach ($request->input('delete_images') as $imageToDelete) {
-            // Filter out the deleted images from the existing array
-                $existingImages = array_filter($existingImages, function($image) use ($imageToDelete) {
-                    return $image !== $imageToDelete;
-                    });
-            // Delete the image from storage
-                Storage::delete('public/' . $imageToDelete);
-                }   
+        // Handle new image uploads
+        if ($request->hasFile('images')) {
+            foreach ($request->file('images') as $image) {
+                // Store each new image and add its path to the existing images array
+                $existingImages[] = $image->store('products', 'public');
             }
+        }
 
-            // Update the images field in the database
-                $product->images = json_encode(array_values($existingImages));
-            
-            // Save the product
-                $product->save();
+        // Store the combined remaining and new image paths as a JSON array in the 'images' column
+        $product->images = json_encode(array_values($existingImages));
 
-            // Redirect with success message
-                return redirect()->route('owner.products.index')->with('success', 'Product updated successfully.'); 
+        // Save the product with the updated images
+        $product->save();
+
+        return redirect()->route('owner.products.index')->with('success', 'Product updated successfully.');
     }
+
      // Delete product/service
      public function destroy(Product $product) {
         $product->delete();

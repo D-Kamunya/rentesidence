@@ -145,7 +145,7 @@
                                                                 <div class="form-group">
                                                                     <label for="current_images">Current Images</label>
                                                                         <div>
-                                                                             @foreach(json_decode($product->images) as $image)
+                                                                            @foreach(json_decode($product->images) as $image)
                                                                                 <img src="{{ asset('storage/' . $image) }}" alt="Product Image" style="max-width: 100px;">
                                                                                 <label>
                                                                                 <input type="checkbox" name="delete_images[]" value="{{ $image }}"> Delete
@@ -155,10 +155,10 @@
                                                                 
                                                                 </div>
                                                                     <!-- Option to upload new images (commented because of an error to be sorted out later)--> 
-                                                                     <!--<div class="form-group">
-                                                                   <label for="images">Add New Images</label>
+                                                                <div class="form-group">
+                                                                    <label for="images">Add New Images</label>
                                                                     <input type="file" name="images[]" id="images" class="form-control" multiple>
-                                                                </div>-->
+                                                                </div>
                                                             </div>
                                                     </div>
                                                 </div>
