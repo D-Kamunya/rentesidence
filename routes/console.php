@@ -16,7 +16,8 @@ use Illuminate\Support\Facades\File;
 |
 */
 
-Artisan::command('db:run-setup-sql {file}', function ($file) {
+Artisan::command('db:run-setup-sql', function () {
+    $file = 'rentesidence-setup.sql';
     $path = base_path($file);
 
     if (!File::exists($path)) {
