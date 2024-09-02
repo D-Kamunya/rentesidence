@@ -68,7 +68,7 @@
                                                                         <label
                                                                         class="label-text-title color-heading font-medium mb-2">{{ __('Product description') }}
                                                                         <span class="text-danger">*</span></label>
-                                                                        <textarea name="description" name="description" class="form-control" 
+                                                                        <textarea name="description" class="form-control" 
                                                                          role="alert" placeholder="{{ __('product description') }}">                                                                  
                                                                         </textarea>
                                                                 </div>
@@ -181,4 +181,10 @@
     </div>
 
 @endsection
+@push('script')
+    <script src="{{ asset('assets/js/custom/product.js') }}"></script>
+@endpush
+@push('style')
+    <link rel="stylesheet" href="{{ asset('assets/css/product.css') }}">
+@endpush
 

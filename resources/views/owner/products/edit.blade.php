@@ -144,15 +144,16 @@
                                                                 <!-- Display current images -->
                                                                 <div class="form-group">
                                                                     <label for="current_images">Current Images</label>
-                                                                        <div>
-                                                                            @foreach(json_decode($product->images) as $image)
-                                                                                <img src="{{ asset('storage/' . $image) }}" alt="Product Image" style="max-width: 100px;">
-                                                                                <label>
-                                                                                <input type="checkbox" name="delete_images[]" value="{{ $image }}"> Delete
+                                                                    <div class="current-images-grid">
+                                                                        @foreach(json_decode($product->images) as $image)
+                                                                            <div class="image-container">
+                                                                                <img src="{{ asset('storage/' . $image) }}" alt="Product Image" class="current-image">
+                                                                                <label class="delete-label">
+                                                                                    <input type="checkbox" name="delete_images[]" value="{{ $image }}"> Delete
                                                                                 </label>
-                                                                            @endforeach
-                                                                        </div>
-                                                                
+                                                                            </div>
+                                                                        @endforeach
+                                                                    </div>
                                                                 </div>
                                                                     <!-- Option to upload new images (commented because of an error to be sorted out later)--> 
                                                                 <div class="form-group">
@@ -199,6 +200,8 @@
 @endsection
 
 @push('script')
-    <script src="{{ asset('/') }}assets/js/pages/profile-setting.init.js"></script>
-    <script src="{{ asset('assets/js/custom/tenant.js') }}"></script>
+    <script src="{{ asset('assets/js/custom/product.js') }}"></script>
+@endpush
+@push('style')
+    <link rel="stylesheet" href="{{ asset('assets/css/product.css') }}">
 @endpush
