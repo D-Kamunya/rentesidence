@@ -66,7 +66,6 @@
                                                                         <a href="{{ route('tenant.products.index') }}" class="action-button theme-btn mt-25">Reset Filters</a>
                                                                 </div>
                                                             </form>
-                                                
                                                 </div>
                                             </div>
 
@@ -98,7 +97,11 @@
                                                                     @else
                                                                         <p>No images available.</p>
                                                                 @endif
-                                                                <h2 style="font-size: 20px; font-weight:bold;">{{ $product->name }}</h2>
+                                                                <h2 style="font-size: 20px; font-weight:bold; padding: 10px 0 10px 0;">
+                                                                <a href="{{ route('tenant.products.show', $product->id) }}" style="text-decoration: none; color: inherit;">
+                                                                    {{ $product->name }}
+                                                                </a>
+                                                                </h2>
                                                                 <p>{{ $product->description }}</p>
                                                                 <div class="property-item-info d-flex mt-15 flex-wrap bg-white theme-border py-3 px-2 radius-4 p-5">
                                                                     <p style="padding: 20px; color:blue; font-weight:bold;">Ksh.{{ $product->price }}</p>

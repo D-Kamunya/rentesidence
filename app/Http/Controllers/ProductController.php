@@ -155,4 +155,11 @@ class ProductController extends Controller
     
         return view('tenant.products.index', compact('products'));
     }
+
+    //show products in single product page
+    public function show($id)
+{
+    $product = Product::findOrFail($id);
+    return view('tenant.products.show', compact('product'));
+}
 }

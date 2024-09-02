@@ -14,7 +14,7 @@ use Carbon\Carbon;
 use Illuminate\Support\Facades\App;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\OrderController;
-
+use App\Http\Controllers\CartController;
 /*
 |--------------------------------------------------------------------------
 | Web Routes
@@ -86,6 +86,8 @@ Route::group(['prefix' => 'tenant'], function () {
     Route::get('/products', [ProductController::class, 'showProductsForTenant'])->name('tenant.products.index');
     Route::post('/products/{product}/order', [OrderController::class, 'store'])->name('tenant.products.order');
 });
+
+Route::get('/product/{id}', [ProductController::class, 'show'])->name('tenant.products.show');
 
 Route::get('version-update', [VersionUpdateController::class, 'versionUpdate'])->name('version-update');
 Route::post('process-update', [VersionUpdateController::class, 'processUpdate'])->name('process-update');
