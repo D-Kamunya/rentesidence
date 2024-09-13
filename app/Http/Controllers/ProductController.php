@@ -51,7 +51,7 @@ class ProductController extends Controller
             'category' => 'required|string',
             'type' => 'required|string',
             'images' => 'required|array|min:1',
-            'images.*' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
+            'images.*' => 'nullable|image|mimes:jpeg,png,jpg,gif',
         ]);
 
          // creating a new product instance
