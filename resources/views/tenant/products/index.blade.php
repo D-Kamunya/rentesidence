@@ -80,6 +80,10 @@
 
                                         <h2 class="product-title">{{ $product->name }}</h2>
 
+                                        <h2 class="product-id d-none">{{$product->id}}</h2>
+
+                                        <h2 class="product-price d-none">{{$product->price}}</h2>
+
                                         <div class="product-action-buttons">
                                             <!-- Add to Cart Button -->
                                             <button class="action-icon add-to-cart-button" title="Add to Cart">
@@ -148,6 +152,13 @@
             </div>
         </div>
     </div>
+
+    <!-- Floating Cart Button -->
+    <div id="floating-cart-button" class="floating-cart" data-url="{{ route('tenant.products.pay', $product->id) }}">
+        <i class="fas fa-shopping-cart"></i>
+        <span id="cart-counter" class="cart-counter">0</span>
+    </div>
+
         <!-- End Page-content -->
         <input type="hidden" id="getAllTenantRoute" value="{{ route('owner.tenant.index', ['type' => 'all']) }}">
         <input type="hidden" id="getPropertyUnitsRoute" value="{{ route('owner.property.getPropertyUnits') }}">
@@ -268,6 +279,53 @@
             // Start auto-scrolling initially
             startAutoScroll(slider);
             });
+
+
+            const cartButton = document.getElementById('floating-cart-button');
+            const cartCounter = document.getElementById('cart-counter');
+            let cartItems = []; // Array to hold cart items
+
+            // Event listener for adding items to the cart
+            document.querySelectorAll('.add-to-cart-button').forEach(button => {
+                button.addEventListener('click', (e) => {
+                    // Simulate adding item details to cart (you can customize this)
+                    const productElement = e.target.closest('.product-card');
+                    const productId = productElement.querySelector('.product-id').textContent;
+                    const productName = productElement.querySelector('.product-title').textContent;
+                    const productPrice = productElement.querySelector('.product-price').textContent; // Assuming price is included
+                    const productImage = productElement.querySelector('img').src;
+
+                    // Add the product to the cart
+                    cartItems.push({
+                        name: productName,
+                        price: productPrice,
+                        image: productImage
+                    });
+
+                    // Update the counter badge
+                    cartCounter.textContent = cartItems.length;
+
+                    // Optionally, store cart items in local storage for persistence
+                    localStorage.setItem('cartItems', JSON.stringify(cartItems));
+                });
+            });
+
+            // Event listener for the floating cart button click
+            cartButton.addEventListener('click', () => {
+                // Retrieve the route URL from the data attribute
+                const routeUrl = cartButton.getAttribute('data-url');
+
+                // Redirect to the route URL
+                window.location.href = routeUrl;
+            });
+
+            // On page load, check if there are items in the local storage
+            const storedCartItems = JSON.parse(localStorage.getItem('cartItems')) || [];
+            if (storedCartItems.length > 0) {
+                cartItems = storedCartItems;
+                cartCounter.textContent = cartItems.length;
+            }
+
         });
 
     </script>
