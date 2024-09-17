@@ -5,9 +5,19 @@ use App\Models\Product;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
+use App\Services\GatewayService;
+use App\Traits\ResponseTrait;
 
 class ProductController extends Controller
 {
+
+        use ResponseTrait;
+        public $gatewayService;
+
+        public function __construct()
+        {
+            $this->gatewayService = new GatewayService;
+        }
         // Start filter
         public function index(Request $request)
         {
@@ -157,9 +167,19 @@ class ProductController extends Controller
     }
 
     //show products in single product page
-    public function show($id)
-{
-    $product = Product::findOrFail($id);
-    return view('tenant.products.show', compact('product'));
-}
+    public function show($id){
+        $product = Product::findOrFail($id);
+        return view('tenant.products.show', compact('product'));
+    }
+
+    //Product payment page controller
+    public function pay($id){
+        $data['pageTitle'] = __('Products Pay');
+        $data['navInvoiceMMActiveClass'] = 'mm-active';
+        $data['navInvoiceActiveClass'] = 'active';
+        $data['gateways'] = $this->gatewayService->getActiveAll(auth()->user()->owner_user_id);
+        $data['banks'] = $this->gatewayService->getActiveBanks();
+        $data['mpesaAccounts'] = $this->gatewayService->getActiveMpesaAccounts();
+        return view('tenant.products.pay', $data);
+    }
 }

@@ -83,7 +83,7 @@ Route::group(['prefix' => 'owner'], function () {
 });
 
 Route::group(['prefix' => 'tenant'], function () {
-    Route::get('/products', [ProductController::class, 'showProductsForTenant'])->name('tenant.products.index');
+    Route::get('/products', [ProductController::class, 'showProductsForTenant'])->name('tenant.products');
     Route::post('/products/{product}/order', [OrderController::class, 'store'])->name('tenant.products.order');
     Route::get('/products/pay/{id}', [ProductController::class, 'pay'])->name('tenant.products.pay');
 });

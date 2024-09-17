@@ -200,7 +200,7 @@
 @endsection
 
 @push('script')
-    <script src="{{ asset('assets/js/custom/product.js') }}"></script>
+    <script src="{{ asset('assets/js/custom/owner-product.js') }}"></script>
 @endpush
 @push('style')
     <link rel="stylesheet" href="{{ asset('assets/css/product.css') }}">

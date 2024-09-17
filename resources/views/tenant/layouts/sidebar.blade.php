@@ -13,13 +13,10 @@
                     </a>
                 </li>
                 <li>
-                    <a href="{{ route('tenant.products.index') }}" class="has-arrow">
+                    <a href="{{ route('tenant.products') }}" class="has-arrow">
                         <i class="ri-store-2-fill"></i>
                         <span>{{ __('Market Place') }}</span>
                     </a>
-                    <ul class="sub-menu" aria-expanded="false">
-                        <li><a href="">{{ __('My Cart') }}</a></li>
-                    </ul>
                 </li>
                 <li class="{{ @$navInvoiceMMActiveClass }}">
                     <a href="{{ route('tenant.invoice.index') }}" class="{{ @$navInvoiceActiveClass }}">
