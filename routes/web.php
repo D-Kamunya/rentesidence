@@ -12,9 +12,6 @@ use App\Http\Controllers\VersionUpdateController;
 use App\Models\Language;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\App;
-use App\Http\Controllers\ProductController;
-use App\Http\Controllers\OrderController;
-use App\Http\Controllers\CartController;
 /*
 |--------------------------------------------------------------------------
 | Web Routes
@@ -71,21 +68,6 @@ Route::group(['prefix' => 'payment'], function () {
     Route::post('/', [PaymentController::class, 'checkout'])->name('payment.checkout');
     Route::match(array('GET', 'POST'), 'verify', [PaymentController::class, 'verify'])->name('payment.verify');
     Route::get('verify-redirect/{type?}', [PaymentController::class, 'verifyRedirect'])->name('payment.verify.redirect');
-});
-
-Route::group(['prefix' => 'owner'], function () {
-    Route::get('/products', [ProductController::class, 'index'])->name('owner.products.index');
-    Route::get('/products/create', [ProductController::class, 'create'])->name('owner.products.create');
-    Route::post('/products', [ProductController::class, 'store'])->name('owner.products.store');
-    Route::get('/products/{product}/edit', [ProductController::class, 'edit'])->name('owner.products.edit');
-    Route::put('/products/{product}', [ProductController::class, 'update'])->name('owner.products.update');
-    Route::delete('/products/{product}', [ProductController::class, 'destroy'])->name('owner.products.destroy');
-});
-
-Route::group(['prefix' => 'tenant'], function () {
-    Route::get('/products', [ProductController::class, 'showProductsForTenant'])->name('tenant.products');
-    Route::post('/products/{product}/order', [OrderController::class, 'store'])->name('tenant.products.order');
-    Route::get('/products/pay/{id}', [ProductController::class, 'pay'])->name('tenant.products.pay');
 });
 
 Route::get('/product/{id}', [ProductController::class, 'show'])->name('tenant.products.show');

@@ -23,6 +23,7 @@ use App\Http\Controllers\Owner\TenantController;
 use App\Http\Controllers\Owner\TicketController;
 use App\Http\Controllers\Owner\TicketTopicController;
 use App\Http\Controllers\Tenancy\DomainController;
+use App\Http\Controllers\ProductController;
 use Illuminate\Support\Facades\Route;
 
 Route::group(['prefix' => 'owner', 'as' => 'owner.', 'middleware' => ['auth', 'owner']], function () {
@@ -230,5 +231,14 @@ Route::group(['prefix' => 'owner', 'as' => 'owner.', 'middleware' => ['auth', 'o
         Route::get('/', [DomainController::class, 'index'])->name('index');
         Route::post('store', [DomainController::class, 'store'])->name('store');
         Route::get('info', [DomainController::class, 'info'])->name('info');
+    });
+
+    Route::group(['prefix' => 'products', 'as' => 'products.'], function () {
+        Route::get('/', [ProductController::class, 'index'])->name('index');
+        Route::get('create', [ProductController::class, 'create'])->name('create');
+        Route::post('store', [ProductController::class, 'store'])->name('store');
+        Route::get('edit/{product}', [ProductController::class, 'edit'])->name('edit');
+        Route::put('update/{product}', [ProductController::class, 'update'])->name('update');
+        Route::delete('destroy/{product}', [ProductController::class, 'destroy'])->name('destroy');
     });
 });

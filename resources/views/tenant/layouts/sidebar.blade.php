@@ -13,7 +13,7 @@
                     </a>
                 </li>
                 <li>
-                    <a href="{{ route('tenant.products') }}" class="has-arrow">
+                    <a href="{{ route('tenant.products') }}">
                         <i class="ri-store-2-fill"></i>
                         <span>{{ __('Market Place') }}</span>
                     </a>

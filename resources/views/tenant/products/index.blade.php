@@ -16,12 +16,12 @@
                                         <h3 class="mb-sm-0">Market Place</h3>
                                     </div>
                                     <div class="page-title-right">
-                                <ol class="breadcrumb mb-0">
-                                    <li class="breadcrumb-item"><a href="{{ route('tenant.dashboard') }}"
-                                            title="{{ __('Dashboard') }}">{{ __('Dashboard') }}</a></li>
-                                    <li class="breadcrumb-item active" aria-current="page">Marketplace</li>
-                                </ol>
-                            </div>
+                                        <ol class="breadcrumb mb-0">
+                                            <li class="breadcrumb-item"><a href="{{ route('tenant.dashboard') }}"
+                                                    title="{{ __('Dashboard') }}">{{ __('Dashboard') }}</a></li>
+                                            <li class="breadcrumb-item active" aria-current="page">Marketplace</li>
+                                        </ol>
+                                    </div>
                                 </div>
                             </div>
                         </div>

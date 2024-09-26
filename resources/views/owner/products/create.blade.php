@@ -18,6 +18,8 @@
                                     <ol class="breadcrumb mb-0">
                                         <li class="breadcrumb-item"><a href="{{ route('owner.dashboard') }}"
                                                 title="{{ __('Dashboard') }}">{{ __('Dashboard') }}</a></li>
+                                        <li class="breadcrumb-item"><a href="{{ route('owner.products.index') }}"
+                                                title="{{ __('My Shop') }}">{{ __('My Shop') }}</a></li>
                                         <li class="breadcrumb-item active" aria-current="page">Add products/Services</li>
                                     </ol>
                                 </div>
