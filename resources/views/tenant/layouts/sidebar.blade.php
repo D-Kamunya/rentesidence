@@ -12,9 +12,9 @@
                         <span>{{ __('Dashboard') }}</span>
                     </a>
                 </li>
-                <li>
-                    <a href="{{ route('tenant.products') }}">
-                        <i class="ri-store-2-fill"></i>
+                <li class="{{ @$navMarketPlaceMMActiveClass }}">
+                    <a href="{{ route('tenant.products') }}" class="{{ @$navMarketPlaceActiveClass }}">
+                        <i class="ri-store-2-fill "></i>
                         <span>{{ __('Market Place') }}</span>
                     </a>
                 </li>

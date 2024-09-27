@@ -1,3 +1,5 @@
+"use strict";
+
 document.addEventListener("DOMContentLoaded", () => {
     let cartItems = JSON.parse(localStorage.getItem("cartItems")) || [];
     const cartContainer = document.getElementById("cartItems");
@@ -94,18 +96,231 @@ document.addEventListener("DOMContentLoaded", () => {
         renderCart();
     };
 
-    document.getElementById("checkoutBtn").addEventListener("click", () => {
-        const selectedGateway = document.querySelector(
-            'input[name="gatewayOption"]:checked'
-        );
-        if (!selectedGateway) {
-            alert("Please select a payment method.");
-            return;
-        }
-
-        document.getElementById("selectGateway").value = selectedGateway.value;
-        document.getElementById("checkout-form").submit();
-    });
-
     renderCart();
+});
+
+$("#bank_id").on("change", function () {
+    $("#bankDetails").removeClass("d-none");
+    $("#bankDetails p").html($(this).find(":selected").data("details"));
+});
+
+$(document).on("click", ".paymentGateway", function (e) {
+    e.preventDefault();
+
+    // Remove the active class from all nav-link elements in the #gatewaySection
+    $(this)
+        .closest("#gatewaySection")
+        .find(".paymentGateway")
+        .removeClass("active");
+
+    // Add the active class to the clicked element
+    $(this).addClass("active");
+    var selectGateway = $(this).data("gateway").replace(/\s+/g, "");
+    $("#selectGateway").val(selectGateway);
+    $("#selectCurrency").val("");
+
+    commonAjax(
+        "GET",
+        $("#getCurrencyByGatewayRoute").val(),
+        getCurrencyRes,
+        getCurrencyRes,
+        { id: $(this).find("input").val() }
+    );
+    if (selectGateway == "bank") {
+        $("#bankAppend").removeClass("d-none");
+        $("#checkoutBtn").removeClass("d-none");
+        $("#bank_slip").attr("required", true);
+        $("#bank_id").attr("required", true);
+        $("#checkoutAmount").text("");
+        $("#mpesaGatewayCurrencyAmount").text("");
+        $("#mpesaPayBtn").addClass("d-none");
+        $("#mpesa_account_id").attr("required", false);
+        $("#mpesaAccountAppend").addClass("d-none");
+    } else if (selectGateway == "mpesa") {
+        $("#mpesa_selectGateway").val(selectGateway);
+        $("#mpesa_selectCurrency").val("");
+
+        $("#mpesaAccountAppend").removeClass("d-none");
+        $("#mpesaPayBtn").removeClass("d-none");
+        $("#checkoutAmount").text("Via STK");
+        $("#mpesaGatewayCurrencyAmount").text("");
+        $("#mpesa_account_id").attr("required", true);
+        $("#bank_slip").attr("required", false);
+        $("#bank_id").attr("required", false);
+        $("#bankAppend").addClass("d-none");
+    } else {
+        $("#bank_slip").attr("required", false);
+        $("#checkoutBtn").removeClass("d-none");
+        $("#bank_id").attr("required", false);
+        $("#mpesa_account_id").attr("required", false);
+        $("#checkoutAmount").text("");
+        $("#mpesaGatewayCurrencyAmount").text("");
+        $("#mpesaPayBtn").addClass("d-none");
+        $("#bankAppend").addClass("d-none");
+        $("#mpesaAccountAppend").addClass("d-none");
+    }
+});
+
+function getCurrencyRes(response) {
+    var html = "";
+    var totalAmount = parseFloat($("#cartTotal").val()).toFixed(2);
+
+    Object.entries(response.data).forEach((currency) => {
+        let currencyAmount = currency[1].conversion_rate * totalAmount;
+        html += `<tr>
+                    <td>
+                        <div class="custom-radiobox gatewayCurrencyAmount">
+                            <input type="radio" name="gateway_currency_amount" id="${
+                                currency[1].id
+                            }" class="" value="${gatewayCurrencyPrice(
+            currencyAmount,
+            currency[1].symbol
+        )}">
+                            <label for="${currency[1].id}">${
+            currency[1].currency
+        }</label>
+                        </div>
+                    </td>
+                    <td><h6 class="tenant-invoice-tbl-right-text text-end">${gatewayCurrencyPrice(
+                        currencyAmount,
+                        currency[1].symbol
+                    )}</h6></td>
+                </tr>`;
+    });
+    $("#currencyAppend").html(html);
+}
+
+$(document).on("click", ".gatewayCurrencyAmount", function () {
+    var getCurrencyAmount = "(" + $(this).find("input").val() + ")";
+    var gateway = $("#selectGateway").val();
+    $("#checkoutAmount").text(getCurrencyAmount);
+
+    if (gateway === "mpesa") {
+        $("#checkoutAmount").text("Via STK " + getCurrencyAmount);
+        $("#mpesaGatewayCurrencyAmount").text(getCurrencyAmount);
+        document.getElementById("mpesa-amount").textContent = getCurrencyAmount;
+    } else {
+        $("#checkoutAmount").text(getCurrencyAmount);
+    }
+    $("#selectCurrency").val($(this).text().replace(/\s+/g, ""));
+    $("#mpesa_selectCurrency").val($(this).text().replace(/\s+/g, ""));
+});
+
+function showMpesaPreloader() {
+    document.getElementById("mpesa-preloader").style.display = "block";
+}
+
+$("#checkoutBtn").on("click", function () {
+    var gateway = $("#selectGateway").val();
+    var currency = $("#selectCurrency").val();
+    if (gateway == "") {
+        toastr.error("Select Gateway");
+        $("#checkoutBtn").attr("type", "button");
+    } else {
+        if (currency == "") {
+            toastr.error("Select Currency");
+            $("#checkoutBtn").attr("type", "button");
+        } else {
+            var payment_form = document.getElementById(
+                "pay-products-order-form"
+            );
+            $("#checkoutBtn").attr("type", "submit");
+            if (payment_form.checkValidity()) {
+                if (gateway == "mpesa") {
+                    showMpesaPreloader();
+                    var countdown = 50; // Set the initial countdown time in seconds
+
+                    // Update the countdown every second
+                    var countdownInterval = setInterval(function () {
+                        document.getElementById("countdownTimer").textContent =
+                            countdown;
+                        countdown--;
+
+                        // Hide preloader when countdown reaches 0
+                        if (countdown < 0) {
+                            document.getElementById(
+                                "trans-message"
+                            ).style.display = "block";
+                            clearInterval(countdownInterval);
+                            document.getElementById("countdown").textContent =
+                                "Oops!Time is Up!!!!";
+                        }
+                    }, 1000);
+                }
+            }
+        }
+    }
+});
+
+$("#mpesaPayBtn").on("click", function () {
+    var gateway = $("#selectGateway").val();
+
+    var currency = $("#selectCurrency").val();
+    if (gateway == "") {
+        toastr.error("Select Gateway");
+        $("#mpesaPayBtn").attr("type", "button");
+    } else {
+        if (currency == "") {
+            toastr.error("Select Currency");
+            $("#mpesaPayBtn").attr("type", "button");
+        } else {
+            var payment_form = document.getElementById(
+                "pay-products-order-form"
+            );
+            payment_form.action = "";
+
+            $("#mpesaPayBtn").attr("type", "submit");
+
+            // Prevent default form submission
+            payment_form.addEventListener("submit", function (event) {
+                event.preventDefault();
+            });
+            if (payment_form.checkValidity()) {
+                $("#paymentMethodModal").modal("hide");
+                var selector = $("#mpesaCodePaymentMethodModal");
+                selector.modal("show");
+            }
+        }
+    }
+});
+
+$(document).on("change", "#mpesa_account_id", function () {
+    var selectedOption = $(this).find("option:selected");
+    var textContent = selectedOption.text().trim();
+    var details = selectedOption.data("details");
+
+    $("#mpesa_code_account_id").val(selectedOption.val());
+    if (details === "TILLNUMBER") {
+        var tillNumber = "";
+        var parts = textContent.split("- Till Number: ");
+        if (parts.length > 1) {
+            tillNumber = parts[1].trim();
+        }
+        document.getElementById("till-number").textContent = tillNumber;
+        $("#mpesa-code-payment-paybill").addClass("d-none");
+        $("#mpesa-code-payment-till").removeClass("d-none");
+    } else if (details === "PAYBILL") {
+        // Parse Paybill and Account Name
+        const paybillMatch = textContent.match(/Paybill:\s*([\w\d]+)/);
+        const accountNameMatch = textContent.match(/Account Name:\s*([\w\d]+)/);
+
+        // Extract values
+        const paybill = paybillMatch ? paybillMatch[1] : "";
+        const accountName = accountNameMatch ? accountNameMatch[1] : "";
+        document.getElementById("bs-number").textContent = paybill;
+        document.getElementById("acc-number").textContent = accountName;
+        $("#mpesa-code-payment-paybill").removeClass("d-none");
+        $("#mpesa-code-payment-till").addClass("d-none");
+    }
+});
+
+$("#mpesaCodeSubmitBtn").on("click", function () {
+    var mpesaTransCode = $("#mpesaTransactionCode").val();
+
+    if (mpesaTransCode == "") {
+        toastr.error("Enter Mpesa Transaction Code");
+        $("#mpesaCodeSubmitBtn").attr("type", "button");
+    } else {
+        $("#mpesaCodeSubmitBtn").attr("type", "submit");
+    }
 });

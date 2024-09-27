@@ -743,6 +743,96 @@ if (!function_exists('handleSubscriptionPaymentConfirmation')) {
 }
 
 
+if (!function_exists('handleProductPaymentConfirmation')) {
+    function handleProductPaymentConfirmation($order, $payerId = null, $gateway_slug, $paymentCheck = null)
+    {
+        try {
+            $gateway = Gateway::find($order->gateway_id);
+            DB::beginTransaction();
+            if ($order->gateway_id == $gateway->id && $gateway->slug == MERCADOPAGO) {
+                $order->payment_id = $payment_id;
+                $order->save();
+            }
+
+            $payment_id = $order->payment_id;
+
+            $gatewayBasePayment = new Payment($gateway->slug, ['currency' => $order->gateway_currency, 'type' => 'subscription']);
+            $payment_data = $gatewayBasePayment->paymentConfirmation($payment_id, $payerId);
+            
+            if ($payment_data['success']) {
+                if ($payment_data['data']['payment_status'] == 'success') {
+                    $order->payment_status = ORDER_PAYMENT_STATUS_PAID;
+                    $order->transaction_id = str_replace('-', '', uuid_create());
+                    $order->save();
+
+
+                    DB::commit();
+                    
+                    $title = __("You have a new invoice");
+                    $body = __("Products payment verify successfully");
+                    $adminUser = User::where('role', USER_ROLE_ADMIN)->first();
+                    addNotification($title, $body, null, null, $adminUser->id, auth()->id());
+
+                    if (getOption('send_email_status', 0) == ACTIVE) {
+                        $emails = [$order->user->email];
+                        $subject = __('Product Payment Successful!');
+                        $title = __('Congratulations!');
+                        $message = __('You have successfully made the payment');
+                        $ownerUserId = auth()->id();
+                        $method = $gateway->slug;
+                        $status = 'Paid';
+                        $amount = $order->amount;
+
+                        $mailService = new MailService;
+                        $template = EmailTemplate::where('owner_user_id', $ownerUserId)->where('category', EMAIL_TEMPLATE_SUBSCRIPTION_SUCCESS)->where('status', ACTIVE)->first();
+
+                        if ($template) {
+                            $customizedFieldsArray = [
+                                '{{amount}}' => $order->total,
+                                '{{status}}' => $status,
+                                '{{duration}}' => $duration,
+                                '{{gateway}}' => $method,
+                                '{{app_name}}' => getOption('app_name')
+                            ];
+                            $content = getEmailTemplate($template->body, $customizedFieldsArray);
+                            $mailService->sendCustomizeMail($emails, $template->subject, $content);
+                        } else {
+                            $mailService->sendSubscriptionSuccessMail($emails, $subject, $message, $ownerUserId, $title, $method, $status, $amount, $duration);
+                        }
+                    }
+
+                    if ($gateway_slug == 'mpesa') {
+                        return redirect()->route('tenant.products')->with('success', __('Mpesa Payment Successful!'));
+                    }
+
+                    return redirect()->route('tenant.products')->with('success', __('Payment Successful!'));
+                }
+            } else {
+                if ($gateway_slug == 'mpesa') {
+                    if ($paymentCheck!==null){
+                        $paymentCheck->increment('check_count');
+                        $paymentCheck->last_check_at=now();
+                        $paymentCheck->save();
+                        DB::commit();
+                    }
+                    return redirect()->route('tenant.products')->with('error', __('Mpesa Payment failed!! Please try again after a few minutes. If the problem persists, contact the System Admin.'));
+                }
+                if ($paymentCheck!==null){
+                    $paymentCheck->increment('check_count');
+                    $paymentCheck->last_check_at=now();
+                    $paymentCheck->save();
+                    DB::commit();
+                }
+                return redirect()->route('tenant.products')->with('error', __('Payment Failed!'));
+            }
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return redirect()->route('tenant.products')->with('error', __('Payment Failed!'));
+        }
+    }
+}
+
+
 if (!function_exists('handlePaymentConfirmation')) {
     function handlePaymentConfirmation($order, $payerId = null, $gateway_slug, $paymentCheck = null)
     {
