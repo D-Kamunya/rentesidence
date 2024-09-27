@@ -22,12 +22,14 @@ class ProductPaymentController extends Controller
     {
         DB::beginTransaction();
         try {
-            $user = User::where('role', USER_ROLE_ADMIN)->first();
-            $gateway = Gateway::where(['owner_user_id' => $user->id, 'slug' => $request->gateway, 'status' => ACTIVE])->firstOrFail();
+            $adminId = User::where('role', USER_ROLE_ADMIN)->first();
+            $ownerId = auth()->user()->owner_user_id; 
+            $gateway = Gateway::where(['owner_user_id' => $ownerId, 'slug' => $request->gateway, 'status' => ACTIVE])->firstOrFail();
             $gatewayCurrency = GatewayCurrency::where(['gateway_id' => $gateway->id, 'currency' => $request->currency])->firstOrFail();
             $cartAmount = $request->cartTotal;
+            $mpesaAmount = $request->mpesa_amount;
             if ($gateway->slug == 'bank') {
-                $bank = Bank::where(['owner_user_id' => $user->id, 'gateway_id' => $gateway->id, 'id' => $request->bank_id])->first();
+                $bank = Bank::where(['owner_user_id' => $ownerId, 'gateway_id' => $gateway->id, 'id' => $request->bank_id])->first();
                 if (is_null($bank)) {
                     throw new Exception('Bank not found');
                 }
@@ -64,17 +66,17 @@ class ProductPaymentController extends Controller
                 return redirect()->route('tenant.products')->with('success', __('Cash Payment Request Sent Successfully! Wait for approval'));
             } elseif ($gateway->slug == 'mpesa'){
                 if ($request->has('mpesa_transaction_code')) {
-                    $order = $this->placeOrder($cartAmount, $gateway, $gatewayCurrency, null, null, null, null, null, $request->mpesa_transaction_code); // new order create
+                    $order = $this->placeOrder($mpesaAmount, $gateway, $gatewayCurrency, null, null, null, null, null, $request->mpesa_transaction_code); // new order create
                     $order->save();
                     DB::commit();
                     return redirect()->route('tenant.products')->with('success', __('Mpesa Transaction Code Submitted Successfully! Wait for approval'));
                 }else{
-                    $mpesaAccount = MpesaAccount::where(['owner_user_id' => $user->id, 'gateway_id' => $gateway->id, 'id' => $request->mpesa_account_id])->first();
+                    $mpesaAccount = MpesaAccount::where(['owner_user_id' => $ownerId, 'gateway_id' => $gateway->id, 'id' => $request->mpesa_account_id])->first();
                     if (is_null($mpesaAccount)) {
                         throw new Exception('Mpesa Account not found');
                     }
                     $paymentData['mpesaAccount'] = $mpesaAccount;
-                    $order = $this->placeOrder($cartAmount, $gateway, $gatewayCurrency);
+                    $order = $this->placeOrder($mpesaAmount, $gateway, $gatewayCurrency);
                     DB::commit();
                     }
                 
@@ -105,6 +107,7 @@ class ProductPaymentController extends Controller
                 return redirect()->back()->with('error', $responseData['message']);
             }
         } catch (\Exception $e) {
+            echo $e;
             DB::rollBack();
             return redirect()->route('tenant.products')->with('error', __('Payment Failed!'));
         }
@@ -122,7 +125,7 @@ class ProductPaymentController extends Controller
             'gateway_currency' => $gatewayCurrency->currency,
             'subtotal' => $amount,
             'total' => $amount,
-            'transaction_amount' => $price * $gatewayCurrency->conversion_rate,
+            'transaction_amount' => $amount * $gatewayCurrency->conversion_rate,
             'conversion_rate' => $gatewayCurrency->conversion_rate,
             'payment_status' => ORDER_PAYMENT_STATUS_PENDING,
             'bank_id' => $bank_id,
@@ -148,7 +151,7 @@ class ProductPaymentController extends Controller
         
         $order = ProductOrder::findOrFail($order_id);
         if ($order->status == ORDER_PAYMENT_STATUS_PAID) {
-            return redirect()->route('owner.subscription.index')->with('error', __('Your order has been paid!'));
+            return redirect()->route('tenant.products')->with('error', __('Your order has been paid!'));
         }
         
         return handleProductPaymentConfirmation($order, $payerId, $gateway_slug, null);

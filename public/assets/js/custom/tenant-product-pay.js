@@ -176,6 +176,7 @@ function getCurrencyRes(response) {
             currencyAmount,
             currency[1].symbol
         )}">
+                            <input type="hidden" id="currencyAmount" name="currencyAmount" value="${currencyAmount}">
                             <label for="${currency[1].id}">${
             currency[1].currency
         }</label>
@@ -191,16 +192,19 @@ function getCurrencyRes(response) {
 }
 
 $(document).on("click", ".gatewayCurrencyAmount", function () {
-    var getCurrencyAmount = "(" + $(this).find("input").val() + ")";
+    var getCurrencyAmount = $(this).find('input[name="gateway_currency_amount"]').val();
     var gateway = $("#selectGateway").val();
     $("#checkoutAmount").text(getCurrencyAmount);
-
+    var currencyAmount = $(this).find('input[name="currencyAmount"]').val();
+    
     if (gateway === "mpesa") {
         $("#checkoutAmount").text("Via STK " + getCurrencyAmount);
         $("#mpesaGatewayCurrencyAmount").text(getCurrencyAmount);
         document.getElementById("mpesa-amount").textContent = getCurrencyAmount;
+        $("#mpesa_amount").value(currencyAmount);
     } else {
         $("#checkoutAmount").text(getCurrencyAmount);
+        $("#cartTotal").value(currencyAmount);
     }
     $("#selectCurrency").val($(this).text().replace(/\s+/g, ""));
     $("#mpesa_selectCurrency").val($(this).text().replace(/\s+/g, ""));

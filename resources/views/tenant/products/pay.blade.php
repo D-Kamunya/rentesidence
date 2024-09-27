@@ -210,12 +210,13 @@
                                         <div class="payment-method-area">
                                             <h2 class="text-center payment-method-area-title">{{ __('Mpesa Payment Details') }}</h2>
                                             <div class="payment-method-wrap px-5">
-                                                <form id="" class="" action="{{ route('payment.subscription.checkout') }}" method="POST"
+                                                <form id="" class="" action="{{ route('payment.products.checkout') }}" method="POST"
                                                     enctype="multipart/form-data">
                                                     @csrf
                                                     <input type="hidden" id="mpesa_code_account_id" name="mpesa_account_id" value="">
                                                     <input type="hidden" id="mpesa_selectGateway" name="gateway">
                                                     <input type="hidden" id="mpesa_selectCurrency" name="currency">
+                                                    <input type="hidden" id="mpesa_amount" name="mpesa_amount">
                                                     <input type="hidden"  id="mpesa_default-currency" name="default-currency" value="{{ json_encode(session('default_currency')) }}">
                                                     <div class="row">
                                                         <h4>Hello {{ auth()->user()->name }}</h4>
