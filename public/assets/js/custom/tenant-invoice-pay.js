@@ -5,11 +5,36 @@ $("#bank_id").on("change", function () {
 });
 
 $(document).on("click", ".paymentGateway", function () {
-    $("#selectGateway").val($(this).data("gateway").replace(/\s+/g, ""));
-    if ($("#selectGateway").val() == "mpesa") {
-        $("#mpesa_account_id").attr("required", true);
-    } else {
+    var selectGateway = $(this).data("gateway").replace(/\s+/g, "");
+    $("#selectGateway").val(selectGateway);
+    if (selectGateway == "bank") {
+        $("#payBtn").removeClass("d-none");
+        $("#bank_slip").attr("required", true);
+        $("#bank_id").attr("required", true);
+        $("#gatewayCurrencyAmount").text("");
+        $("#mpesaGatewayCurrencyAmount").text("");
+        $("#mpesaPayBtn").addClass("d-none");
         $("#mpesa_account_id").attr("required", false);
+        $("#mpesaAccountAppend").addClass("d-none");
+    } else if (selectGateway == "mpesa") {
+        $("#mpesa_selectGateway").val(selectGateway);
+        $("#mpesa_selectCurrency").val("");
+        $("#mpesaAccountAppend").removeClass("d-none");
+        $("#mpesaPayBtn").removeClass("d-none");
+        $("#gatewayCurrencyAmount").text("Via STK");
+        $("#mpesaGatewayCurrencyAmount").text("");
+        $("#mpesa_account_id").attr("required", true);
+        $("#bank_slip").attr("required", false);
+        $("#bank_id").attr("required", false);
+        $("#bankAppend").addClass("d-none");
+    } else {
+        $("#bank_slip").attr("required", false);
+        $("#payBtn").removeClass("d-none");
+        $("#bank_id").attr("required", false);
+        $("#mpesa_account_id").attr("required", false);
+        $("#gatewayCurrencyAmount").text("");
+        $("#mpesaGatewayCurrencyAmount").text("");
+        $("#mpesaPayBtn").addClass("d-none");
     }
     $("#selectCurrency").val("");
     commonAjax(
@@ -50,9 +75,18 @@ function getCurrencyRes(response) {
 }
 
 $(document).on("click", ".gatewayCurrencyAmount", function () {
+    var gateway = $("#selectGateway").val();
     var getCurrencyAmount = "(" + $(this).find("input").val() + ")";
     $("#gatewayCurrencyAmount").text(getCurrencyAmount);
+    if (gateway === "mpesa") {
+        $("#gatewayCurrencyAmount").text("Via STK " + getCurrencyAmount);
+        $("#mpesaGatewayCurrencyAmount").text(getCurrencyAmount);
+        document.getElementById("mpesa-amount").textContent = getCurrencyAmount;
+    } else {
+        $("#gatewayCurrencyAmount").text(getCurrencyAmount);
+    }
     $("#selectCurrency").val($(this).text().replace(/\s+/g, ""));
+    $("#mpesa_selectCurrency").val($(this).text().replace(/\s+/g, ""));
 });
 
 function showMpesaPreloader() {
@@ -96,5 +130,61 @@ $("#payBtn").on("click", function () {
                 }
             }
         }
+    }
+});
+
+$("#mpesaPayBtn").on("click", function () {
+    var gateway = $("#selectGateway").val();
+    var currency = $("#selectCurrency").val();
+    if (gateway == "") {
+        toastr.error("Select Gateway");
+        $("#mpesaPayBtn").attr("type", "button");
+    } else {
+        if (currency == "") {
+            toastr.error("Select Currency");
+            $("#mpesaPayBtn").attr("type", "button");
+        } else {
+            var invoice_form = document.getElementById("pay-invoice-form");
+            invoice_form.action = "";
+
+            $("#mpesaPayBtn").attr("type", "submit");
+
+            // Prevent default form submission
+            invoice_form.addEventListener("submit", function (event) {
+                event.preventDefault();
+            });
+
+            if (invoice_form.checkValidity()) {
+                var selector = $("#mpesaCodePaymentMethodModal");
+                selector.modal("show");
+            }
+        }
+    }
+});
+
+$(document).on("change", "#mpesa_account_id", function () {
+    var selectedOption = $(this).find("option:selected");
+    var textContent = selectedOption.text().trim();
+    var details = selectedOption.data("details");
+    if (details === "TILLNUMBER") {
+        var tillNumber = "";
+        var parts = textContent.split("- Till Number: ");
+        if (parts.length > 1) {
+            tillNumber = parts[1].trim();
+        }
+        document.getElementById("till-number").textContent = tillNumber;
+        $("#mpesa-code-payment-paybill").addClass("d-none");
+        $("#mpesa-code-payment-till").removeClass("d-none");
+    } else if (details === "PAYBILL") {
+        // Parse Paybill and Account Name
+        const paybillMatch = textContent.match(/Paybill:\s*([\w\d]+)/);
+        const accountNameMatch = textContent.match(/Account Name:\s*([\w\d]+)/);
+        // Extract values
+        const paybill = paybillMatch ? paybillMatch[1] : "";
+        const accountName = accountNameMatch ? accountNameMatch[1] : "";
+        document.getElementById("bs-number").textContent = paybill;
+        document.getElementById("acc-number").textContent = accountName;
+        $("#mpesa-code-payment-paybill").removeClass("d-none");
+        $("#mpesa-code-payment-till").addClass("d-none");
     }
 });
