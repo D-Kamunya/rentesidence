@@ -105,6 +105,26 @@ document.addEventListener("DOMContentLoaded", () => {
         startAutoScroll(slider);
     });
 
+    function showToast(message, type) {
+        var toast = document.getElementById("toast");
+        var toastMessage = document.getElementById("toast-message");
+        var icon = toast.querySelector("i");
+
+        toastMessage.innerHTML = message; // Set the message
+        toast.classList.add("show");
+
+        // Set background color and icon dynamically based on type
+        if (type === "success") {
+            toast.classList.add("success");
+            toast.classList.remove("error");
+            icon.className = "fas fa-cart-plus"; // Cart plus icon for success
+        } else if (type === "error") {
+            toast.classList.add("error");
+            toast.classList.remove("success");
+            icon.className = "fas fa-times-circle"; // Error icon for error
+        }
+    }
+
     var cartButton = document.getElementById("floating-cart-button");
     var cartCounter = document.getElementById("cart-counter");
     var cartItems = []; // Array to hold cart items
@@ -135,6 +155,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
             // Optionally, store cart items in local storage for persistence
             localStorage.setItem("cartItems", JSON.stringify(cartItems));
+
+            showToast("Item added to cart!", "success"); // Show success message
         });
     });
 

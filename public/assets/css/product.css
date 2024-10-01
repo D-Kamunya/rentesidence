@@ -352,3 +352,35 @@ input[type="checkbox"] {
     justify-content: center;
     font-size: 12px;
 }
+
+.toast {
+    position: fixed;
+    right: 20px; /* Align to the right */
+    top: 20px; /* Adjust the vertical position */
+    padding: 10px 20px; /* Add some padding */
+    background-color: rgba(
+        76,
+        175,
+        80,
+        0.9
+    ); /* Green background with 90% opacity */
+    color: #fff; /* Text color */
+    border-radius: 5px; /* Rounded corners */
+    display: none; /* Hidden by default */
+    z-index: 1000; /* Ensure it's above other elements */
+    transition: opacity 0.5s ease; /* Transition for fade effect */
+    width: 30%;
+}
+
+.toast.show {
+    display: block; /* Show when active */
+    opacity: 1; /* Fully opaque when shown */
+}
+
+.toast.success {
+    background-color: rgba(76, 175, 80, 0.9); /* Green for success */
+}
+
+.toast.error {
+    background-color: rgba(244, 67, 54, 0.9); /* Red for error */
+}

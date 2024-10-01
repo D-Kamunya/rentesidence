@@ -164,6 +164,11 @@
         <span id="cart-counter" class="cart-counter">0</span>
     </div>
 
+    <div id="toast" class="toast">
+        <i class="fas fa-cart-plus"></i> <!-- Shopping cart icon -->
+        <span id="toast-message">Item added to cart!</span>
+    </div>
+
     <!-- End Page-content -->
     <input type="hidden" id="getAllTenantRoute" value="{{ route('owner.tenant.index', ['type' => 'all']) }}">
     <input type="hidden" id="getPropertyUnitsRoute" value="{{ route('owner.property.getPropertyUnits') }}">
