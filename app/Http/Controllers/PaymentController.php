@@ -61,12 +61,20 @@ class PaymentController extends Controller
                 return redirect()->route('tenant.invoice.index')->with('error', __('Payment Failed!'));
             }
         } elseif ($gateway->slug == 'mpesa'){
-            $mpesaAccount = MpesaAccount::where(['gateway_id' => $gateway->id, 'id' => $request->mpesa_account_id])->first();
-            if (is_null($mpesaAccount)) {
-                throw new Exception('Mpesa Account not found');
+            if ($request->has('mpesa_transaction_code')) {
+                $order = $this->placeOrder($invoice, $gateway, $gatewayCurrency,null, null, null, null, null, $request->mpesa_transaction_code); // new order create
+                $order->save();
+                DB::commit();
+                return redirect()->route('tenant.invoice.index')->with('success', __('Mpesa Transaction Code Submitted Successfully! Wait for approval'));
+            }else{
+                $mpesaAccount = MpesaAccount::where(['gateway_id' => $gateway->id, 'id' => $request->mpesa_account_id])->first();
+                if (is_null($mpesaAccount)) {
+                    throw new Exception('Mpesa Account not found');
+                }
+                $paymentData['mpesaAccount'] = $mpesaAccount;
+                $order = $this->placeOrder($invoice, $gateway, $gatewayCurrency);
+                DB::commit();
             }
-            $paymentData['mpesaAccount'] = $mpesaAccount;
-            $order = $this->placeOrder($invoice, $gateway, $gatewayCurrency); 
         }elseif ($gateway->slug == 'cash') {
             $order = $this->placeOrder($invoice, $gateway, $gatewayCurrency); // new order create
             $invoice->order_id = $order->id;
@@ -100,7 +108,7 @@ class PaymentController extends Controller
         }
     }
 
-    public function placeOrder($invoice, $gateway, $gatewayCurrency, $bank_id = null, $bank_name = null, $bank_account_number = null, $deposit_by = null, $deposit_slip_id = null)
+    public function placeOrder($invoice, $gateway, $gatewayCurrency, $bank_id = null, $bank_name = null, $bank_account_number = null, $deposit_by = null, $deposit_slip_id = null,$mpesa_transaction_code = null)
     {
         return Order::create([
             'user_id' => auth()->id(),
@@ -118,7 +126,8 @@ class PaymentController extends Controller
             'bank_name' => $bank_name,
             'bank_account_number' => $bank_account_number,
             'deposit_by' => $deposit_by,
-            'deposit_slip_id' => $deposit_slip_id
+            'deposit_slip_id' => $deposit_slip_id,
+            'mpesa_transaction_code' => $mpesa_transaction_code
         ]);
     }
 

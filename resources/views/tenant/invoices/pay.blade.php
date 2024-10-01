@@ -172,7 +172,7 @@
                                                             <div class="col-md-12 mb-20">
                                                                 <label
                                                                     class="label-text-title color-heading font-medium mb-2">{{ __('Upload Deposit Slip') }}</label>
-                                                                <input type="file" class="form-control"
+                                                                <input type="file" id="bank_slip" class="form-control"
                                                                     name="bank_slip">
                                                                 @error('bank_slip')
                                                                     <span class="text-danger">{{ $message }}</span>
