@@ -2,14 +2,15 @@
 
 document.addEventListener("DOMContentLoaded", () => {
     let cartItems = JSON.parse(localStorage.getItem("cartItems")) || [];
-    const cartContainer = document.getElementById("cartItems");
-    const totalAmountElement = document.getElementById("totalAmount");
-    const checkoutAmountElement = document.getElementById("checkoutAmount");
-    const cartTotalElement = document.getElementById("cartTotal");
+    var cartContainer = document.getElementById("cartItems");
+    var totalAmountElement = document.getElementById("totalAmount");
+    var checkoutAmountElement = document.getElementById("checkoutAmount");
+    var cartTotalElement = document.getElementById("cartTotal");
+    var mpesaTotalElement = document.getElementById("mpesa_amount");
 
     function groupCartItems(items) {
         // Group cart items by name or another unique identifier
-        const groupedItems = {};
+        var groupedItems = {};
 
         items.forEach((item) => {
             // Ensure the quantity is initialized correctly
@@ -34,11 +35,11 @@ document.addEventListener("DOMContentLoaded", () => {
 
         cartItems.forEach((item, index) => {
             // Ensure the price is a number
-            const price = parseFloat(item.price);
-            const itemTotal = price * item.quantity;
+            var price = parseFloat(item.price);
+            var itemTotal = price * item.quantity;
             totalAmount += itemTotal;
 
-            const cartItemCard = document.createElement("div");
+            var cartItemCard = document.createElement("div");
             cartItemCard.classList.add("cart-item-card");
 
             // Rendering the image, name, price, quantity controls, and remove button
@@ -71,6 +72,7 @@ document.addEventListener("DOMContentLoaded", () => {
         totalAmountElement.textContent = totalAmount.toFixed(2);
         checkoutAmountElement.textContent = totalAmount.toFixed(2);
         cartTotalElement.value = totalAmount.toFixed(2);
+        mpesaTotalElement.value = totalAmount.toFixed(2);
 
         // Update localStorage after grouping
         localStorage.setItem("cartItems", JSON.stringify(cartItems));
@@ -80,6 +82,7 @@ document.addEventListener("DOMContentLoaded", () => {
         cartItems[index].quantity++;
         localStorage.setItem("cartItems", JSON.stringify(cartItems));
         renderCart();
+        updateCurrencyAmounts();
     };
 
     window.decreaseQuantity = function (index) {
@@ -87,6 +90,7 @@ document.addEventListener("DOMContentLoaded", () => {
             cartItems[index].quantity--;
             localStorage.setItem("cartItems", JSON.stringify(cartItems));
             renderCart();
+            updateCurrencyAmounts();
         }
     };
 
@@ -176,10 +180,12 @@ function getCurrencyRes(response) {
             currencyAmount,
             currency[1].symbol
         )}">
-                            <input type="hidden" id="currencyAmount" name="currencyAmount" value="${currencyAmount}">
                             <label for="${currency[1].id}">${
             currency[1].currency
         }</label>
+                            <input type="hidden" class="conversionRate" name="conversionRate" value="${
+                                currency[1].conversion_rate
+                            }">
                         </div>
                     </td>
                     <td><h6 class="tenant-invoice-tbl-right-text text-end">${gatewayCurrencyPrice(
@@ -191,20 +197,52 @@ function getCurrencyRes(response) {
     $("#currencyAppend").html(html);
 }
 
+// Function to loop through conversionRates and update amounts
+function updateCurrencyAmounts() {
+    // Get all the conversion rate input elements
+    var conversionRates = document.querySelectorAll(".conversionRate");
+
+    var totalAmount = parseFloat($("#cartTotal").val()).toFixed(2);
+
+    // Loop through each conversionRate
+    conversionRates.forEach((conversionRateInput) => {
+        // Fetch the current conversion rate value
+        var conversionRate = parseFloat(conversionRateInput.value);
+
+        // Calculate the new amount based on totalAmount and conversion rate
+        var newAmount = (conversionRate * totalAmount).toFixed(2);
+
+        // Find the associated gateway_currency_amount input and update its value
+        var gatewayCurrencyAmountInput = conversionRateInput
+            .closest(".gatewayCurrencyAmount")
+            .querySelector('input[name="gateway_currency_amount"]');
+        gatewayCurrencyAmountInput.value = gatewayCurrencyPrice(
+            newAmount,
+            currencySymbol
+        ); // Update the radio value
+
+        // Find the associated h6 element and update its text content
+        var amountText = conversionRateInput.closest("tr").querySelector("h6");
+        amountText.textContent = gatewayCurrencyPrice(
+            newAmount,
+            currencySymbol
+        ); // Update the text
+    });
+}
+
 $(document).on("click", ".gatewayCurrencyAmount", function () {
-    var getCurrencyAmount = $(this).find('input[name="gateway_currency_amount"]').val();
+    var getCurrencyAmount = $(this)
+        .find('input[name="gateway_currency_amount"]')
+        .val();
     var gateway = $("#selectGateway").val();
     $("#checkoutAmount").text(getCurrencyAmount);
-    var currencyAmount = $(this).find('input[name="currencyAmount"]').val();
-    
+
     if (gateway === "mpesa") {
         $("#checkoutAmount").text("Via STK " + getCurrencyAmount);
         $("#mpesaGatewayCurrencyAmount").text(getCurrencyAmount);
         document.getElementById("mpesa-amount").textContent = getCurrencyAmount;
-        $("#mpesa_amount").value(currencyAmount);
     } else {
         $("#checkoutAmount").text(getCurrencyAmount);
-        $("#cartTotal").value(currencyAmount);
     }
     $("#selectCurrency").val($(this).text().replace(/\s+/g, ""));
     $("#mpesa_selectCurrency").val($(this).text().replace(/\s+/g, ""));
@@ -262,7 +300,6 @@ $("#mpesaPayBtn").on("click", function () {
     var currency = $("#selectCurrency").val();
     if (gateway == "") {
         toastr.error("Select Gateway");
-        $("#mpesaPayBtn").attr("type", "button");
     } else {
         if (currency == "") {
             toastr.error("Select Currency");
@@ -272,8 +309,6 @@ $("#mpesaPayBtn").on("click", function () {
                 "pay-products-order-form"
             );
             payment_form.action = "";
-
-            $("#mpesaPayBtn").attr("type", "submit");
 
             // Prevent default form submission
             payment_form.addEventListener("submit", function (event) {
@@ -305,12 +340,12 @@ $(document).on("change", "#mpesa_account_id", function () {
         $("#mpesa-code-payment-till").removeClass("d-none");
     } else if (details === "PAYBILL") {
         // Parse Paybill and Account Name
-        const paybillMatch = textContent.match(/Paybill:\s*([\w\d]+)/);
-        const accountNameMatch = textContent.match(/Account Name:\s*([\w\d]+)/);
+        var paybillMatch = textContent.match(/Paybill:\s*([\w\d]+)/);
+        var accountNameMatch = textContent.match(/Account Name:\s*([\w\d]+)/);
 
         // Extract values
-        const paybill = paybillMatch ? paybillMatch[1] : "";
-        const accountName = accountNameMatch ? accountNameMatch[1] : "";
+        var paybill = paybillMatch ? paybillMatch[1] : "";
+        var accountName = accountNameMatch ? accountNameMatch[1] : "";
         document.getElementById("bs-number").textContent = paybill;
         document.getElementById("acc-number").textContent = accountName;
         $("#mpesa-code-payment-paybill").removeClass("d-none");
@@ -327,4 +362,31 @@ $("#mpesaCodeSubmitBtn").on("click", function () {
     } else {
         $("#mpesaCodeSubmitBtn").attr("type", "submit");
     }
+});
+
+// Select all forms with the name 'checkoutForm'
+var forms = document.getElementsByName("checkoutForm");
+
+forms.forEach(function (form) {
+    form.addEventListener("submit", function (e) {
+        e.preventDefault(); // Prevent default form submission
+        // Logic for the individual form submission
+        let cartItems = JSON.parse(localStorage.getItem("cartItems")) || [];
+
+        cartItems.forEach((item, index) => {
+            let input = document.createElement("input");
+            input.type = "hidden";
+            input.name = `products[${index}][id]`; // Using array notation for the product id
+            input.value = item.id;
+            this.appendChild(input);
+
+            let quantityInput = document.createElement("input");
+            quantityInput.type = "hidden";
+            quantityInput.name = `products[${index}][quantity]`; // Using array notation for the quantity
+            quantityInput.value = item.quantity;
+            this.appendChild(quantityInput);
+        });
+
+        this.submit(); // Now submit the form
+    });
 });

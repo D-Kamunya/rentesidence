@@ -15,6 +15,7 @@ use App\Services\Payment\Payment;
 use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class ProductPaymentController extends Controller
 {
@@ -28,6 +29,8 @@ class ProductPaymentController extends Controller
             $gatewayCurrency = GatewayCurrency::where(['gateway_id' => $gateway->id, 'currency' => $request->currency])->firstOrFail();
             $cartAmount = $request->cartTotal;
             $mpesaAmount = $request->mpesa_amount;
+            $products = $request->input('products');
+
             if ($gateway->slug == 'bank') {
                 $bank = Bank::where(['owner_user_id' => $ownerId, 'gateway_id' => $gateway->id, 'id' => $request->bank_id])->first();
                 if (is_null($bank)) {
@@ -57,18 +60,37 @@ class ProductPaymentController extends Controller
                 $order = $this->placeOrder($cartAmount, $gateway, $gatewayCurrency, $bank_id, $bank_name, $bank_account_number, $deposit_by, $deposit_slip_id); // new order create
                 $order->deposit_slip_id = $deposit_slip_id;
                 $order->save();
+                $this->addProductOrderItems($order, $products);
                 DB::commit();
+                echo '
+                    <script>
+                        localStorage.removeItem("cartItems");
+                    </script>
+                    ';
                 return redirect()->route('tenant.products')->with('success', __('Bank Details Sent Successfully! Wait for approval'));
             } elseif ($gateway->slug == 'cash') {
                 $order = $this->placeOrder($cartAmount, $gateway, $gatewayCurrency); // new order create
                 $order->save();
+                 // Loop through each product in the cart
+                $this->addProductOrderItems($order, $products);
                 DB::commit();
+                echo '
+                    <script>
+                        localStorage.removeItem("cartItems");
+                    </script>
+                    ';
                 return redirect()->route('tenant.products')->with('success', __('Cash Payment Request Sent Successfully! Wait for approval'));
             } elseif ($gateway->slug == 'mpesa'){
                 if ($request->has('mpesa_transaction_code')) {
                     $order = $this->placeOrder($mpesaAmount, $gateway, $gatewayCurrency, null, null, null, null, null, $request->mpesa_transaction_code); // new order create
                     $order->save();
+                    $this->addProductOrderItems($order, $products);
                     DB::commit();
+                    echo '
+                        <script>
+                            localStorage.removeItem("cartItems");
+                        </script>
+                        ';
                     return redirect()->route('tenant.products')->with('success', __('Mpesa Transaction Code Submitted Successfully! Wait for approval'));
                 }else{
                     $mpesaAccount = MpesaAccount::where(['owner_user_id' => $ownerId, 'gateway_id' => $gateway->id, 'id' => $request->mpesa_account_id])->first();
@@ -76,14 +98,17 @@ class ProductPaymentController extends Controller
                         throw new Exception('Mpesa Account not found');
                     }
                     $paymentData['mpesaAccount'] = $mpesaAccount;
-                    $order = $this->placeOrder($mpesaAmount, $gateway, $gatewayCurrency);
+                    $order = $this->placeOrder($cartAmount, $gateway, $gatewayCurrency);
+                    $this->addProductOrderItems($order, $products);
                     DB::commit();
                     }
                 
             } else {
                 $order = $this->placeOrder($cartAmount, $gateway, $gatewayCurrency); // new order create
+                $this->addProductOrderItems($order, $products);
                 DB::commit();
             }
+
             $object = [
                 'id' => $order->id,
                 'gateway' => $gateway->slug,
@@ -107,11 +132,30 @@ class ProductPaymentController extends Controller
                 return redirect()->back()->with('error', $responseData['message']);
             }
         } catch (\Exception $e) {
-            echo $e;
+            Log::error('Payment failed: '.$e->getMessage(), [
+            'exception' => $e, // Logs the whole exception object
+            'request' => $request->all() // Optionally log request data
+            ]);
+
             DB::rollBack();
             return redirect()->route('tenant.products')->with('error', __('Payment Failed!'));
         }
+        
     }
+
+
+    public function addProductOrderItems( $order, $products)
+    {
+
+        foreach ($products as $product) {
+            // Create an order item
+            $item = $order->orderItems()->create([
+                'product_id' => $product['id'],
+                'quantity' => $product['quantity'],
+            ]);
+        }
+    }
+
 
     public function placeOrder( $amount, $gateway, $gatewayCurrency, $bank_id = null, $bank_name = null, $bank_account_number = null, $deposit_by = null, $deposit_slip_id = null, $mpesa_transaction_code = null)
     {
@@ -151,7 +195,7 @@ class ProductPaymentController extends Controller
         
         $order = ProductOrder::findOrFail($order_id);
         if ($order->status == ORDER_PAYMENT_STATUS_PAID) {
-            return redirect()->route('tenant.products')->with('error', __('Your order has been paid!'));
+            return redirect()->route('tenant.products')->with('success', __('Your order has been paid!'));
         }
         
         return handleProductPaymentConfirmation($order, $payerId, $gateway_slug, null);

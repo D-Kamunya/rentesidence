@@ -756,9 +756,8 @@ if (!function_exists('handleProductPaymentConfirmation')) {
 
             $payment_id = $order->payment_id;
 
-            $gatewayBasePayment = new Payment($gateway->slug, ['currency' => $order->gateway_currency, 'type' => 'subscription']);
+            $gatewayBasePayment = new Payment($gateway->slug, ['currency' => $order->gateway_currency, 'type' => 'productorder']);
             $payment_data = $gatewayBasePayment->paymentConfirmation($payment_id, $payerId);
-            
             if ($payment_data['success']) {
                 if ($payment_data['data']['payment_status'] == 'success') {
                     $order->payment_status = ORDER_PAYMENT_STATUS_PAID;
@@ -770,41 +769,22 @@ if (!function_exists('handleProductPaymentConfirmation')) {
                     
                     $title = __("You have a new invoice");
                     $body = __("Products payment verify successfully");
-                    $adminUser = User::where('role', USER_ROLE_ADMIN)->first();
-                    addNotification($title, $body, null, null, $adminUser->id, auth()->id());
-
-                    if (getOption('send_email_status', 0) == ACTIVE) {
-                        $emails = [$order->user->email];
-                        $subject = __('Product Payment Successful!');
-                        $title = __('Congratulations!');
-                        $message = __('You have successfully made the payment');
-                        $ownerUserId = auth()->id();
-                        $method = $gateway->slug;
-                        $status = 'Paid';
-                        $amount = $order->amount;
-
-                        $mailService = new MailService;
-                        $template = EmailTemplate::where('owner_user_id', $ownerUserId)->where('category', EMAIL_TEMPLATE_SUBSCRIPTION_SUCCESS)->where('status', ACTIVE)->first();
-
-                        if ($template) {
-                            $customizedFieldsArray = [
-                                '{{amount}}' => $order->total,
-                                '{{status}}' => $status,
-                                '{{duration}}' => $duration,
-                                '{{gateway}}' => $method,
-                                '{{app_name}}' => getOption('app_name')
-                            ];
-                            $content = getEmailTemplate($template->body, $customizedFieldsArray);
-                            $mailService->sendCustomizeMail($emails, $template->subject, $content);
-                        } else {
-                            $mailService->sendSubscriptionSuccessMail($emails, $subject, $message, $ownerUserId, $title, $method, $status, $amount, $duration);
-                        }
-                    }
+                    $ownerUserID = auth()->user()->owner_user_id;;
+                    addNotification($title, $body, null, null, $ownerUserID, auth()->id());
 
                     if ($gateway_slug == 'mpesa') {
+                        echo '
+                            <script>
+                                localStorage.removeItem("cartItems");
+                            </script>
+                            ';
                         return redirect()->route('tenant.products')->with('success', __('Mpesa Payment Successful!'));
                     }
-
+                    echo '
+                            <script>
+                                localStorage.removeItem("cartItems");
+                            </script>
+                            ';
                     return redirect()->route('tenant.products')->with('success', __('Payment Successful!'));
                 }
             } else {

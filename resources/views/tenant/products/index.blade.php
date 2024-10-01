@@ -1,6 +1,11 @@
 @extends('tenant.layouts.app')
 
 @section('content')
+    @if (session('success'))
+        <script>
+            localStorage.removeItem('cartItems');
+        </script>
+    @endif
     <div class="main-content">
         <div class="page-content">
             <div class="page-content-wrapper"> 
@@ -154,14 +159,14 @@
     </div>
 
     <!-- Floating Cart Button -->
-    <div id="floating-cart-button" class="floating-cart" data-url="{{ route('tenant.products.pay', $product->id) }}">
+    <div id="floating-cart-button" class="floating-cart" data-url="{{ route('tenant.products.pay') }}">
         <i class="fas fa-shopping-cart"></i>
         <span id="cart-counter" class="cart-counter">0</span>
     </div>
 
-        <!-- End Page-content -->
-        <input type="hidden" id="getAllTenantRoute" value="{{ route('owner.tenant.index', ['type' => 'all']) }}">
-        <input type="hidden" id="getPropertyUnitsRoute" value="{{ route('owner.property.getPropertyUnits') }}">
+    <!-- End Page-content -->
+    <input type="hidden" id="getAllTenantRoute" value="{{ route('owner.tenant.index', ['type' => 'all']) }}">
+    <input type="hidden" id="getPropertyUnitsRoute" value="{{ route('owner.property.getPropertyUnits') }}">
 
 @endsection
 

@@ -65,7 +65,7 @@
                         <div class="col-lg-6">
                             <div
                                 class="tenant-portal-invoice-details-rightside bg-off-white theme-border p-20 radius-4 mb-25">
-                                <form id="pay-products-order-form" class="" action="{{ route('payment.products.checkout') }}" method="POST"
+                                <form id="pay-products-order-form" class="" name="checkoutForm" action="{{ route('payment.products.checkout') }}" method="POST"
                                     enctype="multipart/form-data">
                                     @csrf
                                     <input type="hidden" id="cartTotal" name="cartTotal">
@@ -90,7 +90,7 @@
                                                     data-gateway="{{ $gateway->slug }}" data-bs-toggle="tab" role="tab"
                                                     aria-controls="{{ $gateway->slug }}" aria-selected="true">
                                                     <div class="custom-radiobox">
-                                                        <input type="radio" value="{{ $gateway->id }}">
+                                                        <input type="radio" name="selectGateway" value="{{ $gateway->id }}">
                                                         <label class="fs-5">{{ $gateway->title }}</label>
                                                     </div>
                                                     <div class="invoice-payment-img">
@@ -210,7 +210,7 @@
                                         <div class="payment-method-area">
                                             <h2 class="text-center payment-method-area-title">{{ __('Mpesa Payment Details') }}</h2>
                                             <div class="payment-method-wrap px-5">
-                                                <form id="" class="" action="{{ route('payment.products.checkout') }}" method="POST"
+                                                <form id="pay-products-order-form" name="checkoutForm" class="" action="{{ route('payment.products.checkout') }}" method="POST"
                                                     enctype="multipart/form-data">
                                                     @csrf
                                                     <input type="hidden" id="mpesa_code_account_id" name="mpesa_account_id" value="">

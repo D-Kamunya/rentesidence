@@ -3,11 +3,14 @@
 namespace App\Http\Controllers;
 use App\Models\Product;
 use App\Models\ProductOrder;
+use App\Models\PaymentCheck;
+use App\Models\Gateway;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
 use App\Services\GatewayService;
 use App\Traits\ResponseTrait;
+use Illuminate\Support\Facades\Session;
 
 class ProductController extends Controller
 {
@@ -144,7 +147,7 @@ class ProductController extends Controller
     }
 
      // Delete product/service
-     public function destroy(Product $product) {
+    public function destroy(Product $product) {
         $product->delete();
         return redirect()->route('owner.products.index')->with('success', 'Product deleted successfully.');
     }
@@ -154,54 +157,56 @@ class ProductController extends Controller
     public function showProductsForTenant(Request $request) {
         $tenant = Auth::user();
         $ownerId = $tenant->owner_user_id;
+        $tenantId = $tenant->id;
 
-        // Retrieve records from the ProductOrder model
-        $latestMpesaProductOrder = ProductOrder::whereNotNull('payment_id')
-            ->where('user_id', $ownerId) // Filter by user_id
-            ->latest() // Order by created_at in descending order
-            ->first(); // Retrieve only the latest record
-        // Handle any pending mpesa product order transactions
-        if($latestMpesaProductOrder && strpos($latestMpesaProductOrder->payment_id, 'ws') === 0 && $latestMpesaProductOrder->payment_status == ORDER_PAYMENT_STATUS_PENDING) {
-            $paymentCheck = PaymentCheck::where('products_payment_id', $latestMpesaProductOrder->id)->first();
-            if (!$paymentCheck) {
-                $paymentCheck = new PaymentCheck();
-                $paymentCheck->products_payment_id = $latestMpesaProductOrder->id;
-                $paymentCheck->check_count=0;
-                $paymentCheck->last_check_at=now();
-                $paymentCheck->save();
-                $gateway = Gateway::find($latestMpesaProductOrder->gateway_id);
-                // Clear specific flash messages
-                Session::forget('success');
-                Session::forget('error');
-                handleProductPaymentConfirmation($latestMpesaProductOrder, null, $gateway->slug, $paymentCheck);
-            }else{
-                if($paymentCheck->check_count < 3){
-                    $gateway = Gateway::find($latestMpesaProductOrder->gateway_id);
-                    // Clear specific flash messages
-                    Session::forget('success');
-                    Session::forget('error');
-                    handleProductPaymentConfirmation($latestMpesaProductOrder, null, $gateway->slug, $paymentCheck);
-                }else {
-                    // Get the creation timestamp of the product order
-                    $productOrderCreatedAt = $latestMpesaProductOrder->created_at;
-                    // Add 5 hours to the product order creation timestamp
-                    $fiveHoursAfterProductOrderCreation = $productOrderCreatedAt->copy()->addHours(5);
-                    // Check if the last_check_at timestamp in the payment check is greater than or equal to 5 hours after product order creation
-                    $paymentCheckLastCheck = $paymentCheck->last_check_at;
-                    if ($paymentCheckLastCheck->greaterThanOrEqualTo($fiveHoursAfterProductOrderCreation)) {
-                        // Last check is more than or equal to 5 hours after product order creation
-                        // Your logic here
-                    } else {
-                        // Last check is less than 5 hours after product order creation
-                        $gateway = Gateway::find($latestMpesaProductOrder->gateway_id);
-                        // Clear specific flash messages
-                        Session::forget('success');
-                        Session::forget('error');
-                        handleProductPaymentConfirmation($latestMpesaProductOrder, null,$gateway->slug, $paymentCheck);
-                    }
-                }
-            }
-        }
+        // // Retrieve records from the ProductOrder model
+        // $latestMpesaProductOrder = ProductOrder::whereNotNull('payment_id')
+        //     ->where('user_id', $tenantId) // Filter by user_id
+        //     ->latest() // Order by created_at in descending order
+        //     ->first(); // Retrieve only the latest record
+        // // Handle any pending mpesa product order transactions
+        // if($latestMpesaProductOrder && strpos($latestMpesaProductOrder->payment_id, 'ws') === 0 && $latestMpesaProductOrder->payment_status == ORDER_PAYMENT_STATUS_PENDING) {
+        //     $paymentCheck = PaymentCheck::where('products_payment_id', $latestMpesaProductOrder->id)->first();
+        //     if (!$paymentCheck) {
+        //         $paymentCheck = new PaymentCheck();
+        //         $paymentCheck->products_payment_id = $latestMpesaProductOrder->id;
+        //         $paymentCheck->check_count=0;
+        //         $paymentCheck->last_check_at=now();
+        //         $paymentCheck->save();
+        //         $gateway = Gateway::find($latestMpesaProductOrder->gateway_id);
+        //         // Clear specific flash messages
+        //         sleep(5);
+        //         Session::forget('success');
+        //         Session::forget('error');
+        //         handleProductPaymentConfirmation($latestMpesaProductOrder, null, $gateway->slug, $paymentCheck);
+        //     }else{
+        //         if($paymentCheck->check_count < 3){
+        //             $gateway = Gateway::find($latestMpesaProductOrder->gateway_id);
+        //             // Clear specific flash messages
+        //             Session::forget('success');
+        //             Session::forget('error');
+        //             handleProductPaymentConfirmation($latestMpesaProductOrder, null, $gateway->slug, $paymentCheck);
+        //         }else {
+        //             // Get the creation timestamp of the product order
+        //             $productOrderCreatedAt = $latestMpesaProductOrder->created_at;
+        //             // Add 5 hours to the product order creation timestamp
+        //             $fiveHoursAfterProductOrderCreation = $productOrderCreatedAt->copy()->addHours(5);
+        //             // Check if the last_check_at timestamp in the payment check is greater than or equal to 5 hours after product order creation
+        //             $paymentCheckLastCheck = $paymentCheck->last_check_at;
+        //             if ($paymentCheckLastCheck->greaterThanOrEqualTo($fiveHoursAfterProductOrderCreation)) {
+        //                 // Last check is more than or equal to 5 hours after product order creation
+        //                 // Your logic here
+        //             } else {
+        //                 // Last check is less than 5 hours after product order creation
+        //                 $gateway = Gateway::find($latestMpesaProductOrder->gateway_id);
+        //                 // Clear specific flash messages
+        //                 Session::forget('success');
+        //                 Session::forget('error');
+        //                 handleProductPaymentConfirmation($latestMpesaProductOrder, null,$gateway->slug, $paymentCheck);
+        //             }
+        //         }
+        //     }
+        // }
     
         $products = Product::where('owner_user_id', $ownerId)
                 ->when($request->category, function ($query) use ($request) {
@@ -222,7 +227,7 @@ class ProductController extends Controller
     }
 
     //Product payment page controller
-    public function pay($id){
+    public function pay(){
         $data['pageTitle'] = __('Products Pay');
 
         $data['navMarketPlaceMMActiveClass'] = 'mm-active';

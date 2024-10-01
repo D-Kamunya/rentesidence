@@ -70,6 +70,8 @@ Route::group(['prefix' => 'payment'], function () {
     Route::post('/products', [ProductPaymentController::class, 'checkout'])->name('payment.products.checkout');
     Route::match(array('GET', 'POST'), 'verify', [PaymentController::class, 'verify'])->name('payment.verify');
     Route::get('verify-redirect/{type?}', [PaymentController::class, 'verifyRedirect'])->name('payment.verify.redirect');
+    Route::match(array('GET', 'POST'), 'products/verify', [ProductPaymentController::class, 'verify'])->name('payment.products.verify');
+    Route::get('products/verify-redirect/{type?}', [PaymentController::class, 'verifyRedirect'])->name('payment.products.verify.redirect');
 });
 
 Route::get('/product/{id}', [ProductController::class, 'show'])->name('tenant.products.show');

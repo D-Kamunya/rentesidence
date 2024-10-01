@@ -1,13 +1,13 @@
 document.addEventListener("DOMContentLoaded", () => {
-    const sliders = document.querySelectorAll(".image-slider");
-    const scrollAmount = 10; // Adjust scroll amount for each click
-    const scrollInterval = 20000; // 5 seconds interval for auto-scrolling
+    var sliders = document.querySelectorAll(".image-slider");
+    var scrollAmount = 10; // Adjust scroll amount for each click
+    var scrollInterval = 20000; // 5 seconds interval for auto-scrolling
 
     sliders.forEach((slider) => {
-        let isDown = false;
-        let startX;
-        let scrollLeft;
-        let autoScroll;
+        var isDown = false;
+        var startX;
+        var scrollLeft;
+        var autoScroll;
 
         // Swipe/drag interactions
         slider.addEventListener("mousedown", (e) => {
@@ -33,8 +33,8 @@ document.addEventListener("DOMContentLoaded", () => {
         slider.addEventListener("mousemove", (e) => {
             if (!isDown) return;
             e.preventDefault();
-            const x = e.pageX - slider.offsetLeft;
-            const walk = (x - startX) * 2;
+            var x = e.pageX - slider.offsetLeft;
+            var walk = (x - startX) * 2;
             slider.scrollLeft = scrollLeft - walk;
         });
 
@@ -56,14 +56,14 @@ document.addEventListener("DOMContentLoaded", () => {
         slider.addEventListener("touchmove", (e) => {
             if (!isDown) return;
             e.preventDefault();
-            const x = e.touches[0].pageX - slider.offsetLeft;
-            const walk = (x - startX) * 2;
+            var x = e.touches[0].pageX - slider.offsetLeft;
+            var walk = (x - startX) * 2;
             slider.scrollLeft = scrollLeft - walk;
         });
 
         // Button interactions
-        const scrollLeftButton = slider.previousElementSibling; // Assuming buttons are before and after the slider
-        const scrollRightButton = slider.nextElementSibling;
+        var scrollLeftButton = slider.previousElementSibling; // Assuming buttons are before and after the slider
+        var scrollRightButton = slider.nextElementSibling;
 
         scrollLeftButton.addEventListener("click", () => {
             slider.scrollBy({
@@ -105,22 +105,22 @@ document.addEventListener("DOMContentLoaded", () => {
         startAutoScroll(slider);
     });
 
-    const cartButton = document.getElementById("floating-cart-button");
-    const cartCounter = document.getElementById("cart-counter");
-    let cartItems = []; // Array to hold cart items
+    var cartButton = document.getElementById("floating-cart-button");
+    var cartCounter = document.getElementById("cart-counter");
+    var cartItems = []; // Array to hold cart items
 
     // Event listener for adding items to the cart
     document.querySelectorAll(".add-to-cart-button").forEach((button) => {
         button.addEventListener("click", (e) => {
             // Simulate adding item details to cart (you can customize this)
-            const productElement = e.target.closest(".product-card");
-            const productId =
+            var productElement = e.target.closest(".product-card");
+            var productId =
                 productElement.querySelector(".product-id").textContent;
-            const productName =
+            var productName =
                 productElement.querySelector(".product-title").textContent;
-            const productPrice =
+            var productPrice =
                 productElement.querySelector(".product-price").textContent; // Assuming price is included
-            const productImage = productElement.querySelector("img").src;
+            var productImage = productElement.querySelector("img").src;
 
             // Add the product to the cart
             cartItems.push({
@@ -139,18 +139,33 @@ document.addEventListener("DOMContentLoaded", () => {
     });
 
     // Event listener for the floating cart button click
-    cartButton.addEventListener("click", () => {
+    cartButton.addEventListener("click", (event) => {
         // Retrieve the route URL from the data attribute
-        const routeUrl = cartButton.getAttribute("data-url");
+        var routeUrl = cartButton.getAttribute("data-url");
 
-        // Redirect to the route URL
+        if (cartItems.length === 0) {
+            // Display a message if the cart is empty
+            alert(
+                "Your cart is empty. Please add items to the cart before proceeding to payment."
+            );
+
+            // Prevent the redirection
+            event.preventDefault();
+            return false; // Stop further code execution
+        }
+
+        // If cart is not empty, proceed to redirection
         window.location.href = routeUrl;
     });
 
     // On page load, check if there are items in the local storage
-    const storedCartItems = JSON.parse(localStorage.getItem("cartItems")) || [];
+    var storedCartItems = JSON.parse(localStorage.getItem("cartItems")) || [];
     if (storedCartItems.length > 0) {
         cartItems = storedCartItems;
         cartCounter.textContent = cartItems.length;
     }
+
+    var floatingCartButton = document.getElementById("floating-cart-button");
+    // Check local storage for cart items before redirecting
+    floatingCartButton.addEventListener("click", function (event) {});
 });

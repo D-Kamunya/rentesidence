@@ -53,7 +53,7 @@ Route::group(['prefix' => 'tenant', 'as' => 'tenant.', 'middleware' => ['auth', 
 
     Route::group(['prefix' => 'products'], function () {
         Route::get('/', [ProductController::class, 'showProductsForTenant'])->name('products');
-        Route::get('pay/{id}', [ProductController::class, 'pay'])->name('products.pay');
+        Route::get('pay', [ProductController::class, 'pay'])->name('products.pay');
     });
 
 });
