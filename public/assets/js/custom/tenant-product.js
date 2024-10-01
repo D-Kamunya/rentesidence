@@ -123,6 +123,11 @@ document.addEventListener("DOMContentLoaded", () => {
             toast.classList.remove("success");
             icon.className = "fas fa-times-circle"; // Error icon for error
         }
+
+        // After 3 seconds, remove the show class and hide the toast
+        setTimeout(function () {
+            toast.classList.remove("show");
+        }, 3000);
     }
 
     var cartButton = document.getElementById("floating-cart-button");
@@ -167,9 +172,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
         if (cartItems.length === 0) {
             // Display a message if the cart is empty
-            alert(
-                "Your cart is empty. Please add items to the cart before proceeding to payment."
-            );
+            showToast("Cart Empty!Add items to cart", "error"); // Show success message
 
             // Prevent the redirection
             event.preventDefault();
