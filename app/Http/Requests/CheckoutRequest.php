@@ -28,7 +28,6 @@ class CheckoutRequest extends FormRequest
     public function rules()
     {
         return [
-            'invoice_id' => 'required',
             'gateway' => 'required',
             'currency' => 'required',
             'bank_id' => 'required_if:gateway,bank',
@@ -40,7 +39,6 @@ class CheckoutRequest extends FormRequest
     public function messages()
     {
         return [
-            'invoice_id.required_if' => 'No invoice is selected.',
             'bank_id.required_if' => 'The bank field is required.',
             'bank_slip.required_if' => 'The bank slip field is required.',
             'mpesa_account_id.required_if' => 'Mpesa Account is required.'

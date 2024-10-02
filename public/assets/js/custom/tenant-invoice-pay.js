@@ -8,6 +8,9 @@ $(document).on("click", ".paymentGateway", function () {
     var selectGateway = $(this).data("gateway").replace(/\s+/g, "");
     $("#selectGateway").val(selectGateway);
     if (selectGateway == "bank") {
+        $("#bank_id").val("");
+        $("#bankDetails").addClass("d-none");
+        $("#bank_slip").val("");
         $("#payBtn").removeClass("d-none");
         $("#bank_slip").attr("required", true);
         $("#bank_id").attr("required", true);
@@ -17,6 +20,7 @@ $(document).on("click", ".paymentGateway", function () {
         $("#mpesa_account_id").attr("required", false);
         $("#mpesaAccountAppend").addClass("d-none");
     } else if (selectGateway == "mpesa") {
+        $("#mpesa_account_id").val("");
         $("#mpesa_selectGateway").val(selectGateway);
         $("#mpesa_selectCurrency").val("");
         $("#mpesaAccountAppend").removeClass("d-none");
@@ -145,18 +149,12 @@ $("#mpesaPayBtn").on("click", function () {
             $("#mpesaPayBtn").attr("type", "button");
         } else {
             var invoice_form = document.getElementById("pay-invoice-form");
-            invoice_form.action = "";
-
-            $("#mpesaPayBtn").attr("type", "submit");
-
-            // Prevent default form submission
-            invoice_form.addEventListener("submit", function (event) {
-                event.preventDefault();
-            });
 
             if (invoice_form.checkValidity()) {
                 var selector = $("#mpesaCodePaymentMethodModal");
                 selector.modal("show");
+            } else {
+                invoice_form.reportValidity();
             }
         }
     }

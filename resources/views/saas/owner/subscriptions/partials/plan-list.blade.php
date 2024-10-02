@@ -108,7 +108,7 @@
                         {{ $currentPlan->duration_type == PACKAGE_DURATION_TYPE_YEARLY ? __('Current Plan') : __('Subscribe Now') }}
                     </button>
                 @else
-                    <button type="submit" class="theme-btn-outline mt-15" title="{{ __('Subscribe Now') }}">
+                    <button type="submit" id="subscribeBtn" class="theme-btn-outline mt-15" title="{{ __('Subscribe Now') }}">
                         {{ __('Subscribe Now') }}
                     </button>
                 @endif

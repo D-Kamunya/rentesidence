@@ -131,6 +131,9 @@ $(document).on("click", ".paymentGateway", function (e) {
         { id: $(this).find("input").val() }
     );
     if (selectGateway == "bank") {
+        $("#bank_id").val("");
+        $("#bankDetails").addClass("d-none");
+        $("#bank_slip").val("");
         $("#bankAppend").removeClass("d-none");
         $("#checkoutBtn").removeClass("d-none");
         $("#bank_slip").attr("required", true);
@@ -141,6 +144,7 @@ $(document).on("click", ".paymentGateway", function (e) {
         $("#mpesa_account_id").attr("required", false);
         $("#mpesaAccountAppend").addClass("d-none");
     } else if (selectGateway == "mpesa") {
+        $("#mpesa_account_id").val("");
         $("#mpesa_selectGateway").val(selectGateway);
         $("#mpesa_selectCurrency").val("");
 
@@ -308,16 +312,13 @@ $("#mpesaPayBtn").on("click", function () {
             var payment_form = document.getElementById(
                 "pay-products-order-form"
             );
-            payment_form.action = "";
 
-            // Prevent default form submission
-            payment_form.addEventListener("submit", function (event) {
-                event.preventDefault();
-            });
             if (payment_form.checkValidity()) {
                 $("#paymentMethodModal").modal("hide");
                 var selector = $("#mpesaCodePaymentMethodModal");
                 selector.modal("show");
+            } else {
+                payment_form.reportValidity();
             }
         }
     }
