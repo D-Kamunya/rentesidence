@@ -172,7 +172,7 @@
                                                             <div class="col-md-12 mb-20">
                                                                 <label
                                                                     class="label-text-title color-heading font-medium mb-2">{{ __('Upload Deposit Slip') }}</label>
-                                                                <input type="file" class="form-control"
+                                                                <input type="file" id="bank_slip" class="form-control"
                                                                     name="bank_slip">
                                                                 @error('bank_slip')
                                                                     <span class="text-danger">{{ $message }}</span>
@@ -251,6 +251,7 @@
                                                     enctype="multipart/form-data">
                                                     @csrf
                                                     <input type="hidden" id="mpesa_code_account_id" name="mpesa_account_id" value="">
+                                                    <input type="hidden" name="invoice_id" value="{{ $invoice->id }}">
                                                     <input type="hidden" id="mpesa_selectGateway" name="gateway">
                                                     <input type="hidden" id="mpesa_selectCurrency" name="currency">
                                                     <input type="hidden"  id="mpesa_default-currency" name="default-currency" value="{{ json_encode(session('default_currency')) }}">

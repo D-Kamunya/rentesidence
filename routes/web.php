@@ -74,8 +74,6 @@ Route::group(['prefix' => 'payment'], function () {
     Route::get('products/verify-redirect/{type?}', [PaymentController::class, 'verifyRedirect'])->name('payment.products.verify.redirect');
 });
 
-Route::get('/product/{id}', [ProductController::class, 'show'])->name('tenant.products.show');
-
 Route::get('version-update', [VersionUpdateController::class, 'versionUpdate'])->name('version-update');
 Route::post('process-update', [VersionUpdateController::class, 'processUpdate'])->name('process-update');
 Route::get('version-check', [VersionUpdateController::class, 'versionCheck'])->name('versionCheck');

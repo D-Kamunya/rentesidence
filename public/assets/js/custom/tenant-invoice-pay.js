@@ -166,6 +166,8 @@ $(document).on("change", "#mpesa_account_id", function () {
     var selectedOption = $(this).find("option:selected");
     var textContent = selectedOption.text().trim();
     var details = selectedOption.data("details");
+
+    $("#mpesa_code_account_id").val(selectedOption.val());
     if (details === "TILLNUMBER") {
         var tillNumber = "";
         var parts = textContent.split("- Till Number: ");
@@ -186,5 +188,15 @@ $(document).on("change", "#mpesa_account_id", function () {
         document.getElementById("acc-number").textContent = accountName;
         $("#mpesa-code-payment-paybill").removeClass("d-none");
         $("#mpesa-code-payment-till").addClass("d-none");
+    }
+});
+
+$("#mpesaCodeSubmitBtn").on("click", function () {
+    var mpesaTransCode = $("#mpesaTransactionCode").val();
+    if (mpesaTransCode == "") {
+        toastr.error("Enter Mpesa Transaction Code");
+        $("#mpesaCodeSubmitBtn").attr("type", "button");
+    } else {
+        $("#mpesaCodeSubmitBtn").attr("type", "submit");
     }
 });
