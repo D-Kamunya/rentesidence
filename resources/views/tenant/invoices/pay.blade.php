@@ -251,6 +251,7 @@
                                                     enctype="multipart/form-data">
                                                     @csrf
                                                     <input type="hidden" id="mpesa_code_account_id" name="mpesa_account_id" value="">
+                                                    <input type="hidden" name="invoice_id" value="{{ $invoice->id }}">
                                                     <input type="hidden" id="mpesa_selectGateway" name="gateway">
                                                     <input type="hidden" id="mpesa_selectCurrency" name="currency">
                                                     <input type="hidden"  id="mpesa_default-currency" name="default-currency" value="{{ json_encode(session('default_currency')) }}">
