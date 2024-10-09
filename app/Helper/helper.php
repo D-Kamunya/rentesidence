@@ -772,19 +772,24 @@ if (!function_exists('handleProductPaymentConfirmation')) {
                     $ownerUserID = auth()->user()->owner_user_id;;
                     addNotification($title, $body, null, null, $ownerUserID, auth()->id());
 
+                    if (getOption('send_email_status', 0) == ACTIVE) {
+                        $emails = [$order->user->email];
+                        $subject = __('Product Payment Successful!');
+                        $title = __('Congratulations!');
+                        $message = __('You have successfully made the product order payment');
+                        $tenantUserId = auth()->id();
+                        $method = $gateway->slug;
+                        $status = 'Paid';
+                        $amount = $order->amount;
+
+                        $mailService = new MailService;
+                        
+                        $mailService->sendProductOrderSuccessMail($emails, $subject, $message, $tenantUserId, $title, $method, $status, $amount);
+                    }
+
                     if ($gateway_slug == 'mpesa') {
-                        echo '
-                            <script>
-                                localStorage.removeItem("cartItems");
-                            </script>
-                            ';
                         return redirect()->route('tenant.products')->with('success', __('Mpesa Payment Successful!'));
                     }
-                    echo '
-                            <script>
-                                localStorage.removeItem("cartItems");
-                            </script>
-                            ';
                     return redirect()->route('tenant.products')->with('success', __('Payment Successful!'));
                 }
             } else {
@@ -865,7 +870,6 @@ if (!function_exists('handlePaymentConfirmation')) {
                 return redirect()->route('tenant.invoice.index')->with('error', __('Payment Failed!'));
             }
         } catch (\Exception $e) {
-            dd($e);
             DB::rollBack();
             return redirect()->route('tenant.invoice.index')->with('error', __('Payment Failed!'));
         }
