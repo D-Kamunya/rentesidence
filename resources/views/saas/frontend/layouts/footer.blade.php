@@ -6,7 +6,8 @@
              <div class="col-12 col-sm-12 col-md-12 col-lg-3">
                  <div class="footer-widget footer-about">
                      <a href="{{ route('frontend') }}"><img src="{{ getSettingImage('app_logo_white') }}"
-                             alt="{{ getOption('app_name') }}"></a>
+                             alt="{{ getOption('app_name') }}"  class="img-fluid" 
+                             style="max-width: 300px;"></a>
                      <address class="big-para">
                          <p>{{ getOption('app_footer_text') }}</p>
                      </address>
