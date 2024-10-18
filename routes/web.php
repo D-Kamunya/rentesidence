@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Affiliates\AffiliatesController;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\CommonController;
 use App\Http\Controllers\NotificationController;
@@ -15,6 +16,9 @@ use Illuminate\Support\Facades\App;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\OrderController;
 use App\Http\Controllers\CartController;
+use App\Http\Controllers\Affiliates\DashboardController;
+use SebastianBergmann\CodeCoverage\Report\Html\Dashboard;
+
 /*
 |--------------------------------------------------------------------------
 | Web Routes
@@ -88,6 +92,12 @@ Route::group(['prefix' => 'tenant'], function () {
 });
 
 Route::get('/product/{id}', [ProductController::class, 'show'])->name('tenant.products.show');
+Route::get('/affiliates', [DashboardController::class, 'index'])->name('affiliates.index');
+Route::post('/affiliates/withdraw', function (Request $request) {
+    // Handle the withdrawal logic here
+    return back()->with('success', 'Withdrawal request submitted!');
+})->name('affiliates.withdraw');
+
 
 Route::get('version-update', [VersionUpdateController::class, 'versionUpdate'])->name('version-update');
 Route::post('process-update', [VersionUpdateController::class, 'processUpdate'])->name('process-update');
