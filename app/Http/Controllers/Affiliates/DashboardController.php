@@ -9,7 +9,7 @@ use Illuminate\Support\Facades\Hash;
 
 class DashboardController extends Controller
 {
-    public function index()
+    public function dashboard()
     {
         // For now, mock some data for agents and affiliate earnings.
         $owners = [

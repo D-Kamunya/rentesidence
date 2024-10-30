@@ -7,14 +7,14 @@
             <ul class="metismenu list-unstyled" id="side-menu">
 
                 <li>
-                    <a href="{{ route('affiliates.index') }}">
+                    <a href="{{ route('affiliate.dashboard') }}">
                         <i class="ri-dashboard-line"></i>
                         <span>{{ __('Dashboard') }}</span>
                     </a>
                 </li>
                
                 <li>
-                    <a href="{{ route('affiliates.index') }}">
+                    <a href="{{ route('affiliate.dashboard') }}">
                         <i class="ri-folder-info-line"></i>
                         <span>{{ __('Messages') }}</span>
                     </a>

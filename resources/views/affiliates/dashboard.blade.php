@@ -65,7 +65,7 @@
                             </div>
                             <div class="modal-body">
                                 <p>Your current total earnings: {{ number_format(array_sum(array_column($owners, 'affiliate_earning')), 2) }} KES</p>
-                                <form action="{{route('affiliates.withdraw') }}" method="POST">
+                                <form action="{{route('affiliate.withdraw') }}" method="POST">
                                         @csrf
                                     <div class="mb-3">
                                         <label for="withdrawAmount" class="form-label">Enter Amount to Withdraw</label>
