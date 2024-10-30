@@ -1,10 +1,10 @@
 <?php
 
-use App\Http\Controllers\Affiliates\AffiliatesController;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\CommonController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\PaymentController;
+use App\Http\Controllers\ProductPaymentController;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\ProfileController;
@@ -13,12 +13,6 @@ use App\Http\Controllers\VersionUpdateController;
 use App\Models\Language;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\App;
-use App\Http\Controllers\ProductController;
-use App\Http\Controllers\OrderController;
-use App\Http\Controllers\CartController;
-use App\Http\Controllers\Affiliates\DashboardController;
-use SebastianBergmann\CodeCoverage\Report\Html\Dashboard;
-
 /*
 |--------------------------------------------------------------------------
 | Web Routes
@@ -73,31 +67,12 @@ Route::group(['prefix' => 'user', 'as' => 'user.'], function () {
 
 Route::group(['prefix' => 'payment'], function () {
     Route::post('/', [PaymentController::class, 'checkout'])->name('payment.checkout');
+    Route::post('/products', [ProductPaymentController::class, 'checkout'])->name('payment.products.checkout');
     Route::match(array('GET', 'POST'), 'verify', [PaymentController::class, 'verify'])->name('payment.verify');
     Route::get('verify-redirect/{type?}', [PaymentController::class, 'verifyRedirect'])->name('payment.verify.redirect');
+    Route::match(array('GET', 'POST'), 'products/verify', [ProductPaymentController::class, 'verify'])->name('payment.products.verify');
+    Route::get('products/verify-redirect/{type?}', [PaymentController::class, 'verifyRedirect'])->name('payment.products.verify.redirect');
 });
-
-Route::group(['prefix' => 'owner'], function () {
-    Route::get('/products', [ProductController::class, 'index'])->name('owner.products.index');
-    Route::get('/products/create', [ProductController::class, 'create'])->name('owner.products.create');
-    Route::post('/products', [ProductController::class, 'store'])->name('owner.products.store');
-    Route::get('/products/{product}/edit', [ProductController::class, 'edit'])->name('owner.products.edit');
-    Route::put('/products/{product}', [ProductController::class, 'update'])->name('owner.products.update');
-    Route::delete('/products/{product}', [ProductController::class, 'destroy'])->name('owner.products.destroy');
-});
-
-Route::group(['prefix' => 'tenant'], function () {
-    Route::get('/products', [ProductController::class, 'showProductsForTenant'])->name('tenant.products.index');
-    Route::post('/products/{product}/order', [OrderController::class, 'store'])->name('tenant.products.order');
-});
-
-Route::get('/product/{id}', [ProductController::class, 'show'])->name('tenant.products.show');
-Route::get('/affiliates', [DashboardController::class, 'index'])->name('affiliates.index');
-Route::post('/affiliates/withdraw', function (Request $request) {
-    // Handle the withdrawal logic here
-    return back()->with('success', 'Withdrawal request submitted!');
-})->name('affiliates.withdraw');
-
 
 Route::get('version-update', [VersionUpdateController::class, 'versionUpdate'])->name('version-update');
 Route::post('process-update', [VersionUpdateController::class, 'processUpdate'])->name('process-update');

@@ -110,6 +110,9 @@ $(document).on("click", ".paymentGateway", function (e) {
         { id: $(this).data("id") }
     );
     if (selectGateway == "bank") {
+        $("#bank_id").val("");
+        $("#bankDetails").addClass("d-none");
+        $("#bank_slip").val("");
         $("#bankAppend").removeClass("d-none");
         $("#payBtn").removeClass("d-none");
         $("#bank_slip").attr("required", true);
@@ -120,6 +123,7 @@ $(document).on("click", ".paymentGateway", function (e) {
         $("#mpesa_account_id").attr("required", false);
         $("#mpesaAccountAppend").addClass("d-none");
     } else if (selectGateway == "mpesa") {
+        $("#mpesa_account_id").val("");
         $("#mpesa_selectGateway").val(selectGateway);
         $("#mpesa_selectCurrency").val("");
         $("#mpesa_plan_id").val($(this).data("plan_id"));
@@ -183,6 +187,17 @@ function getCurrencyRes(response) {
     $("#currencyAppend").html(html);
 }
 
+$(document).on("click", "#subscribeBtn", function (e) {
+    $("#selectGateway").val("");
+    $("#selectCurrency").val("");
+    $("#plan_id").val(document.getElementsByName("id").value);
+    $("#payBtn").removeClass("d-none");
+    $("#mpesaPayBtn").addClass("d-none");
+    $("#gatewayCurrencyAmount").text("");
+    $("#bank_id").val("");
+    $("#mpesa_account_id").val("");
+});
+
 $(document).on("click", ".gatewayCurrencyAmount", function () {
     var gateway = $("#selectGateway").val();
     var getCurrencyAmount = "(" + $(this).find("input").val() + ")";
@@ -224,6 +239,7 @@ $("#payBtn").on("click", function () {
             );
             $("#payBtn").attr("type", "submit");
             if (subscription_form.checkValidity()) {
+                subscription_form.submit();
                 if (gateway == "mpesa") {
                     showMpesaPreloader();
                     var countdown = 50; // Set the initial countdown time in seconds
@@ -265,18 +281,13 @@ $("#mpesaPayBtn").on("click", function () {
             var subscription_form = document.getElementById(
                 "pay-subscription-form"
             );
-            subscription_form.action = "";
 
-            $("#mpesaPayBtn").attr("type", "submit");
-
-            // Prevent default form submission
-            subscription_form.addEventListener("submit", function (event) {
-                event.preventDefault();
-            });
             if (subscription_form.checkValidity()) {
                 $("#paymentMethodModal").modal("hide");
                 var selector = $("#mpesaCodePaymentMethodModal");
                 selector.modal("show");
+            } else {
+                subscription_form.reportValidity();
             }
         }
     }

@@ -1,0 +1,132 @@
+/***** Tenant product pay blade styling *****/
+/* Container for Cart Items */
+.cart-items-container {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+/* Individual Cart Item Card */
+.cart-item-card {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    padding: 15px;
+    margin-bottom: 10px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    background-color: #fff;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+/* Cart Item Details with Image */
+.cart-item-details {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+/* Product Image */
+.cart-item-image {
+    width: 80px;
+    height: 80px;
+    border-radius: 8px;
+    object-fit: cover;
+}
+
+/* Cart Item Text Details */
+.cart-item-info {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.cart-item-name {
+    font-size: 16px;
+    font-weight: 500;
+}
+
+.cart-item-price {
+    font-size: 16px;
+    color: #555;
+}
+
+/* Cart Item Quantity Section */
+.cart-item-quantity {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.cart-item-quantity button {
+    padding: 5px 10px;
+    border: none;
+    background-color: #f0f0f0;
+    color: #333;
+    font-size: 14px;
+    cursor: pointer;
+    border-radius: 4px;
+}
+
+.cart-item-quantity span {
+    padding: 0 10px;
+    font-size: 16px;
+}
+
+/* Actions and Total Price Section */
+.cart-item-actions {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 10px;
+}
+
+.cart-item-actions .cart-item-total {
+    font-size: 16px;
+    margin-right: 15px;
+}
+
+/* Buttons */
+.cart-item-button {
+    padding: 5px 10px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.btn-secondary {
+    background-color: #f0f0f0;
+    color: #333;
+}
+
+.btn-danger {
+    background-color: #ff5c5c;
+    color: white;
+}
+
+.btn-secondary:hover {
+    background-color: #e0e0e0;
+}
+
+.btn-danger:hover {
+    background-color: #ff3b3b;
+}
+
+/* Responsive Design for Larger Screens */
+@media (min-width: 768px) {
+    .cart-item-card {
+        flex-direction: row;
+        align-items: center;
+    }
+
+    .cart-item-details,
+    .cart-item-quantity,
+    .cart-item-actions {
+        flex: 1;
+    }
+
+    .cart-item-actions {
+        justify-content: flex-end;
+        margin-bottom: 0;
+    }
+}

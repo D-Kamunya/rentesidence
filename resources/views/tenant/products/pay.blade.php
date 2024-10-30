@@ -4,14 +4,13 @@
     <div class="main-content">
         <div id="mpesa-preloader" style="display: none;">
             <div id="mpesa-preloaderInner">
-                <img src="{{asset('assets/images/gateway-icon/mpesa.jpg')}}" alt="M-PESA Image">
+                <img src="{{ asset('assets/images/gateway-icon/mpesa.jpg') }}" alt="M-PESA Image">
                 <div>
-                    <p>Sending M-PESA payment notification to your phone. <br>
-                        Dear Customer, <br> Shortly you will receive an M-PESA prompt on your phone <br> requesting you to enter your M-PESA PIN to complete your payment. <br> Please ensure your phone is on and unlocked to enable you to complete the process. Thank you.</p>
+                    <p>Sending M-PESA payment notification to your phone...</p>
                     <p id="countdown">Make payment in <span id="countdownTimer">50</span> seconds.</p>
                     <p id="trans-message" style="display:none">Please wait for a few seconds for the transaction to be verified.</p>
                 </div>
-                <img src="{{asset('assets/images/loading.svg')}}" alt="M-PESA Image">
+                <img src="{{ asset('assets/images/loading.svg') }}" alt="M-PESA Image">
             </div>
         </div>
         <div class="page-content">
@@ -19,96 +18,60 @@
                 <div class="page-content-wrapper bg-white p-30 radius-20">
                     <div class="row">
                         <div class="col-12">
-                            <div
-                                class="page-title-box d-sm-flex align-items-center justify-content-between border-bottom mb-20">
+                            <div class="page-title-box d-sm-flex align-items-center justify-content-between border-bottom mb-20">
                                 <div class="page-title-left">
-                                    <h3 class="mb-sm-0">{{ $pageTitle }}</h3>
+                                    <h3 class="mb-sm-0">{{ __('Product Order Details') }}</h3>
                                 </div>
                                 <div class="page-title-right">
                                     <ol class="breadcrumb mb-0">
-                                        <li class="breadcrumb-item"><a href="{{ route('tenant.dashboard') }}"
-                                                title="{{ __('Dashboard') }}">{{ __('Dashboard') }}</a></li>
-                                        <li class="breadcrumb-item" aria-current="page">{{ __('Invoice') }}</li>
-                                        <li class="breadcrumb-item active" aria-current="page">{{ $pageTitle }}</li>
+                                        <li class="breadcrumb-item"><a href="{{ route('tenant.dashboard') }}" title="{{ __('Dashboard') }}">{{ __('Dashboard') }}</a></li>
+                                        <li class="breadcrumb-item"><a href="{{ route('tenant.products') }}" title="{{ __('Market Place') }}">{{ __('Market Place') }}</a></li>
+                                        <li class="breadcrumb-item active">{{ __('Checkout') }}</li>
                                     </ol>
                                 </div>
                             </div>
                         </div>
                     </div>
+
                     <div class="row">
-                        <!-- Tenant Portal Invoice Details Left Side Start -->
+                        <!-- Product Cart Items Start -->
                         <div class="col-lg-6">
-                            <div
-                                class="tenant-portal-invoice-details-leftside bg-off-white theme-border p-20 radius-4 mb-25">
+                            <div class="tenant-portal-order-details-leftside bg-off-white theme-border p-20 radius-4 mb-25">
                                 <div class="row align-items-center">
                                     <div class="col-12">
                                         <div class="d-flex align-items-center justify-content-between mb-25">
-                                            <h4 class="mb-0">{{ __('Invoice Details') }}</h4>
+                                            <h4 class="mb-0">{{ __('Cart Details') }}</h4>
                                         </div>
                                     </div>
                                 </div>
                                 <div class="row">
                                     <div class="col-12">
-                                        <div class="table-responsive">
-                                            <table class="table theme-border p-20">
-                                                <tbody>
-                                                    <tr>
-                                                        <td>{{ __('Invoice No') }}.</td>
-                                                        <td>
-                                                            <h6 class="tenant-invoice-tbl-right-text text-end">
-                                                                {{ $invoice->invoice_no }}</h6>
-                                                        </td>
-                                                    </tr>
-                                                    <tr>
-                                                        <td>{{ __('Name') }}</td>
-                                                        <td>
-                                                            <h6 class="tenant-invoice-tbl-right-text text-end">
-                                                                {{ $invoice->name }}</h6>
-                                                        </td>
-                                                    </tr>
-                                                    <tr>
-                                                        <td>{{ __('Issus Date') }}</td>
-                                                        <td>
-                                                            <h6 class="tenant-invoice-tbl-right-text text-end">
-                                                                {{ $invoice->created_at->format('Y-m-d') }}</h6>
-                                                        </td>
-                                                    </tr>
-                                                    <tr>
-                                                        <td>{{ __('Due Date') }}</td>
-                                                        <td>
-                                                            <h6 class="tenant-invoice-tbl-right-text text-end">
-                                                                {{ $invoice->due_date }}</h6>
-                                                        </td>
-                                                    </tr>
-                                                    <tr>
-                                                        <td>{{ __('Amount') }}</td>
-                                                        <td>
-                                                            <h6 class="tenant-invoice-tbl-right-text text-end">
-                                                                {{ currencyPrice($invoice->amount) }}</h6>
-                                                        </td>
-                                                    </tr>
-                                                </tbody>
-                                            </table>
-                                            <table class="table theme-border p-20">
-                                                <tbody id="currencyAppend"></tbody>
-                                            </table>
+                                        <div id="cartItems" class="cart-items-container">
+                                            <!-- Cart Items will be populated here by JavaScript -->
                                         </div>
+                                        <div class="text-end mt-4">
+                                            <h5>{{ __('Total Amount:')}} <span id="totalAmount">0.00</span></h5>
+                                        </div>
+                                        <table class="table theme-border p-20">
+                                            <tbody id="currencyAppend"></tbody>
+                                        </table>
                                     </div>
                                 </div>
                             </div>
                         </div>
-                        <!-- Tenant Portal Invoice Details Left Side End -->
+                        <!-- Product Cart Items End -->
 
-                        <!-- Tenant Portal Invoice Details Right Side Start -->
+                        <!-- Payment Gateway Section Start -->
                         <div class="col-lg-6">
                             <div
                                 class="tenant-portal-invoice-details-rightside bg-off-white theme-border p-20 radius-4 mb-25">
-                                <form id="pay-invoice-form" class="" action="{{ route('payment.checkout') }}" method="POST"
+                                <form id="pay-products-order-form" class="" name="checkoutForm" action="{{ route('payment.products.checkout') }}" method="POST"
                                     enctype="multipart/form-data">
                                     @csrf
-                                    <input type="hidden" name="invoice_id" value="{{ $invoice->id }}">
+                                    <input type="hidden" id="cartTotal" name="cartTotal">
                                     <input type="hidden" id="selectGateway" name="gateway">
                                     <input type="hidden" id="selectCurrency" name="currency">
+                                    <input type="hidden" id="getCurrencyByGatewayRoute" value="{{ route('tenant.invoice.get.currency') }}">
 
                                     <div class="row align-items-center">
                                         <div class="col-12">
@@ -118,7 +81,7 @@
                                         </div>
                                     </div>
 
-                                    <ul class="nav nav-tabs invoice-payment-nav-tabs row" id="invoicePaymentTab"
+                                    <ul class="nav nav-tabs invoice-payment-nav-tabs row" id="gatewaySection"
                                         role="tablist">
                                         @foreach ($gateways as $gateway)
                                             <li class="nav-item col-md-12 col-xl-12 col-xxl-6 mb-25" role="presentation">
@@ -127,7 +90,7 @@
                                                     data-gateway="{{ $gateway->slug }}" data-bs-toggle="tab" role="tab"
                                                     aria-controls="{{ $gateway->slug }}" aria-selected="true">
                                                     <div class="custom-radiobox">
-                                                        <input type="radio" value="{{ $gateway->id }}">
+                                                        <input type="radio" name="selectGateway" value="{{ $gateway->id }}">
                                                         <label class="fs-5">{{ $gateway->title }}</label>
                                                     </div>
                                                     <div class="invoice-payment-img">
@@ -172,7 +135,7 @@
                                                             <div class="col-md-12 mb-20">
                                                                 <label
                                                                     class="label-text-title color-heading font-medium mb-2">{{ __('Upload Deposit Slip') }}</label>
-                                                                <input type="file" id="bank_slip" class="form-control"
+                                                                <input type="file" class="form-control"
                                                                     name="bank_slip">
                                                                 @error('bank_slip')
                                                                     <span class="text-danger">{{ $message }}</span>
@@ -220,19 +183,19 @@
                                             </div>
                                         </div>
                                     </div>
-                                    <div class="col-md-12">
-                                        <button type="button" class="theme-btn me-2 mb-1 w-100"
-                                            id="payBtn">{{ __('Pay Now') }}
-                                            <span class="ms-1" id="gatewayCurrencyAmount"></span></button>
-                                        
-                                        <button type="button" class="d-none theme-btn me-2 mb-1 w-100"
-                                            id="mpesaPayBtn">{{ __('Pay Now Via Mpesa Code') }}
-                                            <span class="ms-1" id="mpesaGatewayCurrencyAmount"></span></button>
+                                    <div class="row">
+                                        <div class="col-md-12 text-center">
+                                            <button type="button" class="theme-btn me-2 mb-1 w-75"
+                                                id="checkoutBtn">{{ __('Checkout') }}
+                                                <span class="ms-1" id="checkoutAmount"></span></button>
+                                            <button type="button" class="d-none theme-btn me-2 mb-1 w-75"
+                                                id="mpesaPayBtn">{{ __('Checkout Via Mpesa Code') }}
+                                                <span class="ms-1" id="mpesaGatewayCurrencyAmount"></span></button>
+                                        </div>
                                     </div>
                                 </form>
                             </div>
                         </div>
-                        <!-- Tenant Portal Invoice Details Right Side End -->
 
                         <!-- Mpesa Transaction Code Payment Method Modal Start -->
                         <div class="modal fade big-modal" id="mpesaCodePaymentMethodModal" tabindex="-1" aria-hidden="true">
@@ -247,13 +210,13 @@
                                         <div class="payment-method-area">
                                             <h2 class="text-center payment-method-area-title">{{ __('Mpesa Payment Details') }}</h2>
                                             <div class="payment-method-wrap px-5">
-                                                <form id="" class="" action="{{ route('payment.checkout') }}" method="POST"
+                                                <form id="pay-products-order-form" name="checkoutForm" class="" action="{{ route('payment.products.checkout') }}" method="POST"
                                                     enctype="multipart/form-data">
                                                     @csrf
                                                     <input type="hidden" id="mpesa_code_account_id" name="mpesa_account_id" value="">
-                                                    <input type="hidden" name="invoice_id" value="{{ $invoice->id }}">
                                                     <input type="hidden" id="mpesa_selectGateway" name="gateway">
                                                     <input type="hidden" id="mpesa_selectCurrency" name="currency">
+                                                    <input type="hidden" id="mpesa_amount" name="mpesa_amount">
                                                     <input type="hidden"  id="mpesa_default-currency" name="default-currency" value="{{ json_encode(session('default_currency')) }}">
                                                     <div class="row">
                                                         <h4>Hello {{ auth()->user()->name }}</h4>
@@ -298,15 +261,19 @@
                             </div>
                         </div>
                         <!-- Mpesa Transaction Code Payment Method Modal End -->
+                        <!-- Payment Gateway Section End -->
                     </div>
                 </div>
             </div>
         </div>
     </div>
-    <input type="hidden" id="invoiceAmount" value="{{ $invoice->amount }}">
-    <input type="hidden" id="getCurrencyByGatewayRoute" value="{{ route('tenant.invoice.get.currency') }}">
 @endsection
 
-@push('script')
-    <script src="{{ asset('assets/js/custom/tenant-invoice-pay.js') }}"></script>
+@push('style')
+    <link rel="stylesheet" href="{{ asset('assets/css/product-pay.css') }}">
 @endpush
+
+@push('script')
+    <script src="{{ asset('assets/js/custom/tenant-product-pay.js') }}"></script>
+@endpush
+

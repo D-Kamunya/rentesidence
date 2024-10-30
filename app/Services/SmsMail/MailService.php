@@ -8,6 +8,7 @@ use App\Mail\InvoiceMail;
 use App\Mail\ReminderMail;
 use App\Mail\SignUpMail;
 use App\Mail\SubscriptionSuccessMail;
+use App\Mail\ProductOrderSuccessMail;
 use App\Mail\ThankYouMail;
 use App\Mail\UserEmailVerification;
 use App\Mail\WelcomeMail;
@@ -231,6 +232,41 @@ class MailService
                     } catch (Exception $e) {
                         Log::channel('sms-mail')->info($e->getMessage());
                         self::historyStore($ownerUserId, $email, $subject, $message, SMS_STATUS_FAILED, $e->getMessage());
+                    }
+                }
+                return 'success';
+            } else {
+                return __('No email found');
+            }
+        } else {
+            return __('Smtp setting not enabled');
+        }
+    }
+
+    public static function sendProductOrderSuccessMail($emails = [], $subject = null, $message = null, $tenantUserId, $title = null, $method = null, $status = null, $amount = 0)
+    {
+        if (env('MAIL_STATUS', 0) == 1 && env('MAIL_USERNAME')) {
+            if (count($emails)) {
+                foreach ($emails as $key => $email) {
+                    try {
+                        if (filter_var($email, FILTER_VALIDATE_EMAIL)) {
+                            $details['subject'] = $subject;
+                            $details['message'] = $message;
+                            $details['title'] = $title;
+                            $details['method'] = $method;
+                            $details['status'] = $status;
+                            $details['amount'] = $amount;
+                            // send mail
+                            Mail::to($email)->send(new ProductOrderSuccessMail($details));
+                            // log generate
+                            Log::channel('sms-mail')->info('email : ' . $email . ', subject : ' . $subject . ', message : ' . $message . 'key : ' . $key . ', date : ' . date('d-m-Y'));
+                            self::historyStore($tenantUserId, $email, $subject, $message, SMS_STATUS_DELIVERED);
+                        } else {
+                            throw new Exception('Email ' . $email . ' is not valid');
+                        }
+                    } catch (Exception $e) {
+                        Log::channel('sms-mail')->info($e->getMessage());
+                        self::historyStore($tenantUserId, $email, $subject, $message, SMS_STATUS_FAILED, $e->getMessage());
                     }
                 }
                 return 'success';

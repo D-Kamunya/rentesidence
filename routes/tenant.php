@@ -6,6 +6,7 @@ use App\Http\Controllers\Tenant\InformationController;
 use App\Http\Controllers\Tenant\InvoiceController;
 use App\Http\Controllers\Tenant\MaintenanceRequestController;
 use App\Http\Controllers\Tenant\TicketController;
+use App\Http\Controllers\ProductController;
 use Illuminate\Support\Facades\Route;
 
 Route::group(['prefix' => 'tenant', 'as' => 'tenant.', 'middleware' => ['auth', 'tenant']], function () {
@@ -49,4 +50,10 @@ Route::group(['prefix' => 'tenant', 'as' => 'tenant.', 'middleware' => ['auth', 
         Route::post('store', [MaintenanceRequestController::class, 'store'])->name('store');
         Route::get('get-info', [MaintenanceRequestController::class, 'getInfo'])->name('get.info'); // ajax
     });
+
+    Route::group(['prefix' => 'products'], function () {
+        Route::get('/', [ProductController::class, 'showProductsForTenant'])->name('products');
+        Route::get('pay', [ProductController::class, 'pay'])->name('products.pay');
+    });
+
 });

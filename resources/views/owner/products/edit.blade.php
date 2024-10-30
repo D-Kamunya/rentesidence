@@ -14,7 +14,16 @@
                             <div
                                 class="page-title-box d-sm-flex align-items-center justify-content-between border-bottom mb-20">
                                 <div class="page-title-left">
-                                    <h3 class="mb-sm-0">Edit products/Services</h3>
+                                    <h3 class="mb-sm-0">Edit {{$product->name}}</h3>
+                                </div>
+                                <div class="page-title-right">
+                                    <ol class="breadcrumb mb-0">
+                                        <li class="breadcrumb-item"><a href="{{ route('owner.dashboard') }}"
+                                                title="{{ __('Dashboard') }}">{{ __('Dashboard') }}</a></li>
+                                        <li class="breadcrumb-item"><a href="{{ route('owner.products.index') }}"
+                                                title="{{ __('My Shop') }}">{{ __('My Shop') }}</a></li>
+                                        <li class="breadcrumb-item active" aria-current="page">{{$product->name}}</li>
+                                    </ol>
                                 </div>
                             </div>
                         </div>
@@ -200,7 +209,7 @@
 @endsection
 
 @push('script')
-    <script src="{{ asset('assets/js/custom/product.js') }}"></script>
+    <script src="{{ asset('assets/js/custom/owner-product.js') }}"></script>
 @endpush
 @push('style')
     <link rel="stylesheet" href="{{ asset('assets/css/product.css') }}">
