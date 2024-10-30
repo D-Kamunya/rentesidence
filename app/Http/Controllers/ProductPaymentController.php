@@ -67,7 +67,7 @@ class ProductPaymentController extends Controller
                         localStorage.removeItem("cartItems");
                     </script>
                     ';
-                return redirect()->route('tenant.products')->with('success', __('Bank Details Sent Successfully! Wait for approval'));
+                return redirect()->route('tenant.product.index')->with('success', __('Bank Details Sent Successfully! Wait for approval'));
             } elseif ($gateway->slug == 'cash') {
                 $order = $this->placeOrder($cartAmount, $gateway, $gatewayCurrency); // new order create
                 $order->save();
@@ -79,7 +79,7 @@ class ProductPaymentController extends Controller
                         localStorage.removeItem("cartItems");
                     </script>
                     ';
-                return redirect()->route('tenant.products')->with('success', __('Cash Payment Request Sent Successfully! Wait for approval'));
+                return redirect()->route('tenant.product.index')->with('success', __('Cash Payment Request Sent Successfully! Wait for approval'));
             } elseif ($gateway->slug == 'mpesa'){
                 if ($request->has('mpesa_transaction_code')) {
                     $order = $this->placeOrder($mpesaAmount, $gateway, $gatewayCurrency, null, null, null, null, null, $request->mpesa_transaction_code); // new order create
@@ -91,7 +91,7 @@ class ProductPaymentController extends Controller
                             localStorage.removeItem("cartItems");
                         </script>
                         ';
-                    return redirect()->route('tenant.products')->with('success', __('Mpesa Transaction Code Submitted Successfully! Wait for approval'));
+                    return redirect()->route('tenant.product.index')->with('success', __('Mpesa Transaction Code Submitted Successfully! Wait for approval'));
                 }else{
                     $mpesaAccount = MpesaAccount::where(['owner_user_id' => $ownerId, 'gateway_id' => $gateway->id, 'id' => $request->mpesa_account_id])->first();
                     if (is_null($mpesaAccount)) {
@@ -138,7 +138,7 @@ class ProductPaymentController extends Controller
             ]);
 
             DB::rollBack();
-            return redirect()->route('tenant.products')->with('error', __('Payment Failed!'));
+            return redirect()->route('tenant.product.index')->with('error', __('Payment Failed!'));
         }
         
     }
@@ -195,7 +195,7 @@ class ProductPaymentController extends Controller
         
         $order = ProductOrder::findOrFail($order_id);
         if ($order->status == ORDER_PAYMENT_STATUS_PAID) {
-            return redirect()->route('tenant.products')->with('success', __('Your order has been paid!'));
+            return redirect()->route('tenant.product.index')->with('success', __('Your order has been paid!'));
         }
         
         return handleProductPaymentConfirmation($order, $payerId, $gateway_slug, null);

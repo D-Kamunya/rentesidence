@@ -25,7 +25,7 @@
                                 <div class="page-title-right">
                                     <ol class="breadcrumb mb-0">
                                         <li class="breadcrumb-item"><a href="{{ route('tenant.dashboard') }}" title="{{ __('Dashboard') }}">{{ __('Dashboard') }}</a></li>
-                                        <li class="breadcrumb-item"><a href="{{ route('tenant.products') }}" title="{{ __('Market Place') }}">{{ __('Market Place') }}</a></li>
+                                        <li class="breadcrumb-item"><a href="{{ route('tenant.product.index') }}" title="{{ __('Market Place') }}">{{ __('Market Place') }}</a></li>
                                         <li class="breadcrumb-item active">{{ __('Checkout') }}</li>
                                     </ol>
                                 </div>

@@ -83,7 +83,11 @@
                                             <p>No image available.</p>
                                         @endif
 
-                                        <h2 class="product-title">{{ $product->name }}</h2>
+                                        <h2 class="product-title">
+                                            <a href="{{ route('tenant.product.details', $product->id) }}" style="text-decoration: none; color: inherit;">
+                                                {{ $product->name }}
+                                            </a>
+                                        </h2>
 
                                         <h2 class="product-id d-none">{{$product->id}}</h2>
 
@@ -159,7 +163,7 @@
     </div>
 
     <!-- Floating Cart Button -->
-    <div id="floating-cart-button" class="floating-cart" data-url="{{ route('tenant.products.pay') }}">
+    <div id="floating-cart-button" class="floating-cart" data-url="{{ route('tenant.product.pay') }}">
         <i class="fas fa-shopping-cart"></i>
         <span id="cart-counter" class="cart-counter">0</span>
     </div>
