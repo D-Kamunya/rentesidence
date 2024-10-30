@@ -51,9 +51,10 @@ Route::group(['prefix' => 'tenant', 'as' => 'tenant.', 'middleware' => ['auth', 
         Route::get('get-info', [MaintenanceRequestController::class, 'getInfo'])->name('get.info'); // ajax
     });
 
-    Route::group(['prefix' => 'products'], function () {
-        Route::get('/', [ProductController::class, 'showProductsForTenant'])->name('products');
-        Route::get('pay', [ProductController::class, 'pay'])->name('products.pay');
+    Route::group(['prefix' => 'product', 'as' => 'product.'], function () {
+        Route::get('/', [ProductController::class, 'showProductsForTenant'])->name('index');
+        Route::get('details/{id}', [ProductController::class, 'show'])->name('details');
+        Route::get('pay', [ProductController::class, 'pay'])->name('pay');
     });
 
 });

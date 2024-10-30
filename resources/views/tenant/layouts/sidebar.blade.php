@@ -13,7 +13,7 @@
                     </a>
                 </li>
                 <li class="{{ @$navMarketPlaceMMActiveClass }}">
-                    <a href="{{ route('tenant.products') }}" class="{{ @$navMarketPlaceActiveClass }}">
+                    <a href="{{ route('tenant.product.index') }}" class="{{ @$navMarketPlaceActiveClass }}">
                         <i class="ri-store-2-fill "></i>
                         <span>{{ __('Market Place') }}</span>
                     </a>

@@ -788,9 +788,9 @@ if (!function_exists('handleProductPaymentConfirmation')) {
                     }
 
                     if ($gateway_slug == 'mpesa') {
-                        return redirect()->route('tenant.products')->with('success', __('Mpesa Payment Successful!'));
+                        return redirect()->route('tenant.product.index')->with('success', __('Mpesa Payment Successful!'));
                     }
-                    return redirect()->route('tenant.products')->with('success', __('Payment Successful!'));
+                    return redirect()->route('tenant.product.index')->with('success', __('Payment Successful!'));
                 }
             } else {
                 if ($gateway_slug == 'mpesa') {
@@ -800,7 +800,7 @@ if (!function_exists('handleProductPaymentConfirmation')) {
                         $paymentCheck->save();
                         DB::commit();
                     }
-                    return redirect()->route('tenant.products')->with('error', __('Mpesa Payment failed!! Please try again after a few minutes. If the problem persists, contact the System Admin.'));
+                    return redirect()->route('tenant.product.index')->with('error', __('Mpesa Payment failed!! Please try again after a few minutes. If the problem persists, contact the System Admin.'));
                 }
                 if ($paymentCheck!==null){
                     $paymentCheck->increment('check_count');
@@ -808,11 +808,11 @@ if (!function_exists('handleProductPaymentConfirmation')) {
                     $paymentCheck->save();
                     DB::commit();
                 }
-                return redirect()->route('tenant.products')->with('error', __('Payment Failed!'));
+                return redirect()->route('tenant.product.index')->with('error', __('Payment Failed!'));
             }
         } catch (\Exception $e) {
             DB::rollBack();
-            return redirect()->route('tenant.products')->with('error', __('Payment Failed!'));
+            return redirect()->route('tenant.product.index')->with('error', __('Payment Failed!'));
         }
     }
 }
