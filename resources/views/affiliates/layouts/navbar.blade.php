@@ -3,7 +3,7 @@
         <div class="d-flex">
             <!-- LOGO -->
             <div class="navbar-brand-box">
-                <a href="{{ route('affiliates.index') }}" class="logo logo-light">
+                <a href="{{ route('affiliate.dashboard') }}" class="logo logo-light">
                     <span class="logo-sm">
                         <img src="{{ getSettingImage('app_logo') }}" alt="logo-sm-light">
                     </span>

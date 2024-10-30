@@ -31,7 +31,6 @@
     <title>{{ getOption('app_name') . ' - ' . @$pageTitle }}</title>
 
     @include('common.layouts.style')
-    @include('affiliates.layouts.sidebar')
     @stack('style')
 </head>
 
@@ -47,6 +46,7 @@
 
     <div id="layout-wrapper">
         @include('affiliates.layouts.navbar')
+        @include('affiliates.layouts.sidebar')
         @yield('content')
     </div>
 

@@ -113,6 +113,9 @@ class RouteServiceProvider extends ServiceProvider
 
             Route::middleware(['web', 'tenancy', 'common', 'version.update', 'addon.update'])
                 ->group(base_path('routes/maintainer.php'));
+
+            Route::middleware(['web', 'tenancy', 'common', 'version.update', 'addon.update'])
+                ->group(base_path('routes/affiliate.php'));
         });
     }
 
