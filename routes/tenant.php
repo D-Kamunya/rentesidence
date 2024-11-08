@@ -4,6 +4,7 @@ use App\Http\Controllers\Tenant\DashboardController;
 use App\Http\Controllers\Tenant\DocumentController;
 use App\Http\Controllers\Tenant\InformationController;
 use App\Http\Controllers\Tenant\InvoiceController;
+use App\Http\Controllers\Tenant\ProductOrderController;
 use App\Http\Controllers\Tenant\MaintenanceRequestController;
 use App\Http\Controllers\Tenant\TicketController;
 use App\Http\Controllers\ProductController;
@@ -19,6 +20,13 @@ Route::group(['prefix' => 'tenant', 'as' => 'tenant.', 'middleware' => ['auth', 
         Route::get('print/{id}', [InvoiceController::class, 'details'])->name('print');
         Route::get('pay/{id}', [InvoiceController::class, 'pay'])->name('pay');
         Route::get('get-currency-by-gateway', [InvoiceController::class, 'getCurrencyByGateway'])->name('get.currency');
+    });
+
+    Route::group(['prefix' => 'order', 'as' => 'order.'], function () {
+        Route::get('/', [ProductOrderController::class, 'index'])->name('index');
+        // Route::get('print/{id}', [InvoiceController::class, 'details'])->name('print');
+        // Route::get('pay/{id}', [InvoiceController::class, 'pay'])->name('pay');
+        // Route::get('get-currency-by-gateway', [InvoiceController::class, 'getCurrencyByGateway'])->name('get.currency');
     });
 
     Route::group(['prefix' => 'information', 'as' => 'information.'], function () {

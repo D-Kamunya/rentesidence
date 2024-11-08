@@ -7,12 +7,14 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Str; 
 
 class ProductOrder extends Model
 {
     use HasFactory, SoftDeletes;
 
     protected $fillable = [
+        'order_id', 
         'payment_id',
         'transaction_id',
         'mpesa_transaction_code',
@@ -34,6 +36,31 @@ class ProductOrder extends Model
         'deposit_by',
         'deposit_slip_id',
     ];
+
+    protected static function boot()
+    {
+        parent::boot();
+
+        // Automatically generate order_id before creating the model
+        static::creating(function ($model) {
+            $model->order_id = 'ORDERID' . strtoupper(Str::random(8));
+        });
+    }
+
+    public function scopePending($query)
+    {
+        return $query->where('payment_status', PRODUCT_ORDER_STATUS_PENDING);
+    }
+
+    public function scopePaid($query)
+    {
+        return $query->where('payment_status', PRODUCT_ORDER_STATUS_PAID);
+    }
+
+    public function scopeCancelled($query)
+    {
+        return $query->where('payment_status', PRODUCT_ORDER_STATUS_CANCELLED);
+    }
 
     public function user(): HasOne
     {

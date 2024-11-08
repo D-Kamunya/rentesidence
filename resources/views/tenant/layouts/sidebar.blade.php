@@ -24,6 +24,12 @@
                         <span>{{ __('Invoice') }}</span>
                     </a>
                 </li>
+                <li class="{{ @$navProductOrdersMMActiveClass }}">
+                    <a href="{{ route('tenant.order.index') }}" class="{{ @$navProductOrderActiveClass }}">
+                        <i class="ri-bill-line"></i>
+                        <span>{{ __('Product Orders') }}</span>
+                    </a>
+                </li>
                 @if (ownerCurrentPackage(auth()->user()->owner_user_id)?->ticket_support == ACTIVE || isAddonInstalled('PROTYSAAS') < 1)
                     <li class="{{ @$navTicketMMActiveClass }}">
                         <a href="{{ route('tenant.ticket.index') }}" class="{{ @$navTicketActiveClass }}">
