@@ -20,6 +20,13 @@
                 </li>
 
                 <li>
+                    <a href="{{ route('owner.order.index') }}" >
+                        <i class="ri-bill-line"></i>
+                        <span>{{ __('Product Orders') }}</span>
+                    </a>
+                </li>
+
+                <li>
                     <a href="javascript: void(0);" class="has-arrow">
                         <i class="ri-building-line"></i>
                         <span>{{ __('Properties') }}</span>

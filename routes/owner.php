@@ -8,6 +8,7 @@ use App\Http\Controllers\Owner\ExpenseTypeController;
 use App\Http\Controllers\Owner\GatewayController;
 use App\Http\Controllers\Owner\InformationController;
 use App\Http\Controllers\Owner\InvoiceController;
+use App\Http\Controllers\Owner\ProductOrderController;
 use App\Http\Controllers\Owner\InvoiceRecurringController;
 use App\Http\Controllers\Owner\InvoiceTypeController;
 use App\Http\Controllers\Owner\KycConfigController;
@@ -70,6 +71,13 @@ Route::group(['prefix' => 'owner', 'as' => 'owner.', 'middleware' => ['auth', 'o
         Route::get('details/{id}', [TenantController::class, 'details'])->name('details');
         Route::post('close-history-store/{id}', [TenantController::class, 'closeHistoryStore'])->name('close.history.store');
         Route::post('delete', [TenantController::class, 'delete'])->name('delete');
+    });
+
+    Route::group(['prefix' => 'order', 'as' => 'order.'], function () {
+        Route::get('/', [ProductOrderController::class, 'index'])->name('index');
+        // Route::get('print/{id}', [InvoiceController::class, 'details'])->name('print');
+        // Route::get('pay/{id}', [InvoiceController::class, 'pay'])->name('pay');
+        // Route::get('get-currency-by-gateway', [InvoiceController::class, 'getCurrencyByGateway'])->name('get.currency');
     });
 
     Route::group(['prefix' => 'information', 'as' => 'information.'], function () {
