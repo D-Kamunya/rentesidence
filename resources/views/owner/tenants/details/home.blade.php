@@ -92,9 +92,9 @@
                                                                                 <i
                                                                                     class="ri-checkbox-circle-fill me-1 "></i>
                                                                                 @if ($tenant->status == TENANT_STATUS_ACTIVE)
-                                                                                    {{ __('Currnetly Tenant') }}
+                                                                                    {{ __('Active Tenant') }}
                                                                                 @else
-                                                                                    {{ __('Deactivate Tenant') }}
+                                                                                    {{ __('Deactivated Tenant') }}
                                                                                 @endif
                                                                             </div>
                                                                         </div>

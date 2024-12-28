@@ -283,7 +283,7 @@
                     <h4 class="modal-title" id="tenantCloseModalLabel">{{ __('Tenant Close') }}</h4>
                     <div class="account-settings-menu-item "
                         title="{{ __('This Tenant have') }} {{ $paymentDueInvoiceCount }} {{ __('Invoice Due') }}">
-                        {{ __('This Tenant have') }} <a href=""><span
+                        {{ __('This Tenant has') }} <a href=""><span
                                 class="bg-red-transparent red-color radius-4 overflow-hidden px-2 mx-2">{{ $paymentDueInvoiceCount }}</span></a>
                         {{ __('Due Invoice') }}
                     </div>
@@ -325,7 +325,7 @@
                                                         <p class="font-13">{{ $tenant->general_rent }}</p>
                                                     </td>
                                                     <td>
-                                                        <h6>{{ __('Securiry Deposit') }}</h6>
+                                                        <h6>{{ __('Security Deposit') }}</h6>
                                                         <p class="font-13">{{ $tenant->security_deposit }}</p>
                                                     </td>
                                                     <td>
@@ -384,6 +384,37 @@
                                         class="label-text-title color-heading font-medium mb-2">{{ __('Closing Reason') }}</label>
                                     <textarea name="close_reason" id="close_reason" class="form-control" placeholder="{{ __('Reason') }}"></textarea>
                                 </div>
+                                <div>
+                                    <label
+                                    class="label-text-title color-heading font-medium mb-2">Tenant screening </label>
+                                    </br>
+                                    <div class="mb-3">
+                                        <label for="rent_payment_rating" class="form-label">Rent Payment Rating</label>
+                                        <select id="rent_payment_rating" name="rent_payment_rating" class="form-control" required>
+                                            <option value="">Select Rating</option>
+                                            <option value="1 - Worst">1 - Worst</option>
+                                            <option value="2 - Poor">2 - Poor</option>
+                                            <option value="3 - Average">3 - Average</option>
+                                            <option value="4 - Good">4 - Good</option>
+                                            <option value="5 - Excellent">5 - Excellent</option>
+                                        </select>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label for="discipline_rating" class="form-label">Discipline Rating</label>
+                                        <select id="discipline_rating" name="discipline_rating" class="form-control" required>
+                                            <option value="">Select Rating</option>
+                                            <option value="1 - Worst">1 - Worst</option>
+                                            <option value="2 - Poor">2 - Poor</option>
+                                            <option value="3 - Average">3 - Average</option>
+                                            <option value="4 - Good">4 - Good</option>
+                                            <option value="5 - Excellent">5 - Excellent</option>
+                                        </select>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label for="closingRemarks" class="form-label">Remarks (Optional)</label>
+                                        <textarea name="closing_remarks" id="closing_remarks" rows="3" class="form-control"></textarea>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                         <!-- Modal Inner Form Box End -->
@@ -407,7 +438,7 @@
                 <div class="modal-header">
                     <h4 class="modal-title" id="tenantDeleteModalLabel">{{ __('Tenant Delete') }}</h4>
                     <div class="account-settings-menu-item "
-                        title="{{ __('This Tenant have') }} {{ $paymentDueInvoiceCount }} {{ __('Invoice Due') }}">
+                        title="{{ __('This Tenant has') }} {{ $paymentDueInvoiceCount }} {{ __('Invoice Due') }}">
                         {{ __('This Tenant have') }} <a href=""><span
                                 class="bg-red-transparent red-color radius-4 overflow-hidden px-2 mx-2">{{ $paymentDueInvoiceCount }}</span></a>
                         {{ __('Due Invoice') }}

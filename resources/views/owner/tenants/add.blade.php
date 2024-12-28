@@ -46,9 +46,11 @@
                                                     <span>{{ __('Tenant Information') }}</span>
                                                 </li>
                                                 <li id="locationStep">
-                                                    <span class="form-stepper-nav-icon"><i
-                                                            class="ri-home-4-fill"></i></span>
-                                                    <span>{{ __('Home Details') }}</span>
+                                                    <span class="form-stepper-nav-icon" style="display: flex; align-items: center; gap: 2px;">
+                                                        <i class="ri-user-search-line"></i> <!-- Tenant Screening Icon -->
+                                                        <i class="ri-home-4-fill"></i> <!-- Home Details Icon -->
+                                                    </span>
+                                                    <span>{{ __('Tenant Screening & Home Details') }}</span>
                                                 </li>
                                                 <li id="unitStep">
                                                     <span class="form-stepper-nav-icon"><i
@@ -280,6 +282,47 @@
 
                                         <!-- fieldsets 2 -->
                                         <fieldset>
+                                            <!-- Tenant screening -->
+                                            <div class="form-card add-property-box bg-off-white theme-border radius-4 p-20 mb-4">
+                                                <div class="tenants-inner-box-block">
+                                                    <div class="add-property-title border-bottom pb-25 mb-25">
+                                                        <h4>{{ __('Tenant Screening') }}</h4>
+                                                    </div>
+                                                    @if(isset($tenant) && ($tenant->rent_payment_rating || $tenant->discipline_rating))
+                                                        <p>
+                                                            <strong>Rent Payment Rating:</strong> 
+                                                            {{ $tenant->rent_payment_rating }}
+                                                            @if((int) $tenant->rent_payment_rating[0] >= 4)
+                                                                <span style="color: green; font-weight: bold;">✔</span>
+                                                            @elseif((int) $tenant->rent_payment_rating[0] < 3)
+                                                                <span style="color: orange; font-weight: bold;">⚠</span>
+                                                            @endif
+                                                        </p>
+                                                        <p>
+                                                            <strong>Discipline Rating:</strong> 
+                                                            {{ $tenant->discipline_rating }}
+                                                            @if((int) $tenant->discipline_rating[0] >= 4)
+                                                                <span style="color: green; font-weight: bold;">✔</span>
+                                                            @elseif((int) $tenant->discipline_rating[0] < 3)
+                                                                <span style="color: orange; font-weight: bold;">⚠</span>
+                                                            @endif
+                                                        </p>
+                                                        @if((int) $tenant->rent_payment_rating[0] >= 4 || (int) $tenant->discipline_rating[0] >= 4)
+                                                            <div style="border: 1px solid green; background-color: #d4edda; color: #155724; padding: 10px; margin-top: 10px; border-radius: 5px;">
+                                                                <strong>Positive:</strong> This tenant is rated above average.
+                                                            </div>
+                                                        @endif
+                                                        @if((int) $tenant->rent_payment_rating[0] < 3 || (int) $tenant->discipline_rating[0] < 3)
+                                                            <div style="border: 1px solid orange; background-color: #fff3cd; color: #856404; padding: 10px; margin-top: 10px; border-radius: 5px;">
+                                                                <strong>Caution:</strong> This tenant is rated below average. Proceed with caution.
+                                                            </div>
+                                                        @endif
+                                                    @else
+                                                        <p>There are no previous ratings available for this tenant. You may proceed with the unit allocation below..</p>
+                                                    @endif
+                                                    <!-- End of tenant screening -->
+                                                </div>    
+                                            </div>
                                             <form class="ajax" action="{{ route('owner.tenant.store') }}"
                                                 method="POST" data-handler="stepChange">
                                                 @csrf
