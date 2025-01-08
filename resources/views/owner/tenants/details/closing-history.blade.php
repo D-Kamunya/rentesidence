@@ -91,6 +91,31 @@
                                                         <p>{{ $tenant->close_reason }}</p>
                                                     </div>
                                                 </div>
+                                                
+                                                <div class="row account-settings-info-item">
+                                                    <div class="col-md-4 col-lg-4 col-xl-4 col-xxl-4">
+                                                        <p class="color-heading">{{ __('Rent Payment Rating') }}:</p>
+                                                    </div>
+                                                    <div class="col-md-6 col-lg-6 col-xl-6 col-xxl-4">
+                                                        <p> {{ $tenant->rent_payment_rating }} </p>
+                                                    </div>
+                                                </div>
+                                                <div class="row account-settings-info-item">
+                                                    <div class="col-md-4 col-lg-4 col-xl-4 col-xxl-4">
+                                                        <p class="color-heading">{{ __('Discipline Rating') }}:</p>
+                                                    </div>
+                                                    <div class="col-md-6 col-lg-6 col-xl-6 col-xxl-4">
+                                                        <p>{{ $tenant->discipline_rating }} </p>
+                                                    </div>
+                                                </div>
+                                                <div class="row account-settings-info-item">
+                                                    <div class="col-md-4 col-lg-4 col-xl-4 col-xxl-4">
+                                                        <p class="color-heading">{{ __('Closing Remarks') }}:</p>
+                                                    </div>
+                                                    <div class="col-md-6 col-lg-6 col-xl-6 col-xxl-4">
+                                                        <p>{{ $tenant->closing_remarks }}</p>
+                                                    </div>
+                                                </div>
                                             </div>
                                         </div>
                                         <!-- Account Settings Content Box End -->

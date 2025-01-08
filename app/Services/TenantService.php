@@ -353,6 +353,7 @@ class TenantService
             /*End*/
 
             DB::commit();
+            session(['tenant_id' => $tenant->id]);
             if (getOption('send_email_status', 0) == ACTIVE) {
                 if ($id == '') {
                     $emails = [$user->email];
@@ -386,6 +387,36 @@ class TenantService
             return $this->error([],  $message);
         }
     }
+
+    public function screening()
+    {
+        try {
+            // Retrieve tenant data from the database
+            $tenantId = session('tenant_id'); // Ensure tenant_id is stored during step1
+            $currentTenant = Tenant::with('user')->findOrFail($tenantId);
+    
+            // Check if the tenant exists in the system (excluding the current owner)
+            $existingTenant = Tenant::where('first_name', $currentTenant->user->first_name)
+                ->where('last_name', $currentTenant->user->last_name)
+                ->where('contact_number', $currentTenant->user->contact_number)
+                ->where('owner_user_id', '!=', auth()->id()) // Exclude the current owner
+                ->whereNotNull('rent_payment_rating') // Ensure ratings exist
+                ->whereNotNull('discipline_rating')
+                ->first();
+    
+            // Prepare response data
+            $data = $existingTenant ?: null;
+    
+            if (!$data) {
+                $data['message'] = 'There are no previous ratings available for this tenant.';
+            }
+    
+            $message = $existingTenant ? __('Screening data retrieved successfully.') : __('No data found.');
+            return $this->success($data, $message);
+        } catch (Exception $e) {
+            return $this->error([], getErrorMessage($e, $e->getMessage()));
+        }
+    }    
 
     public function step2(Request $request)
     {
@@ -464,6 +495,9 @@ class TenantService
             $tenant->close_charge = $request->close_charge;
             $tenant->close_date = $request->close_date;
             $tenant->close_reason = $request->close_reason;
+            $tenant->rent_payment_rating = $request->rent_payment_rating;
+            $tenant->discipline_rating = $request->discipline_rating;
+            $tenant->closing_remarks = $request->closing_remarks;
             $tenant->save();
 
             DB::commit();

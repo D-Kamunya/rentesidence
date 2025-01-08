@@ -198,12 +198,10 @@
                     <li>
                         <a href="javascript: void(0);" class="has-arrow">
                             <i class="ri-mail-send-line"></i>
-                            <span>{{ __('Bulk Sms/Mail') }}</span>
+                            <span>{{ __('Mail') }}</span>
                         </a>
                         <ul class="sub-menu" aria-expanded="false">
-                            <li>
-                                <a href="{{ route('sms-mail.sms') }}">{{ __('Sms') }}</a>
-                            </li>
+                            
                             <li>
                                 <a href="{{ route('sms-mail.mail') }}">{{ __('Email') }}</a>
                             </li>

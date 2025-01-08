@@ -109,7 +109,7 @@
                             <a href="javascript:void(0)" class="theme-btn-back me-3" data-bs-dismiss="modal"
                                 title="{{ __('Back') }}">{{ __('Back') }}</a>
                             <button type="submit" class="theme-btn me-3"
-                                title="{{ __('Assing') }}">{{ __('Assing') }}</button>
+                                title="{{ __('Assign') }}">{{ __('Assign') }}</button>
                         </div>
                     </form>
                 </div>

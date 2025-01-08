@@ -31,10 +31,10 @@
                                             <th>{{ __('SL') }}</th>
                                             <th class="all">{{ __('Invoice No') }}.</th>
                                             <th class="all">{{ __('Name') }}</th>
-                                            <th class="desktop">{{ __('Issus Date') }}</th>
+                                            <th class="desktop">{{ __('Issue Date') }}</th>
                                             <th class="desktop">{{ __('Due Date') }}</th>
                                             <th class="desktop">{{ __('Amount') }}</th>
-                                            <th class="all">{{ __('Recept') }}</th>
+                                            <th class="all">{{ __('Receipt') }}</th>
                                             <th class="desktop">{{ __('Action') }}</th>
                                         </tr>
                                     </thead>
