@@ -113,8 +113,8 @@ class GatewayService
                 Bank::where('owner_user_id', $ownerUserId)->whereNotIn('id', $bankIds)->delete();
             }elseif ($gateway->slug == 'mpesa') {
                 $mpesaAccountIds = [];
-                if (isset($request->mpesaAccount['passkey']) && is_array($request->mpesaAccount['passkey'])) {
-                    for ($i = 0; $i < count($request->mpesaAccount['passkey']); $i++) {
+                if (isset($request->mpesaAccount['account_type']) && is_array($request->mpesaAccount['account_type'])) {
+                    for ($i = 0; $i < count($request->mpesaAccount['account_type']); $i++) {
                         $accountType = $request->mpesaAccount['account_type'][$i];
                         // Set default values for fields
                         $paybill = null;
@@ -142,7 +142,6 @@ class GatewayService
                                 'paybill' => $paybill,
                                 'account_name' => $accountName,
                                 'till_number' => $tillNumber,
-                                'passkey' => $request->mpesaAccount['passkey'][$i],
                             ]
                         );
                         
@@ -154,11 +153,11 @@ class GatewayService
                 // Delete removed MpesaAccount records
                 MpesaAccount::where('owner_user_id', $ownerUserId)->whereNotIn('id', $mpesaAccountIds)->delete();
             } else {
-                $gateway->mode = $request->mode;
                 $gateway->url = $request->url;
                 $gateway->key = $request->key;
                 $gateway->secret = $request->secret;
             }
+            $gateway->mode = $request->mode;
             $gateway->status = $request->status;
             $gateway->owner_user_id = $ownerUserId;
             $gateway->save();

@@ -94,7 +94,6 @@ function getDataEditRes(response) {
     selector.find("input[name=url]").val(response.data.gateway.url);
 
     if (response.data.gateway.slug == "bank") {
-        selector.find(".mode-div").hide();
         selector.find(".url-div").hide();
         selector.find(".key-secret-div").hide();
         selector.find(".mpesa-div").hide();
@@ -152,7 +151,6 @@ function getDataEditRes(response) {
 
         $(".bank-div-append").html(bankHtml);
     } else if (response.data.gateway.slug == "mpesa") {
-        selector.find(".mode-div").hide();
         selector.find(".url-div").hide();
         selector.find(".key-secret-div").hide();
         selector.find(".bank-div").hide();
@@ -224,11 +222,7 @@ function getDataEditRes(response) {
                                                 `;
                 }
 
-                mpesaHtml += `<div class="col-6 mb-20">
-                                <label for="name" class="label-text-title color-heading font-medium mb-2">Pass Key</label>
-                                <input type="text" name="mpesaAccount[passkey][]" class="form-control passkey" id="passkey" placeholder="Passkey" value="${mpesaAccount[1].passkey}">
-                            </div>
-                            <div class="row mb-20">
+                mpesaHtml += `<div class="row mb-20">
                                 <div class="col-12 text-end"><button type="button" class="red-color remove-mpesa-account" title="Remove">Remove</button></div>
                             </div>
                     </div>
@@ -239,13 +233,11 @@ function getDataEditRes(response) {
         $(".mpesa-div-append").html(mpesaHtml);
     } else {
         if (response.data.gateway.slug == "cash") {
-            selector.find(".mode-div").hide();
             selector.find(".url-div").hide();
             selector.find(".key-secret-div").hide();
             selector.find(".bank-div").hide();
             selector.find(".mpesa-div").hide();
         } else {
-            selector.find(".mode-div").show();
             selector.find(".url-div").show();
             selector.find(".key-secret-div").show();
             selector.find(".bank-div").hide();
@@ -413,10 +405,6 @@ function addMpesaAccount() {
                     <div class="col-6 mb-20 till-number-fields" style="display: none;">
                         <label for="name" class="label-text-title color-heading font-medium mb-2">Till Number</label>
                                 <input type="text" name="mpesaAccount[till_number][]" class="form-control till-number" id="till-number" placeholder="Till Number" value="">
-                    </div>
-                    <div class="col-6 mb-20">
-                            <label for="name" class="label-text-title color-heading font-medium mb-2">Pass Key</label>
-                            <input type="text" name="mpesaAccount[passkey][]" class="form-control passkey" id="passkey" placeholder="Passkey" value="">
                     </div>
                     <div class="row mb-20">
                         <div class="col-12 text-end"><button type="button" class="red-color remove-mpesa-account" title="Remove">Remove</button></div>

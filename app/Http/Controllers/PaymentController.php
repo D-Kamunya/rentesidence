@@ -89,7 +89,8 @@ class PaymentController extends Controller
             'id' => $order->id,
             'gateway' => $gateway->slug,
             'callback_url' => route('payment.verify'),
-            'currency' => $gatewayCurrency->currency
+            'currency' => $gatewayCurrency->currency,
+            'type' => 'Rent Payment'
         ];
 
         $payment = new Payment($gateway->slug, $object);
