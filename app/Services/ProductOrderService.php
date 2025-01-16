@@ -163,7 +163,7 @@ class ProductOrderService
                 return currencyPrice($order->total_amount);
             })
             ->addColumn('status', function ($order) {
-                if ($order->status == PRODUCT_ORDER_STATUS_PAID) {
+                if ($order->payment_status == PRODUCT_ORDER_STATUS_PAID) {
                     return '<div class="status-btn status-btn-blue font-13 radius-4">Paid</div>';
                 } else {
                     return '<div class="status-btn status-btn-orange font-13 radius-4">Pending</div>';
@@ -171,11 +171,11 @@ class ProductOrderService
             })
             ->addColumn('action', function ($order) {
                 $html = '<div class="tbl-action-btns d-inline-flex">';
-                if ($order->status == PRODUCT_ORDER_STATUS_PENDING) {
+                if ($order->payment_status == PRODUCT_ORDER_STATUS_PENDING) {
                     $html .= '<button type="button" class="p-1 tbl-action-btn edit" data-detailsurl="' . route('user.product_order.details', $order->id) . '" title="' . __('Edit') . '"><span class="iconify" data-icon="clarity:note-edit-solid"></span></button>';
                     $html .= '<button type="button" class="p-1 tbl-action-btn view" data-detailsurl="' . route('user.product_order.details', $order->id) . '" title="' . __('View') . '"><span class="iconify" data-icon="carbon:view-filled"></span></button>';
                     $html .= '<button type="button" onclick="deleteItem(\'' . route('user.product_order.destroy', $order->id) . '\', \'allProductOrdersDatatable\')" class="p-1 tbl-action-btn" title="Delete"><span class="iconify" data-icon="ep:delete-filled"></span></button>';
-                } elseif ($order->status == PRODUCT_ORDER_STATUS_PAID) {
+                } elseif ($order->payment_status == PRODUCT_ORDER_STATUS_PAID) {
                     $html .= '<button type="button" class="p-1 tbl-action-btn view" data-detailsurl="' . route('user.product_order.details', $order->id) . '" title="' . __('View') . '"><span class="iconify" data-icon="carbon:view-filled"></span></button>';
                 }
                 $html .= '</div>';
@@ -215,7 +215,7 @@ class ProductOrderService
                 return $order->gatewayTitle;
             })
             ->addColumn('status', function ($order) {
-                if ($order->status == PRODUCT_ORDER_STATUS_PAID) {
+                if ($order->payment_status == PRODUCT_ORDER_STATUS_PAID) {
                     return '<div class="status-btn status-btn-blue font-13 radius-4">Paid</div>';
                 } else {
                     return '<div class="status-btn status-btn-orange font-13 radius-4">Pending</div>';
@@ -223,7 +223,7 @@ class ProductOrderService
             })
             ->addColumn('action', function ($order) {
                 $html = '<div class="tbl-action-btns d-inline-flex">';
-                if ($order->status == PRODUCT_ORDER_STATUS_PENDING) {
+                if ($order->payment_status == PRODUCT_ORDER_STATUS_PENDING) {
                     $html .= '<button type="button" class="p-1 tbl-action-btn edit" data-detailsurl="' . route('user.product_order.details', $order->id) . '" title="' . __('Edit') . '"><span class="iconify" data-icon="clarity:note-edit-solid"></span></button>';
                     $html .= '<button type="button" class="p-1 tbl-action-btn view" data-detailsurl="' . route('user.product_order.details', $order->id) . '" title="' . __('View') . '"><span class="iconify" data-icon="carbon:view-filled"></span></button>';
                     $html .= '<button type="button" onclick="deleteItem(\'' . route('user.product_order.destroy', $order->id) . '\', \'allProductOrdersDatatable\')" class="p-1 tbl-action-btn" title="Delete"><span class="iconify" data-icon="ep:delete-filled"></span></button>';
@@ -231,7 +231,7 @@ class ProductOrderService
                         $html .= '<a href="' . getFileUrl($order->folder_name, $order->file_name) . '" class="p-1 tbl-action-btn" title="' . __('Bank slip download') . '" download><span class="iconify" data-icon="fa6-solid:download"></span></a>';
                         $html .= '<button type="button" class="p-1 tbl-action-btn payStatus" data-detailsurl="' . route('user.product_order.details', $order->id) . '" title="' . __('Payment Status Change') . '"><span class="iconify" data-icon="fluent:text-change-previous-20-filled"></span></button>';
                     }
-                } elseif ($order->status == PRODUCT_ORDER_STATUS_PAID) {
+                } elseif ($order->payment_status == PRODUCT_ORDER_STATUS_PAID) {
                     $html .= '<button type="button" class="p-1 tbl-action-btn view" data-detailsurl="' . route('user.product_order.details', $order->id) . '" title="' . __('View') . '"><span class="iconify" data-icon="carbon:view-filled"></span></button>';
                 }
                 $html .= '</div>';

@@ -136,7 +136,7 @@ class PaymentSubscriptionController extends Controller
         $payment_id = $request->get('payment_id', NULL);
 
         $order = SubscriptionOrder::findOrFail($order_id);
-        if ($order->status == ORDER_PAYMENT_STATUS_PAID) {
+        if ($order->payment_status == ORDER_PAYMENT_STATUS_PAID) {
             return $this->success([], __('Your order has been paid!'));
         }
 
