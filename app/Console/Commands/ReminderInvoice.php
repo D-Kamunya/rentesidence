@@ -68,7 +68,7 @@ class ReminderInvoice extends Command
                                     $content = getEmailTemplate($template->body, $customizedFieldsArray);
                                     $mailService->sendCustomizeMail($emails, $template->subject, $content);
                                 } else {
-                                    $mailService->sendInvoiceMail($emails, $subject, $message, $ownerUserId, $title, $amount, $dueDate, $month, $invoiceNo, $status);
+                                    $mailService->sendInvoiceMail($ownerUserId, $status, $emails, $subject, $message,  $title, $amount, $dueDate, $month, $invoiceNo);
                                 }
                             }
                         }
@@ -107,7 +107,7 @@ class ReminderInvoice extends Command
                                         $content = getEmailTemplate($template->body, $customizedFieldsArray);
                                         $mailService->sendCustomizeMail($emails, $template->subject, $content);
                                     } else {
-                                        $mailService->sendInvoiceMail($emails, $subject, $message, $ownerUserId, $title, $amount, $dueDate, $month, $invoiceNo, $status);
+                                        $mailService->sendInvoiceMail($ownerUserId, $status, $emails, $subject, $message, $title, $amount, $dueDate, $month, $invoiceNo);
                                     }
                                 }
                             }

@@ -707,7 +707,7 @@ if (!function_exists('handleSubscriptionPaymentConfirmation')) {
                             $content = getEmailTemplate($template->body, $customizedFieldsArray);
                             $mailService->sendCustomizeMail($emails, $template->subject, $content);
                         } else {
-                            $mailService->sendSubscriptionSuccessMail($emails, $subject, $message, $ownerUserId, $title, $method, $status, $amount, $duration);
+                            $mailService->sendSubscriptionSuccessMail($ownerUserId,$emails, $subject, $message, $title, $method, $status, $amount, $duration);
                         }
                     }
 
@@ -784,7 +784,7 @@ if (!function_exists('handleProductPaymentConfirmation')) {
 
                         $mailService = new MailService;
                         
-                        $mailService->sendProductOrderSuccessMail($emails, $subject, $message, $tenantUserId, $title, $method, $status, $amount);
+                        $mailService->sendProductOrderSuccessMail($tenantUserId,   $emails, $subject, $message, $title, $method, $status, $amount);
                     }
 
                     if ($gateway_slug == 'mpesa') {

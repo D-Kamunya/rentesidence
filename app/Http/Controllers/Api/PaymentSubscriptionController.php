@@ -193,7 +193,7 @@ class PaymentSubscriptionController extends Controller
                             $content = getEmailTemplate($template->body, $customizedFieldsArray);
                             $mailService->sendCustomizeMail($emails, $template->subject, $content);
                         } else {
-                            $mailService->sendSubscriptionSuccessMail($emails, $subject, $message, $ownerUserId, $title, $method, $status, $amount, $duration);
+                            $mailService->sendSubscriptionSuccessMail($ownerUserId, $emails, $subject, $message, $title, $method, $status, $amount, $duration);
                         }
 
                     }

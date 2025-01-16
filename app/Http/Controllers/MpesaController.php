@@ -77,7 +77,7 @@ class MpesaController extends Controller
                                 $content = getEmailTemplate($template->body, $customizedFieldsArray);
                                 $mailService->sendCustomizeMail($emails, $template->subject, $content);
                             } else {
-                                $mailService->sendSubscriptionSuccessMail($emails, $subject, $message, $ownerUserId, $title, $method, $status, $amount, $duration);
+                                $mailService->sendSubscriptionSuccessMail($ownerUserId, $emails, $subject, $message, $title, $method, $status, $amount, $duration);
                             }
                         }
                         Log::info("Mpesa Callback Completed subscription ok");
@@ -145,7 +145,7 @@ class MpesaController extends Controller
 
                             $mailService = new MailService;
                             
-                            $mailService->sendProductOrderSuccessMail($emails, $subject, $message, $tenantUserId, $title, $method, $status, $amount);
+                            $mailService->sendProductOrderSuccessMail($tenantUserId,$emails, $subject, $message, $title, $method, $status, $amount);
                         }
                         Log::info("Mpesa Callback Completed product payment ok");
                     }

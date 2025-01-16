@@ -207,7 +207,7 @@ class MailService
         }
     }
 
-    public static function sendSubscriptionSuccessMail($emails = [], $subject = null, $message = null, $ownerUserId, $title = null, $method = null, $status = null, $amount = 0, $duration = 30)
+    public static function sendSubscriptionSuccessMail($ownerUserId, $emails = [], $subject = null, $message = null, $title = null, $method = null, $status = null, $amount = 0, $duration = 30)
     {
         if (env('MAIL_STATUS', 0) == 1 && env('MAIL_USERNAME')) {
             if (count($emails)) {
@@ -243,7 +243,7 @@ class MailService
         }
     }
 
-    public static function sendProductOrderSuccessMail($emails = [], $subject = null, $message = null, $tenantUserId, $title = null, $method = null, $status = null, $amount = 0)
+    public static function sendProductOrderSuccessMail($tenantUserId, $emails = [], $subject = null, $message = null, $title = null, $method = null, $status = null, $amount = 0)
     {
         if (env('MAIL_STATUS', 0) == 1 && env('MAIL_USERNAME')) {
             if (count($emails)) {
@@ -278,7 +278,7 @@ class MailService
         }
     }
 
-    public static function sendInvoiceMail($emails = [], $subject = null, $message = null, $ownerUserId, $title = null, $amount = 0, $dueDate = null, $month = null, $invoiceNo = null, $status)
+    public static function sendInvoiceMail($ownerUserId, $status, $emails = [], $subject = null, $message = null, $title = null, $amount = 0, $dueDate = null, $month = null, $invoiceNo = null)
     {
         if (env('MAIL_STATUS', 0) == 1 && env('MAIL_USERNAME')) {
             if (count($emails)) {
