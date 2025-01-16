@@ -34,6 +34,8 @@ class BasePaymentService
         }
         if (isset($object['type'])) {
             $this->type = $object['type'];
+            $newCallbackUrl = config('MPESA_CALLBACK_URL') . '&type=' . $object['type'];
+            config(['MPESA_CALLBACK_URL' => $newCallbackUrl]);
         }
 
         $this->paymentMethod = $method;

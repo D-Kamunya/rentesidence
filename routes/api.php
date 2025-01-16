@@ -9,7 +9,6 @@ use App\Http\Controllers\Api\SettingController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\MpesaController;
-
 /*
 |--------------------------------------------------------------------------
 | API Routes
@@ -55,7 +54,7 @@ Route::group(['middleware' => ['auth:api']], function () {
     Route::post('payment', [PaymentController::class, 'checkout']);
 });
 
-Route::post('subscription-confirm', [MpesaController::class, 'confirm'])->name('mpesa.subscription.confirm');
+Route::post('payment-confirm', [MpesaController::class, 'MpesaPaymentConfirm'])->name('mpesa.payment.confirm');
 
 Route::match(array('GET', 'POST'), 'payment-subscription/verify', [PaymentSubscriptionController::class, 'verify']);
 Route::match(array('GET', 'POST'), 'payment-verify', [PaymentController::class, 'verify']);

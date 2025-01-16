@@ -158,14 +158,13 @@ class PaymentSubscriptionController extends Controller
         $gateway_slug = $request->get('gateway', NULL);
         $merchant_id = $request->get('merchant_id', NULL);
         $checkout_id = $request->get('checkout_id', NULL);
+        $formattedGateway = ucfirst(strtolower($gateway_slug));
 
-        if($gateway_slug=='mpesa'){
-            sleep(45);
-        }
-        
         $order = SubscriptionOrder::findOrFail($order_id);
-        if ($order->status == ORDER_PAYMENT_STATUS_PAID) {
-            return redirect()->route('owner.subscription.index')->with('error', __('Your order has been paid!'));
+        if ($order->payment_status == ORDER_PAYMENT_STATUS_PAID) {
+            return redirect()->route('owner.subscription.index')->with('success', __('$formattedGateway Payment Successfull. \nPackage Subscription Renewed!'));
+        }elseif ($order->payment_status == ORDER_PAYMENT_STATUS_CANCELLED) {
+            return redirect()->route('owner.subscription.index')->with('error', __('$formattedGateway Payment Declined! \nPackage Subscription Not Renewed'));
         }
         
         return handleSubscriptionPaymentConfirmation($order, $payerId, $gateway_slug, null);

@@ -90,7 +90,7 @@ class PaymentController extends Controller
             'gateway' => $gateway->slug,
             'callback_url' => route('payment.verify'),
             'currency' => $gatewayCurrency->currency,
-            'type' => 'Rent Payment'
+            'type' => 'RentPayment'
         ];
 
         $payment = new Payment($gateway->slug, $object);
@@ -140,17 +140,14 @@ class PaymentController extends Controller
         $gateway_slug = $request->get('gateway', NULL);
         $merchant_id = $request->get('merchant_id', NULL);
         $checkout_id = $request->get('checkout_id', NULL);
-
-
-        if($gateway_slug=='mpesa'){
-            sleep(45);
-        }
+        $formattedGateway = ucfirst(strtolower($gateway_slug));
 
         $order = Order::findOrFail($order_id);
-        if ($order->status == INVOICE_STATUS_PAID) {
-            return redirect()->route('tenant.invoice.index')->with('error', __('Your order has been paid!'));
+        if ($order->payment_status == INVOICE_STATUS_PAID) {
+            return redirect()->route('tenant.invoice.index')->with('error', __('$formattedGateway Payment Successful.\nRent Paid!'));
+        }elseif ($order->payment_status == ORDER_PAYMENT_STATUS_CANCELLED) {
+            return redirect()->route('tenant.invoice.index')->with('error', __('$formattedGateway Payment Declined! \nRent Not Paid'));
         }
-
         
         return handlePaymentConfirmation($order,$payerId,$gateway_slug,null);
     }

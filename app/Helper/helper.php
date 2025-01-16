@@ -756,7 +756,7 @@ if (!function_exists('handleProductPaymentConfirmation')) {
 
             $payment_id = $order->payment_id;
 
-            $gatewayBasePayment = new Payment($gateway->slug, ['currency' => $order->gateway_currency, 'type' => 'productorder']);
+            $gatewayBasePayment = new Payment($gateway->slug, ['currency' => $order->gateway_currency, 'type' => 'ProductOrder']);
             $payment_data = $gatewayBasePayment->paymentConfirmation($payment_id, $payerId);
             if ($payment_data['success']) {
                 if ($payment_data['data']['payment_status'] == 'success') {
@@ -769,7 +769,7 @@ if (!function_exists('handleProductPaymentConfirmation')) {
                     
                     $title = __("You have a new invoice");
                     $body = __("Products payment verify successfully");
-                    $ownerUserID = auth()->user()->owner_user_id;;
+                    $ownerUserID = auth()->user()->owner_user_id;
                     addNotification($title, $body, null, null, $ownerUserID, auth()->id());
 
                     if (getOption('send_email_status', 0) == ACTIVE) {
@@ -831,7 +831,7 @@ if (!function_exists('handlePaymentConfirmation')) {
 
             $payment_id = $order->payment_id;
 
-            $gatewayBasePayment = new Payment($gateway->slug, ['currency' => $order->gateway_currency]);
+            $gatewayBasePayment = new Payment($gateway->slug, ['currency' => $order->gateway_currency, 'type' => 'RentPayment']);
             $payment_data = $gatewayBasePayment->paymentConfirmation($payment_id, $payerId);
             
             if ($payment_data['success']) {
