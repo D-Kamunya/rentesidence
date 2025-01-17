@@ -24,9 +24,9 @@ $(document).on("click", ".paymentGateway", function () {
         $("#mpesa_selectGateway").val(selectGateway);
         $("#mpesa_selectCurrency").val("");
         $("#mpesaAccountAppend").removeClass("d-none");
-        $("#mpesaPayBtn").removeClass("d-none");
-        $("#gatewayCurrencyAmount").text("Via STK");
-        $("#mpesaGatewayCurrencyAmount").text("");
+        // $("#mpesaPayBtn").removeClass("d-none");
+        // $("#gatewayCurrencyAmount").text("Via STK");
+        // $("#mpesaGatewayCurrencyAmount").text("");
         $("#mpesa_account_id").attr("required", true);
         $("#bank_slip").attr("required", false);
         $("#bank_id").attr("required", false);
@@ -82,13 +82,13 @@ $(document).on("click", ".gatewayCurrencyAmount", function () {
     var gateway = $("#selectGateway").val();
     var getCurrencyAmount = "(" + $(this).find("input").val() + ")";
     $("#gatewayCurrencyAmount").text(getCurrencyAmount);
-    if (gateway === "mpesa") {
-        $("#gatewayCurrencyAmount").text("Via STK " + getCurrencyAmount);
-        $("#mpesaGatewayCurrencyAmount").text(getCurrencyAmount);
-        document.getElementById("mpesa-amount").textContent = getCurrencyAmount;
-    } else {
-        $("#gatewayCurrencyAmount").text(getCurrencyAmount);
-    }
+    // if (gateway === "mpesa") {
+    //     $("#gatewayCurrencyAmount").text("Via STK " + getCurrencyAmount);
+    //     $("#mpesaGatewayCurrencyAmount").text(getCurrencyAmount);
+    //     document.getElementById("mpesa-amount").textContent = getCurrencyAmount;
+    // } else {
+    $("#gatewayCurrencyAmount").text(getCurrencyAmount);
+    // }
     $("#selectCurrency").val($(this).text().replace(/\s+/g, ""));
     $("#mpesa_selectCurrency").val($(this).text().replace(/\s+/g, ""));
 });
