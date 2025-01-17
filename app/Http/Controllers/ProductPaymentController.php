@@ -125,11 +125,23 @@ class ProductPaymentController extends Controller
                 $order->save();
                 if($gateway->slug=='mpesa'){
                     $url=$responseData['redirect_url'] . '&merchant_id=' . $responseData['merchant_request_id']. '&checkout_id=' . $responseData['checkout_request_id'];
-                    return redirect($url);
+                    return response()->json([
+                        'success' => true,
+                        'data' => $url
+                    ]);
+                }else{
+                    return redirect($responseData['redirect_url']);
                 }
-                return redirect($responseData['redirect_url']);
             } else {
-                return redirect()->back()->with('error', $responseData['message']);
+                if($gateway->slug=='mpesa'){
+                    return response()->json([
+                        'success' => false,
+                        'data' => $responseData['message']
+                    ]);
+                }
+                else{
+                    return redirect()->back()->with('error', $responseData['message']);
+                }
             }
         } catch (\Exception $e) {
             Log::error('Payment failed: '.$e->getMessage(), [
@@ -192,9 +204,9 @@ class ProductPaymentController extends Controller
 
         $order = ProductOrder::findOrFail($order_id);
         if ($order->payment_status == ORDER_PAYMENT_STATUS_PAID) {
-            return redirect()->route('tenant.product.index')->with('success', __('$formattedGateway Payment Successful.\nProduct Order Paid!'));
+            return redirect()->route('tenant.product.index')->with('success', __($formattedGateway.' Payment Successful.\nProduct Order Paid!'));
         }elseif ($order->payment_status == ORDER_PAYMENT_STATUS_CANCELLED) {
-            return redirect()->route('owner.subscription.index')->with('error', __('$formattedGateway Payment Declined!\nProduct Order Not Paid!'));
+            return redirect()->route('tenant.product.index')->with('error', __($formattedGateway.' Payment Declined!\nProduct Order Not Paid!'));
         }
         
         return handleProductPaymentConfirmation($order, $payerId, $gateway_slug, null);

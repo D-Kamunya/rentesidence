@@ -95,6 +95,25 @@ $(document).on("click", ".gatewayCurrencyAmount", function () {
 
 function showMpesaPreloader() {
     document.getElementById("mpesa-preloader").style.display = "block";
+    var countdown = 50; // Set the initial countdown time in seconds
+
+    // Update the countdown every second
+    var countdownInterval = setInterval(function () {
+        document.getElementById("countdownTimer").textContent = countdown;
+        countdown--;
+
+        // Hide preloader when countdown reaches 0
+        if (countdown < 0) {
+            document.getElementById("trans-message").style.display = "block";
+            clearInterval(countdownInterval);
+            document.getElementById("countdown").textContent =
+                "Oops!Time is Up!!!!";
+        }
+    }, 1000);
+}
+
+function hideMpesaPreloader() {
+    document.getElementById("mpesa-preloader").style.display = "none";
 }
 
 $("#payBtn").on("click", function () {
@@ -109,28 +128,38 @@ $("#payBtn").on("click", function () {
             $("#payBtn").attr("type", "button");
         } else {
             var payment_form = document.getElementById("pay-invoice-form");
-            $("#payBtn").attr("type", "submit");
-            if (payment_form.checkValidity()) {
-                if (gateway == "mpesa") {
+            if (gateway == "mpesa") {
+                var mpesaAccount = $("#mpesa_account_id").val();
+                if (mpesaAccount == "") {
+                    toastr.error("Select Mpesa Account");
+                    $("#payBtn").attr("type", "button");
+                } else {
                     showMpesaPreloader();
-                    var countdown = 50; // Set the initial countdown time in seconds
-
-                    // Update the countdown every second
-                    var countdownInterval = setInterval(function () {
-                        document.getElementById("countdownTimer").textContent =
-                            countdown;
-                        countdown--;
-
-                        // Hide preloader when countdown reaches 0
-                        if (countdown < 0) {
-                            document.getElementById(
-                                "trans-message"
-                            ).style.display = "block";
-                            clearInterval(countdownInterval);
-                            document.getElementById("countdown").textContent =
-                                "Oops!Time is Up!!!!";
-                        }
-                    }, 1000);
+                    var formData = new FormData(payment_form);
+                    fetch(payment_form.action, {
+                        method: "POST",
+                        body: formData,
+                    })
+                        .then((response) => response.json())
+                        .then((data) => {
+                            if (data["success"]) {
+                                setTimeout(() => {
+                                    window.location.href = data["data"]; // Redirect to the URL from the response
+                                }, 50000);
+                            } else {
+                                hideMpesaPreloader();
+                                toastr.error(data["data"]);
+                            }
+                        })
+                        .catch((error) => {
+                            hideMpesaPreloader();
+                            toastr.error(error);
+                        });
+                }
+            } else {
+                $("#payBtn").attr("type", "submit");
+                if (payment_form_form.checkValidity()) {
+                    payment_form_form.submit();
                 }
             }
         }

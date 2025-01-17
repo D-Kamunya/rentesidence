@@ -101,11 +101,23 @@ class PaymentController extends Controller
             $order->save();
             if($gateway->slug=='mpesa'){
                 $url=$responseData['redirect_url'] . '&merchant_id=' . $responseData['merchant_request_id']. '&checkout_id=' . $responseData['checkout_request_id'];
-                return redirect($url);
+                return response()->json([
+                    'success' => true,
+                    'data' => $url
+                ]);
+            }else{
+                return redirect($responseData['redirect_url']);
             }
-            return redirect($responseData['redirect_url']);
         } else {
-            return redirect()->back()->with('error', $responseData['message']);
+            if($gateway->slug=='mpesa'){
+                return response()->json([
+                    'success' => false,
+                    'data' => $responseData['message']
+                ]);
+            }
+            else{
+                return redirect()->back()->with('error', $responseData['message']);
+            }
         }
     }
 
@@ -144,9 +156,9 @@ class PaymentController extends Controller
 
         $order = Order::findOrFail($order_id);
         if ($order->payment_status == INVOICE_STATUS_PAID) {
-            return redirect()->route('tenant.invoice.index')->with('error', __('$formattedGateway Payment Successful.\nRent Paid!'));
+            return redirect()->route('tenant.invoice.index')->with('success', __($formattedGateway.' Payment Successful.\nRent Paid!'));
         }elseif ($order->payment_status == ORDER_PAYMENT_STATUS_CANCELLED) {
-            return redirect()->route('tenant.invoice.index')->with('error', __('$formattedGateway Payment Declined! \nRent Not Paid'));
+            return redirect()->route('tenant.invoice.index')->with('error', __($formattedGateway.' Payment Declined! \nRent Not Paid'));
         }
         
         return handlePaymentConfirmation($order,$payerId,$gateway_slug,null);
