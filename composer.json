@@ -25,6 +25,7 @@
         "mollie/laravel-mollie": "2.19",
         "omnipay/paypal": "^3.0",
         "php-http/guzzle7-adapter": "^1.0",
+        "pusher/pusher-php-server": "^7.2",
         "razorpay/razorpay": "^2.8",
         "spatie/laravel-permission": "^5.5",
         "stancl/tenancy": "^3.7",

@@ -15,6 +15,7 @@ use App\Models\ProductOrder;
 use App\Models\User;
 use App\Services\SmsMail\MailService;
 use App\Models\EmailTemplate;
+use App\Events\MpesaTransactionProcessed;
 
 class MpesaController extends Controller
 {
@@ -81,7 +82,8 @@ class MpesaController extends Controller
                                 $mailService->sendSubscriptionSuccessMail($ownerUserId, $emails, $subject, $message, $title, $method, $status, $amount, $duration);
                             }
                         }
-                        Log::info("Mpesa Callback Completed subscription ok");
+                        $success=true;
+                        MpesaTransactionProcessed::dispatch($order,$success);
                     }
                 }elseif ($resultCode!=0) {
                     DB::beginTransaction();
@@ -90,7 +92,8 @@ class MpesaController extends Controller
                     $order->transaction_id = str_replace('-', '', uuid_create());
                     $order->save();
                     DB::commit();
-                    Log::info("Mpesa Callback Completed subscription declined");
+                    $success=false;
+                    MpesaTransactionProcessed::dispatch($order,$success);
                 }
             }elseif($paymentType=="RentPayment"){
                 $order = Order::findOrFail($orderId);
@@ -107,7 +110,9 @@ class MpesaController extends Controller
                         $invoice->order_id = $order->id;
                         $invoice->save();
                         DB::commit();
-                        Log::info("Mpesa Callback Completed rent ok");
+                        $success=true;
+                        Log::info('Rent paid');
+                        MpesaTransactionProcessed::dispatch($order,$success);
                     }
                 }elseif($resultCode!=0) {
                     DB::beginTransaction();
@@ -116,7 +121,9 @@ class MpesaController extends Controller
                     $order->transaction_id = str_replace('-', '', uuid_create());
                     $order->save();
                     DB::commit();
-                    Log::info("Mpesa Callback Completed rent declined");
+                    $success=false;
+                    Log::info('Rent declined');
+                    MpesaTransactionProcessed::dispatch($order,$success);
                 }
             }elseif($paymentType=="ProductOrder"){
                 $order = ProductOrder::findOrFail($orderId);
@@ -148,7 +155,8 @@ class MpesaController extends Controller
                             
                             $mailService->sendProductOrderSuccessMail($tenantUserId,$emails, $subject, $message, $title, $method, $status, $amount);
                         }
-                        Log::info("Mpesa Callback Completed product payment ok");
+                        $success=true;
+                        MpesaTransactionProcessed::dispatch($order,$success);
                     }
                 }elseif($resultCode!=0) {
                     DB::beginTransaction();
@@ -157,7 +165,8 @@ class MpesaController extends Controller
                     $order->transaction_id = str_replace('-', '', uuid_create());
                     $order->save();
                     DB::commit();
-                    Log::info("Mpesa Callback Completed product payment declined");
+                    $success=false;
+                    MpesaTransactionProcessed::dispatch($order,$success);
                 }
             }
             

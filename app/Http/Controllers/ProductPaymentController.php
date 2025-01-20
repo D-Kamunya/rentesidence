@@ -125,9 +125,11 @@ class ProductPaymentController extends Controller
                 $order->save();
                 if($gateway->slug=='mpesa'){
                     $url=$responseData['redirect_url'] . '&merchant_id=' . $responseData['merchant_request_id']. '&checkout_id=' . $responseData['checkout_request_id'];
+                    $transactionId=$responseData['checkout_request_id'];
                     return response()->json([
                         'success' => true,
-                        'data' => $url
+                        'redirect_url' => $url,
+                        'transaction_id' => $transactionId
                     ]);
                 }else{
                     return redirect($responseData['redirect_url']);
@@ -136,7 +138,7 @@ class ProductPaymentController extends Controller
                 if($gateway->slug=='mpesa'){
                     return response()->json([
                         'success' => false,
-                        'data' => $responseData['message']
+                        'error' => $responseData['message']
                     ]);
                 }
                 else{
@@ -195,12 +197,22 @@ class ProductPaymentController extends Controller
     public function verify(Request $request)
     {
         $order_id = $request->get('id', '');
+        $callback = $request->get('callback', false);
+        $stkSuccess = $request->get('stk_success', false);
         $payerId = $request->get('PayerID', NULL);
         $payment_id = $request->get('paymentId', NULL);
         $gateway_slug = $request->get('gateway', NULL);
         $merchant_id = $request->get('merchant_id', NULL);
         $checkout_id = $request->get('checkout_id', NULL);
         $formattedGateway = ucfirst(strtolower($gateway_slug));
+
+        if(filter_var($callback, FILTER_VALIDATE_BOOLEAN)===true){
+            if(filter_var($stkSuccess, FILTER_VALIDATE_BOOLEAN)===true){
+                return redirect()->route('tenant.product.index')->with('success', __($formattedGateway.' STK Payment Successfull. \nProduct Order Paid!'));
+            }else {
+                return redirect()->route('tenant.product.index')->with('error', __($formattedGateway.' STK Payment Declined! \nProduct Order Not Paid!'));
+            }
+        }
 
         $order = ProductOrder::findOrFail($order_id);
         if ($order->payment_status == ORDER_PAYMENT_STATUS_PAID) {

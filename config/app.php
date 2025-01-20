@@ -160,6 +160,9 @@ return [
         // 'store'  => 'redis',
     ],
 
+    'pusher_key' => env('PUSHER_APP_KEY'),
+    'pusher_cluster' => env('PUSHER_APP_CLUSTER'),
+
     /*
     |--------------------------------------------------------------------------
     | Autoloaded Service Providers

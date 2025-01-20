@@ -315,12 +315,38 @@ $("#checkoutBtn").on("click", function () {
                         .then((response) => response.json())
                         .then((data) => {
                             if (data["success"]) {
-                                setTimeout(() => {
-                                    window.location.href = data["data"]; // Redirect to the URL from the response
-                                }, 50000);
+                                // setTimeout(() => {
+                                //     window.location.href = data["data"]; // Redirect to the URL from the response
+                                // }, 50000);
+                                var pusher = new Pusher(
+                                    window.Laravel.pusher_key,
+                                    {
+                                        cluster: window.Laravel.pusher_cluster,
+                                    }
+                                );
+                                var channel = pusher.subscribe(
+                                    "transaction." + data["transaction_id"]
+                                );
+
+                                channel.bind(
+                                    "MpesaTransactionDeclined",
+                                    function (dataa) {
+                                        window.location.href =
+                                            data["redirect_url"] +
+                                            "&callback=true&stk_success=false";
+                                    }
+                                );
+                                channel.bind(
+                                    "MpesaTransactionProcessed",
+                                    function (dataa) {
+                                        window.location.href =
+                                            data["redirect_url"] +
+                                            "&callback=true&stk_success=true";
+                                    }
+                                );
                             } else {
                                 hideMpesaPreloader();
-                                toastr.error(data["data"]);
+                                toastr.error(data["error"]);
                             }
                         })
                         .catch((error) => {
