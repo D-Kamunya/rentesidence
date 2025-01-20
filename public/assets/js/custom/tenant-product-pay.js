@@ -254,21 +254,6 @@ $(document).on("click", ".gatewayCurrencyAmount", function () {
 
 function showMpesaPreloader() {
     document.getElementById("mpesa-preloader").style.display = "block";
-    var countdown = 50; // Set the initial countdown time in seconds
-
-    // Update the countdown every second
-    var countdownInterval = setInterval(function () {
-        document.getElementById("countdownTimer").textContent = countdown;
-        countdown--;
-
-        // Hide preloader when countdown reaches 0
-        if (countdown < 0) {
-            document.getElementById("trans-message").style.display = "block";
-            clearInterval(countdownInterval);
-            document.getElementById("countdown").textContent =
-                "Oops!Time is Up!!!!";
-        }
-    }, 1000);
 }
 
 function hideMpesaPreloader() {

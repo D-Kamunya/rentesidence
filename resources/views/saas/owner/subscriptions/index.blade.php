@@ -7,10 +7,10 @@
             <div id="mpesa-preloaderInner">
                 <img src="{{asset('assets/images/gateway-icon/mpesa.jpg')}}" alt="M-PESA Image">
                 <div>
-                    <p>Sending M-PESA payment notification to your phone. <br>
-                        Dear Customer, <br> Shortly you will receive an M-PESA prompt on your phone <br> requesting you to enter your M-PESA PIN to complete your payment. <br> Please ensure your phone is on and unlocked to enable you to complete the process. Thank you.</p>
-                    <p id="countdown">Make payment in <span id="countdownTimer">50</span> seconds.</p>
-                    <p id="trans-message" style="display:none">Please wait for a few seconds for the transaction to be verified.</p>
+                    <p>Please follow the instructions and do not refresh or leave this page.</p><br>
+                    <p>This may take up to 2 minutes.</p><br>
+                    <p>You will receive a prompt on mobile number to enter your PIN to authorize your payment request.</p><br>
+                    <p> Please ensure your phone is on and unlocked to enable you to complete the process. Thank you.</p>
                 </div>
                 <img src="{{asset('assets/images/loading.svg')}}" alt="M-PESA Image">
             </div>
