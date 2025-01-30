@@ -7,6 +7,7 @@ use App\Traits\ResponseTrait;
 use Exception;
 use Illuminate\Support\Facades\Log;
 use Twilio\Rest\Client;
+use App\Helper\SmsHelper;
 
 class TwilioSmsService
 {
@@ -58,12 +59,12 @@ class TwilioSmsService
                         );
                         if ($sendStatus->status == 'queued' || $sendStatus->status == 'delivered') {
                             Log::channel('sms-mail')->info('sms status : ' . $sendStatus->status . ', number : ' . $number . ', message : ' . $message . 'key : ' . $key . ', date : ' . date('d-m-Y'));
-                            self::historyStore($ownerUserId, $sid, $token, $from_number, $number, $message, SMS_STATUS_DELIVERED);
+                            SmsHelper::historyStore($ownerUserId, $sid, $token, $from_number, $number, $message, SMS_STATUS_DELIVERED);
                         } else {
                             throw new Exception('sms status not delivered');
                         }
                     } catch (Exception $e) {
-                        self::historyStore($ownerUserId, $sid, $token, $from_number, $number, $message, SMS_STATUS_FAILED, $e->getMessage());
+                        SmsHelper::historyStore($ownerUserId, $sid, $token, $from_number, $number, $message, SMS_STATUS_FAILED, $e->getMessage());
                         Log::channel('sms-mail')->info($e->getMessage());
                     }
                 }
@@ -74,18 +75,5 @@ class TwilioSmsService
         } else {
             return __('Sms setting not enabled');
         }
-    }
-
-    public static function historyStore($ownerUserId, $sid, $token, $from_number, $number, $message, $status, $error = null)
-    {
-        $history = new SmsHistory();
-        $history->owner_user_id = $ownerUserId;
-        $history->api = 'sid : ' . $sid . 'token : ' . $token . ' number : ' . $from_number;
-        $history->phone_number = $number;
-        $history->message = $message;
-        $history->status = $status;
-        $history->date = now();
-        $history->error = $error;
-        $history->save();
     }
 }

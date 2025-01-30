@@ -17,6 +17,7 @@ use App\Services\TenantService;
 use App\Traits\ResponseTrait;
 use Exception;
 use Illuminate\Support\Facades\DB;
+use App\Jobs\SendSmsJob;
 
 class InvoiceService
 {
@@ -366,6 +367,8 @@ class InvoiceService
         $totalAmountAndTax = $this->calculateTotalAmount($request, $invoice);
         $this->saveInvoiceItems($request, $invoice, $totalAmountAndTax['totalAmount'], $totalAmountAndTax['totalTax']);
         $this->sendInvoiceNotificationAndEmail($invoice, $tenant);
+        $message = __('A new invoice was generated! '.$invoice->invoice_no . ' ' . 'due on date' . ' ' . $invoice->due_date);
+        SendSmsJob::dispatch([$tenant->user->contact_number], $message, auth()->id());
     }
 
     private function storeInvoicesForAllProperties($request, $id)
