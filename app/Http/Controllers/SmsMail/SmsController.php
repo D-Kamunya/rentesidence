@@ -18,10 +18,13 @@ use App\Traits\ResponseTrait;
 use Exception;
 use Illuminate\Http\Request;
 use Twilio\Rest\Client;
+use App\Services\Payment\MpesaHelper;
+use Illuminate\Support\Facades\Http;
 
 class SmsController extends Controller
 {
     use ResponseTrait;
+    use MpesaHelper;
     public $twilioSmsService, $smsService, $propertyService, $tenantService, $maintainerService;
     public function __construct()
     {
@@ -140,30 +143,67 @@ class SmsController extends Controller
 
     public function testSend(TestSmsRequest $request)
     {
+        $provider = $request->provider;
         $sid = getOption('TWILIO_ACCOUNT_SID');
         $token = getOption('TWILIO_AUTH_TOKEN');
         $from_number = getOption('TWILIO_PHONE_NUMBER');
 
-        try {
-            if (getOption('TWILIO_STATUS', 0) == 1 && $sid) {
-                $client = new Client($sid, $token);
-                $sendStatus = $client->messages->create(
-                    $request->phone_number,
-                    [
-                        'from' => $from_number,
-                        'body' => $request->message
-                    ]
-                );
-                if ($sendStatus->status == 'queued' || $sendStatus->status == 'delivered') {
-                    return $this->success([], __(SENT_SUCCESSFULLY));
+        if ($provider == 'twilio') {
+            try {
+                if (getOption('TWILIO_STATUS', 0) == 1 && $sid) {
+                    $client = new Client($sid, $token);
+                    $sendStatus = $client->messages->create(
+                        $request->phone_number,
+                        [
+                            'from' => $from_number,
+                            'body' => $request->message
+                        ]
+                    );
+                    if ($sendStatus->status == 'queued' || $sendStatus->status == 'delivered') {
+                        return $this->success([], __(SENT_SUCCESSFULLY));
+                    } else {
+                        throw new Exception('sms status not delivered');
+                    }
                 } else {
-                    throw new Exception('sms status not delivered');
+                    throw new Exception('Please setup sms setting');
+                }
+            } catch (Exception $e) {
+                return $this->error([], $e->getMessage());
+            }
+        }elseif ($provider == 'advanta') {
+            $apikey = getOption('ADVANTA_API_KEY');
+            $partnerID = getOption('ADVANTA_PARTNER_ID');
+            $shortcode = getOption('ADVANTA_SHORT_CODE');
+
+            if (!$apikey || !$partnerID || !$shortcode) {
+                throw new Exception('Please set up Advanta SMS settings');
+            }
+
+            $response = Http::post('https://quicksms.advantasms.com/api/services/sendsms/', [
+                "apikey" => $apikey,
+                "partnerID" => $partnerID,
+                "message" => $request->message,
+                "shortcode" => $shortcode,
+                "mobile" =>  (new self())->phoneValidator($request->phone_number),
+            ]);
+            
+            
+            // Check the response status
+            if ($response->ok() && isset($response['responses'][0])) {
+                $responseData = $response['responses'][0];
+                if ($responseData['response-code'] == 200) {
+                    return $this->success([], __('Sent successfully via Advanta.'));
+                } else {
+                    // Handle failed SMS delivery
+                    throw new Exception('Advanta SMS failed: ' . $responseData['response-description']);
                 }
             } else {
-                throw new Exception('Please setup sms setting');
+                // Handle unexpected or failed API responses
+                throw new Exception('Unexpected API response: ' . $response->body());
             }
-        } catch (Exception $e) {
-            return $this->error([], $e->getMessage());
+        } 
+        else {
+            throw new Exception('Invalid SMS provider selected');
         }
     }
 }

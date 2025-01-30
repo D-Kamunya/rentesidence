@@ -29,8 +29,8 @@
                         <div class="row">
                             @include('admin.setting.sidebar')
                             <div class="col-md-12 col-lg-12 col-xl-8 col-xxl-9">
-                                <div class="account-settings-rightside bg-off-white theme-border radius-4 p-25">
-                                    <div class="language-settings-page-area">
+                                <div class="account-settings-rightside bg-off-white ">
+                                    <div class="language-settings-page-area theme-border radius-4 p-25">
                                         <div class="account-settings-content-box">
                                             <div class="account-settings-title border-bottom mb-20 pb-20">
                                                 <div class="row align-items-center">
@@ -89,6 +89,133 @@
                                                                     class="form-control"
                                                                     placeholder="{{ __('Twilio Phone Number') }}">
                                                             </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div class="account-settings-title border-bottom mb-20 pb-20">
+                                                    <div class="row align-items-center">
+                                                        <div class="col-md-6">
+                                                            <h4>Mail Setting</h4>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div class="settings-inner-box bg-white theme-border radius-4 mb-25">
+                                                    <div class="settings-inner-box-fields p-20 pb-0">
+                                                        <div class="row">
+                                                            <div class="col-md-6 mb-25">
+                                                                <label
+                                                                    class="label-text-title color-heading font-medium mb-2">{{ __('Send Email Status') }}</label>
+                                                                <select name="send_email_status"
+                                                                    class="form-select flex-shrink-0">
+                                                                    <option value="1"
+                                                                        {{ getOption('send_email_status', 0) == SEND_EMAIL_STATUS_ACTIVE ? 'selected' : '' }}>
+                                                                        {{ __('Active') }}</option>
+                                                                    <option value="0"
+                                                                        {{ getOption('send_email_status', 0) != SEND_EMAIL_STATUS_ACTIVE ? 'selected' : '' }}>
+                                                                        {{ __('Deactivate') }}</option>
+                                                                </select>
+                                                                <small
+                                                                    class="small">{{ __('Sent mail to Owner sign Up, New invoice generate, Subscription payment success, New tenant add, New maintainer add, New contact message etc.') }}</small>
+                                                            </div>
+                                                            <div class="col-md-6 mb-25">
+                                                                <label
+                                                                    class="label-text-title color-heading font-medium mb-2">{{ __('Email Verify Status') }}</label>
+                                                                <select name="email_verification_status"
+                                                                    class="form-select flex-shrink-0">
+                                                                    <option value="1"
+                                                                        {{ getOption('email_verification_status', 0) == EMAIL_VERIFICATION_STATUS_ACTIVE ? 'selected' : '' }}>
+                                                                        {{ __('Active') }}</option>
+                                                                    <option value="0"
+                                                                        {{ getOption('email_verification_status', 0) != EMAIL_VERIFICATION_STATUS_ACTIVE ? 'selected' : '' }}>
+                                                                        {{ __('Deactivate') }}</option>
+                                                                </select>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <button class="theme-btn"
+                                                    title="{{ __('Update') }}">{{ __('Update') }}</button>
+                                            </form>
+                                        </div>
+                                    </div>
+
+                                    <div class="language-settings-page-area theme-border radius-4 p-25 mt-4">
+                                        <div class="account-settings-content-box">
+                                            <div class="account-settings-title border-bottom mb-20 pb-20">
+                                                <div class="row align-items-center">
+                                                    <div class="col-md-6">
+                                                        <h4>Advanta Sms Setting</h4>
+                                                    </div>
+                                                    <div class="col-md-6">
+                                                        <div class="property-details-right text-end">
+                                                            <button type="button" class="theme-btn" data-bs-toggle="modal"
+                                                                data-bs-target="#testSmsModal" title="{{ __('Test Sms') }}">
+                                                                {{ __('Test Sms') }}
+                                                            </button>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <form action="{{ route('admin.setting.general-setting.update') }}"
+                                                method="post" enctype="multipart/form-data">
+                                                @csrf
+                                                <div class="settings-inner-box bg-white theme-border radius-4 mb-25">
+                                                    <div class="settings-inner-box-fields p-20 pb-0">
+                                                        <div class="row">
+                                                            <div class="col-md-6 mb-25">
+                                                                <label
+                                                                    class="label-text-title color-heading font-medium mb-2">{{ __('Status') }}</label>
+                                                                <select name="ADVANTA_STATUS" class="form-control">
+                                                                    <option value="0"
+                                                                        {{ getOption('ADVANTA_STATUS') == '0' ? 'selected' : '' }}>
+                                                                        {{ __('Disable') }}</option>
+                                                                    <option value="1"
+                                                                        {{ getOption('ADVANTA_STATUS') == '1' ? 'selected' : '' }}>
+                                                                        {{ __('Enable') }}</option>
+                                                                </select>
+                                                            </div>
+                                                            <div class="col-md-6 mb-25">
+                                                                <label
+                                                                    class="label-text-title color-heading font-medium mb-2">{{ __('Advanta account Api Key') }}</label>
+                                                                <input type="password" name="ADVANTA_API_KEY"
+                                                                    value="{{ getOption('ADVANTA_API_KEY') }}"
+                                                                    class="form-control"
+                                                                    placeholder="{{ __('ADVANTA_API_KEY') }}">
+                                                            </div>
+                                                            <div class="col-md-6 mb-25">
+                                                                <label
+                                                                    class="label-text-title color-heading font-medium mb-2">{{ __('Advanta PartnerID') }}</label>
+                                                                <input type="password" name="ADVANTA_PARTNER_ID"
+                                                                    value="{{ getOption('ADVANTA_PARTNER_ID') }}"
+                                                                    class="form-control"
+                                                                    placeholder="{{ __('Advanta PartnerID') }}">
+                                                            </div>
+                                                            <div class="col-md-6 mb-25">
+                                                                <label
+                                                                    class="label-text-title color-heading font-medium mb-2">{{ __('Advanta ShortCode') }}</label>
+                                                                <input type="text" name="ADVANTA_SHORT_CODE"
+                                                                    value="{{ getOption('ADVANTA_SHORT_CODE') }}"
+                                                                    class="form-control"
+                                                                    placeholder="{{ __('ADVANTA_SHORT_CODE') }}">
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <button class="theme-btn"
+                                                    title="{{ __('Update') }}">{{ __('Update') }}</button>
+                                            </form>
+                                        </div>
+                                    </div>
+
+                                    <div class="language-settings-page-area theme-border radius-4 p-25 mt-4">
+                                        <div class="account-settings-content-box">
+                                            <form action="{{ route('admin.setting.general-setting.update') }}"
+                                                method="post" enctype="multipart/form-data">
+                                                @csrf
+                                                <div class="account-settings-title border-bottom mb-20 pb-20">
+                                                    <div class="row align-items-center">
+                                                        <div class="col-md-6">
+                                                            <h4>Mail Setting</h4>
                                                         </div>
                                                     </div>
                                                 </div>
@@ -154,6 +281,16 @@
                     <div class="modal-body">
                         <div class="modal-inner-form-box">
                             <div class="row">
+
+                                <div class="col-md-12 mb-25">
+                                    <label
+                                        class="label-text-title color-heading font-medium mb-2">{{ __('SMS Provider') }}</label>
+                                    <select name="provider" class="form-control" id="provider" required>
+                                        <option value="twilio">Twilio</option>
+                                        <option value="advanta">Advanta</option>
+                                    </select>
+                                </div>
+
                                 <div class="col-md-12 mb-25">
                                     <label
                                         class="label-text-title color-heading font-medium mb-2">{{ __('Phone Number') }}</label>
