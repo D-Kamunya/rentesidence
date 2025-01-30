@@ -145,7 +145,8 @@ class SettingController extends Controller
         if (isAddonInstalled('PROTYSMS') < 1) {
             abort(404);
         }
-        $data['pageTitle'] = __("Reminder Invoice Setting");
+        $data['pageTitle'] = __("Reminder Due Invoice Setting");
+        $data['pageTitle1'] = __("Reminder OverDue Invoice Setting");
         $data['subReminderSettingActiveClass'] = 'active';
         return view('admin.setting.reminder-setting')->with($data);
     }

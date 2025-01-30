@@ -60,13 +60,13 @@
                         <a href="{{ route('admin.setting.sms.setting') }}"
                             class="account-settings-menu-item {{ @$subSmsSettingActiveClass }}">
                             <span class="iconify"
-                                data-icon="icon-park-outline:setting-web"></span>{{ __('Sms Setting') }}
+                                data-icon="icon-park-outline:setting-web"></span>{{ __('Sms/Mail Setting') }}
                         </a>
                     </li>
                     <li>
                         <a href="{{ route('admin.setting.reminder.setting') }}"
                             class="account-settings-menu-item {{ @$subReminderSettingActiveClass }}">
-                            <span class="iconify" data-icon="carbon:reminder"></span>{{ __('Reminder Setting') }}
+                            <span class="iconify" data-icon="carbon:reminder"></span>{{ __('Invoice Reminder Setting') }}
                         </a>
                     </li>
                 @endif

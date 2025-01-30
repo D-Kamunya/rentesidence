@@ -29,8 +29,8 @@
                         <div class="row">
                             @include('admin.setting.sidebar')
                             <div class="col-md-12 col-lg-12 col-xl-8 col-xxl-9">
-                                <div class="account-settings-rightside bg-off-white theme-border radius-4 p-25">
-                                    <div class="language-settings-page-area">
+                                <div class="account-settings-rightside bg-off-white">
+                                    <div class="language-settings-page-area theme-border radius-4 p-25">
                                         <div class="account-settings-content-box">
                                             <div class="account-settings-title border-bottom mb-20 pb-20">
                                                 <div class="row align-items-center">
@@ -77,7 +77,65 @@
                                                                 <input type="text" name="reminder_days"
                                                                     value="{{ getOption('reminder_days') }}"
                                                                     class="form-control" placeholder="3">
-                                                                <small>{{ __('Day separet by comma(,)') }}</small>
+                                                                <small>{{ __('Day separate by comma(,)') }}</small>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <button class="theme-btn"
+                                                    title="{{ __('Update') }}">{{ __('Update') }}</button>
+                                            </form>
+                                        </div>
+                                    </div>
+
+                                    <div class="language-settings-page-area theme-border radius-4 p-25 mt-4">
+                                        <div class="account-settings-content-box">
+                                            <div class="account-settings-title border-bottom mb-20 pb-20">
+                                                <div class="row align-items-center">
+                                                    <div class="col-md-6">
+                                                        <h4>{{ $pageTitle1 }}</h4>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <form action="{{ route('admin.setting.general-setting.update') }}"
+                                                method="post" enctype="multipart/form-data">
+                                                @csrf
+                                                <div class="settings-inner-box bg-white theme-border radius-4 mb-25">
+                                                    <div class="settings-inner-box-fields p-20 pb-0">
+                                                        <div class="row">
+                                                            <div class="col-md-4 mb-25">
+                                                                <label
+                                                                    class="label-text-title color-heading font-medium mb-2">{{ __('Status') }}</label>
+                                                                <select name="OVERDUE_REMAINDER_STATUS" class="form-control">
+                                                                    <option value="0"
+                                                                        {{ getOption('OVERDUE_REMAINDER_STATUS', 0) != REMAINDER_STATUS_ACTIVE ? 'selected' : '' }}>
+                                                                        {{ __('Disable') }}</option>
+                                                                    <option value="1"
+                                                                        {{ getOption('OVERDUE_REMAINDER_STATUS', 0) == REMAINDER_STATUS_ACTIVE ? 'selected' : '' }}>
+                                                                        {{ __('Enable') }}</option>
+                                                                </select>
+                                                            </div>
+                                                            <div class="col-md-4 mb-25">
+                                                                <label
+                                                                    class="label-text-title color-heading font-medium mb-2">{{ __('Remind day') }}</label>
+                                                                <select name="OVERDUE_REMAINDER_EVERYDAY_STATUS" id=""
+                                                                    class="form-control">
+                                                                    <option value="0"
+                                                                        {{ getOption('OVERDUE_REMAINDER_EVERYDAY_STATUS', 0) != REMAINDER_EVERYDAY_STATUS_ACTIVE ? 'selected' : '' }}>
+                                                                        {{ __('Custom') }}</option>
+                                                                    <option value="1"
+                                                                        {{ getOption('OVERDUE_REMAINDER_EVERYDAY_STATUS', 0) == REMAINDER_EVERYDAY_STATUS_ACTIVE ? 'selected' : '' }}>
+                                                                        {{ __('Every Day') }}</option>
+                                                                </select>
+                                                            </div>
+                                                            <div
+                                                                class="col-md-4 mb-25 overdue_reminder_day {{ getOption('OVERDUE_REMAINDER_EVERYDAY_STATUS', 0) == REMAINDER_EVERYDAY_STATUS_ACTIVE ? 'd-none' : '' }}">
+                                                                <label
+                                                                    class="label-text-title color-heading font-medium mb-2">{{ __('Reminder after due days') }}</label>
+                                                                <input type="text" name="OVERDUE_REMAINDER_DAYS" 
+                                                                    value="{{ getOption('OVERDUE_REMAINDER_DAYS') }}"
+                                                                    class="form-control" placeholder="3">
+                                                                <small>{{ __('Day separate by comma(,)') }}</small>
                                                             </div>
                                                         </div>
                                                     </div>
@@ -105,6 +163,15 @@
                 $('.reminder_day').addClass('d-none');
             } else {
                 $('.reminder_day').removeClass('d-none');
+            }
+        });
+
+        $('select[name=OVERDUE_REMAINDER_EVERYDAY_STATUS]').on('change', function() {
+            var overdue_remainder_everyday_status = $(this).val();
+            if (overdue_remainder_everyday_status == 1) {
+                $('.overdue_reminder_day').addClass('d-none');
+            } else {
+                $('.overdue_reminder_day').removeClass('d-none');
             }
         });
     </script>
