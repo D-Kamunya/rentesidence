@@ -206,8 +206,8 @@ function getDataEditRes(response) {
                                                     <input type="text" name="mpesaAccount[paybill_number][]" class="form-control paybill-number" id="paybill-number" placeholder="Paybill Number" value="${mpesaAccount[1].paybill}">
                                                     </div>
                                                 <div class="col-6 mb-20 paybill-fields">
-                                                    <label for="name" class="label-text-title color-heading font-medium mb-2">Account Name</label>
-                                                    <input type="text" name="mpesaAccount[account_name][]" class="form-control account-name" id="account-name" placeholder="Account Name" value="${mpesaAccount[1].account_name}">
+                                                    <label for="name" class="label-text-title color-heading font-medium mb-2">Account Number</label>
+                                                    <input type="text" name="mpesaAccount[account_name][]" class="form-control account-name" id="account-name" placeholder="Account Number" value="${mpesaAccount[1].account_name}">
                                                 </div>
                                                 <input type="hidden" name="mpesaAccount[till_number][]" class="form-control till-number" id="till-number" placeholder="Till Number" value="${mpesaAccount[1].till_number}">
                                                 `;
@@ -218,7 +218,7 @@ function getDataEditRes(response) {
                                                 </div>
                                                     
                                                 <input type="hidden" name="mpesaAccount[paybill_number][]" class="form-control paybill-number" id="paybill-number" placeholder="Paybill Number" value="${mpesaAccount[1].paybill}">
-                                                <input type="hidden" name="mpesaAccount[account_name][]" class="form-control account-name" id="account-name" placeholder="Account Name" value="${mpesaAccount[1].account_name}">
+                                                <input type="hidden" name="mpesaAccount[account_name][]" class="form-control account-name" id="account-name" placeholder="Account Number" value="${mpesaAccount[1].account_name}">
                                                 `;
                 }
 
@@ -399,8 +399,8 @@ function addMpesaAccount() {
                             <input type="text" name="mpesaAccount[paybill_number][]" class="form-control paybill-number" id="paybill-number" placeholder="Paybill Number" value="">
                     </div>
                     <div class="col-6 mb-20 paybill-fields">
-                        <label for="name" class="label-text-title color-heading font-medium mb-2">Account Name</label>
-                            <input type="text" name="mpesaAccount[account_name][]" class="form-control account-name" id="account-name" placeholder="Account Name" value="">
+                        <label for="name" class="label-text-title color-heading font-medium mb-2">Account Number</label>
+                            <input type="text" name="mpesaAccount[account_name][]" class="form-control account-name" id="account-name" placeholder="Account Number" value="">
                     </div>
                     <div class="col-6 mb-20 till-number-fields" style="display: none;">
                         <label for="name" class="label-text-title color-heading font-medium mb-2">Till Number</label>

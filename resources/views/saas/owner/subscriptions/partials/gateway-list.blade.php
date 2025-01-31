@@ -115,7 +115,7 @@
                                                     {{ $mpesaAccount->account_type }}
 
                                                     @if ($mpesaAccount->account_type === 'PAYBILL')
-                                                        - Paybill: {{ $mpesaAccount->paybill }}, Account Name: {{ $mpesaAccount->account_name }}
+                                                        - Paybill: {{ $mpesaAccount->paybill }}, Account Number: {{ $mpesaAccount->account_name }}
                                                     @elseif ($mpesaAccount->account_type === 'TILLNUMBER')
                                                         - Till Number: {{ $mpesaAccount->till_number }}
                                                     @endif

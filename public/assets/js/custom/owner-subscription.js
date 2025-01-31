@@ -348,9 +348,11 @@ $(document).on("change", "#mpesa_account_id", function () {
         $("#mpesa-code-payment-paybill").addClass("d-none");
         $("#mpesa-code-payment-till").removeClass("d-none");
     } else if (details === "PAYBILL") {
-        // Parse Paybill and Account Name
+        // Parse Paybill and Account Number
         const paybillMatch = textContent.match(/Paybill:\s*([\w\d]+)/);
-        const accountNameMatch = textContent.match(/Account Name:\s*([\w\d]+)/);
+        const accountNameMatch = textContent.match(
+            /Account Number:\s*([\w\d]+)/
+        );
 
         // Extract values
         const paybill = paybillMatch ? paybillMatch[1] : "";
