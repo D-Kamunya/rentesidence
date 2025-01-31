@@ -366,8 +366,8 @@ class InvoiceService
         $invoice = $this->getOrCreateInvoice($request, $id, $tenant);
         $totalAmountAndTax = $this->calculateTotalAmount($request, $invoice);
         $this->saveInvoiceItems($request, $invoice, $totalAmountAndTax['totalAmount'], $totalAmountAndTax['totalTax']);
-        $this->sendInvoiceNotificationAndEmail($invoice, $tenant);
-        $message = __('A new invoice was generated! '.$invoice->invoice_no . ' ' . 'due on date' . ' ' . $invoice->due_date);
+        sendInvoiceNotificationAndEmail($invoice, $tenant);
+        $message = __('New '.$invoice->month.' invoice  from Centresidence . '.$invoice->invoice_no . ' ' . 'due on date' . ' ' . $invoice->due_date);
         SendSmsJob::dispatch([$tenant->user->contact_number], $message, auth()->id());
     }
 
@@ -505,46 +505,6 @@ class InvoiceService
         return $invoiceItem;
     }
 
-    private function sendInvoiceNotificationAndEmail($invoice, $tenant)
-    {
-        $title = __("You have a new invoice");
-        $body = __("Please check the invoice and response as soon as possible.");
-        addNotification($title, $body, null, null, $tenant->id, auth()->user()->id);
-
-        if (getOption('send_email_status', 0) == ACTIVE) {
-            $emails = [$tenant->user->email];
-            $subject = __('Invoice') . ' ' . $invoice->invoice_no . ' ' . __('due on date') . ' ' . $invoice->due_date;
-            $title = __('A new invoice was generated!');
-            $message = __('You have a new invoice');
-            $ownerUserId = auth()->id();
-            $amount = $invoice->amount;
-            $dueDate = $invoice->due_date;
-            $month = $invoice->month;
-            $invoiceNo = $invoice->invoice_no;
-            $status = __('Pending');
-
-            // send mail
-            $mailService = new MailService;
-            $template = EmailTemplate::where('owner_user_id', $ownerUserId)
-                ->where('category', EMAIL_TEMPLATE_INVOICE)
-                ->where('status', ACTIVE)
-                ->first();
-
-            if ($template) {
-                $customizedFieldsArray = [
-                '{{amount}}' => $invoice->amount,
-                '{{due_date}}' => $invoice->due_date,
-                '{{month}}' => $invoice->month,
-                '{{invoice_no}}' => $invoice->invoice_no,
-                '{{app_name}}' => getOption('app_name')
-            ];
-            $content = getEmailTemplate($template->body, $customizedFieldsArray);
-            $mailService->sendCustomizeMail($emails, $template->subject, $content);
-            } else {
-                $mailService->sendInvoiceMail($ownerUserId, $status, $emails, $subject, $message, $title, $amount, $dueDate, $month, $invoiceNo);
-            }
-        }
-    }
     private function getTenantsToInvoice($request, $units=false)
     {
         if ($units){

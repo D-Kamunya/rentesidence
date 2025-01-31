@@ -9,6 +9,7 @@ use App\Models\Tenant;
 use Exception;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
+use App\Jobs\SendSmsJob;
 
 class GenerateInvoice extends Command
 {
@@ -49,7 +50,7 @@ class GenerateInvoice extends Command
                         ->whereYear('created_at', '=', now()->format('Y'))
                         ->exists();
                     if (!$invoiceExist) {
-                        $this->generateInvoice($invoiceRecurring);
+                        $this->generateInvoice($tenant,$invoiceRecurring);
                         echo "Created \n";
                     } else {
                         echo "Already Created \n";
@@ -61,7 +62,7 @@ class GenerateInvoice extends Command
                         ->whereYear('created_at', '=', now()->format('Y'))
                         ->exists();
                     if (!$invoiceExist) {
-                        $this->generateInvoice($invoiceRecurring);
+                        $this->generateInvoice($tenant,$invoiceRecurring);
                         echo "Created \n";
                     } else {
                         echo "Already Created \n";
@@ -73,7 +74,7 @@ class GenerateInvoice extends Command
                         ->whereDate('created_at', '>', now()->subDays($invoiceRecurring->cycle_day))
                         ->exists();
                     if (!$invoiceExist) {
-                        $this->generateInvoice($invoiceRecurring);
+                        $this->generateInvoice($tenant,$invoiceRecurring);
                         echo "Created \n";
                     } else {
                         echo "Already Created \n";
@@ -83,7 +84,7 @@ class GenerateInvoice extends Command
         }
     }
 
-    public function generateInvoice($invoiceRecurring)
+    public function generateInvoice($tenant,$invoiceRecurring)
     {
         DB::beginTransaction();
         try {
@@ -111,6 +112,9 @@ class GenerateInvoice extends Command
             $invoice->amount = $totalAmount;
             $invoice->save();
             DB::commit();
+            $message = __('New '.$invoice->month.' invoice  from Centresidence . '.$invoice->invoice_no . ' ' . 'due on date' . ' ' . $invoice->due_date);
+            SendSmsJob::dispatch([$tenant->user->contact_number], $message, $invoice->owner_user_id);
+            sendInvoiceNotificationAndEmail($invoice, $tenant);
             return true;
         } catch (Exception $e) {
             DB::rollBack();
