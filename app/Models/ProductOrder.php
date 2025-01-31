@@ -67,6 +67,11 @@ class ProductOrder extends Model
         return $this->hasOne(User::class, 'id', 'user_id');
     }
 
+    public function gateway(): HasOne
+    {
+        return $this->hasOne(Gateway::class, 'id', 'gateway_id');
+    }
+
     public function orderItems(): HasMany
     {
         return $this->hasMany(ProductOrderItem::class);

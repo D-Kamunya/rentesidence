@@ -16,6 +16,7 @@ use App\Models\User;
 use App\Services\SmsMail\MailService;
 use App\Models\EmailTemplate;
 use App\Events\MpesaTransactionProcessed;
+use App\Jobs\SendSmsJob;
 
 class MpesaController extends Controller
 {
@@ -128,6 +129,7 @@ class MpesaController extends Controller
             }elseif($paymentType=="ProductOrder"){
                 $order = ProductOrder::findOrFail($orderId);
                 $gateway = Gateway::find($order->gateway_id);
+                $ownerNumber = $order->gateway->owner->contact_number;
                 if($resultCode==0){
                     if ($order->payment_status == ORDER_PAYMENT_STATUS_PENDING) {
                         DB::beginTransaction();
@@ -156,7 +158,9 @@ class MpesaController extends Controller
                             $mailService->sendProductOrderSuccessMail($tenantUserId,$emails, $subject, $message, $title, $method, $status, $amount);
                         }
                         $success=true;
+                        $message = __('New product order '.$order->order_id.' from Centresidence. Kindly Dispatch');
                         MpesaTransactionProcessed::dispatch($order,$success);
+                        SendSmsJob::dispatch([$ownerNumber], $message, $tenantUserId);
                     }
                 }elseif($resultCode!=0) {
                     DB::beginTransaction();
