@@ -92,47 +92,6 @@
                                                         </div>
                                                     </div>
                                                 </div>
-                                                <div class="account-settings-title border-bottom mb-20 pb-20">
-                                                    <div class="row align-items-center">
-                                                        <div class="col-md-6">
-                                                            <h4>Mail Setting</h4>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                                <div class="settings-inner-box bg-white theme-border radius-4 mb-25">
-                                                    <div class="settings-inner-box-fields p-20 pb-0">
-                                                        <div class="row">
-                                                            <div class="col-md-6 mb-25">
-                                                                <label
-                                                                    class="label-text-title color-heading font-medium mb-2">{{ __('Send Email Status') }}</label>
-                                                                <select name="send_email_status"
-                                                                    class="form-select flex-shrink-0">
-                                                                    <option value="1"
-                                                                        {{ getOption('send_email_status', 0) == SEND_EMAIL_STATUS_ACTIVE ? 'selected' : '' }}>
-                                                                        {{ __('Active') }}</option>
-                                                                    <option value="0"
-                                                                        {{ getOption('send_email_status', 0) != SEND_EMAIL_STATUS_ACTIVE ? 'selected' : '' }}>
-                                                                        {{ __('Deactivate') }}</option>
-                                                                </select>
-                                                                <small
-                                                                    class="small">{{ __('Sent mail to Owner sign Up, New invoice generate, Subscription payment success, New tenant add, New maintainer add, New contact message etc.') }}</small>
-                                                            </div>
-                                                            <div class="col-md-6 mb-25">
-                                                                <label
-                                                                    class="label-text-title color-heading font-medium mb-2">{{ __('Email Verify Status') }}</label>
-                                                                <select name="email_verification_status"
-                                                                    class="form-select flex-shrink-0">
-                                                                    <option value="1"
-                                                                        {{ getOption('email_verification_status', 0) == EMAIL_VERIFICATION_STATUS_ACTIVE ? 'selected' : '' }}>
-                                                                        {{ __('Active') }}</option>
-                                                                    <option value="0"
-                                                                        {{ getOption('email_verification_status', 0) != EMAIL_VERIFICATION_STATUS_ACTIVE ? 'selected' : '' }}>
-                                                                        {{ __('Deactivate') }}</option>
-                                                                </select>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                </div>
                                                 <button class="theme-btn"
                                                     title="{{ __('Update') }}">{{ __('Update') }}</button>
                                             </form>
