@@ -29,6 +29,8 @@ class TenantService
             ->leftJoin(DB::raw('(select tenant_id, MAX(updated_at) as last_payment from invoices where status = 1 AND deleted_at IS NULL group By tenant_id) as inv_last'), ['inv_last.tenant_id' => 'tenants.id'])
             ->select(['tenants.*', 'inv.due', 'inv_last.last_payment', 'users.first_name', 'users.last_name', 'users.status as userStatus', 'users.contact_number', 'users.email', 'property_units.unit_name', 'properties.name as property_name'])
             ->where('tenants.owner_user_id', auth()->id())
+            ->orderBy('properties.name', 'asc')  // Sort by property name first
+            ->orderBy('property_units.unit_name', 'asc') // Then sort by unit name under each property
             ->get();
         return $data?->makeHidden(['created_at', 'updated_at', 'deleted_at']);
     }
