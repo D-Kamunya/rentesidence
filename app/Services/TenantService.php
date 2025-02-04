@@ -30,7 +30,7 @@ class TenantService
             ->select(['tenants.*', 'inv.due', 'inv_last.last_payment', 'users.first_name', 'users.last_name', 'users.status as userStatus', 'users.contact_number', 'users.email', 'property_units.unit_name', 'properties.name as property_name'])
             ->where('tenants.owner_user_id', auth()->id())
             ->orderBy('properties.name', 'asc')  // Sort by property name first
-            ->orderBy('property_units.unit_name', 'asc') // Then sort by unit name under each property
+            ->orderByRaw("REGEXP_REPLACE(property_units.unit_name, '[0-9]', '') ASC, CAST(REGEXP_REPLACE(property_units.unit_name, '[^0-9]', '') AS UNSIGNED) ASC")
             ->get();
         return $data?->makeHidden(['created_at', 'updated_at', 'deleted_at']);
     }
