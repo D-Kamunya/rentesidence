@@ -10,6 +10,7 @@ use Exception;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
 use App\Jobs\SendSmsJob;
+use App\Jobs\SendInvoiceNotificationAndEmailJob;
 
 class GenerateInvoice extends Command
 {
@@ -112,9 +113,20 @@ class GenerateInvoice extends Command
             $invoice->amount = $totalAmount;
             $invoice->save();
             DB::commit();
+
             $message = __('New '.$invoice->month.' invoice  from Centresidence . '.$invoice->invoice_no . ' ' . 'due on date' . ' ' . $invoice->due_date);
             SendSmsJob::dispatch([$tenant->user->contact_number], $message, $invoice->owner_user_id);
-            sendInvoiceNotificationAndEmail($invoice, $tenant);
+            
+            $emailData = (object) [
+                'subject'   => __('Invoice') . ' ' . $invoice->invoice_no . ' ' . __('due on date') . ' ' . $invoice->due_date,
+                'title'     => __('A new invoice was generated!'),
+                'message'   => __('You have a new invoice'),
+            ];
+            $notificationData = (object) [
+                'title'   => __("You have a new invoice"),
+                'body'     => __("Please check the invoice and respond as soon as possible."),
+            ];
+            SendInvoiceNotificationAndEmailJob::dispatch($invoice,$emailData,$notificationData);
             return true;
         } catch (Exception $e) {
             DB::rollBack();

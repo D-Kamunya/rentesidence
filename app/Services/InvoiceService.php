@@ -18,6 +18,7 @@ use App\Traits\ResponseTrait;
 use Exception;
 use Illuminate\Support\Facades\DB;
 use App\Jobs\SendSmsJob;
+use App\Jobs\SendInvoiceNotificationAndEmailJob;
 
 class InvoiceService
 {
@@ -366,7 +367,18 @@ class InvoiceService
         $invoice = $this->getOrCreateInvoice($request, $id, $tenant);
         $totalAmountAndTax = $this->calculateTotalAmount($request, $invoice);
         $this->saveInvoiceItems($request, $invoice, $totalAmountAndTax['totalAmount'], $totalAmountAndTax['totalTax']);
-        sendInvoiceNotificationAndEmail($invoice, $tenant);
+
+        $emailData = (object) [
+                'subject'   => __('Invoice') . ' ' . $invoice->invoice_no . ' ' . __('due on date') . ' ' . $invoice->due_date,
+                'title'     => __('A new invoice was generated!'),
+                'message'   => __('You have a new invoice'),
+            ];
+        $notificationData = (object) [
+            'title'   => __("You have a new invoice"),
+            'body'     => __("Please check the invoice and respond as soon as possible."),
+        ];
+        SendInvoiceNotificationAndEmailJob::dispatch($invoice,$emailData,$notificationData);
+    
         $message = __('New '.$invoice->month.' invoice  from Centresidence . '.$invoice->invoice_no . ' ' . 'due on date' . ' ' . $invoice->due_date);
         SendSmsJob::dispatch([$tenant->user->contact_number], $message, auth()->id());
     }

@@ -17,6 +17,8 @@ use App\Services\SmsMail\MailService;
 use App\Models\EmailTemplate;
 use App\Events\MpesaTransactionProcessed;
 use App\Jobs\SendSmsJob;
+use App\Jobs\SendPaymentsSuccessEmailJob;
+use App\Jobs\SendInvoiceNotificationAndEmailJob;
 
 class MpesaController extends Controller
 {
@@ -54,7 +56,7 @@ class MpesaController extends Controller
                         $title = __("You have a new invoice");
                         $body = __("Subscription payment verify successfully");
                         $adminUser = User::where('role', USER_ROLE_ADMIN)->first();
-                        addNotification($title, $body, null, null, $adminUser->id,$order->user_id);
+                        addNotification($title, $body, null, null,$order->user_id,$adminUser->id);
 
                         if (getOption('send_email_status', 0) == ACTIVE) {
                             $emails = [$order->user->email];
@@ -66,23 +68,12 @@ class MpesaController extends Controller
                             $status = 'Paid';
                             $amount = $order->amount;
 
-                            $mailService = new MailService;
-                            $template = EmailTemplate::where('owner_user_id', $ownerUserId)->where('category', EMAIL_TEMPLATE_SUBSCRIPTION_SUCCESS)->where('status', ACTIVE)->first();
-
-                            if ($template) {
-                                $customizedFieldsArray = [
-                                    '{{amount}}' => $order->total,
-                                    '{{status}}' => $status,
-                                    '{{duration}}' => $duration,
-                                    '{{gateway}}' => $method,
-                                    '{{app_name}}' => getOption('app_name')
-                                ];
-                                $content = getEmailTemplate($template->body, $customizedFieldsArray);
-                                $mailService->sendCustomizeMail($emails, $template->subject, $content);
-                            } else {
-                                $mailService->sendSubscriptionSuccessMail($ownerUserId, $emails, $subject, $message, $title, $method, $status, $amount, $duration);
-                            }
+                            SendPaymentsSuccessEmailJob::dispatch(
+                                $emails, $subject, $message, $title, $method, 
+                                $status, $amount,$paymentType, $order, $duration
+                            );
                         }
+
                         $success=true;
                         MpesaTransactionProcessed::dispatch($order,$success);
                     }
@@ -111,8 +102,19 @@ class MpesaController extends Controller
                         $invoice->order_id = $order->id;
                         $invoice->save();
                         DB::commit();
+
+                        $emailData = (object) [
+                            'subject'   => __("Rent payment verify successfully"),
+                            'title'     =>  __("You have a new invoice"),
+                            'message'   => $invoice->invoice_no . ' ' . __('paid successfully'),
+                        ];
+                        $notificationData = (object) [
+                            'title'   => __('Rent Payment successful!'),
+                            'body'     =>  $invoice->invoice_no . ' ' . __('paid successfully'),
+                        ];
+                        SendInvoiceNotificationAndEmailJob::dispatch($invoice,$emailData,$notificationData);
+
                         $success=true;
-                        Log::info('Rent paid');
                         MpesaTransactionProcessed::dispatch($order,$success);
                     }
                 }elseif($resultCode!=0) {
@@ -123,7 +125,6 @@ class MpesaController extends Controller
                     $order->save();
                     DB::commit();
                     $success=false;
-                    Log::info('Rent declined');
                     MpesaTransactionProcessed::dispatch($order,$success);
                 }
             }elseif($paymentType=="ProductOrder"){
@@ -138,10 +139,11 @@ class MpesaController extends Controller
                         $order->transaction_id = str_replace('-', '', uuid_create());
                         $order->save();
                         DB::commit();
+
                         $title = __("You have a new invoice");
                         $body = __("Products payment verify successfully");
-                        $ownerUserID = $gateway->owner_user_id;;
-                        addNotification($title, $body, null, null, $ownerUserID, $order->user_id);
+                        $ownerUserID = $gateway->owner_user_id;
+                        addNotification($title, $body, null, null,  $order->user_id,$ownerUserID);
 
                         if (getOption('send_email_status', 0) == ACTIVE) {
                             $emails = [$order->user->email];
@@ -153,10 +155,12 @@ class MpesaController extends Controller
                             $status = 'Paid';
                             $amount = $order->amount;
 
-                            $mailService = new MailService;
-                            
-                            $mailService->sendProductOrderSuccessMail($tenantUserId,$emails, $subject, $message, $title, $method, $status, $amount);
+                            SendPaymentsSuccessEmailJob::dispatch(
+                                $emails, $subject, $message, $title, $method, 
+                                $status, $amount,$paymentType, $order
+                            );
                         }
+
                         $success=true;
                         $message = __('New product order '.$order->order_id.' from Centresidence. Kindly Dispatch');
                         MpesaTransactionProcessed::dispatch($order,$success);
