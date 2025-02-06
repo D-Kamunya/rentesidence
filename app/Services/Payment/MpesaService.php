@@ -53,6 +53,8 @@ class MpesaService extends BasePaymentService
                 $data['checkout_request_id'] =  $result['CheckoutRequestID'];
                 $data['payment_id'] = $result['CheckoutRequestID'];
                 $data['success'] = true;
+            }elseif (isset($result['errorMessage'])) {
+                $data['message'] = __($result['errorMessage']);
             }
             return $data;
         } catch (\Exception $ex) {
