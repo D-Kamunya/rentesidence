@@ -29,6 +29,9 @@ class MpesaController extends Controller
         $paymentId= $response['Body']['stkCallback']['CheckoutRequestID'];
         $orderId=$request->get('id', '');
         $paymentType=$request->get('type', '');
+
+        $originalQueueConnection = config('queue.default');
+
         try {
             if($paymentType=='subscription'){
                 $order = SubscriptionOrder::findOrFail($orderId);
@@ -53,6 +56,13 @@ class MpesaController extends Controller
 
                         DB::commit();
 
+                        config(['queue.default' => 'sync']);
+
+                        $success=true;
+                        MpesaTransactionProcessed::dispatch($order,$success);
+
+                        config(['queue.default' => $originalQueueConnection]);
+
                         $title = __("You have a new invoice");
                         $body = __("Subscription payment verify successfully");
                         $adminUser = User::where('role', USER_ROLE_ADMIN)->first();
@@ -60,7 +70,7 @@ class MpesaController extends Controller
 
                         if (getOption('send_email_status', 0) == ACTIVE) {
                             $emails = [$order->user->email];
-                            $subject = __('Payment Successful!');
+                            $subject = __('Subscription Payment Successful!');
                             $title = __('Congratulations!');
                             $message = __('You have successfully made the payment');
                             $ownerUserId =$order->user_id;
@@ -73,9 +83,6 @@ class MpesaController extends Controller
                                 $status, $amount,$paymentType, $order, $duration
                             );
                         }
-
-                        $success=true;
-                        MpesaTransactionProcessed::dispatch($order,$success);
                     }
                 }elseif ($resultCode!=0) {
                     DB::beginTransaction();
@@ -84,8 +91,13 @@ class MpesaController extends Controller
                     $order->transaction_id = str_replace('-', '', uuid_create());
                     $order->save();
                     DB::commit();
+
+                    config(['queue.default' => 'sync']);
+
                     $success=false;
                     MpesaTransactionProcessed::dispatch($order,$success);
+
+                    config(['queue.default' => $originalQueueConnection]);
                 }
             }elseif($paymentType=="RentPayment"){
                 $order = Order::findOrFail($orderId);
@@ -103,6 +115,13 @@ class MpesaController extends Controller
                         $invoice->save();
                         DB::commit();
 
+                        config(['queue.default' => 'sync']);
+
+                        $success=true;
+                        MpesaTransactionProcessed::dispatch($order,$success);
+
+                        config(['queue.default' => $originalQueueConnection]);
+
                         $emailData = (object) [
                             'subject'   => __("Rent payment verify successfully"),
                             'title'     =>  __("You have a new invoice"),
@@ -113,9 +132,6 @@ class MpesaController extends Controller
                             'body'     =>  $invoice->invoice_no . ' ' . __('paid successfully'),
                         ];
                         SendInvoiceNotificationAndEmailJob::dispatch($invoice,$emailData,$notificationData);
-
-                        $success=true;
-                        MpesaTransactionProcessed::dispatch($order,$success);
                     }
                 }elseif($resultCode!=0) {
                     DB::beginTransaction();
@@ -124,8 +140,13 @@ class MpesaController extends Controller
                     $order->transaction_id = str_replace('-', '', uuid_create());
                     $order->save();
                     DB::commit();
+                    
+                    config(['queue.default' => 'sync']);
+
                     $success=false;
                     MpesaTransactionProcessed::dispatch($order,$success);
+
+                    config(['queue.default' => $originalQueueConnection]);
                 }
             }elseif($paymentType=="ProductOrder"){
                 $order = ProductOrder::findOrFail($orderId);
@@ -139,6 +160,13 @@ class MpesaController extends Controller
                         $order->transaction_id = str_replace('-', '', uuid_create());
                         $order->save();
                         DB::commit();
+
+                        config(['queue.default' => 'sync']);
+
+                        $success=true;
+                        MpesaTransactionProcessed::dispatch($order,$success);
+
+                        config(['queue.default' => $originalQueueConnection]);
 
                         $title = __("You have a new invoice");
                         $body = __("Products payment verify successfully");
@@ -161,9 +189,7 @@ class MpesaController extends Controller
                             );
                         }
 
-                        $success=true;
                         $message = __('New product order '.$order->order_id.' from Centresidence. Kindly Dispatch');
-                        MpesaTransactionProcessed::dispatch($order,$success);
                         SendSmsJob::dispatch([$ownerNumber], $message, $tenantUserId);
                     }
                 }elseif($resultCode!=0) {
@@ -173,14 +199,23 @@ class MpesaController extends Controller
                     $order->transaction_id = str_replace('-', '', uuid_create());
                     $order->save();
                     DB::commit();
+                    
+                    config(['queue.default' => 'sync']);
+
                     $success=false;
                     MpesaTransactionProcessed::dispatch($order,$success);
+
+                    config(['queue.default' => $originalQueueConnection]);
                 }
             }
             
         } catch (\Exception $e) {
             DB::rollBack();
             Log::error($e->getMessage());
+            config(['queue.default' => $originalQueueConnection]);
+        } finally {
+            config(['queue.default' => $originalQueueConnection]);
         }
+
     }
 }
