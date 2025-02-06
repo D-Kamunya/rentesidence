@@ -70,6 +70,6 @@ class ReminderInvoice extends Command
 
         $message = $overDue ? __($invoice->month.' Payment Remainder from Centresidence . '.$invoice->invoice_no . ' ' . 'overdue on date' . ' ' . $invoice->due_date):
         __($invoice->month.' Payment Remainder from Centresidence . '.$invoice->invoice_no . ' ' . 'due on date' . ' ' . $invoice->due_date);
-        // SendSmsJob::dispatch([$invoice->tenant->user->contact_number], $message, $ownerUserId);
+        SendSmsJob::dispatch([$invoice->tenant->user->contact_number], $message, $invoice->owner_user_id);
     }
 }
