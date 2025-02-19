@@ -234,20 +234,34 @@ if (!function_exists('getCountryById')) {
 }
 
 if (!function_exists('csvToArray')) {
-    function csvToArray($filename = '', $delimiter = ',')
+    function csvToArray($filename = '', $delimiter = ',', $filterKey = null, $filterValue = null)
     {
-        if (!file_exists($filename) || !is_readable($filename))
-            return false;
+        if (!file_exists($filename) || !is_readable($filename)) {
+            return [];
+        }
 
-        $header = null;
-        $data = array();
-        if (($handle = fopen($filename, 'r')) !== false) {
+        $data = [];
+        $handle = fopen($filename, 'r');
+
+        if ($handle !== false) {
+            $header = fgetcsv($handle, 1000, $delimiter); // Read header row
+
             while (($row = fgetcsv($handle, 1000, $delimiter)) !== false) {
-                if (!$header)
-                    $header = $row;
-                else
-                    $data[] = array_combine($header, $row);
+                if (count($row) === count($header)) {
+                    $rowData = array_combine($header, $row);
+
+                    // Apply filtering if needed (e.g., only return cities for a given state_id)
+                    if ($filterKey !== null && isset($rowData[$filterKey]) && $rowData[$filterKey] == $filterValue) {
+                        $data[] = $rowData;
+                    }
+
+                    // Stop loading after a reasonable number of records (prevents overload)
+                    if (count($data) >= 5000) {
+                        break;
+                    }
+                }
             }
+
             fclose($handle);
         }
         return $data;
