@@ -8,6 +8,7 @@ use App\Http\Requests\TenantDeleteRequest;
 use App\Http\Requests\TenantRequest;
 use App\Models\Property;
 use App\Services\InvoiceTypeService;
+use App\Services\SmsMail\AdvantaSmsService;
 use App\Services\LocationService;
 use App\Services\PropertyService;
 use App\Services\TenantService;
@@ -51,6 +52,24 @@ class TenantController extends Controller
             }
             return view('owner.tenants.index', $data);
         }
+    }
+
+    public function sendLoginDets(Request $request)
+    {
+        $data['tenants'] = $this->tenantService->getAllTenantsLogins();
+           // Loop through tenants and send SMS
+        foreach ($data['tenants'] as $tenant) {
+            $message = "Dear {$tenant->first_name}, Welcome to Centresidence Property Management Technologies! Here are your account details:";
+            $message .= " Email: {$tenant->email}";
+            $message .= " Password: 123456";
+            $message .= " Please use these to access your account on centresidence.com and update your information. For any questions, contact your agent Mr. Wanjohi at 0720847025. We will also be on your property tomorrow for any assistance";
+            try {
+                AdvantaSmsService::sendSms([$tenant->contact_number], $message, auth()->id());
+            } catch (\Exception $e) {
+                \Log::error("SMS sending failed for {$tenant->contact_number}: " . $e->getMessage());
+            }
+        }
+        return response()->json(['message' => 'SMS sent to all tenants.']);
     }
 
     public function create()

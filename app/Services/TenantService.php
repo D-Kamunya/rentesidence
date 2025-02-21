@@ -35,6 +35,16 @@ class TenantService
         return $data?->makeHidden(['created_at', 'updated_at', 'deleted_at']);
     }
 
+    public function getAllTenantsLogins()
+    {
+        $data = Tenant::query()
+            ->leftJoin('users', 'tenants.user_id', '=', 'users.id')
+            ->where('tenants.owner_user_id', auth()->id())
+            ->select('users.first_name', 'users.contact_number', 'users.email')
+            ->get();
+        return $data;
+    }
+
     public function getActiveAll()
     {
         return Tenant::query()
