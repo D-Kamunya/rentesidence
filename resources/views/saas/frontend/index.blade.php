@@ -13,8 +13,8 @@
                                 <p class="hero-sub-title">
                                     {!! getOption('home_hero_summery') !!}
                                 </p>
-                                <a href="{{ route('owner.register.form') }}" class="theme-btn position-relative"
-                                    title="{{ __('Request a Demo') }}">{{ __('Request a Demo') }}</a>
+                                <!-- <a href="{{ route('owner.register.form') }}" class="theme-btn position-relative"
+                                    title="{{ __('Request a Demo') }}">{{ __('Request a Demo') }}</a> -->
                             </div>
                         </div>
                     </div>

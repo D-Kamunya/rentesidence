@@ -89,13 +89,13 @@
                                         class="nav-link"><span>{{ __('Dashboard') }}</span></a>
                                 @endif
                             @else
-                                <a href="{{ route('login') }}" class="nav-link"><span>{{ __('Sign In') }}</span></a>
+                                <a href="{{ route('login') }}" class="theme-btn-outline"><span>{{ __('Sign In') }}</span></a>
                             @endauth
                         </div>
-                        <div class="nav-item">
+                        <!-- <div class="nav-item">
                             <a href="{{ route('owner.register.form') }}" class="theme-btn-outline"
                                 title="{{ __('Request a Demo') }}">{{ __('Request a Demo') }}</a>
-                        </div>
+                        </div> -->
                     </div>
                 </div>
             </div>

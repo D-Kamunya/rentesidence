@@ -20,9 +20,9 @@
                                 </div>
                                 <h1 class="mb-25">{{ __('Sign in') }}</h1>
                                 @if (isAddonInstalled('PROTYSAAS') > 1)
-                                    <p class="font-16 mb-30">{{ __('New owner?') }} <a
+                                    <!-- <p class="font-16 mb-30">{{ __('New owner?') }} <a
                                             href="{{ route('owner.register.form') }}"
-                                            class="secondary-color font-medium">{{ __('Sign Up') }}</a></p>
+                                            class="secondary-color font-medium">{{ __('Sign Up') }}</a></p> -->
                                 @endif
                                 <div class="row mb-25">
                                     <div class="col-md-12">
