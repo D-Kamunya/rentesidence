@@ -40,7 +40,7 @@ class MpesaService extends BasePaymentService
         $amount = $this->amount;
         $transaction_type=$this->payment['type'];
         $callbackurl=  $this->callbackUrl;
-        $response = $this->stkpush('0705075111', '1', $mpesaAccount,$transaction_type, config('MPESA_CALLBACK_URL'));
+        $response = $this->stkpush($customerPhoneNumber, $amount, $mpesaAccount,$transaction_type, config('MPESA_CALLBACK_URL'));
         $result = json_decode((string)$response, true);
 
         $data['success'] = false;
