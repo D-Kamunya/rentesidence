@@ -13,8 +13,8 @@
                                 <p class="hero-sub-title">
                                     {!! getOption('home_hero_summery') !!}
                                 </p>
-                                <!-- <a href="{{ route('owner.register.form') }}" class="theme-btn position-relative"
-                                    title="{{ __('Request a Demo') }}">{{ __('Request a Demo') }}</a> -->
+                                <a href="{{ route('frontend') }}#contact-us" class="theme-btn position-relative"
+                                    title="{{ __('Request a Demo') }}">{{ __('Request a Demo') }}</a>
                             </div>
                         </div>
                     </div>
@@ -607,7 +607,7 @@
     @endif
     <section id="support" class="py-5">
         <div class="container mt-5 p-5">
-            <div class="support-area p-5">
+            <div id="contact-us" class="support-area p-5">
                 <div class="text-center">
                     <h2 class=" fw-bold mb-3 text-white">{{ __('Contact Us') }}</h2>
                     <p class="text-white">
