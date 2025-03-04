@@ -79,10 +79,13 @@ class MpesaService extends BasePaymentService
                     $data['success'] = true;
                     $data['data']['payment_status'] = 'success';
                     $data['data']['payment_method'] = MPESA;
+                }elseif ($result->ResultCode != DEACTIVATE && isset($result->ResultDesc)) {
+                    $data['data']['error'] = $result->ResultDesc;
                 }
             
                 return $data;
             }catch(\Exception $e) {
+                $data['data']['error'] = $e->getMessage();
                 return $data;
             }
         }

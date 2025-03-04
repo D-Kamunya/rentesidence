@@ -739,7 +739,7 @@ if (!function_exists('handleSubscriptionPaymentConfirmation')) {
                     //     $paymentCheck->save();
                     //     DB::commit();
                     // }
-                    return redirect()->route('owner.subscription.index')->with('error', __('Mpesa Payment failed!! Please try again after a few minutes. If the problem persists, contact the System Admin.'));
+                    return redirect()->route('tenant.invoice.index')->with('error', __($payment_data['data']['error']));
                 }
                 // if ($paymentCheck!==null){
                 //     $paymentCheck->increment('check_count');
@@ -814,7 +814,7 @@ if (!function_exists('handleProductPaymentConfirmation')) {
                     //     $paymentCheck->save();
                     //     DB::commit();
                     // }
-                    return redirect()->route('tenant.product.index')->with('error', __('Mpesa Payment failed!! Please try again after a few minutes. If the problem persists, contact the System Admin.'));
+                    return redirect()->route('tenant.invoice.index')->with('error', __($payment_data['data']['error']));
                 }
                 // if ($paymentCheck!==null){
                 //     $paymentCheck->increment('check_count');
@@ -872,7 +872,7 @@ if (!function_exists('handlePaymentConfirmation')) {
                     //     $paymentCheck->save();
                     //     DB::commit();
                     // }
-                    return redirect()->route('tenant.invoice.index')->with('error', __('Mpesa Payment failed!! Please try again after a few minutes. If the problem persists, contact the System Admin.'));
+                    return redirect()->route('tenant.invoice.index')->with('error', __($payment_data['data']['error']));
                 }
                 // if ($paymentCheck!==null){
                 //     $paymentCheck->increment('check_count');
