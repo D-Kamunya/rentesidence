@@ -739,7 +739,7 @@ if (!function_exists('handleSubscriptionPaymentConfirmation')) {
                     //     $paymentCheck->save();
                     //     DB::commit();
                     // }
-                    return redirect()->route('tenant.invoice.index')->with('error', __($payment_data['data']['error']));
+                    return redirect()->route('owner.subscription.index')->with('error', __($payment_data['data']['error']));
                 }
                 // if ($paymentCheck!==null){
                 //     $paymentCheck->increment('check_count');
@@ -814,7 +814,7 @@ if (!function_exists('handleProductPaymentConfirmation')) {
                     //     $paymentCheck->save();
                     //     DB::commit();
                     // }
-                    return redirect()->route('tenant.invoice.index')->with('error', __($payment_data['data']['error']));
+                    return redirect()->route('tenant.product.index')->with('error', __($payment_data['data']['error']));
                 }
                 // if ($paymentCheck!==null){
                 //     $paymentCheck->increment('check_count');
