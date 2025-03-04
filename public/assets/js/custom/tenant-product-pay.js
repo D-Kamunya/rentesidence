@@ -300,9 +300,9 @@ $("#checkoutBtn").on("click", function () {
                         .then((response) => response.json())
                         .then((data) => {
                             if (data["success"]) {
-                                // setTimeout(() => {
-                                //     window.location.href = data["data"]; // Redirect to the URL from the response
-                                // }, 50000);
+                                var redirectTimeout = setTimeout(() => {
+                                    window.location.href = data["redirect_url"];
+                                }, 120000);
                                 var pusher = new Pusher(
                                     window.Laravel.pusher_key,
                                     {
