@@ -28,6 +28,9 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Artisan;
+use App\Jobs\SendPaymentsSuccessEmailJob;
+use App\Jobs\SendInvoiceNotificationAndEmailJob;
+use App\Jobs\SendSmsJob;
 
 function getOption($option_key, $default = '')
 {
@@ -691,40 +694,29 @@ if (!function_exists('handleSubscriptionPaymentConfirmation')) {
                     setUserPackage(auth()->id(), $package, $duration, $order->quantity, $order->id);
 
                     DB::commit();
-                    
+
                     $title = __("You have a new invoice");
                     $body = __("Subscription payment verify successfully");
                     $adminUser = User::where('role', USER_ROLE_ADMIN)->first();
-                    addNotification($title, $body, null, null, $adminUser->id, auth()->id());
+                    addNotification($title, $body, null, null,$order->user_id,$adminUser->id);
 
                     if (getOption('send_email_status', 0) == ACTIVE) {
                         $emails = [$order->user->email];
-                        $subject = __('Payment Successful!');
+                        $subject = __('Subscription Payment Successful!');
                         $title = __('Congratulations!');
                         $message = __('You have successfully made the payment');
-                        $ownerUserId = auth()->id();
+                        $ownerUserId =$order->user_id;
                         $method = $gateway->slug;
                         $status = 'Paid';
                         $amount = $order->amount;
+                        $paymentType = "subscription";
 
-                        $mailService = new MailService;
-                        $template = EmailTemplate::where('owner_user_id', $ownerUserId)->where('category', EMAIL_TEMPLATE_SUBSCRIPTION_SUCCESS)->where('status', ACTIVE)->first();
-
-                        if ($template) {
-                            $customizedFieldsArray = [
-                                '{{amount}}' => $order->total,
-                                '{{status}}' => $status,
-                                '{{duration}}' => $duration,
-                                '{{gateway}}' => $method,
-                                '{{app_name}}' => getOption('app_name')
-                            ];
-                            $content = getEmailTemplate($template->body, $customizedFieldsArray);
-                            $mailService->sendCustomizeMail($emails, $template->subject, $content);
-                        } else {
-                            $mailService->sendSubscriptionSuccessMail($ownerUserId,$emails, $subject, $message, $title, $method, $status, $amount, $duration);
-                        }
+                        SendPaymentsSuccessEmailJob::dispatch(
+                            $emails, $subject, $message, $title, $method, 
+                            $status, $amount,$paymentType, $order, $duration
+                        );
                     }
-
+                    
                     if ($gateway_slug == 'mpesa') {
                         return redirect()->route('owner.subscription.index')->with('success', __('Mpesa Payment Successful!'));
                     }
@@ -769,6 +761,7 @@ if (!function_exists('handleProductPaymentConfirmation')) {
             }
 
             $payment_id = $order->payment_id;
+            $ownerNumber = $order->gateway->owner->contact_number;
 
             $gatewayBasePayment = new Payment($gateway->slug, ['currency' => $order->gateway_currency, 'type' => 'ProductOrder']);
             $payment_data = $gatewayBasePayment->paymentConfirmation($payment_id, $payerId);
@@ -783,27 +776,33 @@ if (!function_exists('handleProductPaymentConfirmation')) {
                     
                     $title = __("You have a new invoice");
                     $body = __("Products payment verify successfully");
-                    $ownerUserID = auth()->user()->owner_user_id;
-                    addNotification($title, $body, null, null, $ownerUserID, auth()->id());
+                    $ownerUserID = $gateway->owner_user_id;
+                    addNotification($title, $body, null, null,  $order->user_id,$ownerUserID);
 
                     if (getOption('send_email_status', 0) == ACTIVE) {
                         $emails = [$order->user->email];
                         $subject = __('Product Payment Successful!');
                         $title = __('Congratulations!');
                         $message = __('You have successfully made the product order payment');
-                        $tenantUserId = auth()->id();
+                        $tenantUserId = $order->user_id;
                         $method = $gateway->slug;
                         $status = 'Paid';
                         $amount = $order->amount;
+                        $paymentType = "ProductOrder";
 
-                        $mailService = new MailService;
-                        
-                        $mailService->sendProductOrderSuccessMail($tenantUserId,   $emails, $subject, $message, $title, $method, $status, $amount);
+                        SendPaymentsSuccessEmailJob::dispatch(
+                            $emails, $subject, $message, $title, $method, 
+                            $status, $amount,$paymentType, $order
+                        );
                     }
+
+                    $message = __('New product order '.$order->order_id.' from Centresidence. Kindly Dispatch');
+                    SendSmsJob::dispatch([$ownerNumber], $message, $tenantUserId);
 
                     if ($gateway_slug == 'mpesa') {
                         return redirect()->route('tenant.product.index')->with('success', __('Mpesa Payment Successful!'));
                     }
+
                     return redirect()->route('tenant.product.index')->with('success', __('Payment Successful!'));
                 }
             } else {
@@ -857,6 +856,17 @@ if (!function_exists('handlePaymentConfirmation')) {
                     $invoice->order_id = $order->id;
                     $invoice->save();
                     DB::commit();
+
+                    $emailData = (object) [
+                        'subject'   => __("Rent payment verify successfully"),
+                        'title'     =>  __("You have a new invoice"),
+                        'message'   => $invoice->invoice_no . ' ' . __('paid successfully'),
+                    ];
+                    $notificationData = (object) [
+                        'title'   => __('Rent Payment successful!'),
+                        'body'     =>  $invoice->invoice_no . ' ' . __('paid successfully'),
+                    ];
+                    SendInvoiceNotificationAndEmailJob::dispatch($invoice,$emailData,$notificationData);
 
                     if ($gateway_slug == 'mpesa') {
                         return redirect()->route('tenant.invoice.index')->with('success', __('Mpesa Payment Successful!'));
