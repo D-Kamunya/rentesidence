@@ -93,11 +93,29 @@ $(document).on("click", ".gatewayCurrencyAmount", function () {
     $("#mpesa_selectCurrency").val($(this).text().replace(/\s+/g, ""));
 });
 
+var timerInterval;
 function showMpesaPreloader() {
+    let countdown = 120; // 2 minutes (in seconds)
+    const timerElement = document.getElementById("mpesa-timer");
     document.getElementById("mpesa-preloader").style.display = "block";
+    // Start countdown
+    timerInterval = setInterval(() => {
+        let minutes = Math.floor(countdown / 60);
+        let seconds = countdown % 60;
+        timerElement.textContent = `${minutes}:${
+            seconds < 10 ? "0" + seconds : seconds
+        }`;
+
+        if (countdown <= 0) {
+            clearInterval(timerInterval);
+        }
+
+        countdown--;
+    }, 1000);
 }
 
 function hideMpesaPreloader() {
+    clearInterval(timerInterval);
     document.getElementById("mpesa-preloader").style.display = "none";
 }
 

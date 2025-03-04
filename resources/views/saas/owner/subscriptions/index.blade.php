@@ -7,8 +7,8 @@
             <div id="mpesa-preloaderInner">
                 <img src="{{asset('assets/images/gateway-icon/mpesa.jpg')}}" alt="M-PESA Image">
                 <div>
-                    <p>Please follow the instructions and do not refresh or leave this page.</p><br>
-                    <p>This may take up to 2 minutes.</p><br>
+                    <p>Please follow the instructions and do not refresh or leave this page.                             
+                    <<p>This may take up to <span id="mpesa-timer">2:00 minute(s)</span>.</p><br>
                     <p>You will receive a prompt on mobile number to enter your PIN to authorize your payment request.</p><br>
                     <p> Please ensure your phone is on and unlocked to enable you to complete the process. Thank you.</p>
                 </div>
