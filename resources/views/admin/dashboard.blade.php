@@ -13,6 +13,10 @@
                                     <p>{{ __('Welcome back') }}, {{ auth()->user()->name }} <span class="iconify font-24"
                                             data-icon="openmoji:waving-hand"></span></p>
                                 </div>
+                                <div class="page-title-right">
+                                    <button id="cleanup-btn" class="theme-btn" title="Run Cleanup">Run Cleanup
+                                    </button>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -193,3 +197,39 @@
         </div>
     </div>
 @endsection
+@push('script')
+    <script>
+        document.getElementById("cleanup-btn").addEventListener("click", function() {
+            Swal.fire({
+                title: "Are you sure you want to clean up the system?",
+                text: "You won't be able to revert this!",
+                icon: "warning",
+                showCancelButton: true,
+                confirmButtonColor: "#3085d6",
+                cancelButtonColor: "#d33",
+                confirmButtonText: "Yes, Delete It!",
+            }).then((result) => {
+                if (result.value) {
+                    fetch("{{ route('admin.cleanup') }}")
+                    .then(response => response.json())
+                    .then(data => {
+                        Swal.fire({
+                            title: "CleanUp Success",
+                            html: ' <span style="color:red">System CleanUp Completed!</span> ',
+                            timer: 6000,
+                            icon: "success",
+                        });
+                    })
+                    .catch(error => {
+                        Swal.fire({
+                            title: "CleanUp Error",
+                            html: ' <span style="color:red">'+error+'</span> ',
+                            timer: 6000,
+                            icon: "success",
+                        });
+                    });
+                }
+            });
+        });
+    </script>
+@endpush

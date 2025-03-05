@@ -9,6 +9,7 @@ use App\Http\Controllers\Admin\OwnerController;
 use App\Http\Controllers\Admin\SettingController;
 use App\Http\Controllers\VersionUpdateController;
 use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Facades\Artisan;
 
 Route::group(['prefix' => 'admin', 'as' => 'admin.', 'middleware' => ['auth', 'admin']], function () {
     Route::get('/', [DashboardController::class, 'dashboard'])->name('dashboard');
@@ -74,4 +75,15 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'middleware' => ['auth', 'a
         Route::post('uninstall/{code}', [AddonUpdateController::class, 'addonSaasUninstall'])->name('uninstall')->withoutMiddleware(['addon.update']);
         Route::get('delete/{code}', [AddonUpdateController::class, 'addonSaasFileDelete'])->name('delete')->withoutMiddleware(['addon.update']);
     });
+
+    Route::get('/cleanup', function () {
+        Artisan::call('config:clear');
+        Artisan::call('cache:clear');
+        Artisan::call('view:clear');
+        Artisan::call('route:clear');
+        Artisan::call('queue:restart');
+
+        return response()->json(['message' => 'Cleanup completed!']);
+
+    })->name('cleanup');
 });
