@@ -60,35 +60,35 @@
                                         <button class="nav-link active" id="table1-tab" data-bs-toggle="tab"
                                             data-bs-target="#table1-tab-pane" type="button" role="tab"
                                             aria-controls="table1-tab-pane" aria-selected="true">
-                                            {{ __('All') }} ({{ $totalInvoice }})
+                                            {{ __('All') }} (<span id="allCount">{{ $totalInvoice }}</span>)
                                         </button>
                                     </li>
                                     <li class="nav-item" role="presentation">
                                         <button class="nav-link" id="table2-tab" data-bs-toggle="tab"
                                             data-bs-target="#table2-tab-pane" type="button" role="tab"
                                             aria-controls="table2-tab-pane" aria-selected="false">
-                                            {{ __('Paid') }} ({{ $totalPaidInvoice }})
+                                            {{ __('Paid') }} (<span id="paidCount">{{ $totalPaidInvoice }}</span>)
                                         </button>
                                     </li>
                                     <li class="nav-item" role="presentation">
                                         <button class="nav-link" id="table3-tab" data-bs-toggle="tab"
                                             data-bs-target="#table3-tab-pane" type="button" role="tab"
                                             aria-controls="table3-tab-pane" aria-selected="false">
-                                            {{ __('Pending') }} ({{ $totalPendingInvoice }})
+                                            {{ __('Pending') }} (<span id="pendingCount">{{ $totalPendingInvoice }}</span>)
                                         </button>
                                     </li>
                                     <li class="nav-item" role="presentation">
                                         <button class="nav-link" id="tableBank-tab" data-bs-toggle="tab"
                                             data-bs-target="#tableBank-tab-pane" type="button" role="tab"
                                             aria-controls="tableBank-tab-pane" aria-selected="false">
-                                            {{ __('Bank Pending') }} ({{ $totalBankPendingInvoice }})
+                                            {{ __('Bank Pending') }} (<span id="bankPendingCount">{{ $totalBankPendingInvoice }}</span>)
                                         </button>
                                     </li>
                                     {{-- <li class="nav-item" role="presentation">
                                         <button class="nav-link" id="table4-tab" data-bs-toggle="tab"
                                             data-bs-target="#table4-tab-pane" type="button" role="tab"
                                             aria-controls="table4-tab-pane" aria-selected="false">
-                                            {{ __('OverDue') }} ({{ $totalOverDueInvoice }})
+                                            {{ __('OverDue') }} (<span id="overdueCount">{{ $totalOverDueInvoice }}</span>)
                                         </button>
                                     </li> --}}
                                 </ul>

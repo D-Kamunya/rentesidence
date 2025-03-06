@@ -301,6 +301,22 @@
             .html(html);
     }
 
+    function updateInvoiceCounts() {
+        $("#allCount").text(oTable.rows({ search: "applied" }).count());
+        $("#paidCount").text(
+            paidInvoiceDataTable.rows({ search: "applied" }).count()
+        );
+        $("#pendingCount").text(
+            pendingInvoiceDataTable.rows({ search: "applied" }).count()
+        );
+        $("#bankPendingCount").text(
+            bankPendingInvoiceDataTable.rows({ search: "applied" }).count()
+        );
+        $("#overdueCount").text(
+            overdueInvoiceDataTable.rows({ search: "applied" }).count()
+        );
+    }
+
     $(document).ready(function () {
         // Event delegation for dynamically added select fields
         $(document).on("change", ".invoiceItem-invoice_type_id", function () {
@@ -410,7 +426,14 @@
     var overdueInvoiceDataTable;
 
     $("#search_property").on("change", function () {
-        oTable.search($(this).val()).draw();
+        let propertyValue = $(this).val();
+
+        // Apply search filter to all tables
+        oTable.search(propertyValue).draw();
+        paidInvoiceDataTable.search(propertyValue).draw();
+        pendingInvoiceDataTable.search(propertyValue).draw();
+        bankPendingInvoiceDataTable.search(propertyValue).draw();
+        overdueInvoiceDataTable.search(propertyValue).draw();
     });
 
     $(document).on(
@@ -437,6 +460,7 @@
             $(".dataTables_length select").addClass(
                 "form-select form-select-sm"
             );
+            updateInvoiceCounts();
         },
         language: {
             paginate: {
@@ -469,6 +493,7 @@
             $(".dataTables_length select").addClass(
                 "form-select form-select-sm"
             );
+            updateInvoiceCounts();
         },
         language: {
             paginate: {
@@ -500,6 +525,7 @@
             $(".dataTables_length select").addClass(
                 "form-select form-select-sm"
             );
+            updateInvoiceCounts();
         },
         language: {
             paginate: {
@@ -531,6 +557,7 @@
             $(".dataTables_length select").addClass(
                 "form-select form-select-sm"
             );
+            updateInvoiceCounts();
         },
         language: {
             paginate: {
@@ -563,6 +590,7 @@
             $(".dataTables_length select").addClass(
                 "form-select form-select-sm"
             );
+            updateInvoiceCounts();
         },
         language: {
             paginate: {
