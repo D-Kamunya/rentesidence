@@ -82,7 +82,13 @@ class InvoiceService
                         <p class="font-13">' . $invoice->unit_name . '</p>';
             })
             ->addColumn('due_date', function ($item) {
-                return $item->due_date;
+                $html = $item->due_date;
+                if ($item->status == INVOICE_STATUS_PENDING) {
+                    if ($item->due_date < date('Y-m-d')) {
+                        $html .= '<div class="status-btn status-btn-red mx-1" title="' . __('Over Due') . '">' . __('Over Due') . '</div>';
+                    }
+                }
+                return $html;
             })
             ->addColumn('amount', function ($invoice) {
                 return currencyPrice(invoiceItemTotalAmount($invoice->id));
@@ -120,7 +126,7 @@ class InvoiceService
                 $html .= '</div>';
                 return $html;
             })
-            ->rawColumns(['invoice', 'property', 'status', 'gateway', 'action'])
+            ->rawColumns(['invoice', 'property','due_date', 'status', 'gateway', 'action'])
             ->make(true);
     }
 
@@ -308,7 +314,13 @@ class InvoiceService
                         <p class="font-13">' . @$invoice->propertyUnit->unit_name . '</p>';
             })
             ->addColumn('due_date', function ($item) {
-                return $item->due_date;
+                $html = $item->due_date;
+                if ($item->status == INVOICE_STATUS_PENDING) {
+                    if ($item->due_date < date('Y-m-d')) {
+                        $html .= '<div class="status-btn status-btn-red mx-1" title="' . __('Over Due') . '">' . __('Over Due') . '</div>';
+                    }
+                }
+                return $html;
             })
             ->addColumn('amount', function ($invoice) {
                 return currencyPrice(invoiceItemTotalAmount($invoice->id));
@@ -329,7 +341,7 @@ class InvoiceService
                             <button onclick="deleteItem(\'' . route('owner.invoice.destroy', $invoice->id) . '\', \'overdueInvoiceDatatable\')" class="p-1 tbl-action-btn" title="' . __('Delete') . '"><span class="iconify" data-icon="ep:delete-filled"></span></button>
                         </div>';
             })
-            ->rawColumns(['invoice', 'property', 'status', 'action'])
+            ->rawColumns(['invoice', 'property','due_date', 'status', 'action'])
             ->make(true);
     }
 

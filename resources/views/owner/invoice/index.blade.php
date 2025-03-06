@@ -84,13 +84,13 @@
                                             {{ __('Bank Pending') }} (<span id="bankPendingCount">{{ $totalBankPendingInvoice }}</span>)
                                         </button>
                                     </li>
-                                    {{-- <li class="nav-item" role="presentation">
+                                    <li class="nav-item" role="presentation">
                                         <button class="nav-link" id="table4-tab" data-bs-toggle="tab"
                                             data-bs-target="#table4-tab-pane" type="button" role="tab"
                                             aria-controls="table4-tab-pane" aria-selected="false">
                                             {{ __('OverDue') }} (<span id="overdueCount">{{ $totalOverDueInvoice }}</span>)
                                         </button>
-                                    </li> --}}
+                                    </li>
                                 </ul>
                             </div>
 
