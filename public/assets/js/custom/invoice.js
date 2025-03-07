@@ -302,18 +302,50 @@
     }
 
     function updateInvoiceCounts() {
-        $("#allCount").text(oTable.rows({ search: "applied" }).count());
-        $("#paidCount").text(
-            paidInvoiceDataTable.rows({ search: "applied" }).count()
-        );
+        if (!oTable || !oTable.ajax) return;
+        if (!paidInvoiceDataTable || !paidInvoiceDataTable.ajax) return;
+        if (!pendingInvoiceDataTable || !pendingInvoiceDataTable.ajax) return;
+        if (!bankPendingInvoiceDataTable || !bankPendingInvoiceDataTable.ajax)
+            return;
+        if (!overdueInvoiceDataTable || !overdueInvoiceDataTable.ajax) return;
+
+        // Get total records before filtering
+        let totalAllInvoices = oTable.ajax.json()?.recordsTotal || 0;
+        let totalPaidInvoices =
+            paidInvoiceDataTable.ajax.json()?.recordsTotal || 0;
+        let totalPendingInvoices =
+            pendingInvoiceDataTable.ajax.json()?.recordsTotal || 0;
+        let totalBankPendingInvoices =
+            bankPendingInvoiceDataTable.ajax.json()?.recordsTotal || 0;
+        let totalOverdueInvoices =
+            overdueInvoiceDataTable.ajax.json()?.recordsTotal || 0;
+
+        // Get the count of currently visible (filtered) records
+        let filteredAllInvoices = oTable.rows({ search: "applied" }).count();
+        let filteredPaidInvoices = paidInvoiceDataTable
+            .rows({ search: "applied" })
+            .count();
+        let filteredPendingInvoices = pendingInvoiceDataTable
+            .rows({ search: "applied" })
+            .count();
+        let filteredBankPendingInvoices = bankPendingInvoiceDataTable
+            .rows({ search: "applied" })
+            .count();
+        let filteredOverdueInvoices = overdueInvoiceDataTable
+            .rows({ search: "applied" })
+            .count();
+
+        // Update UI count display
+        $("#allCount").text(`${filteredAllInvoices} / ${totalAllInvoices}`);
+        $("#paidCount").text(`${filteredPaidInvoices} / ${totalPaidInvoices}`);
         $("#pendingCount").text(
-            pendingInvoiceDataTable.rows({ search: "applied" }).count()
+            `${filteredPendingInvoices} / ${totalPendingInvoices}`
         );
         $("#bankPendingCount").text(
-            bankPendingInvoiceDataTable.rows({ search: "applied" }).count()
+            `${filteredBankPendingInvoices} / ${totalBankPendingInvoices}`
         );
         $("#overdueCount").text(
-            overdueInvoiceDataTable.rows({ search: "applied" }).count()
+            `${filteredOverdueInvoices} / ${totalOverdueInvoices}`
         );
     }
 
