@@ -806,6 +806,7 @@ class InvoiceService
     public function getInvoiceMonths()
     {
         $data = Invoice::query()
+            ->where('invoices.owner_user_id', auth()->id())
             ->selectRaw('month, YEAR(due_date) as year')
             ->distinct()
             ->orderBy('year', 'desc')
