@@ -310,15 +310,14 @@
         if (!overdueInvoiceDataTable || !overdueInvoiceDataTable.ajax) return;
 
         // Get total records before filtering
-        let totalAllInvoices = oTable.ajax.json()?.recordsTotal || 0;
-        let totalPaidInvoices =
-            paidInvoiceDataTable.ajax.json()?.recordsTotal || 0;
+        let totalAllInvoices = oTable.page.info().recordsDisplay;
+        let totalPaidInvoices = paidInvoiceDataTable.page.info().recordsDisplay;
         let totalPendingInvoices =
-            pendingInvoiceDataTable.ajax.json()?.recordsTotal || 0;
+            pendingInvoiceDataTable.page.info().recordsDisplay;
         let totalBankPendingInvoices =
-            bankPendingInvoiceDataTable.ajax.json()?.recordsTotal || 0;
+            bankPendingInvoiceDataTable.page.info().recordsDisplay;
         let totalOverdueInvoices =
-            overdueInvoiceDataTable.ajax.json()?.recordsTotal || 0;
+            overdueInvoiceDataTable.page.info().recordsDisplay;
 
         // Get the count of currently visible (filtered) records
         let filteredAllInvoices = oTable.rows({ search: "applied" }).count();
