@@ -38,6 +38,19 @@
                                             </div>
                                         </div>
                                     </div>
+
+                                    <div class="month-top-search-bar-right">
+                                        <div class="row">
+                                            <div class="col-md-6 col-lg-6 col-xl-4 mb-25">
+                                                <select class="form-select flex-shrink-0" id="search_month">
+                                                    <option value="" selected>{{ __('Select Month') }}</option>
+                                                    @foreach ($invoiceMonths as $month)
+                                                        <option value="{{ $month->formatted }}">{{ $month->formatted }}</option>
+                                                    @endforeach
+                                                </select>
+                                            </div>
+                                        </div>
+                                    </div>
                                 </div>
                                 <div class="col-md-6">
                                     <div class="property-top-search-bar-right text-end">
@@ -102,6 +115,7 @@
                                             <tr>
                                                 <th>{{ __('Invoice') }}</th>
                                                 <th>{{ __('Property') }}</th>
+                                                <th>{{ __('Invoice Month') }}</th>
                                                 <th>{{ __('Due Date') }}</th>
                                                 <th class="tablet-l tablet-p">{{ __('Amount') }}</th>
                                                 <th class="tablet-l tablet-p">{{ __('Payment Status') }}</th>
@@ -118,6 +132,7 @@
                                             <tr>
                                                 <th>{{ __('Invoice') }}</th>
                                                 <th>{{ __('Property') }}</th>
+                                                <th>{{ __('Invoice Month') }}</th>
                                                 <th>{{ __('Due Date') }}</th>
                                                 <th class="tablet-l tablet-p">{{ __('Amount') }}</th>
                                                 <th class="tablet-l tablet-p">{{ __('Payment Status') }}</th>
@@ -133,6 +148,7 @@
                                             <tr>
                                                 <th>{{ __('Invoice') }}</th>
                                                 <th>{{ __('Property') }}</th>
+                                                <th>{{ __('Invoice Month') }}</th>
                                                 <th>{{ __('Due Date') }}</th>
                                                 <th class="tablet-l tablet-p">{{ __('Amount') }}</th>
                                                 <th class="tablet-l tablet-p">{{ __('Payment Status') }}</th>
@@ -148,6 +164,7 @@
                                             <tr>
                                                 <th>{{ __('Invoice') }}</th>
                                                 <th>{{ __('Property') }}</th>
+                                                <th>{{ __('Invoice Month') }}</th>
                                                 <th>{{ __('Due Date') }}</th>
                                                 <th class="tablet-l tablet-p">{{ __('Amount') }}</th>
                                                 <th class="tablet-l tablet-p">{{ __('Payment Status') }}</th>
@@ -165,6 +182,7 @@
                                             <tr>
                                                 <th>{{ __('Invoice') }}</th>
                                                 <th>{{ __('Property') }}</th>
+                                                <th>{{ __('Invoice Month') }}</th>
                                                 <th>{{ __('Due Date') }}</th>
                                                 <th class="tablet-l tablet-p">{{ __('Amount') }}</th>
                                                 <th class="tablet-l tablet-p">{{ __('Payment Status') }}</th>

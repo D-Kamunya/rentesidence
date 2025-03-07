@@ -24,7 +24,7 @@ class Invoice extends Model
 
     public function scopeOverDue($query)
     {
-        return $query->where('status', INVOICE_STATUS_PENDING)
+        return $query->where('invoices.status', INVOICE_STATUS_PENDING)
                 ->whereDate('due_date', '<', now());
     }
 

@@ -81,6 +81,10 @@ class InvoiceService
                 return '<h6>' . $invoice->property_name . '</h6>
                         <p class="font-13">' . $invoice->unit_name . '</p>';
             })
+            ->addColumn('month', function ($item) {
+                $html = $item->month;
+                return $html;
+            })
             ->addColumn('due_date', function ($item) {
                 $html = $item->due_date;
                 if ($item->status == INVOICE_STATUS_PENDING) {
@@ -126,7 +130,7 @@ class InvoiceService
                 $html .= '</div>';
                 return $html;
             })
-            ->rawColumns(['invoice', 'property','due_date', 'status', 'gateway', 'action'])
+            ->rawColumns(['invoice', 'property','month','due_date', 'status', 'gateway', 'action'])
             ->make(true);
     }
 
@@ -146,6 +150,10 @@ class InvoiceService
             ->addColumn('property', function ($invoice) {
                 return '<h6>' . $invoice->property_name . '</h6>
                         <p class="font-13">' . $invoice->unit_name . '</p>';
+            })
+            ->addColumn('month', function ($item) {
+                $html = $item->month;
+                return $html;
             })
             ->addColumn('due_date', function ($item) {
                 return $item->due_date;
@@ -198,6 +206,10 @@ class InvoiceService
             ->addColumn('property', function ($invoice) {
                 return '<h6>' . $invoice->property_name . '</h6>
                         <p class="font-13">' . $invoice->unit_name . '</p>';
+            })
+            ->addColumn('month', function ($item) {
+                $html = $item->month;
+                return $html;
             })
             ->addColumn('due_date', function ($item) {
                 $html = $item->due_date;
@@ -260,6 +272,10 @@ class InvoiceService
                 return '<h6>' . @$invoice->property->name . '</h6>
                         <p class="font-13">' . @$invoice->propertyUnit->unit_name . '</p>';
             })
+            ->addColumn('month', function ($item) {
+                $html = $item->month;
+                return $html;
+            })
             ->addColumn('due_date', function ($item) {
                 return $item->due_date;
             })
@@ -303,7 +319,16 @@ class InvoiceService
 
     public function getOverDueInvoicesData($request)
     {
-        $invoice = Invoice::where('owner_user_id', auth()->id())->overDue();
+        $invoice = Invoice::query()
+            ->where('invoices.owner_user_id', auth()->id())
+            ->overDue() // Using the scope you created
+            ->leftJoin('properties', 'invoices.property_id', '=', 'properties.id') // Ensure properties is joined
+            ->leftJoin('property_units', 'property_units.id', '=', 'invoices.property_unit_id')
+            ->select([
+                'invoices.*',
+                'properties.name as property_name', // Selecting property name
+                'property_units.unit_name',
+            ]);
         return datatables($invoice)
             ->addColumn('invoice', function ($invoice) {
                 return '<h6>' . $invoice->invoice_no . '</h6>
@@ -312,6 +337,10 @@ class InvoiceService
             ->addColumn('property', function ($invoice) {
                 return '<h6>' . @$invoice->property->name . '</h6>
                         <p class="font-13">' . @$invoice->propertyUnit->unit_name . '</p>';
+            })
+            ->addColumn('month', function ($item) {
+                $html = $item->month;
+                return $html;
             })
             ->addColumn('due_date', function ($item) {
                 $html = $item->due_date;
@@ -772,5 +801,23 @@ class InvoiceService
             $message = getErrorMessage($e, $e->getMessage());
             return $this->error([], $message);
         }
+    }
+
+    public function getInvoiceMonths()
+    {
+        $data = Invoice::query()
+            ->selectRaw('month, YEAR(due_date) as year')
+            ->distinct()
+            ->orderBy('year', 'desc')
+            ->orderByRaw("STR_TO_DATE(month, '%M')") // Order months correctly
+            ->groupBy('month', 'year')
+            ->get();
+
+        // Format results
+        return $data->map(function ($item) {
+                return (object)[
+                    'formatted' => "{$item->month} {$item->year}" // Convert to "January 2024"
+                ];
+            });
     }
 }

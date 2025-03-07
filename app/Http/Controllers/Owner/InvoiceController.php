@@ -35,6 +35,7 @@ class InvoiceController extends Controller
         else {
             $responseData  = $this->invoiceService->getAllInvoices();
             $responseData['properties'] = $this->propertyService->getAll(false);
+            $responseData['invoiceMonths'] = $this->invoiceService->getInvoiceMonths();
             return view('owner.invoice.index')->with($responseData);
         }
     }

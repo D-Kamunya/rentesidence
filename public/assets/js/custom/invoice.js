@@ -436,15 +436,58 @@
         overdueInvoiceDataTable.search(propertyValue).draw();
     });
 
+    $("#search_month").on("change", function () {
+        let selectedMonth = $(this).val(); // Example: "February 2025"
+
+        // Extract month and year separately
+        let parts = selectedMonth.split(" ");
+        let month = parts[0]; // February
+        let year = parts[1]; // 2025
+        if (selectedMonth === "") {
+            month = "";
+            year = "";
+            oTable.column(2).search(month).draw(); // Adjust column index based on table structure
+            oTable.column(3).search(year).draw();
+
+            paidInvoiceDataTable.column(2).search(month).draw();
+            paidInvoiceDataTable.column(3).search(year).draw();
+
+            pendingInvoiceDataTable.column(2).search(month).draw();
+            pendingInvoiceDataTable.column(3).search(year).draw();
+
+            bankPendingInvoiceDataTable.column(2).search(month).draw();
+            bankPendingInvoiceDataTable.column(3).search(year).draw();
+
+            overdueInvoiceDataTable.column(2).search(month).draw();
+            overdueInvoiceDataTable.column(3).search(year).draw();
+        } else {
+            // Apply the search filter to all tables
+            oTable.column(2).search(month).draw(); // Adjust column index based on table structure
+            oTable.column(3).search(year).draw();
+
+            paidInvoiceDataTable.column(2).search(month).draw();
+            paidInvoiceDataTable.column(3).search(year).draw();
+
+            pendingInvoiceDataTable.column(2).search(month).draw();
+            pendingInvoiceDataTable.column(3).search(year).draw();
+
+            bankPendingInvoiceDataTable.column(2).search(month).draw();
+            bankPendingInvoiceDataTable.column(3).search(year).draw();
+
+            overdueInvoiceDataTable.column(2).search(month).draw();
+            overdueInvoiceDataTable.column(3).search(year).draw();
+        }
+    });
+
     $(document).on(
         "shown.bs.tab",
         'button[data-bs-toggle="tab"]',
         function (event) {
-            oTable.ajax.reload();
-            paidInvoiceDataTable.ajax.reload();
-            pendingInvoiceDataTable.ajax.reload();
-            bankPendingInvoiceDataTable.ajax.reload();
-            overdueInvoiceDataTable.ajax.reload();
+            oTable.search("").clear().draw();
+            paidInvoiceDataTable.search("").clear().draw();
+            pendingInvoiceDataTable.search("").clear().draw();
+            bankPendingInvoiceDataTable.search("").clear().draw();
+            overdueInvoiceDataTable.search("").clear().draw();
         }
     );
     oTable = $("#allInvoiceDataTable").DataTable({
@@ -472,6 +515,7 @@
         columns: [
             { data: "invoice", name: "invoices.invoice_no" },
             { data: "property", name: "properties.name" },
+            { data: "month", name: "invoices.month" },
             { data: "due_date", name: "invoices.due_date" },
             { data: "amount", name: "property_units.unit_name" },
             { data: "status" },
@@ -505,6 +549,7 @@
         columns: [
             { data: "invoice", name: "invoices.invoice_no" },
             { data: "property", name: "properties.name" },
+            { data: "month", name: "invoices.month" },
             { data: "due_date", name: "invoices.due_date" },
             { data: "amount", name: "property_units.unit_name" },
             { data: "status" },
@@ -537,6 +582,7 @@
         columns: [
             { data: "invoice", name: "invoices.invoice_no" },
             { data: "property", name: "properties.name" },
+            { data: "month", name: "invoices.month" },
             { data: "due_date", name: "invoices.due_date" },
             { data: "amount", name: "property_units.unit_name" },
             { data: "status" },
@@ -569,6 +615,7 @@
         columns: [
             { data: "invoice", name: "invoices.invoice_no" },
             { data: "property", name: "properties.name" },
+            { data: "month", name: "invoices.month" },
             { data: "due_date", name: "invoices.due_date" },
             { data: "amount", name: "property_units.unit_name" },
             { data: "status" },
@@ -602,6 +649,7 @@
         columns: [
             { data: "invoice", name: "invoices.invoice_no" },
             { data: "property", name: "properties.name" },
+            { data: "month", name: "invoices.month" },
             { data: "due_date", name: "invoices.due_date" },
             { data: "amount", name: "property_units.unit_name" },
             { data: "status" },
