@@ -731,6 +731,13 @@ if (!function_exists('handleSubscriptionPaymentConfirmation')) {
                     //     $paymentCheck->save();
                     //     DB::commit();
                     // }
+                    if (($payment_data['data']['error']  ?? null)=== MPESA_REQUEST_CANCELLED) {
+                        $order->payment_status = ORDER_PAYMENT_STATUS_CANCELLED;
+                        $order->transaction_id = str_replace('-', '', uuid_create());
+                        $order->save();
+
+                        DB::commit();
+                    }
                     return redirect()->route('owner.subscription.index')->with('error', __($payment_data['data']['error']));
                 }
                 // if ($paymentCheck!==null){
@@ -813,6 +820,13 @@ if (!function_exists('handleProductPaymentConfirmation')) {
                     //     $paymentCheck->save();
                     //     DB::commit();
                     // }
+                    if (($payment_data['data']['error']  ?? null)=== MPESA_REQUEST_CANCELLED) {
+                        $order->payment_status = PRODUCT_ORDER_STATUS_CANCELLED;
+                        $order->transaction_id = str_replace('-', '', uuid_create());
+                        $order->save();
+
+                        DB::commit();
+                    }
                     return redirect()->route('tenant.product.index')->with('error', __($payment_data['data']['error']));
                 }
                 // if ($paymentCheck!==null){

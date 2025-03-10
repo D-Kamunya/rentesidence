@@ -38,6 +38,9 @@ const PRODUCT_ORDER_STATUS_CANCELLED = 2;
 const DURATION_TYPE_MONTHLY = 1;
 const DURATION_TYPE_YEARLY = 2;
 
+CONST MPESA_REQUEST_CANCELLED = 'Request cancelled by user';
+CONST MPESA_REQUEST_TIMEOUT ='DS timeout user cannot be reached';
+
 //Property
 const PROPERTY_TYPE_OWN = 1;
 const PROPERTY_TYPE_LEASE = 2;

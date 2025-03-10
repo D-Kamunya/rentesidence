@@ -84,7 +84,7 @@ class MpesaController extends Controller
                             );
                         }
                     }
-                }elseif ($resultCode!=0) {
+                }elseif ($resultCode==1032) {
                     DB::beginTransaction();
                     $order->payment_id=$paymentId;
                     $order->payment_status = ORDER_PAYMENT_STATUS_CANCELLED;
@@ -92,6 +92,18 @@ class MpesaController extends Controller
                     $order->save();
                     DB::commit();
 
+                    config(['queue.default' => 'sync']);
+
+                    $success=false;
+                    MpesaTransactionProcessed::dispatch($order,$success);
+
+                    config(['queue.default' => $originalQueueConnection]);
+                }else{
+                    DB::beginTransaction();
+                    $order->payment_id=$paymentId;
+                    $order->transaction_id = str_replace('-', '', uuid_create());
+                    $order->save();
+                    DB::commit();
                     config(['queue.default' => 'sync']);
 
                     $success=false;
@@ -133,10 +145,23 @@ class MpesaController extends Controller
                         ];
                         SendInvoiceNotificationAndEmailJob::dispatch($invoice,$emailData,$notificationData);
                     }
-                }elseif($resultCode!=0) {
+                }elseif($resultCode==1032) {
                     DB::beginTransaction();
                     $order->payment_id=$paymentId;
                     $order->payment_status = ORDER_PAYMENT_STATUS_CANCELLED;
+                    $order->transaction_id = str_replace('-', '', uuid_create());
+                    $order->save();
+                    DB::commit();
+                    
+                    config(['queue.default' => 'sync']);
+
+                    $success=false;
+                    MpesaTransactionProcessed::dispatch($order,$success);
+
+                    config(['queue.default' => $originalQueueConnection]);
+                }else{
+                    DB::beginTransaction();
+                    $order->payment_id=$paymentId;
                     $order->transaction_id = str_replace('-', '', uuid_create());
                     $order->save();
                     DB::commit();
@@ -192,10 +217,23 @@ class MpesaController extends Controller
                         $message = __('New product order '.$order->order_id.' from Centresidence. Kindly Dispatch');
                         SendSmsJob::dispatch([$ownerNumber], $message, $tenantUserId);
                     }
-                }elseif($resultCode!=0) {
+                }elseif($resultCode==1032) {
                     DB::beginTransaction();
                     $order->payment_id=$paymentId;
                     $order->payment_status = ORDER_PAYMENT_STATUS_CANCELLED;
+                    $order->transaction_id = str_replace('-', '', uuid_create());
+                    $order->save();
+                    DB::commit();
+                    
+                    config(['queue.default' => 'sync']);
+
+                    $success=false;
+                    MpesaTransactionProcessed::dispatch($order,$success);
+
+                    config(['queue.default' => $originalQueueConnection]);
+                }else{
+                    DB::beginTransaction();
+                    $order->payment_id=$paymentId;
                     $order->transaction_id = str_replace('-', '', uuid_create());
                     $order->save();
                     DB::commit();
