@@ -485,7 +485,7 @@
                                                                             class="form-control" id="general_rent"
                                                                             placeholder="{{ __('General Rent') }}"
                                                                             value="{{ $tenant->general_rent }}"
-                                                                            name="general_rent">
+                                                                            name="general_rent" readonly>
                                                                     </div>
                                                                 </div>
                                                                 <div class="col-md-6 col-lg-4 col-xl-3 col-xxl-2 mb-25">
@@ -495,7 +495,7 @@
                                                                     <div class="input-group custom-input-group">
                                                                         <select name="security_deposit_type"
                                                                             id="security_deposit_type"
-                                                                            class="form-control">
+                                                                            class="form-control" readonly>
                                                                             <option value="0"
                                                                                 {{ $tenant->security_deposit_type == TYPE_FIXED ? 'selected' : '' }}>
                                                                                 {{ __('Fixed') }}</option>
@@ -507,7 +507,7 @@
                                                                             class="form-control" id="security_deposit"
                                                                             placeholder="{{ __('Security Deposit') }}"
                                                                             value="{{ $tenant->security_deposit }}"
-                                                                            name="security_deposit">
+                                                                            name="security_deposit" readonly>
                                                                     </div>
                                                                 </div>
                                                                 <div class="col-md-6 col-lg-4 col-xl-3 col-xxl-2 mb-25">
@@ -516,7 +516,7 @@
                                                                     </label>
                                                                     <div class="input-group custom-input-group">
                                                                         <select name="late_fee_type" id="late_fee_type"
-                                                                            class="form-control">
+                                                                            class="form-control" readonly>
                                                                             <option value="0"
                                                                                 {{ $tenant->late_fee_type == TYPE_FIXED ? 'selected' : '' }}>
                                                                                 {{ __('Fixed') }}</option>
@@ -528,7 +528,7 @@
                                                                             class="form-control" id="late_fee"
                                                                             placeholder="{{ __('Late Fee') }}"
                                                                             value="{{ $tenant->late_fee }}"
-                                                                            name="late_fee">
+                                                                            name="late_fee" readonly>
                                                                     </div>
                                                                 </div>
                                                                 <div class="col-md-6 col-lg-4 col-xl-3 col-xxl-2 mb-25">
@@ -540,7 +540,7 @@
                                                                             class="form-control" id="incident_receipt"
                                                                             placeholder="{{ __('Incident Receipt') }}"
                                                                             value="{{ $tenant->incident_receipt }}"
-                                                                            name="incident_receipt">
+                                                                            name="incident_receipt" readonly>
                                                                     </div>
                                                                 </div>
 
@@ -551,7 +551,7 @@
                                                                     <input type="number" class="form-control"
                                                                         autocomplete="off" id="payment_due_on_date"
                                                                         placeholder="{{ __('Due Date') }}"
-                                                                        value="{{ $tenant->due_date }}" name="due_date">
+                                                                        value="{{ $tenant->due_date }}" name="due_date" readonly>
                                                                 </div>
                                                             </div>
 
