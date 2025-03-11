@@ -158,6 +158,8 @@
     });
 
     function getDetailsViewRes(response) {
+        console.log(response);
+
         const selector = $("#invoicePreviewModal");
         selector.modal("show");
         let invoicePrintUrl = $("#invoicePrint").val();
@@ -239,10 +241,10 @@
                 .find(".orderTotal")
                 .html(currencyPrice(response.data.order.total));
         } else {
-            selector.find(".orderDate").html();
-            selector.find(".orderPaymentTitle").html();
-            selector.find(".orderPaymentId").html();
-            selector.find(".orderTotal").html();
+            selector.find(".orderDate").html("");
+            selector.find(".orderPaymentTitle").html("");
+            selector.find(".orderPaymentId").html("");
+            selector.find(".orderTotal").html("");
         }
     }
 
