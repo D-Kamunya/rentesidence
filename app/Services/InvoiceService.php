@@ -55,7 +55,10 @@ class InvoiceService
             ->leftJoin('properties', 'invoices.property_id', '=', 'properties.id')
             ->leftJoin('gateways', 'orders.gateway_id', '=', 'gateways.id')
             ->leftJoin('file_managers', ['orders.deposit_slip_id' => 'file_managers.id', 'file_managers.origin_type' => (DB::raw("'App\\\Models\\\Order'"))])
-            ->select(['invoices.*', 'gateways.title as gatewayTitle', 'gateways.slug as gatewaySlug', 'file_managers.file_name', 'file_managers.folder_name'])
+            ->leftJoin('tenants', 'invoices.tenant_id', '=', 'tenants.id')
+            ->leftJoin('users', 'tenants.user_id', '=', 'users.id') 
+            ->orderByDesc('invoices.id')
+            ->select(['invoices.*', 'gateways.title as gatewayTitle', 'gateways.slug as gatewaySlug', 'file_managers.file_name', 'file_managers.folder_name', 'properties.name as property_name', 'property_units.unit_name', DB::raw("CONCAT(users.first_name, ' ', users.last_name) AS tenant_full_name")])
             ->get();
         return $data?->makeHidden(['created_at', 'updated_at', 'deleted_at']);
     }
@@ -69,17 +72,25 @@ class InvoiceService
             ->leftJoin('property_units', 'property_units.id', '=', 'invoices.property_unit_id')
             ->leftJoin('gateways', 'orders.gateway_id', '=', 'gateways.id')
             ->leftJoin('file_managers', ['orders.deposit_slip_id' => 'file_managers.id', 'file_managers.origin_type' => (DB::raw("'App\\\Models\\\Order'"))])
+            ->leftJoin('tenants', 'invoices.tenant_id', '=', 'tenants.id')
+            ->leftJoin('users', 'tenants.user_id', '=', 'users.id') 
             ->orderByDesc('invoices.id')
-            ->select(['invoices.*', 'gateways.title as gatewayTitle', 'gateways.slug as gatewaySlug', 'file_managers.file_name', 'file_managers.folder_name', 'properties.name as property_name', 'property_units.unit_name']);
+            ->select(['invoices.*', 'gateways.title as gatewayTitle', 'gateways.slug as gatewaySlug', 'file_managers.file_name', 'file_managers.folder_name', 'properties.name as property_name', 'property_units.unit_name', DB::raw("CONCAT(users.first_name, ' ', users.last_name) AS tenant_full_name")]);
 
         return datatables($invoice)
+            ->filterColumn('property', function ($query, $keyword) {
+                $query->whereRaw("properties.name LIKE ?", ["%{$keyword}%"])
+                    ->orWhereRaw("property_units.unit_name LIKE ?", ["%{$keyword}%"])
+                    ->orWhereRaw("CONCAT(users.first_name, ' ', users.last_name) LIKE ?", ["%{$keyword}%"]);
+            })
             ->addColumn('invoice', function ($invoice) {
                 return '<h6>' . $invoice->invoice_no . '</h6>
                         <p class="font-13">' . $invoice->name . '</p>';
             })
             ->addColumn('property', function ($invoice) {
                 return '<h6>' . $invoice->property_name . '</h6>
-                        <p class="font-13">' . $invoice->unit_name . '</p>';
+                        <p class="font-13">' . $invoice->unit_name . '</p>
+                        <p class="font-13">' . $invoice->tenant_full_name . '</p>';
             })
             ->addColumn('month', function ($item) {
                 $html = $item->month;
@@ -139,17 +150,25 @@ class InvoiceService
         $invoice = Invoice::where('invoices.owner_user_id', auth()->id())
             ->leftJoin('properties', 'invoices.property_id', '=', 'properties.id')
             ->leftJoin('property_units', 'property_units.id', '=', 'invoices.property_unit_id')
-            ->select(['invoices.*', 'properties.name as property_name', 'property_units.unit_name'])
+            ->leftJoin('tenants', 'invoices.tenant_id', '=', 'tenants.id')
+            ->leftJoin('users', 'tenants.user_id', '=', 'users.id') 
             ->orderByDesc('invoices.id')
+            ->select(['invoices.*','properties.name as property_name', 'property_units.unit_name', DB::raw("CONCAT(users.first_name, ' ', users.last_name) AS tenant_full_name")])
             ->where('invoices.status', INVOICE_STATUS_PAID);
         return datatables($invoice)
+            ->filterColumn('property', function ($query, $keyword) {
+                    $query->whereRaw("properties.name LIKE ?", ["%{$keyword}%"])
+                        ->orWhereRaw("property_units.unit_name LIKE ?", ["%{$keyword}%"])
+                        ->orWhereRaw("CONCAT(users.first_name, ' ', users.last_name) LIKE ?", ["%{$keyword}%"]);
+                })
             ->addColumn('invoice', function ($invoice) {
                 return '<h6>' . $invoice->invoice_no . '</h6>
                         <p class="font-13">' . $invoice->name . '</p>';
             })
             ->addColumn('property', function ($invoice) {
                 return '<h6>' . $invoice->property_name . '</h6>
-                        <p class="font-13">' . $invoice->unit_name . '</p>';
+                        <p class="font-13">' . $invoice->unit_name . '</p>
+                        <p class="font-13">' . $invoice->tenant_full_name . '</p>';
             })
             ->addColumn('month', function ($item) {
                 $html = $item->month;
@@ -195,17 +214,25 @@ class InvoiceService
         $invoice = Invoice::where('invoices.owner_user_id', auth()->id())
             ->leftJoin('properties', 'invoices.property_id', '=', 'properties.id')
             ->leftJoin('property_units', 'property_units.id', '=', 'invoices.property_unit_id')
-            ->select(['invoices.*', 'properties.name as property_name', 'property_units.unit_name'])
+            ->leftJoin('tenants', 'invoices.tenant_id', '=', 'tenants.id')
+            ->leftJoin('users', 'tenants.user_id', '=', 'users.id') 
             ->orderByDesc('invoices.id')
+            ->select(['invoices.*','properties.name as property_name', 'property_units.unit_name', DB::raw("CONCAT(users.first_name, ' ', users.last_name) AS tenant_full_name")])
             ->where('invoices.status', INVOICE_STATUS_PENDING);
         return datatables($invoice)
+            ->filterColumn('property', function ($query, $keyword) {
+                    $query->whereRaw("properties.name LIKE ?", ["%{$keyword}%"])
+                        ->orWhereRaw("property_units.unit_name LIKE ?", ["%{$keyword}%"])
+                        ->orWhereRaw("CONCAT(users.first_name, ' ', users.last_name) LIKE ?", ["%{$keyword}%"]);
+                })
             ->addColumn('invoice', function ($invoice) {
                 return '<h6>' . $invoice->invoice_no . '</h6>
                         <p class="font-13">' . $invoice->name . '</p>';
             })
             ->addColumn('property', function ($invoice) {
                 return '<h6>' . $invoice->property_name . '</h6>
-                        <p class="font-13">' . $invoice->unit_name . '</p>';
+                        <p class="font-13">' . $invoice->unit_name . '</p>
+                        <p class="font-13">' . $invoice->tenant_full_name . '</p>';
             })
             ->addColumn('month', function ($item) {
                 $html = $item->month;
@@ -258,19 +285,27 @@ class InvoiceService
             ->join('orders', 'invoices.order_id', '=', 'orders.id')
             ->join('gateways', 'orders.gateway_id', '=', 'gateways.id')
             ->join('file_managers', ['orders.deposit_slip_id' => 'file_managers.id', 'file_managers.origin_type' => (DB::raw("'App\\\Models\\\Order'"))])
-            ->select(['invoices.*', 'gateways.title as gatewayTitle', 'gateways.slug as gatewaySlug', 'file_managers.file_name', 'file_managers.folder_name'])
+            ->leftJoin('tenants', 'invoices.tenant_id', '=', 'tenants.id')
+            ->leftJoin('users', 'tenants.user_id', '=', 'users.id') 
+            ->select(['invoices.*', 'gateways.title as gatewayTitle', 'gateways.slug as gatewaySlug', 'file_managers.file_name', 'file_managers.folder_name', DB::raw("CONCAT(users.first_name, ' ', users.last_name) AS tenant_full_name")])
             ->where('gateways.slug', 'bank')
             ->where('invoices.owner_user_id', auth()->id())
             ->orderByDesc('invoices.id')
             ->where('orders.payment_status', INVOICE_STATUS_PENDING);
         return datatables($invoice)
+            ->filterColumn('property', function ($query, $keyword) {
+                $query->whereRaw("properties.name LIKE ?", ["%{$keyword}%"])
+                    ->orWhereRaw("property_units.unit_name LIKE ?", ["%{$keyword}%"])
+                    ->orWhereRaw("CONCAT(users.first_name, ' ', users.last_name) LIKE ?", ["%{$keyword}%"]);
+            })
             ->addColumn('invoice', function ($invoice) {
                 return '<h6>' . $invoice->invoice_no . '</h6>
                         <p class="font-13">' . $invoice->name . '</p>';
             })
             ->addColumn('property', function ($invoice) {
                 return '<h6>' . @$invoice->property->name . '</h6>
-                        <p class="font-13">' . @$invoice->propertyUnit->unit_name . '</p>';
+                        <p class="font-13">' . @$invoice->propertyUnit->unit_name . '</p>
+                        <p class="font-13">' . $invoice->tenant_full_name . '</p>';
             })
             ->addColumn('month', function ($item) {
                 $html = $item->month;
@@ -324,19 +359,23 @@ class InvoiceService
             ->overDue() // Using the scope you created
             ->leftJoin('properties', 'invoices.property_id', '=', 'properties.id') // Ensure properties is joined
             ->leftJoin('property_units', 'property_units.id', '=', 'invoices.property_unit_id')
-            ->select([
-                'invoices.*',
-                'properties.name as property_name', // Selecting property name
-                'property_units.unit_name',
-            ]);
+            ->leftJoin('tenants', 'invoices.tenant_id', '=', 'tenants.id')
+            ->leftJoin('users', 'tenants.user_id', '=', 'users.id') 
+            ->select(['invoices.*','properties.name as property_name', 'property_units.unit_name', DB::raw("CONCAT(users.first_name, ' ', users.last_name) AS tenant_full_name")]);
         return datatables($invoice)
+            ->filterColumn('property', function ($query, $keyword) {
+                        $query->whereRaw("properties.name LIKE ?", ["%{$keyword}%"])
+                            ->orWhereRaw("property_units.unit_name LIKE ?", ["%{$keyword}%"])
+                            ->orWhereRaw("CONCAT(users.first_name, ' ', users.last_name) LIKE ?", ["%{$keyword}%"]);
+                    })
             ->addColumn('invoice', function ($invoice) {
                 return '<h6>' . $invoice->invoice_no . '</h6>
                         <p class="font-13">' . $invoice->name . '</p>';
             })
             ->addColumn('property', function ($invoice) {
-                return '<h6>' . @$invoice->property->name . '</h6>
-                        <p class="font-13">' . @$invoice->propertyUnit->unit_name . '</p>';
+                return '<h6>' . $invoice->property_name . '</h6>
+                        <p class="font-13">' . $invoice->unit_name . '</p>
+                        <p class="font-13">' . $invoice->tenant_full_name . '</p>';
             })
             ->addColumn('month', function ($item) {
                 $html = $item->month;
