@@ -32,7 +32,7 @@
                                         <tr>
                                             <th>{{ __('SL') }}</th>
                                             <th class="text-center" data-priority="1">{{ __('Name') }}</th>
-                                            <th class="text-center">{{ __('Unit') }}</th>
+                                            <th class="text-center">{{ __('Email') }}</th>
                                             <th class="text-center">{{ __('Contact') }}</th>
                                             <th class="text-center">{{ __('Property') }}</th>
                                             <th class="text-center">{{ __('Unit') }}</th>
@@ -49,6 +49,10 @@
             </div>
         </div>
     </div>
+    <input type="hidden" id="ownerName" value="{{ auth()->user()->getNameAttribute() }}">
+    <input type="hidden" id="appName" value="{{ getOption('app_name') }}">
+    <input type="hidden" id="userLogo" value="{{ $base64UserImage }}">
+    <input type="hidden" id="appLogo" value="{{ $base64Image }}">
     <input type="hidden" id="tenantReportRoute" value="{{ route('owner.reports.tenant') }}">
 @endsection
 @push('style')

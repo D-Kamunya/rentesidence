@@ -46,6 +46,10 @@
             </div>
         </div>
     </div>
+    <input type="hidden" id="ownerName" value="{{ auth()->user()->getNameAttribute() }}">
+    <input type="hidden" id="appName" value="{{ getOption('app_name') }}">
+    <input type="hidden" id="userLogo" value="{{ $base64UserImage }}">
+    <input type="hidden" id="appLogo" value="{{ $base64Image }}">
     <input type="hidden" id="maintenanceReportRoute" value="{{ route('owner.reports.maintenance') }}">
 @endsection
 @push('style')

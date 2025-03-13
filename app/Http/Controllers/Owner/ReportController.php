@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Services\PropertyService;
 use App\Services\ReportService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 
 class ReportController extends Controller
 {
@@ -24,6 +25,16 @@ class ReportController extends Controller
             return $this->reportService->earning();
         }
         $data['properties'] = $this->propertyService->getAll();
+
+        $imagePath = getSettingImage('app_logo');
+        $base64Image = $this->convertToBase64($imagePath);
+
+        // Get Authenticated User's Profile Image as Base64
+        $userImagePath = auth()->user()->getImageAttribute() ?? null; // Assuming 'profile_image' exists
+        $base64UserImage = $this->convertToBase64($userImagePath);
+
+        $data['base64Image'] = $base64Image;
+        $data['base64UserImage'] = $base64UserImage;
         return view('owner.report.earning', $data);
     }
 
@@ -41,6 +52,16 @@ class ReportController extends Controller
             return $this->reportService->expenses();
         }
         $data['properties'] = $this->propertyService->getAll();
+
+        $imagePath = getSettingImage('app_logo');
+        $base64Image = $this->convertToBase64($imagePath);
+
+        // Get Authenticated User's Profile Image as Base64
+        $userImagePath = auth()->user()->getImageAttribute() ?? null; // Assuming 'profile_image' exists
+        $base64UserImage = $this->convertToBase64($userImagePath);
+
+        $data['base64Image'] = $base64Image;
+        $data['base64UserImage'] = $base64UserImage;
         return view('owner.report.expenses', $data);
     }
 
@@ -59,6 +80,15 @@ class ReportController extends Controller
         if ($request->ajax()) {
             return $this->reportService->occupancy();
         }
+        $imagePath = getSettingImage('app_logo');
+        $base64Image = $this->convertToBase64($imagePath);
+
+        // Get Authenticated User's Profile Image as Base64
+        $userImagePath = auth()->user()->getImageAttribute() ?? null; // Assuming 'profile_image' exists
+        $base64UserImage = $this->convertToBase64($userImagePath);
+
+        $data['base64Image'] = $base64Image;
+        $data['base64UserImage'] = $base64UserImage;
         return view('owner.report.occupancy', $data);
     }
 
@@ -68,6 +98,15 @@ class ReportController extends Controller
         if ($request->ajax()) {
             return $this->reportService->maintenance();
         }
+        $imagePath = getSettingImage('app_logo');
+        $base64Image = $this->convertToBase64($imagePath);
+
+        // Get Authenticated User's Profile Image as Base64
+        $userImagePath = auth()->user()->getImageAttribute() ?? null; // Assuming 'profile_image' exists
+        $base64UserImage = $this->convertToBase64($userImagePath);
+
+        $data['base64Image'] = $base64Image;
+        $data['base64UserImage'] = $base64UserImage;
         return view('owner.report.maintenance', $data);
     }
 
@@ -77,6 +116,32 @@ class ReportController extends Controller
         if ($request->ajax()) {
             return $this->reportService->tenant();
         }
+        $imagePath = getSettingImage('app_logo');
+        $base64Image = $this->convertToBase64($imagePath);
+
+        // Get Authenticated User's Profile Image as Base64
+        $userImagePath = auth()->user()->getImageAttribute() ?? null; // Assuming 'profile_image' exists
+        $base64UserImage = $this->convertToBase64($userImagePath);
+
+        $data['base64Image'] = $base64Image;
+        $data['base64UserImage'] = $base64UserImage;
         return view('owner.report.tenant', $data);
+    }
+
+    private function convertToBase64($imagePath)
+    {
+        if (!$imagePath) {
+            return null;
+        }
+
+        $imagePath = str_replace(url('/'), '', $imagePath); // Convert to relative path
+        $fullPath = public_path($imagePath); // Get absolute path
+
+        if (file_exists($fullPath)) {
+            $imageData = file_get_contents($fullPath);
+            return 'data:image/png;base64,' . base64_encode($imageData);
+        }
+
+        return null;
     }
 }

@@ -89,6 +89,10 @@
             </div>
         </div>
     </div>
+    <input type="hidden" id="ownerName" value="{{ auth()->user()->getNameAttribute() }}">
+    <input type="hidden" id="appName" value="{{ getOption('app_name') }}">
+    <input type="hidden" id="userLogo" value="{{ $base64UserImage }}">
+    <input type="hidden" id="appLogo" value="{{ $base64Image }}">
     <input type="hidden" id="earningReportRoute" value="{{ route('owner.reports.earning') }}">
     <input type="hidden" id="getPropertyUnitsRoute" value="{{ route('owner.property.getPropertyUnits') }}">
 @endsection
