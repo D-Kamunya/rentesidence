@@ -482,7 +482,7 @@
                                 </div>
                             </div>
                         </div>
-                        <div class="invoice-table-part">
+                        <div class="invoice-table-part" style="overflow-x: auto;">
                             <h4 class="invoice-generate-title invoice-heading-color">{{ __('Invoice Items') }}</h4>
                             <div class="">
                                 <table class="table">
@@ -507,7 +507,7 @@
                                         class="invoice-heading-color total"></span></div>
                             </div>
                         </div>
-                        <div class="transaction-table-part">
+                        <div class="transaction-table-part" style="overflow-x: auto;">
                             <h4 class="invoice-generate-title invoice-heading-color">{{ __('Transaction Details') }}</h4>
                             <div class="">
                                 <table class="table">

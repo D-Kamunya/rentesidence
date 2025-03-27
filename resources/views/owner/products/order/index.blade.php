@@ -57,7 +57,7 @@
                                 </ul>
                             </div>
 
-                            <div class="tab-content" id="myTabContent">
+                            <div class="tab-content" id="myTabContent" style="overflow-x: auto;">
                                 <div class="tab-pane fade show active" id="table1-tab-pane" role="tabpanel"
                                     aria-labelledby="table1-tab" tabindex="0">
                                     <table id="allOrderDataTable" class="table theme-border dt-responsive">
