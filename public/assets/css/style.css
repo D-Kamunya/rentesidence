@@ -3423,7 +3423,7 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 .profile-user .app-favicon-profile-photo-edit,
 .profile-user .app-preloader-profile-photo-edit,
 .profile-user .signin-profile-photo-edit {
-    position: absolute;
+    /* position: absolute; */
     right: 0;
     left: auto;
     bottom: -5px;
@@ -4551,7 +4551,7 @@ select[readonly] {
 }
 
 /* delete account button mobile responsive*/
-@media (max-width: 991px){
+@media (max-width: 991px) {
     .theme-btn-red {
         padding: 10px !important;
         margin-left: 40px !important;
