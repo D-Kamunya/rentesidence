@@ -69,9 +69,11 @@
                                             <th class="text-center" data-priority="1">{{ __('Invoice') }}</th>
                                             <th class="text-center">{{ __('Property') }}</th>
                                             <th class="text-center">{{ __('Unit') }}</th>
-                                            <th class="text-center">{{ __('Date') }}</th>
+                                            <!-- <th class="text-center">{{ __('Date') }}</th> -->
+                                            <th class="text-center">{{ __('Invoice Month') }}</th>
                                             <th class="text-center">{{ __('Tax') }}</th>
                                             <th class="text-end">{{ __('Amount') }}</th>
+                                            
                                         </tr>
                                     </thead>
                                     <tfoot>

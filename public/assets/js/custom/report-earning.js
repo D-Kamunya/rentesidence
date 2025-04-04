@@ -144,6 +144,9 @@ var dt = $("#allReportEarningDataTable").DataTable({
                 var appName = $("#appName").val();
                 var logo = $("#userLogo").val(); // Ensure this is a valid Base64 image or URL
 
+                // 🔹 Set page size to A3 (wider)
+                // doc.pageSize = "A3"; // ✅ Wider layout
+
                 // Set up title content manually
                 doc.content.unshift({
                     columns: [
@@ -183,14 +186,19 @@ var dt = $("#allReportEarningDataTable").DataTable({
                 table.layout = "lightHorizontalLines"; // Optional: Improve styling
                 table.alignment = "center"; // **Center the table**
 
-                table.table.widths = Array(table.table.body[0].length).fill(
-                    "*"
-                );
-
+                // 🔹 Allow horizontal scrolling
+                table.table.widths = Array(table.table.body[0].length).fill("auto"); // ✅ Prevents column shrinkage
                 doc.content[1].layout = "fixed"; // Fix table layout for better alignment
                 doc.content[1].alignment = "center"; // Center the table horizontally
 
                 doc.defaultStyle.alignment = "center";
+
+                // 🔹 Adjusting header font sizes for better readability
+                doc.styles.tableHeader = {
+                    fontSize: 10,
+                    bold: true,
+                    alignment: "center",
+                };
 
                 // Add Logo to the footer
                 doc.footer = function (currentPage, pageCount) {
@@ -202,6 +210,7 @@ var dt = $("#allReportEarningDataTable").DataTable({
                                         image: $("#appLogo").val(),
                                         width: 60,
                                         alignment: "center",
+                                        margin: [0, -30, 0, 2], // ✅ Moves logo up kiasi
                                     }, // Logo
                                     {
                                         text:
@@ -209,7 +218,10 @@ var dt = $("#allReportEarningDataTable").DataTable({
                                             $("#appName").val() +
                                             " Report - Do Not Share",
                                         fontSize: 10,
+                                        bold: true, 
+                                        
                                         alignment: "center",
+                                        margin: [0, -5, 0, 2], // ✅ Moves text closer to logo
                                     }, // Text below
                                     {
                                         text:
@@ -280,8 +292,9 @@ var dt = $("#allReportEarningDataTable").DataTable({
         { data: "invoice", name: "invoices.invoice_no" },
         { data: "property", name: "properties.name" },
         { data: "unit", name: "property_units.unit_name" },
-        { data: "date", name: "invoices.created_at" },
+        // { data: "date", name: "invoices.created_at" },
+        { data: "invoice_month",  name: "invoices.month" },
         { data: "tax_amount", name: "invoices.tax_amount" },
-        { data: "amount", name: "invoices.amount" },
+        { data: "amount", name: "invoices.amount" },   
     ],
 });

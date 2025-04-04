@@ -19,7 +19,7 @@ class ReportService
         $invoice = Invoice::query()
             ->join('properties', 'invoices.property_id', '=', 'properties.id')
             ->join('property_units', 'invoices.property_unit_id', '=', 'property_units.id')
-            ->select('invoices.name', 'invoices.invoice_no', 'invoices.amount', 'invoices.tax_amount', 'invoices.created_at', 'properties.name as property_name', 'property_units.unit_name')
+            ->select('invoices.name', 'invoices.invoice_no', 'invoices.amount', 'invoices.tax_amount', 'invoices.created_at', 'invoices.month as invoice_month', 'properties.name as property_name', 'property_units.unit_name')
             ->where('invoices.owner_user_id', auth()->id())
             ->where('invoices.status', INVOICE_STATUS_PAID);
 
@@ -51,6 +51,9 @@ class ReportService
             ->addColumn('date', function ($item) {
                 return $item->created_at->format('Y-m-d');
             })
+            ->addColumn('invoice_month', function ($invoice) { // ✅ I added this column
+                return $invoice->invoice_month ? $invoice->invoice_month : "N/A";
+            })
             ->addColumn('tax_amount', function ($invoice) {
                 return currencyPrice($invoice->tax_amount);
             })
@@ -59,7 +62,7 @@ class ReportService
             })
             ->with('total', $invoice->sum('amount'))
             ->with('tax_amount', $invoice->sum('tax_amount'))
-            ->rawColumns(['invoice', 'property', 'unit', 'date', 'tax_amount', 'amount'])
+            ->rawColumns(['invoice', 'property', 'unit', 'date', 'invoice_month', 'tax_amount', 'amount' ])
             ->make(true);
     }
 
