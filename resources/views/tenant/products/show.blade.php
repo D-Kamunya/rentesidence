@@ -1,5 +1,10 @@
 @extends('tenant.layouts.app')
 @section('content')
+@if (session('success'))
+        <script>
+            localStorage.removeItem('cartItems');
+        </script>
+    @endif
     <div class="main-content">
         <div class="page-content">
             <div class="page-content-wrapper"> 
@@ -21,7 +26,7 @@
                         <!-- end page title -->
                         <div class="container mt-5">
                             <div class="row">
-                                <div class="col-md-6">
+                                <div class="col-md-5">
                                     <div class="product-images">
                                         @php
                                             $images = json_decode($product->images, true); // Decode the JSON
@@ -32,6 +37,7 @@
                                             @php
                                                  $images = json_decode($product->images, true); // Decode the JSON
                                             @endphp
+                                            
                                             @if(is_array($images) && count($images) > 0)
                                                 @foreach($images as $image)
                                                     <img src="{{ asset('storage/' . $image) }}" alt="{{ $product->name }}" class="img-thumbnail img-fluid thumbnail-img" style="width: 80px; height: 80px; margin-right: 10px; cursor: pointer;">
@@ -42,23 +48,29 @@
                                         </div>
                                     </div>
                                 </div>
-                                <div class="col-md-6">
-                                    <h2 style="font-size: 20px; font-weight:bold; padding: 10px 0 10px 0;">
-                                        {{ $product->name }}
-                                    </h2>
-                                    <p style="padding-bottom: 20px;">{{ $product->description }}</p>
-                                    <h4 style="padding-bottom: 20px; color:blue; font-weight:bold;">Ksh.{{ $product->price }}</h4>
-                                    
-                                    <form id="add-to-cart-form">
-                                        @csrf
-                                        <div class="form-group">
-                                            <label for="quantity">Quantity</label>
-                                            <input type="number" name="quantity" id="quantity" class="form-control" value="1" min="1">
+                                
+                                <div class="col-md-5">
+                                    <!-- <div class="product-card"> -->
+                                        <h2 style="font-size: 20px; font-weight:bold; padding: 10px 0 10px 0;">
+                                                {{ $product->name }}
+                                        </h2>
+                                        <p style="padding-bottom: 20px;">{{ $product->description }}</p>
+                                        <h4 style="padding-bottom: 20px; color:blue; font-weight:bold;">Ksh.{{ $product->price }}</h4>
+                                        <!-- Purchase buttons--> 
+                                        <h2 class="product-id d-none">{{$product->id}}</h2>
+                                        <div> 
+                                            <img src="{{ asset('storage/' . $image) }}" alt="{{ $product->name }}"  class="d-none product-image">
                                         </div>
-                                        <input type="hidden" name="product_id" value="{{ $product->id }}">
-                                        <button type="button" class="action-button theme-btn mt-25" data-id="{{ $product->id }}">Add to Cart</button>
-                                        <button type="button" class="action-button theme-btn mt-25" data-id="{{ $product->id }}">Buy Now</button>
-                                    </form>
+                                        <form id="add-to-cart-form">
+                                            @csrf
+                                            <div class="form-group">
+                                                <label for="quantity">Quantity</label>
+                                                <input type="number" name="quantity" id="quantity" class="form-control" value="1" min="1">
+                                            </div>
+                                            <button type="button" class="action-button theme-btn mt-25 add-to-cart-button">Add to Cart </button>
+                                            <!-- <button type="button" class="action-button theme-btn mt-25" data-id="{{ $product->id }}">Buy Now</button> -->
+                                        </form>
+                                    <!-- </div> -->
                                 </div>
                             </div>
                         </div>
@@ -67,8 +79,13 @@
             </div>
         </div>
     </div>
- 
+    <!-- Floating Cart Button -->
+    <div id="floating-cart-button" class="floating-cart" data-url="{{ route('tenant.product.pay') }}">
+        <i class="fas fa-shopping-cart"></i>
+        <span id="cart-counter" class="cart-counter">0</span>
+    </div>
 @endsection
+
 <!-- Include the product.js file -->
 <script>
     // Image control logic
@@ -87,3 +104,10 @@
         });
     });
 </script>
+@push('script')
+    <script src="{{ asset('assets/js/custom/tenant-product.js') }}"></script>
+@endpush
+@push('style')
+    <link rel="stylesheet" href="{{ asset('assets/css/product.css') }}">
+@endpush
+
