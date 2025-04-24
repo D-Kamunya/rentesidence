@@ -47,30 +47,33 @@
                                             @endif
                                         </div>
                                     </div>
-                                </div>
-                                
+                                </div> 
                                 <div class="col-md-5">
-                                    <!-- <div class="product-card"> -->
-                                        <h2 style="font-size: 20px; font-weight:bold; padding: 10px 0 10px 0;">
-                                                {{ $product->name }}
+                                    <div class="product-card" style="border: none; box-shadow: none; padding: 0; margin: 0; text-align: left;">
+                                        <h2 class="product-title" style="font-size: 20px; font-weight:bold; padding: 10px 0 10px 0;">
+                                            {{ $product->name }}
                                         </h2>
                                         <p style="padding-bottom: 20px;">{{ $product->description }}</p>
-                                        <h4 style="padding-bottom: 20px; color:blue; font-weight:bold;">Ksh.{{ $product->price }}</h4>
-                                        <!-- Purchase buttons--> 
-                                        <h2 class="product-id d-none">{{$product->id}}</h2>
-                                        <div> 
-                                            <img src="{{ asset('storage/' . $image) }}" alt="{{ $product->name }}"  class="d-none product-image">
-                                        </div>
+                                        <h4 class="product-price" style="padding-bottom: 20px; color:blue; font-weight:bold;">
+                                            Ksh.{{ $product->price }}
+                                        </h4>
+
+                                        <!-- Hidden fields for JS -->
+                                        <h2 class="product-id d-none">{{ $product->id }}</h2>
+                                        <img src="{{ asset('storage/' . $image) }}" alt="{{ $product->name }}" class="d-none product-image">
+
+                                        <!-- Add to Cart Button -->
                                         <form id="add-to-cart-form">
                                             @csrf
-                                            <div class="form-group">
+                                            <!-- <div class="form-group">
                                                 <label for="quantity">Quantity</label>
                                                 <input type="number" name="quantity" id="quantity" class="form-control" value="1" min="1">
-                                            </div>
-                                            <button type="button" class="action-button theme-btn mt-25 add-to-cart-button">Add to Cart </button>
-                                            <!-- <button type="button" class="action-button theme-btn mt-25" data-id="{{ $product->id }}">Buy Now</button> -->
+                                            </div> -->
+                                            <button type="button" class="action-button theme-btn mt-25 add-to-cart-button">
+                                                Add to Cart
+                                            </button>
                                         </form>
-                                    <!-- </div> -->
+                                    </div>
                                 </div>
                             </div>
                         </div>

@@ -112,21 +112,34 @@ document.addEventListener("DOMContentLoaded", () => {
     // Event listener for adding items to the cart
     document.querySelectorAll(".add-to-cart-button").forEach((button) => {
         button.addEventListener("click", (e) => {
-            // Simulate adding item details to cart (you can customize this)
+            // Find the nearest product card container
             var productElement = e.target.closest(".product-card");
-            var productId =
-                productElement.querySelector(".product-id").textContent;
-            var productName =
-                productElement.querySelector(".product-title").textContent;
-            var productPrice =
-                productElement.querySelector(".product-price").textContent; // Assuming price is included
+    
+            // Get product details
+            var productId = productElement.querySelector(".product-id").textContent.trim();
+            var productName = productElement.querySelector(".product-title").textContent.trim();
+            var priceText = productElement.querySelector(".product-price").textContent.trim();
             var productImage = productElement.querySelector("img").src;
-
+    
+            // Extract and sanitize quantity
+            var quantityInput = productElement.querySelector("#quantity");
+            var quantity = quantityInput ? parseInt(quantityInput.value) : 1;
+    
+            // Sanitize price text
+            var numericPrice = priceText
+                .replace(/Ksh\./i, '')    // Remove "Ksh." (case-insensitive)
+                .replace(/,/g, '')        // Remove commas
+                .replace(/[^\d.]/g, '')   // Remove everything except digits and decimal point
+                .trim();
+    
+            var unitPrice = parseFloat(numericPrice);
+            var totalPrice = unitPrice * quantity;
+            
             // Add the product to the cart
             cartItems.push({
                 id: productId,
                 name: productName,
-                price: productPrice,
+                price: totalPrice.toFixed(2),
                 image: productImage,
             });
 
