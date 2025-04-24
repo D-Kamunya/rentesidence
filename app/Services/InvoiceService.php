@@ -75,7 +75,7 @@ class InvoiceService
             ->leftJoin('tenants', 'invoices.tenant_id', '=', 'tenants.id')
             ->leftJoin('users', 'tenants.user_id', '=', 'users.id') 
             ->orderByDesc('invoices.id')
-            ->select(['invoices.*', 'gateways.title as gatewayTitle', 'gateways.slug as gatewaySlug', 'file_managers.file_name', 'file_managers.folder_name', 'properties.name as property_name', 'property_units.unit_name', DB::raw("CONCAT(users.first_name, ' ', users.last_name) AS tenant_full_name")]);
+            ->select(['invoices.*', 'gateways.title as gatewayTitle', 'gateways.slug as gatewaySlug', 'file_managers.file_name', 'file_managers.folder_name', 'properties.name as property_name', 'property_units.unit_name', 'users.contact_number', DB::raw("CONCAT(users.first_name, ' ', users.last_name) AS tenant_full_name")]);
 
         return datatables($invoice)
             ->filterColumn('property', function ($query, $keyword) {
@@ -89,8 +89,13 @@ class InvoiceService
             })
             ->addColumn('property', function ($invoice) {
                 return '<h6>' . $invoice->property_name . '</h6>
-                        <p class="font-13">' . $invoice->unit_name . '</p>
-                        <p class="font-13">' . $invoice->tenant_full_name . '</p>';
+                        <p class="font-13">
+            <span class="iconify me-1 text-info" data-icon="mdi:door" data-inline="false"></span>' . $invoice->unit_name . '</p>
+                        <p class="font-13">
+            <span class="iconify me-1 text-dark" data-icon="mdi:account-circle-outline" data-inline="false"></span>' . $invoice->tenant_full_name . '</p>
+                        <p class="font-13">
+            <span class="iconify me-1 text-success" data-icon="mdi:phone" data-inline="false"></span>
+            <a href="tel:' . $invoice->contact_number . '">' . $invoice->contact_number . '</a></p>';
             })
             ->addColumn('month', function ($item) {
                 $html = $item->month;
@@ -153,7 +158,7 @@ class InvoiceService
             ->leftJoin('tenants', 'invoices.tenant_id', '=', 'tenants.id')
             ->leftJoin('users', 'tenants.user_id', '=', 'users.id') 
             ->orderByDesc('invoices.id')
-            ->select(['invoices.*','properties.name as property_name', 'property_units.unit_name', DB::raw("CONCAT(users.first_name, ' ', users.last_name) AS tenant_full_name")])
+            ->select(['invoices.*','properties.name as property_name', 'property_units.unit_name', 'users.contact_number', DB::raw("CONCAT(users.first_name, ' ', users.last_name) AS tenant_full_name")])
             ->where('invoices.status', INVOICE_STATUS_PAID);
         return datatables($invoice)
             ->filterColumn('property', function ($query, $keyword) {
@@ -167,8 +172,13 @@ class InvoiceService
             })
             ->addColumn('property', function ($invoice) {
                 return '<h6>' . $invoice->property_name . '</h6>
-                        <p class="font-13">' . $invoice->unit_name . '</p>
-                        <p class="font-13">' . $invoice->tenant_full_name . '</p>';
+                        <p class="font-13">
+            <span class="iconify me-1 text-info" data-icon="mdi:door" data-inline="false"></span>' . $invoice->unit_name . '</p>
+                        <p class="font-13">
+            <span class="iconify me-1 text-dark" data-icon="mdi:account-circle-outline" data-inline="false"></span>' . $invoice->tenant_full_name . '</p>
+                        <p class="font-13">
+            <span class="iconify me-1 text-success" data-icon="mdi:phone" data-inline="false"></span>
+            <a href="tel:' . $invoice->contact_number . '">' . $invoice->contact_number . '</a></p>';
             })
             ->addColumn('month', function ($item) {
                 $html = $item->month;
@@ -217,7 +227,7 @@ class InvoiceService
             ->leftJoin('tenants', 'invoices.tenant_id', '=', 'tenants.id')
             ->leftJoin('users', 'tenants.user_id', '=', 'users.id') 
             ->orderByDesc('invoices.id')
-            ->select(['invoices.*','properties.name as property_name', 'property_units.unit_name', DB::raw("CONCAT(users.first_name, ' ', users.last_name) AS tenant_full_name")])
+            ->select(['invoices.*','properties.name as property_name', 'property_units.unit_name', 'users.contact_number', DB::raw("CONCAT(users.first_name, ' ', users.last_name) AS tenant_full_name")])
             ->where('invoices.status', INVOICE_STATUS_PENDING);
         return datatables($invoice)
             ->filterColumn('property', function ($query, $keyword) {
@@ -231,8 +241,13 @@ class InvoiceService
             })
             ->addColumn('property', function ($invoice) {
                 return '<h6>' . $invoice->property_name . '</h6>
-                        <p class="font-13">' . $invoice->unit_name . '</p>
-                        <p class="font-13">' . $invoice->tenant_full_name . '</p>';
+                        <p class="font-13">
+            <span class="iconify me-1 text-info" data-icon="mdi:door" data-inline="false"></span>' . $invoice->unit_name . '</p>
+                        <p class="font-13">
+            <span class="iconify me-1 text-dark" data-icon="mdi:account-circle-outline" data-inline="false"></span>' . $invoice->tenant_full_name . '</p>
+                        <p class="font-13">
+            <span class="iconify me-1 text-success" data-icon="mdi:phone" data-inline="false"></span>
+            <a href="tel:' . $invoice->contact_number . '">' . $invoice->contact_number . '</a></p>';
             })
             ->addColumn('month', function ($item) {
                 $html = $item->month;
@@ -287,7 +302,7 @@ class InvoiceService
             ->join('file_managers', ['orders.deposit_slip_id' => 'file_managers.id', 'file_managers.origin_type' => (DB::raw("'App\\\Models\\\Order'"))])
             ->leftJoin('tenants', 'invoices.tenant_id', '=', 'tenants.id')
             ->leftJoin('users', 'tenants.user_id', '=', 'users.id') 
-            ->select(['invoices.*', 'gateways.title as gatewayTitle', 'gateways.slug as gatewaySlug', 'file_managers.file_name', 'file_managers.folder_name', DB::raw("CONCAT(users.first_name, ' ', users.last_name) AS tenant_full_name")])
+            ->select(['invoices.*', 'gateways.title as gatewayTitle', 'gateways.slug as gatewaySlug', 'file_managers.file_name', 'file_managers.folder_name', 'users.contact_number', DB::raw("CONCAT(users.first_name, ' ', users.last_name) AS tenant_full_name")])
             ->where('gateways.slug', 'bank')
             ->where('invoices.owner_user_id', auth()->id())
             ->orderByDesc('invoices.id')
@@ -303,9 +318,14 @@ class InvoiceService
                         <p class="font-13">' . $invoice->name . '</p>';
             })
             ->addColumn('property', function ($invoice) {
-                return '<h6>' . @$invoice->property->name . '</h6>
-                        <p class="font-13">' . @$invoice->propertyUnit->unit_name . '</p>
-                        <p class="font-13">' . $invoice->tenant_full_name . '</p>';
+                return '<h6>' . $invoice->property_name . '</h6>
+                        <p class="font-13">
+            <span class="iconify me-1 text-info" data-icon="mdi:door" data-inline="false"></span>' . $invoice->unit_name . '</p>
+                        <p class="font-13">
+            <span class="iconify me-1 text-dark" data-icon="mdi:account-circle-outline" data-inline="false"></span>' . $invoice->tenant_full_name . '</p>
+                        <p class="font-13">
+            <span class="iconify me-1 text-success" data-icon="mdi:phone" data-inline="false"></span>
+            <a href="tel:' . $invoice->contact_number . '">' . $invoice->contact_number . '</a></p>';
             })
             ->addColumn('month', function ($item) {
                 $html = $item->month;
@@ -361,7 +381,7 @@ class InvoiceService
             ->leftJoin('property_units', 'property_units.id', '=', 'invoices.property_unit_id')
             ->leftJoin('tenants', 'invoices.tenant_id', '=', 'tenants.id')
             ->leftJoin('users', 'tenants.user_id', '=', 'users.id') 
-            ->select(['invoices.*','properties.name as property_name', 'property_units.unit_name', DB::raw("CONCAT(users.first_name, ' ', users.last_name) AS tenant_full_name")]);
+            ->select(['invoices.*','properties.name as property_name', 'property_units.unit_name', 'users.contact_number', DB::raw("CONCAT(users.first_name, ' ', users.last_name) AS tenant_full_name")]);
         return datatables($invoice)
             ->filterColumn('property', function ($query, $keyword) {
                         $query->whereRaw("properties.name LIKE ?", ["%{$keyword}%"])
@@ -374,8 +394,13 @@ class InvoiceService
             })
             ->addColumn('property', function ($invoice) {
                 return '<h6>' . $invoice->property_name . '</h6>
-                        <p class="font-13">' . $invoice->unit_name . '</p>
-                        <p class="font-13">' . $invoice->tenant_full_name . '</p>';
+                        <p class="font-13">
+            <span class="iconify me-1 text-info" data-icon="mdi:door" data-inline="false"></span>' . $invoice->unit_name . '</p>
+                        <p class="font-13">
+            <span class="iconify me-1 text-dark" data-icon="mdi:account-circle-outline" data-inline="false"></span>' . $invoice->tenant_full_name . '</p>
+                        <p class="font-13">
+            <span class="iconify me-1 text-success" data-icon="mdi:phone" data-inline="false"></span>
+            <a href="tel:' . $invoice->contact_number . '">' . $invoice->contact_number . '</a></p>';
             })
             ->addColumn('month', function ($item) {
                 $html = $item->month;

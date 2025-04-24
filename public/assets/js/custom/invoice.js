@@ -197,6 +197,7 @@
         selector.find(".tenantEmail").html(response.data.tenant.email);
         selector.find(".propertyName").html(response.data.tenant.property_name);
         selector.find(".unitName").html(response.data.tenant.unit_name);
+        selector.find(".tenantPhone").html(response.data.tenant.contact_number);
 
         var html = "";
         Object.entries(response.data.items).forEach((item) => {
