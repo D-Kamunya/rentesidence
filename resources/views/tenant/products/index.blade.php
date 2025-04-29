@@ -139,10 +139,10 @@
                                                         <button class="scroll-button scroll-button-right">&gt;</button> <!-- Right Scroll Button -->
                                                     </div>
 
-                                                    <p><strong>Description:</strong> {{ $product->description }}</p>
-                                                    <p><strong>Category:</strong> {{ $product->category }}</p>
-                                                    <p><strong>Type:</strong> {{ $product->type }}</p>
-                                                    <p><strong>Price:</strong> Ksh. {{ $product->price }}</p>
+                                                    <p style="padding: 8px 0;"><strong>Description:</strong> {{ $product->description }}</p>
+                                                    <p style="padding: 8px 0;"><strong>Category:</strong> {{ $product->category }}</p>
+                                                    <p style="padding: 8px 0;"><strong>Type:</strong> {{ $product->type }}</p>
+                                                    <p style="padding: 8px 0;"><strong>Price:</strong> Ksh. {{ $product->price }}</p>
                                                 </div>
                                             </div>
                                         </div>

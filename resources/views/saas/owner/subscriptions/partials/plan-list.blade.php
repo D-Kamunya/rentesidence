@@ -36,6 +36,8 @@
                             </span>
                             <span
                                 class="font-13 price-monthly">{{ __('Add Upto ') . $plan->max_unit . __(' Units') }}</span>
+                                <span
+                                class="font-14 fw-bold text-success price-yearly d-none">{{ __('Get two months free!! ') }}</span>
                         </li>
                     @endif
                     @if ($plan->type == PACKAGE_TYPE_TENANT)
