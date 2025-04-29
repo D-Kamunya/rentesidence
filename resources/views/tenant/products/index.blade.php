@@ -78,7 +78,9 @@
                                     @endphp
                                     <div class="product-card">
                                         @if(is_array($images) && count($images) > 0)
-                                            <img src="{{ asset('storage/' . $images[0]) }}" alt="{{ $product->name }}" class="product-image-cover">
+                                            <a href="{{ route('tenant.product.details', $product->id) }}">
+                                                <img src="{{ asset('storage/' . $images[0]) }}" alt="{{ $product->name }}" class="product-image-cover">
+                                            </a>
                                         @else
                                             <p>No image available.</p>
                                         @endif
@@ -89,20 +91,19 @@
                                             </a>
                                         </h2>
 
-                                        <h2 class="product-id d-none">{{$product->id}}</h2>
-
-                                        <h2 class="product-price d-none">{{$product->price}}</h2>
+                                        <h2 class="product-id d-none">{{ $product->id }}</h2>
+                                        <h2 class="product-price d-none">{{ $product->price }}</h2>
 
                                         <div class="product-action-buttons">
                                             <!-- Add to Cart Button -->
                                             <button class="action-icon add-to-cart-button" title="Add to Cart">
-                                                <i class="fas fa-cart-plus"></i> <!-- Font Awesome cart icon -->
+                                                <i class="fas fa-cart-plus"></i>
                                             </button>
 
                                             <!-- Order Now Button -->
-                                            <button class="action-icon order-now-button" title="Order Now">
-                                                <i class="fas fa-shopping-bag"></i> <!-- Font Awesome shopping bag icon -->
-                                            </button>
+                                            <!-- <button class="action-icon order-now-button" title="Order Now">
+                                                <i class="fas fa-shopping-bag"></i>
+                                            </button> -->
 
                                             <!-- More Details Button -->
                                             <button class="action-icon more-button" title="Read More" data-bs-toggle="modal" data-bs-target="#product-details-{{ $product->id }}">
@@ -110,6 +111,7 @@
                                             </button>
                                         </div>
                                     </div>
+
 
 
                                     <!-- Product Details Modal -->

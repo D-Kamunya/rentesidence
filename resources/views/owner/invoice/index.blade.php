@@ -470,7 +470,8 @@
                                 <h4 class="invoice-generate-title">{{ __('Invoice To') }}</h4>
                                 <div class="invoice-address">
                                     <h5 class="tenantName"></h5>
-                                    <small class="tenantEmail"></small>
+                                    <small class="tenantEmail d-block"></small>
+                                    <small class="tenantPhone d-block"></small>
                                     <h6 class="propertyName"></h6>
                                     <small class="unitName"></small>
                                 </div>

@@ -32,7 +32,6 @@ document.addEventListener("DOMContentLoaded", () => {
         cartItems = groupCartItems(cartItems); // Group the items by name
         cartContainer.innerHTML = "";
         let totalAmount = 0;
-
         cartItems.forEach((item, index) => {
             // Ensure the price is a number
             var price = parseFloat(item.price);
@@ -50,9 +49,7 @@ document.addEventListener("DOMContentLoaded", () => {
             }" width="50" height="50">
                         <div class="cart-item-info">
                             <div class="cart-item-name">${item.name}</div>
-                            <div class="cart-item-price">$${price.toFixed(
-                                2
-                            )}</div>
+                            <!-- <div class="cart-item-price">KShs.${price.toFixed(2)}</div> -->
                         </div>
                     </div>
                     <div class="cart-item-quantity">
@@ -61,7 +58,7 @@ document.addEventListener("DOMContentLoaded", () => {
                         <button class="cart-item-button btn-secondary" onclick="increaseQuantity(${index})">+</button>
                     </div>
                     <div class="cart-item-actions">
-                        <div>$${itemTotal.toFixed(2)}</div>
+                        <div>KShs.${itemTotal.toFixed(2)}</div>
                         <button class="cart-item-button btn-danger" onclick="removeItem(${index})">Remove</button>
                     </div>
                 `;

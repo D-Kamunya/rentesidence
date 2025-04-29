@@ -51,7 +51,7 @@
                                             <!-- Cart Items will be populated here by JavaScript -->
                                         </div>
                                         <div class="text-end mt-4">
-                                            <h5>{{ __('Total Amount:')}} <span id="totalAmount">0.00</span></h5>
+                                            <h5>{{ __('Total Amount:')}} KShs.<span id="totalAmount">0.00</span></h5>
                                         </div>
                                         <table class="table theme-border p-20">
                                             <tbody id="currencyAppend"></tbody>
