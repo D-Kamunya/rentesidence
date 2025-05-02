@@ -76,28 +76,30 @@
                                                                         @endif
                                                                     </td>
                                                                     <td>
-                                                                        <div class="tbl-action-btns d-inline-flex">
-                                                                            <a class="p-1 tbl-action-btn edit"
-                                                                                data-id="{{ $issue->id }}"
-                                                                                title="{{ __('Edit') }}">
-                                                                                <span class="iconify"
-                                                                                    data-icon="clarity:note-edit-solid"></span>
-                                                                            </a>
-                                                                            <a href="#"
-                                                                                class="p-1 tbl-action-btn deleteItem"
-                                                                                data-formid="delete_row_form_{{ $issue->id }}"
-                                                                                title="{{ __('Delete') }}"><span
-                                                                                    class="iconify"
-                                                                                    data-icon="ep:delete-filled"></span></a>
-                                                                            <form
-                                                                                action="{{ route('owner.setting.maintenance-issue.delete', [$issue->id]) }}"
-                                                                                method="post"
-                                                                                id="delete_row_form_{{ $issue->id }}">
-                                                                                {{ method_field('DELETE') }}
-                                                                                <input type="hidden" name="_token"
-                                                                                    value="{{ csrf_token() }}">
-                                                                            </form>
-                                                                        </div>
+                                                                        @if (!in_array($issue->name, ['Leakage', 'Blockage', 'Other']))
+                                                                            <div class="tbl-action-btns d-inline-flex">
+                                                                                <a class="p-1 tbl-action-btn edit"
+                                                                                    data-id="{{ $issue->id }}"
+                                                                                    title="{{ __('Edit') }}">
+                                                                                    <span class="iconify"
+                                                                                        data-icon="clarity:note-edit-solid"></span>
+                                                                                </a>
+                                                                                <a href="#"
+                                                                                    class="p-1 tbl-action-btn deleteItem"
+                                                                                    data-formid="delete_row_form_{{ $issue->id }}"
+                                                                                    title="{{ __('Delete') }}"><span
+                                                                                        class="iconify"
+                                                                                        data-icon="ep:delete-filled"></span></a>
+                                                                                <form
+                                                                                    action="{{ route('owner.setting.maintenance-issue.delete', [$issue->id]) }}"
+                                                                                    method="post"
+                                                                                    id="delete_row_form_{{ $issue->id }}">
+                                                                                    {{ method_field('DELETE') }}
+                                                                                    <input type="hidden" name="_token"
+                                                                                        value="{{ csrf_token() }}">
+                                                                                </form>
+                                                                            </div>
+                                                                        @endif
                                                                     </td>
                                                                 </tr>
                                                             @endforeach
