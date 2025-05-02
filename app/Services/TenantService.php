@@ -48,11 +48,17 @@ class TenantService
     public function getActiveAll()
     {
         return Tenant::query()
-            ->leftJoin('users', 'tenants.user_id', '=', 'users.id')
-            ->select(['tenants.*', 'users.first_name', 'users.last_name', 'users.contact_number', 'users.email'])
-            ->where('tenants.status', TENANT_STATUS_ACTIVE)
-            ->where('tenants.owner_user_id', auth()->id())
-            ->get();
+        ->leftJoin('users', 'tenants.user_id', '=', 'users.id')
+        ->leftJoin('properties', 'tenants.property_id', '=', 'properties.id')
+        ->leftJoin('property_units', 'tenants.unit_id', '=', 'property_units.id')
+        ->leftJoin(DB::raw('(select tenant_id, SUM(amount) as due from invoices where status = 0 AND deleted_at IS NULL group By tenant_id) as inv'), ['inv.tenant_id' => 'tenants.id'])
+        ->leftJoin(DB::raw('(select tenant_id, MAX(updated_at) as last_payment from invoices where status = 1 AND deleted_at IS NULL group By tenant_id) as inv_last'), ['inv_last.tenant_id' => 'tenants.id'])
+        ->select(['tenants.*', 'inv.due', 'inv_last.last_payment', 'users.first_name', 'users.last_name', 'users.status as userStatus', 'users.contact_number', 'users.email', 'property_units.unit_name', 'properties.name as property_name'])
+        ->where('tenants.owner_user_id', auth()->id())
+        ->where('tenants.status', TENANT_STATUS_ACTIVE)
+        ->orderBy('properties.name', 'asc')  // Sort by property name first
+        ->orderByRaw("REGEXP_REPLACE(property_units.unit_name, '[0-9]', '') ASC, CAST(REGEXP_REPLACE(property_units.unit_name, '[^0-9]', '') AS UNSIGNED) ASC")
+        ->get();
     }
 
     public function getAllData()

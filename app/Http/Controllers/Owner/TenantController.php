@@ -45,7 +45,7 @@ class TenantController extends Controller
             $data['pageTitle'] = __('Tenants');
             $data['properties'] = $this->propertyService->getAll();
             if (getOption('app_card_data_show', 1) == 1) {
-                $data['tenants'] = $this->tenantService->getAll();
+                $data['tenants'] = $this->tenantService->getActiveAll();
             }
             if ($request->ajax()) {
                 return $this->tenantService->getAllData();
