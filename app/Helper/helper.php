@@ -480,8 +480,7 @@ function getNotification($user_id)
         })
         ->select('notifications.*', 'users.first_name', 'users.last_name', 'file_managers.file_name', 'file_managers.folder_name')
         ->where(function ($query) use ($user_id) {
-            $query->where('notifications.user_id', $user_id)
-                ->orWhere('notifications.user_id', null);
+            $query->where('notifications.user_id', $user_id);
         })
         ->latest()
         ->get();
@@ -498,8 +497,7 @@ function getNotificationLimit($user_id)
         })
         ->select('notifications.*', 'users.first_name', 'users.last_name', 'file_managers.file_name', 'file_managers.folder_name')
         ->where(function ($query) use ($user_id) {
-            $query->where('notifications.user_id', $user_id)
-                ->orWhere('notifications.user_id', null);
+            $query->where('notifications.user_id', $user_id);
         })
         ->where('notifications.is_seen', DEACTIVATE) 
         ->take(10)
