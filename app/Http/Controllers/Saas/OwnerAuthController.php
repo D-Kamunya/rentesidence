@@ -63,6 +63,8 @@ class OwnerAuthController extends Controller
             
             setOwnerInvoiceType($user->id);
 
+            setOwnerDefaultMaintenanceIssue($user->id);
+
             DB::commit();
             if (getOption('send_email_status', 0) == ACTIVE) {
                 $emails = [$user->email];

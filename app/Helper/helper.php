@@ -8,6 +8,7 @@ use App\Models\Package;
 use App\Models\Invoice;
 use App\Models\InvoiceItem;
 use App\Models\InvoiceType;
+use App\Models\MaintenanceIssue;
 use App\Models\InvoiceRecurringSetting;
 use App\Models\Language;
 use App\Models\Maintainer;
@@ -656,6 +657,21 @@ if (!function_exists('setOwnerInvoiceType')) {
         $invoiceType->owner_user_id=$userId;
         $invoiceType->status=ACTIVE;
         $invoiceType->save();
+    }
+}
+
+if (!function_exists('setOwnerDefaultMaintenanceIssue')) {
+    function setOwnerDefaultMaintenanceIssue($userId)
+    {   
+        $defaultIssues = ['Leakage', 'Blockage', 'Other'];
+
+        foreach ($defaultIssues as $issueName) {
+            $maintenanceIssue = new MaintenanceIssue;
+            $maintenanceIssue->name = $issueName;
+            $maintenanceIssue->owner_user_id = $userId;
+            $maintenanceIssue->status = ACTIVE;
+            $maintenanceIssue->save();
+        }
     }
 }
 
