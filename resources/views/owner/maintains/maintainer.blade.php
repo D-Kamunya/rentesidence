@@ -173,11 +173,11 @@
                                     <div class="my-custom-select-box">
                                         <select name="property_id[]" data-selected-text-format="count" multiple
                                             class="my-custom-select form-select selectpicker w-100 property_id">
-                                            <option value="all">{{ __('All') }}</option>
                                             @foreach ($properties as $property)
                                                 <option value="{{ $property->id }}">{{ $property->name }}</option>
                                             @endforeach
                                         </select>
+                                        <small>{{ __('You can selected multiple properties') }}</small>
                                     </div>
                                 </div>
                             </div>
