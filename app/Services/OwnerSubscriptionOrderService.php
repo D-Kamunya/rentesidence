@@ -217,9 +217,10 @@ class OwnerSubscriptionOrderService
             }
             $order->save();
             DB::commit();
+            $invoiceUrl = route('owner.subscription.index');
             $title = __("You have a new invoice");
             $body = __("Package Assign Successfully");
-            addNotification($title, $body, null, null, $order->user_id, auth()->id());
+            addNotification($title, $body, $invoiceUrl, null, $order->user_id, auth()->id());
             $message = __(UPDATED_SUCCESSFULLY);
             return $this->success([], $message);
         } catch (Exception $e) {

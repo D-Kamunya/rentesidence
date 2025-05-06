@@ -481,6 +481,7 @@ class InvoiceService
         $notificationData = (object) [
             'title'   => __("You have a new invoice"),
             'body'     => __("Please check the invoice and respond as soon as possible."),
+            'url'     => route('tenant.invoice.index')
         ];
         SendInvoiceNotificationAndEmailJob::dispatch($invoice,$emailData,$notificationData);
     

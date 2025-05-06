@@ -62,12 +62,15 @@
                     </div>
                     <div data-simplebar>
                         @foreach (getNotificationLimit(auth()->id()) as $notification)
-                            <a href="{{ route('notification.status', ['id'=>$notification->id,'role'=>auth()->user()->role ])}}" class="notification-item">
-                                <div class="d-flex">
+                            @php
+                                $url = $notification->url ?? route('maintainer.notification');
+                            @endphp
+                            <a href="{{ route('notification.status', ['id' => $notification->id,'role' => auth()->user()->role]) }}?url={{ urlencode($url) }}" onclick="window.location.href='{{ route('notification.status', ['id' => $notification->id,'role' => auth()->user()->role]) }}?url={{ urlencode($url)}}';" class="notification-item">
+                            <div class="d-flex">
                                     <img src="{{ getFileUrl($notification->folder_name, $notification->file_name) }}"
                                         class="me-3 rounded-circle avatar-xs" alt="user-pic">
                                     <div class="flex-1">
-                                        <h6 class="mb-1">{{ $notification->first_name }}</h6>
+                                        <h6 class="mb-1">{{ $notification->first_name }} {{ $notification->last_name }}</h6>
                                         <div class="">
                                             <p class="mb-1">{{ $notification->title }}</p>
                                             <p class="mb-0 font-12"><i class="mdi mdi-clock-outline"></i>
@@ -82,7 +85,7 @@
                     <div class="p-2 border-top">
                         <div class="d-grid">
                             <a class="btn-sm theme-link font-size-14 d-flex align-items-center justify-content-center"
-                                href="{{ route('maintainer.notification') }}">
+                                href="{{ route('maintainer.notification') }}" onclick="window.location.href='{{ route('maintainer.notification') }}';">
                                 {{ __('See All') }}
                             </a>
                         </div>

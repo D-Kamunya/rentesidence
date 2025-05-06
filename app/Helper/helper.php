@@ -709,10 +709,11 @@ if (!function_exists('handleSubscriptionPaymentConfirmation')) {
 
                     DB::commit();
 
+                    $invoiceUrl = route('owner.subscription.index');
                     $title = __("You have a new invoice");
                     $body = __("Subscription payment verify successfully");
                     $adminUser = User::where('role', USER_ROLE_ADMIN)->first();
-                    addNotification($title, $body, null, null,$order->user_id,$adminUser->id);
+                    addNotification($title, $body, $invoiceUrl, null,$order->user_id,$adminUser->id);
 
                     if (getOption('send_email_status', 0) == ACTIVE) {
                         $emails = [$order->user->email];
@@ -794,11 +795,12 @@ if (!function_exists('handleProductPaymentConfirmation')) {
 
 
                     DB::commit();
-                    
+
+                    $invoiceUrl = route('tenant.order.index');
                     $title = __("You have a new invoice");
                     $body = __("Products payment verify successfully");
                     $ownerUserID = $gateway->owner_user_id;
-                    addNotification($title, $body, null, null,  $order->user_id,$ownerUserID);
+                    addNotification($title, $body, $invoiceUrl, null,  $order->user_id,$ownerUserID);
 
                     if (getOption('send_email_status', 0) == ACTIVE) {
                         $emails = [$order->user->email];
@@ -893,6 +895,7 @@ if (!function_exists('handlePaymentConfirmation')) {
                     $notificationData = (object) [
                         'title'   => __('Rent Payment successful!'),
                         'body'     =>  $invoice->invoice_no . ' ' . __('paid successfully'),
+                        'url'     => route('tenant.invoice.index')
                     ];
                     SendInvoiceNotificationAndEmailJob::dispatch($invoice,$emailData,$notificationData);
 

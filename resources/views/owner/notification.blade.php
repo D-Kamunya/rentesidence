@@ -38,12 +38,15 @@
                                     </thead>
                                     <tbody>
                                         @foreach (getNotification(auth()->id()) as $notification)
+                                            @php
+                                                $url = $notification->url ?? route('owner.notification');
+                                            @endphp
                                             <tr>
                                                 <td>{{ $loop->iteration }}</td>
                                                 <td><img src="{{ getFileUrl($notification->folder_name, $notification->file_name) }}"
                                                         class="me-3 rounded-circle avatar-xs" alt="user-pic"></td>
                                                 <td>{{ $notification->first_name }} {{ $notification->last_name }}</td>
-                                                <td>{!! $notification->title !!}</td>
+                                                <td>{!! $notification->title !!}. <a href="{{$url}}" target="_blank" class="notification-item">Click here to view</a></td>
                                                 <td>{!! $notification->body !!}</td>
                                                 <td>{{ $notification->created_at->diffForHumans() }}</td>
                                             </tr>

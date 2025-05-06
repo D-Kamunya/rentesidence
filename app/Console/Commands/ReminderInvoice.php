@@ -65,6 +65,7 @@ class ReminderInvoice extends Command
         $notificationData = (object) [
             'title'   => __('Payment remainder!'),
             'body'     => $overDue ? __('Payment remainder') . ' ' . $invoice->invoice_no . ' ' . __('overdue on date') . ' ' . $invoice->due_date :  __('Payment remainder') . ' ' . $invoice->invoice_no . ' ' . __('due on date') . ' ' . $invoice->due_date,
+            'url'     => route('tenant.invoice.index')
         ];
         SendInvoiceNotificationAndEmailJob::dispatch($invoice,$emailData,$notificationData);
 

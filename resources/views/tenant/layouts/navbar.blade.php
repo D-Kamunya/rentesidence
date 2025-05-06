@@ -63,12 +63,16 @@
                     </div>
                     <div data-simplebar>
                         @foreach (getNotificationLimit(auth()->id()) as $notification)
-                            <a href="{{ route('notification.status', ['id'=>$notification->id,'role'=>auth()->user()->role ])}}" class="notification-item">
+                            @php
+                                $url = $notification->url ?? route('tenant.notification');
+                            @endphp
+                            <a href="{{ route('notification.status', ['id' => $notification->id,'role' => auth()->user()->role]) }}?url={{ urlencode($url) }}" class="notification-item">
                                 <div class="d-flex">
                                     <img src="{{ getFileUrl($notification->folder_name, $notification->file_name) }}"
                                         class="me-3 rounded-circle avatar-xs" alt="user-pic">
+
                                     <div class="flex-1">
-                                        <h6 class="mb-1">{{ $notification->first_name }}</h6>
+                                        <h6 class="mb-1">{{ $notification->first_name }} {{ $notification->last_name }} </h6>
                                         <div class="">
                                             <p class="mb-1 {{ $notification->is_seen != ACTIVE ? 'fw-bold' : '' }}">
                                                 {{ $notification->title }}</p>

@@ -268,9 +268,10 @@ class PackageService
 
             setUserPackage($order->user_id, $package, $duration, $order->quantity, $order->id);
             DB::commit();
+            $invoiceUrl = route('owner.subscription.index');
             $title = __("You have a new invoice");
             $body = __("Package Assign Successfully");
-            addNotification($title, $body, null, null, $ownerUser->id, $adminUser->id);
+            addNotification($title, $body, $invoiceUrl, null, $ownerUser->id, $adminUser->id);
             return $this->success([], __(ASSIGNED_SUCCESSFULLY));
         } catch (Exception $e) {
             DB::rollBack();

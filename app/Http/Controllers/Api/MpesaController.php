@@ -63,10 +63,11 @@ class MpesaController extends Controller
 
                         config(['queue.default' => $originalQueueConnection]);
 
+                        $invoiceUrl = route('owner.subscription.index');
                         $title = __("You have a new invoice");
                         $body = __("Subscription payment verify successfully");
                         $adminUser = User::where('role', USER_ROLE_ADMIN)->first();
-                        addNotification($title, $body, null, null,$order->user_id,$adminUser->id);
+                        addNotification($title, $body, $invoiceUrl, null,$order->user_id,$adminUser->id);
 
                         if (getOption('send_email_status', 0) == ACTIVE) {
                             $emails = [$order->user->email];
@@ -142,6 +143,7 @@ class MpesaController extends Controller
                         $notificationData = (object) [
                             'title'   => __('Rent Payment successful!'),
                             'body'     =>  $invoice->invoice_no . ' ' . __('paid successfully'),
+                            'url'     => route('tenant.invoice.index')
                         ];
                         SendInvoiceNotificationAndEmailJob::dispatch($invoice,$emailData,$notificationData);
                     }
@@ -193,10 +195,11 @@ class MpesaController extends Controller
 
                         config(['queue.default' => $originalQueueConnection]);
 
+                        $invoiceUrl = route('tenant.order.index');
                         $title = __("You have a new invoice");
                         $body = __("Products payment verify successfully");
                         $ownerUserID = $gateway->owner_user_id;
-                        addNotification($title, $body, null, null,  $order->user_id,$ownerUserID);
+                        addNotification($title, $body, $invoiceUrl, null,  $order->user_id,$ownerUserID);
 
                         if (getOption('send_email_status', 0) == ACTIVE) {
                             $emails = [$order->user->email];

@@ -45,7 +45,8 @@ class SendInvoiceNotificationAndEmailJob implements ShouldQueue
         // Add Notification
         $titleNotification = $this-> notificationData->title;
         $bodyNotification  = $this->notificationData->body;
-        addNotification($titleNotification, $bodyNotification, null, null, $this->invoice->tenant->user->id, $this->invoice->owner_user_id);
+        $invoiceUrl = $this->notificationData->url;
+        addNotification($titleNotification, $bodyNotification, $invoiceUrl, null, $this->invoice->tenant->user->id, $this->invoice->owner_user_id);
 
         // If email sending is active, send the email
         if (getOption('send_email_status', 0) == ACTIVE) {
