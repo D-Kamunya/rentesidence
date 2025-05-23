@@ -4,6 +4,7 @@ use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\CommonController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\PaymentController;
+use App\Http\Controllers\Listing\HouseHuntController;
 use App\Http\Controllers\ProductPaymentController;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
@@ -74,6 +75,9 @@ Route::group(['prefix' => 'payment'], function () {
     Route::get('products/verify-redirect/{type?}', [PaymentController::class, 'verifyRedirect'])->name('payment.products.verify.redirect');
 });
 
+Route::get('/house-hunt', [HouseHuntController::class, 'index'])->name('house.hunt');
+Route::get('/house-hunt/view/{propertyId}', [HouseHuntController::class, 'viewProperty'])->name('house-hunt.view');
+Route::get('/owner/tenants/applications', function () {return view('owner.tenants.applications');})->name('owner.tenants.applications');
 Route::get('version-update', [VersionUpdateController::class, 'versionUpdate'])->name('version-update');
 Route::post('process-update', [VersionUpdateController::class, 'processUpdate'])->name('process-update');
 Route::get('version-check', [VersionUpdateController::class, 'versionCheck'])->name('versionCheck');
