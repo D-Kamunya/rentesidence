@@ -40,6 +40,9 @@
                                 <a class="nav-link {{ request()->is('/') ? 'active' : '' }}" aria-current="page"
                                     href="{{ route('frontend') }}#feature"><span>{{ __('Feature') }}</span></a>
                             </li>
+                            <li class="nav-item">
+                                    <a class="nav-link" href="{{ route('house.hunt') }}">House Hunt</a>
+                            </li>
                         @endif
                         @if (isAddonInstalled('PROTYLISTING') > 0)
                             @if (getOption('LISTING_STATUS', 0) == ACTIVE)

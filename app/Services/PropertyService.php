@@ -93,6 +93,109 @@ class PropertyService
         }
     }
 
+    public function getEmptyUnitsGroupedByProperty($paginate = true)
+{
+    $data = PropertyUnit::query()
+        ->join('properties', 'property_units.property_id', '=', 'properties.id')
+
+        ->leftJoin('tenants', function ($join) {
+            $join->on('property_units.id', '=', 'tenants.unit_id')
+                ->where('tenants.status', DB::raw(TENANT_STATUS_ACTIVE));
+        })
+        ->leftJoin('users as tenants_users', function ($q) {
+            $q->on('tenants.user_id', '=', 'tenants_users.id')->whereNull('tenants_users.deleted_at');
+        })
+
+        ->leftJoin('file_managers', function ($join) {
+            $join->on('properties.thumbnail_image_id', '=', 'file_managers.id')
+                 ->where('file_managers.origin_type', '=', 'App\\Models\\Property');
+        })
+
+        ->leftJoin('users as owners', 'properties.owner_user_id', '=', 'owners.id')
+        ->leftJoin('property_details', 'properties.id', '=', 'property_details.property_id')
+
+        ->whereNull('tenants.id')
+        ->whereNotNull('properties.id')
+
+        ->select(
+            'properties.id as property_id',
+            'properties.name as property_name',
+            'owners.first_name as owner_first_name',
+            'owners.last_name as owner_last_name',
+            'file_managers.file_name',
+            'file_managers.folder_name',
+            DB::raw('COUNT(property_units.id) as empty_units_count'),
+            'property_details.country_id as country',
+            'property_details.state_id as state',
+            'property_details.city_id as city',
+            'property_details.map_link',
+            DB::raw("CONCAT('/storage/', file_managers.folder_name, '/', file_managers.file_name) as thumbnail_url")
+        )
+
+        ->groupBy(
+            'properties.id',
+            'properties.name',
+            'owners.first_name',
+            'owners.last_name',
+            'file_managers.file_name',
+            'file_managers.folder_name',
+            'property_details.country_id',
+            'property_details.state_id',
+            'property_details.city_id',
+            'property_details.map_link'
+        )
+        ->orderBy('properties.id', 'asc');
+
+    return $paginate ? $data->paginate(10) : $data->get();
+}
+
+public function getEmptyUnitsByProperty($propertyId)
+{
+    return PropertyUnit::query()
+        ->where('property_units.property_id', $propertyId)
+        ->join('properties', 'property_units.property_id', '=', 'properties.id')
+
+        ->leftJoin('users as owners', 'properties.owner_user_id', '=', 'owners.id')
+
+        ->leftJoin('tenants', function ($join) {
+            $join->on('property_units.id', '=', 'tenants.unit_id')
+                ->where('tenants.status', DB::raw(TENANT_STATUS_ACTIVE));
+        })
+
+        ->leftJoin('users as tenants_users', function ($q) {
+            $q->on('tenants.user_id', '=', 'tenants_users.id')
+                ->whereNull('tenants_users.deleted_at');
+        })
+
+        ->leftJoin('file_managers as unit_images', function ($join) {
+            $join->on('property_units.id', '=', 'unit_images.origin_id')
+                ->where('unit_images.origin_type', '=', DB::raw("'App\\\\Models\\\\PropertyUnit'"));
+        })
+
+        ->leftJoin('file_managers as property_thumbnails', function ($join) {
+            $join->on('properties.thumbnail_image_id', '=', 'property_thumbnails.id')
+                ->where('property_thumbnails.origin_type', '=', DB::raw("'App\\\\Models\\\\Property'"));
+        })
+        ->leftJoin('property_details', 'properties.id', '=', 'property_details.property_id')
+        ->whereNull('tenants.id') // Only unoccupied units
+        ->select(
+            'property_units.*',
+            'properties.id as property_id',
+            'properties.name as property_name',
+            'owners.first_name as owner_first_name',
+            'property_details.state_id as state',
+            'property_details.city_id as city',
+            'owners.last_name as owner_last_name',
+            'unit_images.file_name as unit_image_file',
+            'unit_images.folder_name as unit_image_folder',
+            'property_thumbnails.file_name as thumbnail_file',
+            'property_thumbnails.folder_name as thumbnail_folder',
+            DB::raw("CONCAT('/storage/', property_thumbnails.folder_name, '/', property_thumbnails.file_name) as thumbnail_url")
+        )
+        ->orderBy('property_units.id', 'asc')
+        ->get();
+}
+
     public function getAllCount()
     {
         $data = Property::query()
