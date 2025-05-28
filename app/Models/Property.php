@@ -12,6 +12,14 @@ class Property extends Model
 {
     use HasFactory, SoftDeletes;
 
+    protected $fillable = [
+        'name',
+        'property_type',
+        'number_of_unit',
+        'description',
+        'owner_user_id'
+    ];
+
     public function scopeActive($query)
     {
         return $query->whereStatus(ACTIVE);

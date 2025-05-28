@@ -21,6 +21,7 @@
         "laravel/tinker": "^2.7",
         "laravel/ui": "^4.0",
         "lcobucci/jwt": "*",
+        "maatwebsite/excel":"^3.1.64",
         "mercadopago/dx-php": "^2.5",
         "mollie/laravel-mollie": "2.19",
         "omnipay/paypal": "^3.0",

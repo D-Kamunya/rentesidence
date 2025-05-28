@@ -12,6 +12,8 @@ use App\Services\PropertyService;
 use App\Traits\ResponseTrait;
 use Illuminate\Http\Request;
 use Illuminate\Pagination\LengthAwarePaginator;
+use App\Imports\PropertyExcelImport;
+use Maatwebsite\Excel\Facades\Excel;
 
 class PropertyController extends Controller
 {
@@ -91,6 +93,26 @@ class PropertyController extends Controller
         $data['subNavPropertyIndexMMActiveClass'] = 'mm-active';
         $data['subNavPropertyIndexActiveClass'] = 'active';
         return view('owner.property.add')->with($data);
+    }
+
+    public function propertiesExcelImportForm()
+    {
+        return view('owner.property.excel-import-form');
+    }
+
+    public function propertiesExcelImport(Request $request)
+    {
+        $request->validate([
+            'excel_file' => 'required|mimes:xlsx,xls,csv',
+        ]);
+
+        $file = $request->file('excel_file');
+        $path = $file->store('temp');
+
+        Excel::import(new PropertyExcelImport, $path);
+
+        return back()->with('success', 'Data imported successfully!');
+        
     }
 
     public function show($id)

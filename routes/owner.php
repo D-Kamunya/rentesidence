@@ -39,6 +39,8 @@ Route::group(['prefix' => 'owner', 'as' => 'owner.', 'middleware' => ['auth', 'o
         Route::get('own-property', [PropertyController::class, 'ownProperty'])->name('ownProperty');
         Route::get('lease-property', [PropertyController::class, 'leaseProperty'])->name('leaseProperty');
         Route::get('add', [PropertyController::class, 'add'])->name('add');
+        Route::get('excel-import', [PropertyController::class, 'propertiesExcelImportForm'])->name('excel.import.form');
+        Route::post('excel-import', [PropertyController::class, 'propertiesExcelImport'])->name('excel.import');
         Route::get('show/{id}', [PropertyController::class, 'show'])->name('show');
         Route::get('edit/{id}', [PropertyController::class, 'edit'])->name('edit');
         Route::delete('destroy/{id}', [PropertyController::class, 'destroy'])->name('destroy');
