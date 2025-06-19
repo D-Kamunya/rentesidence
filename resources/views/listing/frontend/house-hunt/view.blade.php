@@ -4,12 +4,12 @@
 <!-- Hero section -->
 <div class="property-details-area">
     <div class="row">
-        <div class="col-md-12">
-            <div class="property-bander-text text-center">
+        <div class="col-md-12 property-banner text-white" style="background-image: url('{{ $property['thumbnail_image'] ?? asset('storage/images/placeholder.png') }}');">
+            <div class="property-bander-text text-center overlay">
                 <h5 class="property-bander-header">{{ $property['name'] }}</h5>
                 <div class="d-inline-flex align-items-center justify-content-center gap-2">
                     <i class="fas fa-map-marker-alt text-danger fs-4"></i>
-                    <h4 class="mb-0">{{ $property['city'] ?? '' }}, {{ $property['state'] ?? '' }}</h4>
+                    <h4 class="mb-0">{{ $property['city_id'] ?? '' }}, {{ $property['state_id'] ?? '' }}</h4>
                 </div>
             </div>
         </div>
@@ -45,7 +45,7 @@
                                         </div>
                                         <div class="single-option mb-2">
                                             <i class="bi bi-person-badge me-2 text-primary"></i>
-                                            <strong>{{ __('Agent:') }}</strong> {{ $property['owner_name'] }}
+                                            <strong>{{ __('Agent:') }}</strong> {{ $property['owner_first_name'] }} {{ $property['owner_last_name'] }}
                                         </div>
                                         <div class="single-option mb-2 d-flex align-items-start">
                                             <i class="bi bi-stars me-2 text-primary"></i>
@@ -84,7 +84,7 @@
                                                         <div class="alert alert-secondary mb-4">
                                                             <strong>{{ $property['name'] }}</strong><br>
                                                             {{ __('Unit') }}: {{ $unit->unit_name ?? $unit->id }}<br>
-                                                            {{ __('Agent') }}: {{ $property['owner_name'] }}<br>
+                                                            {{ __('Agent') }}: {{ $property['owner_first_name'] }} {{ $property['owner_last_name'] }}<br>
                                                             {{ __('Rent') }}: KES {{ number_format($unit->general_rent) }} / {{ __('Month') }}
                                                         </div>
 

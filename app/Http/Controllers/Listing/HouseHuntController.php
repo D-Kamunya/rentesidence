@@ -17,30 +17,19 @@ class HouseHuntController extends Controller
 
 
     public function viewProperty($propertyId)
-{
-    $units = app(PropertyService::class)->getEmptyUnitsByProperty($propertyId);
+    {
+        $units = app(PropertyService::class)->getEmptyUnitsByProperty($propertyId);
 
-    if ($units->isEmpty()) {
-        abort(404, 'Property not found or has no vacant units.');
+        if ($units->isEmpty()) {
+            abort(404, 'Property not found or has no vacant units.');
+        }
+
+        $property = app(PropertyService::class)->getDetailsById($propertyId);
+
+        return view('listing.frontend.house-hunt.view', [
+            'property' => $property,
+            'emptyUnits' => $units,
+        ]);
     }
-
-    // Extract shared property info from the first unit
-    $firstUnit = $units->first();
-
-    $property = [
-        'id' => $firstUnit->property_id,
-        'name' => $firstUnit->property_name,
-        'owner_name' => trim("{$firstUnit->owner_first_name} {$firstUnit->owner_last_name}"),
-        'thumbnail_url' => $firstUnit->thumbnail_url ?? asset('images/placeholder.png'),
-        'country' => $firstUnit->country ?? '',
-        'city' => $firstUnit->city ?? '',
-        'state' => $firstUnit->state ?? '',
-    ];
-
-    return view('listing.frontend.house-hunt.view', [
-        'property' => $property,
-        'emptyUnits' => $units,
-    ]);
-}
  
 }
