@@ -9,34 +9,34 @@
             <div class="row">
                 <div class="col-md-4 mb-25">
                     <label class="label-text-title color-heading font-medium mb-2">{{ __('Country') }}</label>
-                    <input type="text" name="country_id" class="form-control" placeholder="{{ __('Country') }}" value="{{ @$property->propertyDetail->country_id }}">
+                    <input type="text" name="country_id" class="form-control" placeholder="{{ __('Country') }}" value="{{ @$property->propertyDetail->country_id }}" required>
                 </div>
                 <div class="col-md-4 mb-25">
                     <label class="label-text-title color-heading font-medium mb-2">{{ __('State') }}</label>
-                    <input type="text" name="state_id" class="form-control" placeholder="{{ __('State') }}" value="{{ @$property->propertyDetail->state_id }}">
+                    <input type="text" name="state_id" class="form-control" placeholder="{{ __('State') }}" value="{{ @$property->propertyDetail->state_id }}" required>
                 </div>
                 <div class="col-md-4 mb-25">
                     <label class="label-text-title color-heading font-medium mb-2">{{ __('City') }}</label>
-                    <input type="text" name="city_id" class="form-control" placeholder="{{ __('City') }}" value="{{ @$property->propertyDetail->city_id }}">
+                    <input type="text" name="city_id" class="form-control" placeholder="{{ __('City') }}" value="{{ @$property->propertyDetail->city_id }}" required>
                 </div>
             </div>
             <div class="row">
                 <div class="col-md-4 mb-25">
                     <label class="label-text-title color-heading font-medium mb-2">{{ __('Zip Code') }}</label>
                     <input type="text" name="zip_code" value="{{ @$property->propertyDetail->zip_code }}"
-                        class="form-control" placeholder="{{ __('Zip Code') }}">
+                        class="form-control" placeholder="{{ __('Zip Code') }}" required>
                 </div>
                 <div class="col-md-8 mb-25">
                     <label class="label-text-title color-heading font-medium mb-2">{{ __('Address') }}</label>
                     <input type="text" name="address" value="{{ @$property->propertyDetail->address }}"
-                        class="form-control" placeholder="{{ __('Address') }}">
+                        class="form-control" placeholder="{{ __('Address') }}" required>
                 </div>
             </div>
             <div class="row">
                 <div class="col-md-12 mb-25">
                     <label class="label-text-title color-heading font-medium mb-2">{{ __('Map link') }}</label>
                     <input type="text" name="map_link" value="{{ @$property->propertyDetail->map_link }}"
-                        class="form-control map_link" placeholder="{{ __('Map link') }}">
+                        class="form-control map_link" placeholder="{{ __('Map link') }}" required>
                     <small>N.B : <a href="https://maps.google.com/"
                             target="_blank">{{ __('Google iframe src link') }}</a></small>
                 </div>
