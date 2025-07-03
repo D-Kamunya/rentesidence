@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Listing\Owner\ListingController;
 use App\Http\Controllers\Listing\FrontendListingController;
+use App\Http\Controllers\Listing\HouseHuntController;
 use Illuminate\Support\Facades\Route;
 
 Route::group(['prefix' => 'owner', 'as' => 'owner.', 'middleware' => ['auth', 'owner']], function () {
@@ -22,4 +23,10 @@ Route::group(['middleware' => ['version.update', 'addon.update']], function () {
     Route::get('properties', [FrontendListingController::class, 'list'])->name('listings');
     Route::get('properties/{slug}', [FrontendListingController::class, 'details'])->name('listing.details');
     Route::post('property-contact-store', [FrontendListingController::class, 'contactStore'])->name('listing.contact.store');
+});
+
+Route::group(['prefix' => 'tenant', 'as' => 'tenant.'], function () {
+    Route::group(['prefix' => 'house-hunt', 'as' => 'house-hunt.'], function () {
+        Route::post('application-submit', [HouseHuntController::class, 'applicationStore'])->name('application.submit');
+    });
 });

@@ -92,6 +92,7 @@ const EMAIL_VERIFICATION_STATUS_DEACTIVATE = 0;
 //Message
 const SOMETHING_WENT_WRONG = "Something went wrong! Please try again after a few minutes. If the problem persists, contact the System Admin.";
 const CREATED_SUCCESSFULLY = "Created Successfully";
+const APPLICATION_SUCCESSFULLY = "Application Successfully";
 const UPDATED_SUCCESSFULLY = "Updated Successfully";
 const STATUS_UPDATED_SUCCESSFULLY = "Status Updated Successfully";
 const DELETED_SUCCESSFULLY = "Deleted Successfully";
@@ -127,6 +128,10 @@ const TENANT_STATUS_ACTIVE = 1;
 const TENANT_STATUS_INACTIVE = 2;
 const TENANT_STATUS_DRAFT = 3;
 const TENANT_STATUS_CLOSE = 4;
+
+const HOUSE_HUNT_APPLICATION_ACCEPTED = 1;
+const HOUSE_HUNT_APPLICATION_PENDING = 2;
+const HOUSE_HUNT_APPLICATION_REJECTED = 3;
 
 const RENT_TYPE_MONTHLY = 1;
 const RENT_TYPE_YEARLY = 2;
