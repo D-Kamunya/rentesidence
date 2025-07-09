@@ -151,7 +151,6 @@ class InvoiceRecurringService
         }
 
         $invoiceRecurring->invoice_prefix = $request->invoice_prefix;
-        $invoiceRecurring->tenant_id = $tenant->id;
         $invoiceRecurring->owner_user_id = auth()->id();
         $invoiceRecurring->property_id = $tenant->property_id;
         $invoiceRecurring->property_unit_id = $tenant->unit_id;
