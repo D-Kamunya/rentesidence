@@ -220,6 +220,7 @@ public function getEmptyUnitsByProperty($propertyId)
         $data = Property::query()
             ->leftJoin('property_details', 'properties.id', '=', 'property_details.property_id')
             ->leftJoin('users', 'properties.maintainer_id', '=', 'users.id')
+            ->leftJoin('users as owners', 'properties.owner_user_id', '=', 'owners.id')
             ->leftJoin('tenants', ['properties.id' => 'tenants.property_id', 'tenants.status' => (DB::raw(TENANT_STATUS_ACTIVE))])
             ->selectRaw('properties.number_of_unit - (COUNT(tenants.id)) as available_unit,
             (avg(tenants.general_rent)) as avg_general_rent,
@@ -233,10 +234,12 @@ public function getEmptyUnitsByProperty($propertyId)
             property_details.city_id,
             property_details.zip_code,
             property_details.address,
-            property_details.map_link,users.first_name,
-            users.last_name')
+            property_details.map_link,
+            users.first_name,
+            users.last_name,
+            owners.first_name as owner_first_name,
+            owners.last_name as owner_last_name')
             ->groupBy('properties.id')
-            ->where('properties.owner_user_id', auth()->id())
             ->findOrFail($id);
         return $data?->makeHidden(['updated_at', 'created_at', 'deleted_at']);
     }

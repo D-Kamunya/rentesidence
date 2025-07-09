@@ -5,7 +5,6 @@ namespace App\Http\Controllers\Listing;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\ListingContactRequest;
 use App\Services\Listing\ListingService;
-use App\Services\PropertyService;
 use Illuminate\Http\Request;
 
 class FrontendListingController extends Controller

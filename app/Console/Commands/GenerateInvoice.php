@@ -92,7 +92,7 @@ class GenerateInvoice extends Command
             $now = now();
             $invoice = new Invoice();
             $invoice->name = $invoiceRecurring->invoice_prefix;
-            $invoice->tenant_id = $invoiceRecurring->tenant_id;
+            $invoice->tenant_id = $tenant->id;
             $invoice->owner_user_id = $invoiceRecurring->owner_user_id;
             $invoice->invoice_recurring_setting_id = $invoiceRecurring->id;
             $invoice->property_id = $invoiceRecurring->property_id;

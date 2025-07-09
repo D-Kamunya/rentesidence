@@ -57,14 +57,14 @@
                                             <input type="number" name="propertyUnit[general_rent][]"
                                                 id="general_rent{{ $propertyUnit->id }}"
                                                 value="{{ $propertyUnit->general_rent }}" class="form-control"
-                                                placeholder="">
+                                                placeholder="" required>
                                         </div>
                                         <div class="col-md-6 col-lg-6 col-xl-3 mb-25">
                                             <label
                                                 class="label-text-title color-heading font-medium mb-2">{{ __('Security deposit') }}</label>
                                             <div class="input-group custom-input-group">
                                                 <select name="propertyUnit[security_deposit_type][]"
-                                                    class="form-control">
+                                                    class="form-control" required>
                                                     <option value="0"
                                                         {{ $propertyUnit->security_deposit_type == TYPE_FIXED ? 'selected' : '' }}>
                                                         {{ __('Fixed') }}</option>
@@ -82,7 +82,7 @@
                                             <label
                                                 class="label-text-title color-heading font-medium mb-2">{{ __('Late fee') }}</label>
                                             <div class="input-group custom-input-group">
-                                                <select name="propertyUnit[late_fee_type][]" class="form-control">
+                                                <select name="propertyUnit[late_fee_type][]" class="form-control" required>
                                                     <option value="0"
                                                         {{ $propertyUnit->late_fee_type == TYPE_FIXED ? 'selected' : '' }}>
                                                         {{ __('Fixed') }}</option>
@@ -93,7 +93,7 @@
                                                 <input type="number" name="propertyUnit[late_fee][]"
                                                     id="late_fee{{ $propertyUnit->id }}"
                                                     value="{{ $propertyUnit->late_fee }}" class="form-control"
-                                                    placeholder="">
+                                                    placeholder="" required>
                                             </div>
                                         </div>
                                         <div class="col-md-6 col-lg-6 col-xl-3 mb-25">
@@ -102,7 +102,7 @@
                                             <input type="text" name="propertyUnit[incident_receipt][]"
                                                 id="incident_receipt{{ $propertyUnit->id }}"
                                                 value="{{ $propertyUnit->incident_receipt }}" class="form-control"
-                                                placeholder="">
+                                                placeholder="" required>
                                         </div>
                                     </div>
 
@@ -178,7 +178,7 @@
                                                     <input type="number" step="any" min="0"
                                                         name="propertyUnit[monthly_due_day][]"
                                                         value="{{ $propertyUnit->monthly_due_day }}"
-                                                        class="form-control" placeholder="Type day of month: 1 to 30">
+                                                        class="form-control" placeholder="Type day of month: 1 to 30" required>
                                                 </div>
                                             </div>
                                         </div>
@@ -195,7 +195,7 @@
                                                         name="propertyUnit[yearly_due_day][]"
                                                         value="{{ $propertyUnit->yearly_due_day }}"
                                                         class="form-control"
-                                                        placeholder="{{ __('Type month of year: 1 to 12') }}">
+                                                        placeholder="{{ __('Type month of year: 1 to 12') }}" required>
                                                 </div>
                                             </div>
                                         </div>
@@ -244,7 +244,7 @@
                                                                 name="propertyUnit[lease_payment_due_date][]"
                                                                 value="{{ $propertyUnit->lease_payment_due_date }}"
                                                                 class="datepicker form-control" autocomplete="off"
-                                                                placeholder="dd-mm-yy">
+                                                                placeholder="dd-mm-yy" required>
                                                             <i class="ri-calendar-2-line"></i>
                                                         </div>
                                                     </div>

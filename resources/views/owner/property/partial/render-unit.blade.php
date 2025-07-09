@@ -25,28 +25,28 @@
                                                     <input type="text" name="multiple[unit_name][]"
                                                         value="{{ $propertyUnit->unit_name }}"
                                                         class="form-control multiple-unit_name"
-                                                        placeholder="{{ __('Unit Name') }}">
+                                                        placeholder="{{ __('Unit Name') }}" required>
                                                 </div>
                                                 <div class="col-md-2 col-lg-2 col-xl-2 mb-25">
                                                     <label
                                                         class="label-text-title color-heading font-medium mb-2">{{ __('Bedroom') }}</label>
                                                     <input type="number" min="0" name="multiple[bedroom][]"
                                                         value="{{ $propertyUnit->bedroom }}"
-                                                        class="form-control multiple-bedroom" placeholder="0">
+                                                        class="form-control multiple-bedroom" placeholder="0" required>
                                                 </div>
                                                 <div class="col-md-2 col-lg-2 col-xl-2 mb-25">
                                                     <label
                                                         class="label-text-title color-heading font-medium mb-2">{{ __('Baths') }}</label>
                                                     <input type="number" min="0" name="multiple[bath][]"
                                                         value="{{ $propertyUnit->bath }}"
-                                                        class="form-control multiple-bath" placeholder="0">
+                                                        class="form-control multiple-bath" placeholder="0" required>
                                                 </div>
                                                 <div class="col-md-2 col-lg-2 col-xl-2 mb-25">
                                                     <label
                                                         class="label-text-title color-heading font-medium mb-2">{{ __('Kitchen') }}</label>
                                                     <input type="number" min="0" name="multiple[kitchen][]"
                                                         value="{{ $propertyUnit->kitchen }}"
-                                                        class="form-control multiple-kitchen" placeholder="0">
+                                                        class="form-control multiple-kitchen" placeholder="0" required>
                                                 </div>
                                                 <div class="col-md-2 col-lg-2 col-xl-2 mb-25">
                                                     <label

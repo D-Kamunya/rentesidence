@@ -67,6 +67,7 @@
                                                 @csrf
                                                 <input type="hidden" name="step" class="d-none" value="1">
                                                 <input type="hidden" name="id" value="{{ $tenant->id }}">
+                                                <input type="hidden" name="edit_form" value="{{ $tenant->id }}">
                                                 <input type="hidden" id="user_id" name="user_id"
                                                     value="{{ $tenant->user_id }}">
                                                 <div
@@ -332,6 +333,7 @@
                                                 @csrf
                                                 <input type="hidden" name="step" class="d-none" value="2">
                                                 <input type="hidden" name="id" value="{{ $tenant->id }}">
+                                                <input type="hidden" name="edit_form" value="{{ $tenant->id }}">
                                                 <div
                                                     class="form-card add-property-box bg-off-white theme-border radius-4 p-20">
                                                     <div class="add-property-title border-bottom pb-25 mb-25">
@@ -381,7 +383,7 @@
                                                                             <input type="text"
                                                                                 class="datepicker form-control"
                                                                                 autocomplete="off" placeholder="yy-mm-dd"
-                                                                                name="lease_start_date"
+                                                                                name="lease_start_date" id="lease_start_date"
                                                                                 value="{{ $tenant->lease_start_date }}">
                                                                             <i class="ri-calendar-2-line"></i>
                                                                         </div>
@@ -397,7 +399,7 @@
                                                                             <input type="text"
                                                                                 class="datepicker form-control"
                                                                                 autocomplete="off" placeholder="yy-mm-dd"
-                                                                                name="lease_end_date"
+                                                                                name="lease_end_date" id="lease_end_date"
                                                                                 value="{{ $tenant->lease_end_date }}">
                                                                             <i class="ri-calendar-2-line"></i>
                                                                         </div>
@@ -455,13 +457,6 @@
                                                                                                 id="unit_name">{{ $tenant->unit_name ?? __('N/A') }}</span>
                                                                                         </div>
                                                                                     </div>
-                                                                                    <div class="col-sm-6 col-md-6">
-                                                                                        <div
-                                                                                            class="property-info-item property-info-item-right font-13">
-                                                                                            <i
-                                                                                                class="ri-checkbox-circle-fill me-1 "></i>{{ __('Available For Tenant') }}
-                                                                                        </div>
-                                                                                    </div>
                                                                                 </div>
                                                                             </div>
 
@@ -479,7 +474,6 @@
                                                                 <div class="col-md-6 col-lg-4 col-xl-3 col-xxl-2 mb-25">
                                                                     <label
                                                                         class="label-text-title color-heading font-medium mb-2">{{ __('General Rent') }}
-                                                                        <span class="text-danger">*</span></label>
                                                                     <div class="input-group custom-input-group">
                                                                         <input type="number" step="any"
                                                                             class="form-control" id="general_rent"
@@ -547,7 +541,6 @@
                                                                 <div class="col-md-6 col-lg-4 mb-25">
                                                                     <label
                                                                         class="label-text-title color-heading font-medium mb-2">{{ __('Payment due on date') }}
-                                                                        <span class="text-danger">*</span></label>
                                                                     <input type="number" class="form-control"
                                                                         autocomplete="off" id="payment_due_on_date"
                                                                         placeholder="{{ __('Due Date') }}"
@@ -575,6 +568,7 @@
                                                 @csrf
                                                 <input type="hidden" name="step" class="d-none" value="3">
                                                 <input type="hidden" name="id" value="{{ $tenant->id }}">
+                                                <input type="hidden" name="edit_form" value="{{ $tenant->id }}">
                                                 <div
                                                     class="form-card add-property-box bg-off-white theme-border radius-4 p-20">
                                                     <div class="add-property-title border-bottom pb-25 mb-3">

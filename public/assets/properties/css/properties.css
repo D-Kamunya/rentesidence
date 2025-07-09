@@ -62,11 +62,22 @@
     margin: 42px 0 !important;
 }
 
-@media (min-width: 76px) and (max-width: 991.98px) {
-    .map-property-h{
-        height: 454px !important;
-    }
+.property-banner {
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    height: 300px; /* or 40vh or whatever suits you */
+    position: relative;
 }
+
+.property-banner .overlay {
+    height: 100%;
+    width: 100%;
+    background-color: rgba(0, 0, 0, 0.4); /* optional overlay for readability */
+    padding: 1rem;
+}
+
+
 
 /* single card  start*/
 
@@ -173,55 +184,6 @@
     color: var(--primary-color);
 }
 
-/* pagination color change emd */
-
-/* ------------------
-responsive css start 
-----------------*/
-
-@media (min-width: 78px) and (max-width: 1438.98px) {
-    .properties-filter {
-        flex-direction: column;
-    }
-
-    .properties-search {
-        border: 1px solid var(--border-color);
-        padding: 4px;
-        border-radius: 5px;
-    }
-}
-
-@media (min-width: 78px) and (max-width: 768.98px) {
-    .first-filter {
-        display: inline-block;
-    }
-
-    .properties-filter {
-        display: inline-block;
-    }
-
-    .recent-filter {
-        display: inline-block;
-    }
-
-    .single-filter {
-        display: inline-block;
-        margin-top: 7px;
-    }
-}
-
-@media (min-width: 78px) and (max-width: 506.98px) {
-    .properties-search input {
-        width: 100%;
-    }
-}
-/* -------------------
-responsive css end 
-------------------*/
-
-/*--------------------------------
- property-details area start
------------------------------- */
 
 .property-details-area {
     background-color: var(--bg-primary);
@@ -559,45 +521,6 @@ responsive css end
 
 /* Description area end */
 
-@media (min-width: 78px) and (max-width: 768.98px) {
-    .property-slider-area .owl-prev {
-        margin-left: 0;
-    }
-    
-    .property-slider-area .owl-next {
-        margin-right: 0;
-    }
-
-    .property-slider-area .owl-nav button {
-        width: 30px;
-        height: 30px;
-    }
-
-    .property-slider-area .owl-nav {
-        margin-top: -15px;
-    }
-
-    .property-woner-info{
-        flex-direction: column;
-    }
-
-    .property-woner-name-location {
-        text-align: center;
-    }
-
-    .location-title {
-        font-size: 33px;
-        line-height: normal;
-    }
-
-    .property-price {
-        font-size: 24px;
-    }
-
-    .property-woner-name-location p {
-        font-size: 15px;
-    }
-}
 
 /*--------------------------------
  property-details area end
@@ -765,11 +688,7 @@ model css content start
     border-radius: 4px;
 }
 
-@media (min-width: 992px){
-.customs-model.modal-lg, .modal-xl {
-    --bs-modal-width: 1100px;
-}
-}
+
 /* --------------------
 model css content end 
 ----------------------*/
@@ -826,4 +745,94 @@ model css content end
     color: #fff !important;
     background-color: var(--primary-hover-color);
     
+}
+
+
+@media (min-width: 76px) and (max-width: 991.98px) {
+    .map-property-h{
+        height: 454px !important;
+    }
+}
+
+@media (min-width: 78px) and (max-width: 1438.98px) {
+    .properties-filter {
+        flex-direction: column;
+    }
+
+    .properties-search {
+        border: 1px solid var(--border-color);
+        padding: 4px;
+        border-radius: 5px;
+    }
+}
+
+@media (min-width: 78px) and (max-width: 768.98px) {
+    .first-filter {
+        display: inline-block;
+    }
+
+    .properties-filter {
+        display: inline-block;
+    }
+
+    .recent-filter {
+        display: inline-block;
+    }
+
+    .single-filter {
+        display: inline-block;
+        margin-top: 7px;
+    }
+}
+
+@media (min-width: 78px) and (max-width: 506.98px) {
+    .properties-search input {
+        width: 100%;
+    }
+}
+
+@media (min-width: 78px) and (max-width: 768.98px) {
+    .property-slider-area .owl-prev {
+        margin-left: 0;
+    }
+    
+    .property-slider-area .owl-next {
+        margin-right: 0;
+    }
+
+    .property-slider-area .owl-nav button {
+        width: 30px;
+        height: 30px;
+    }
+
+    .property-slider-area .owl-nav {
+        margin-top: -15px;
+    }
+
+    .property-woner-info{
+        flex-direction: column;
+    }
+
+    .property-woner-name-location {
+        text-align: center;
+    }
+
+    .location-title {
+        font-size: 33px;
+        line-height: normal;
+    }
+
+    .property-price {
+        font-size: 24px;
+    }
+
+    .property-woner-name-location p {
+        font-size: 15px;
+    }
+}
+
+@media (min-width: 992px){
+    .customs-model.modal-lg, .modal-xl {
+        --bs-modal-width: 1100px;
+    }
 }
