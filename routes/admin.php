@@ -86,4 +86,11 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'middleware' => ['auth', 'a
         return response()->json(['message' => 'Cleanup completed!']);
 
     })->name('cleanup');
+
+    Route::get('/migrate', function () {
+        Artisan::call('migrate');
+
+        return response()->json(['message' => 'Migration completed!']);
+
+    })->name('migrate');
 });
