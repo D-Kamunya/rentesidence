@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\TenantCloseRequest;
 use App\Http\Requests\TenantDeleteRequest;
 use App\Http\Requests\TenantRequest;
+use App\Http\Requests\TenantEditRequest;
 use App\Models\Property;
 use App\Services\InvoiceTypeService;
 use App\Services\SmsMail\AdvantaSmsService;
@@ -101,8 +102,20 @@ class TenantController extends Controller
         return view('owner.tenants.edit', $data);
     }
 
-    public function store(TenantRequest $request)
+    public function store(Request $request)
     {
+         // Determine which validation rules to apply
+        if ($request->has('edit_form')) {
+            // Editing an existing tenant
+            $validated = app(TenantEditRequest::class)->validated();
+        } else {
+            // Creating a new tenant
+            $validated = app(TenantRequest::class)->validated();
+        }
+
+        // Now replace original $request with validated data
+        $request->merge($validated);
+
         if ($request->step == FORM_STEP_ONE) {
             return $this->tenantService->step1($request);
         } elseif ($request->step == FORM_STEP_TWO) {

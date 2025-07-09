@@ -440,9 +440,11 @@ class TenantService
     {
         DB::beginTransaction();
         try {
-            $unitExist = Tenant::where('owner_user_id', auth()->id())->where('unit_id', $request->unit_id)->where('status', TENANT_STATUS_ACTIVE)->whereNot('id', $request->id)->first();
-            if (!is_null($unitExist)) {
-                throw new Exception(__('Unit already Used'));
+            if (!empty($request->unit_id)) {
+                $unitExist = Tenant::where('owner_user_id', auth()->id())->where('unit_id', $request->unit_id)->where('status', TENANT_STATUS_ACTIVE)->whereNot('id', $request->id)->first();
+                if (!is_null($unitExist)) {
+                    throw new Exception(__('Unit already Used'));
+                }
             }
             $tenant = Tenant::where('owner_user_id', auth()->id())->findOrFail($request->id);
             $tenant->property_id = $request->property_id;

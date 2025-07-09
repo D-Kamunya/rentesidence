@@ -48,10 +48,23 @@ function stepChange(data) {
 var thisStateSelector;
 // Get unit
 $(document).on("change", ".property_id", function () {
-    thisStateSelector = $(this);
+    var selectedPropertyId = $(this).val();
     var route = $("#getPropertyWithUnitsByIdRoute").val();
+
+    if (!selectedPropertyId) {
+        // If empty, hide property info and clear unit options
+        $("#lease_start_date").val('');
+        $("#lease_end_date").val('');
+        $("#propertyInformation").addClass("d-none");
+        $(".unit_id").html('<option value="">--Select Unit--</option>');
+        $(".property-item-title").find("a").html('');
+        $(".property-item-title").find("a").attr("href", "#");
+        $(".property-item-address").find("p").html('');
+        $(".propertyImg").attr("src", '');
+        return;
+    }
     commonAjax("GET", route, getPropertyWithUnitsRes, getPropertyWithUnitsRes, {
-        property_id: $(thisStateSelector).val(),
+        property_id: selectedPropertyId,
     });
 });
 
@@ -91,20 +104,41 @@ function getPropertyWithUnitsRes(response) {
 // Show data by unit
 $(document).on("change", "#unitId", function () {
     var id = $(this).val();
+
+    if (!id) {
+        // Clear all the dependent fields since no unit is selected
+        $("#unit_name").html('');
+        $("#lease_start_date").val('');
+        $("#lease_end_date").val('');
+        $("#general_rent").val('');
+        $("#incident_receipt").val('');
+        $("#payment_due_on_date").val('');
+        $("#late_fee_type").val('');
+        $("#late_fee").val('');
+        $("#security_deposit_type").val('');
+        $("#security_deposit").val('');
+        return;
+    }
+
+    // Find the selected unit in the collection
     var unit = unitsCollection.find((x) => x.id == id);
+    
+    if (!unit) {
+        console.warn("Unit not found in collection.");
+        return;
+    }
+
+    // Populate fields
     $("#unit_name").html(unit.name);
     $("#general_rent").val(unit.general_rent);
     $("#incident_receipt").val(unit.incident_receipt);
-    if (unit.rent_type == 1) {
-        $("#payment_due_on_date").val(unit.monthly_due_day);
-    } else {
-        $("#payment_due_on_date").val(unit.yearly_due_day);
-    }
+    $("#payment_due_on_date").val(unit.rent_type == 1 ? unit.monthly_due_day : unit.yearly_due_day);
     $("#late_fee_type").val(unit.late_fee_type);
     $("#late_fee").val(unit.late_fee);
     $("#security_deposit_type").val(unit.security_deposit_type);
     $("#security_deposit").val(unit.security_deposit);
 });
+
 
 // Document remove
 $(document).on("click", ".removeDocument", function () {
