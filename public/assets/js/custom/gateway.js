@@ -237,11 +237,15 @@ function getDataEditRes(response) {
             selector.find(".key-secret-div").hide();
             selector.find(".bank-div").hide();
             selector.find(".mpesa-div").hide();
+            selector.find("select[name='mode']").prop("disabled", true);
+            selector.find("select[name='status']").prop("disabled", true);
         } else {
             selector.find(".url-div").show();
             selector.find(".key-secret-div").show();
             selector.find(".bank-div").hide();
             selector.find(".mpesa-div").hide();
+            selector.find("select[name='mode']").prop("disabled", false);
+            selector.find("select[name='status']").prop("disabled", false);
         }
     }
     var html = "";
