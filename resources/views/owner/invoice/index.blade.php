@@ -136,6 +136,7 @@
                                                 <th>{{ __('Due Date') }}</th>
                                                 <th class="tablet-l tablet-p">{{ __('Amount') }}</th>
                                                 <th class="tablet-l tablet-p">{{ __('Payment Status') }}</th>
+                                                <th class="tablet-l tablet-p">{{ __('Gateway') }}</th>
                                                 <th>{{ __('Action') }}</th>
                                             </tr>
                                         </thead>
@@ -168,7 +169,7 @@
                                                 <th>{{ __('Due Date') }}</th>
                                                 <th class="tablet-l tablet-p">{{ __('Amount') }}</th>
                                                 <th class="tablet-l tablet-p">{{ __('Payment Status') }}</th>
-                                                <th class="tablet-l">{{ __('Gateway') }}</th>
+                                                <th class="tablet-l tablet-p">{{ __('Gateway') }}</th>
                                                 <th>{{ __('Action') }}</th>
                                             </tr>
                                         </thead>

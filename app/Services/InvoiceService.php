@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\Currency;
 use App\Models\EmailTemplate;
+use App\Models\Gateway;
 use App\Models\GatewayCurrency;
 use App\Models\Invoice;
 use App\Models\InvoiceItem;
@@ -153,12 +154,15 @@ class InvoiceService
     public function getPaidInvoicesData($request)
     {
         $invoice = Invoice::where('invoices.owner_user_id', auth()->id())
+            ->leftJoin('orders', 'invoices.order_id', '=', 'orders.id')
             ->leftJoin('properties', 'invoices.property_id', '=', 'properties.id')
             ->leftJoin('property_units', 'property_units.id', '=', 'invoices.property_unit_id')
+            ->leftJoin('gateways', 'orders.gateway_id', '=', 'gateways.id')
+            ->leftJoin('file_managers', ['orders.deposit_slip_id' => 'file_managers.id', 'file_managers.origin_type' => (DB::raw("'App\\\Models\\\Order'"))])
             ->leftJoin('tenants', 'invoices.tenant_id', '=', 'tenants.id')
             ->leftJoin('users', 'tenants.user_id', '=', 'users.id') 
             ->orderByDesc('invoices.id')
-            ->select(['invoices.*','properties.name as property_name', 'property_units.unit_name', 'users.contact_number', DB::raw("CONCAT(users.first_name, ' ', users.last_name) AS tenant_full_name")])
+            ->select(['invoices.*', 'gateways.title as gatewayTitle', 'gateways.slug as gatewaySlug', 'file_managers.file_name', 'file_managers.folder_name', 'properties.name as property_name', 'property_units.unit_name', 'users.contact_number', DB::raw("CONCAT(users.first_name, ' ', users.last_name) AS tenant_full_name")])
             ->where('invoices.status', INVOICE_STATUS_PAID);
         return datatables($invoice)
             ->filterColumn('property', function ($query, $keyword) {
@@ -198,6 +202,12 @@ class InvoiceService
                 } else {
                     return '<div class="status-btn status-btn-orange font-13 radius-4">Pending</div>';
                 }
+            })
+            ->addColumn('gateway', function ($invoice) {
+                if ($invoice->gatewaySlug == 'bank') {
+                    return '<a href="' . getFileUrl($invoice->folder_name, $invoice->file_name) . '" title="' . __('Bank slip download') . '" download>' . $invoice->gatewayTitle . '</a>';
+                }
+                return $invoice->gatewayTitle;
             })
             ->addColumn('action', function ($invoice) {
                 $html = '<div class="tbl-action-btns d-inline-flex">';
@@ -831,12 +841,16 @@ class InvoiceService
             if ($request->status == INVOICE_STATUS_PAID) {
                 $invoice = Invoice::where('owner_user_id', auth()->id())->findOrFail($request->id);
                 $order = Order::find($invoice->order_id);
+                $gateway = Gateway::where(['owner_user_id' => auth()->id(), 'slug' => 'cash', 'status' => ACTIVE])->firstOrFail();
+                $gatewayCurrency = GatewayCurrency::where(['owner_user_id' => auth()->id(), 'gateway_id' => $gateway->id, 'currency' => 'KES'])->firstOrFail();
                 if (is_null($order)) {
                     $order = Order::create([
                         'user_id' => $invoice->tenant->user->id,
                         'invoice_id' => $invoice->id,
                         'amount' => $invoice->amount,
                         'system_currency' => Currency::where('current_currency', 'on')->first()->currency_code,
+                        'gateway_id' => $gateway->id,
+                        'gateway_currency' => $gatewayCurrency->currency,
                         'conversion_rate' => 1,
                         'subtotal' => $invoice->amount,
                         'total' => $invoice->amount,
