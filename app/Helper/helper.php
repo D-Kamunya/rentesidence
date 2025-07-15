@@ -4,6 +4,7 @@ use App\Models\CorePage;
 use App\Models\Currency;
 use App\Models\FileManager;
 use App\Models\Gateway;
+use App\Models\GatewayCurrency;
 use App\Models\Package;
 use App\Models\Invoice;
 use App\Models\InvoiceItem;
@@ -610,10 +611,25 @@ if (!function_exists('setOwnerGateway')) {
             ['owner_user_id' => $userId, 'title' => 'Flutterwave', 'slug' => 'flutterwave', 'status' => DEACTIVATE, 'mode' => GATEWAY_MODE_SANDBOX, 'url' => '', 'key' => '', 'secret' => '', 'image' => 'assets/images/gateway-icon/flutterwave.jpg'],
             ['owner_user_id' => $userId, 'title' => 'Mercadopago', 'slug' => 'mercadopago', 'status' => DEACTIVATE, 'mode' => GATEWAY_MODE_SANDBOX, 'url' => '', 'key' => '', 'secret' => '', 'image' => 'assets/images/gateway-icon/mercadopago.jpg'],
             ['owner_user_id' => $userId, 'title' => 'Bank', 'slug' => 'bank', 'status' => DEACTIVATE, 'mode' => GATEWAY_MODE_SANDBOX, 'url' => '', 'key' => '', 'secret' => '', 'image' => 'assets/images/gateway-icon/bank.jpg'],
-            ['owner_user_id' => $userId, 'title' => 'Cash', 'slug' => 'cash', 'status' => DEACTIVATE, 'mode' => GATEWAY_MODE_SANDBOX, 'url' => '', 'key' => '', 'secret' => '', 'image' => 'assets/images/gateway-icon/cash.jpg'],
+            ['owner_user_id' => $userId, 'title' => 'Cash', 'slug' => 'cash', 'status' => ACTIVE, 'mode' => GATEWAY_MODE_LIVE, 'url' => '', 'key' => '', 'secret' => '', 'image' => 'assets/images/gateway-icon/cash.jpg'],
             ['owner_user_id' => $userId, 'title' => 'Mpesa', 'slug' => 'mpesa', 'status' => DEACTIVATE, 'mode' => GATEWAY_MODE_SANDBOX, 'url' => '', 'key' => '', 'secret' => '', 'image' => 'assets/images/gateway-icon/mpesa.jpg'],
         ];
         Gateway::insert($data);
+        
+        // Get the Cash gateway (must use same slug as inserted)
+        $cashGateway = Gateway::where('owner_user_id', $userId)
+            ->where('slug', 'cash')
+            ->first();
+
+        // Create default currency record for Cash gateway
+        if ($cashGateway) {
+            GatewayCurrency::create([
+                'gateway_id' => $cashGateway->id,
+                'owner_user_id' => $userId,
+                'currency' => 'KES',
+                'conversion_rate' => 1,
+            ]);
+        }
     }
 }
 

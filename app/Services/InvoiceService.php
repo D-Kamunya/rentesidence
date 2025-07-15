@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\Currency;
 use App\Models\EmailTemplate;
+use App\Models\Gateway;
 use App\Models\GatewayCurrency;
 use App\Models\Invoice;
 use App\Models\InvoiceItem;
@@ -133,15 +134,21 @@ class InvoiceService
                 if ($invoice->status == INVOICE_STATUS_PENDING) {
                     $html .= '<button type="button" class="p-1 tbl-action-btn edit" data-detailsurl="' . route('owner.invoice.details', $invoice->id) . '" title="' . __('Edit') . '"><span class="iconify" data-icon="clarity:note-edit-solid"></span></button>';
                     $html .= '<button type="button" class="p-1 tbl-action-btn view" data-detailsurl="' . route('owner.invoice.details', $invoice->id) . '" title="' . __('View') . '"><span class="iconify" data-icon="carbon:view-filled"></span></button>';
+                    $html .= '<button type="button" class="p-1 tbl-action-btn payStatus" data-detailsurl="' . route('owner.invoice.details', $invoice->id) . '" title="' . __('Payment Status Change') . '"><span class="iconify" data-icon="fluent:text-change-previous-20-filled"></span></button>';
                     $html .= '<button type="button" onclick="deleteItem(\'' . route('owner.invoice.destroy', $invoice->id) . '\', \'allInvoiceDatatable\')" class="p-1 tbl-action-btn" title="' . __('Delete') . '"><span class="iconify" data-icon="ep:delete-filled"></span></button>';
                     if ($invoice->gatewaySlug == 'bank') {
                         $html .= '<a href="' . getFileUrl($invoice->folder_name, $invoice->file_name) . '"  class="p-1 tbl-action-btn" title="' . __('Bank slip download') . '" download><span class="iconify" data-icon="fa6-solid:download"></span></a>';
-                        $html .= '<button type="button" class="p-1 tbl-action-btn payStatus" data-detailsurl="' . route('owner.invoice.details', $invoice->id) . '" title="' . __('Payment Status Change') . '"><span class="iconify" data-icon="fluent:text-change-previous-20-filled"></span></button>';
                     }
                     $html .= '<button type="button" class="p-1 tbl-action-btn reminder" data-id="' . $invoice->id . '" title="' . __('Send Reminder') . '"><span class="iconify" data-icon="ri:send-plane-fill"></span></button>';
                 } elseif ($invoice->status == INVOICE_STATUS_PAID) {
                     $html .= '<button type="button" class="p-1 tbl-action-btn view" data-detailsurl="' . route('owner.invoice.details', $invoice->id) . '" title="' . __('View') . '"><span class="iconify" data-icon="carbon:view-filled"></span></button>';
-                    $html .= '<button type="button" class="p-1 tbl-action-btn reminder" data-id="' . $invoice->id . '" title="' . __('Send Reminder') . '"><span class="iconify" data-icon="ri:send-plane-fill"></span></button>';
+                    if ($invoice->gatewaySlug == 'cash' || $invoice->gatewaySlug == 'bank' || $invoice->gatewaySlug == '' || $invoice->gatewaySlug == null) {
+                        $html .= '<button type="button" class="p-1 tbl-action-btn payStatus" data-detailsurl="' . route('owner.invoice.details', $invoice->id) . '" title="' . __('Payment Status Change') . '"><span class="iconify" data-icon="fluent:text-change-previous-20-filled"></span></button>';
+                        $html .= '<button type="button" onclick="deleteItem(\'' . route('owner.invoice.destroy', $invoice->id) . '\', \'allInvoiceDatatable\')" class="p-1 tbl-action-btn" title="' . __('Delete') . '"><span class="iconify" data-icon="ep:delete-filled"></span></button>';
+                    }
+                    if ($invoice->gatewaySlug == 'bank') {
+                        $html .= '<a href="' . getFileUrl($invoice->folder_name, $invoice->file_name) . '"  class="p-1 tbl-action-btn" title="' . __('Bank slip download') . '" download><span class="iconify" data-icon="fa6-solid:download"></span></a>';
+                    }
                 }
                 $html .= '</div>';
                 return $html;
@@ -153,12 +160,15 @@ class InvoiceService
     public function getPaidInvoicesData($request)
     {
         $invoice = Invoice::where('invoices.owner_user_id', auth()->id())
+            ->leftJoin('orders', 'invoices.order_id', '=', 'orders.id')
             ->leftJoin('properties', 'invoices.property_id', '=', 'properties.id')
             ->leftJoin('property_units', 'property_units.id', '=', 'invoices.property_unit_id')
+            ->leftJoin('gateways', 'orders.gateway_id', '=', 'gateways.id')
+            ->leftJoin('file_managers', ['orders.deposit_slip_id' => 'file_managers.id', 'file_managers.origin_type' => (DB::raw("'App\\\Models\\\Order'"))])
             ->leftJoin('tenants', 'invoices.tenant_id', '=', 'tenants.id')
             ->leftJoin('users', 'tenants.user_id', '=', 'users.id') 
             ->orderByDesc('invoices.id')
-            ->select(['invoices.*','properties.name as property_name', 'property_units.unit_name', 'users.contact_number', DB::raw("CONCAT(users.first_name, ' ', users.last_name) AS tenant_full_name")])
+            ->select(['invoices.*', 'gateways.title as gatewayTitle', 'gateways.slug as gatewaySlug', 'file_managers.file_name', 'file_managers.folder_name', 'properties.name as property_name', 'property_units.unit_name', 'users.contact_number', DB::raw("CONCAT(users.first_name, ' ', users.last_name) AS tenant_full_name")])
             ->where('invoices.status', INVOICE_STATUS_PAID);
         return datatables($invoice)
             ->filterColumn('property', function ($query, $keyword) {
@@ -191,31 +201,28 @@ class InvoiceService
                 return currencyPrice(invoiceItemTotalAmount($invoice->id));
             })
             ->addColumn('status', function ($invoice) {
-                if ($invoice->status == INVOICE_STATUS_PAID) {
-                    return '<div class="status-btn status-btn-blue font-13 radius-4">Paid</div>';
-                } elseif ($invoice->status == INVOICE_STATUS_OVER_DUE) {
-                    return '<div class="status-btn status-btn-red font-13 radius-4">Due</div>';
-                } else {
-                    return '<div class="status-btn status-btn-orange font-13 radius-4">Pending</div>';
+                return '<div class="status-btn status-btn-blue font-13 radius-4">Paid</div>';
+            })
+            ->addColumn('gateway', function ($invoice) {
+                if ($invoice->gatewaySlug == 'bank') {
+                    return '<a href="' . getFileUrl($invoice->folder_name, $invoice->file_name) . '" title="' . __('Bank slip download') . '" download>' . $invoice->gatewayTitle . '</a>';
                 }
+                return $invoice->gatewayTitle ?? '';
             })
             ->addColumn('action', function ($invoice) {
                 $html = '<div class="tbl-action-btns d-inline-flex">';
-                if ($invoice->status == INVOICE_STATUS_PENDING) {
-                    $html .= '<button type="button" class="p-1 tbl-action-btn edit" data-detailsurl="' . route('owner.invoice.details', $invoice->id) . '" title="' . __('Edit') . '"><span class="iconify" data-icon="clarity:note-edit-solid"></span></button>';
-                    $html .= '<button type="button" class="p-1 tbl-action-btn view" data-detailsurl="' . route('owner.invoice.details', $invoice->id) . '" title="' . __('View') . '"><span class="iconify" data-icon="carbon:view-filled"></span></button>';
-                    $html .= '<button type="button" onclick="deleteItem(\'' . route('owner.invoice.destroy', $invoice->id) . '\', \'allInvoiceDatatable\')" class="p-1 tbl-action-btn" title="Delete"><span class="iconify" data-icon="ep:delete-filled"></span></button>';
-                    if ($invoice->gatewaySlug == 'bank') {
-                        $html .= '<a href="' . getFileUrl($invoice->folder_name, $invoice->file_name) . '"  class="p-1 tbl-action-btn" title="' . __('Bank slip download') . '" download><span class="iconify" data-icon="fa6-solid:download"></span></a>';
-                        $html .= '<button type="button" class="p-1 tbl-action-btn payStatus" data-detailsurl="' . route('owner.invoice.details', $invoice->id) . '" title="' . __('Payment Status Change') . '"><span class="iconify" data-icon="fluent:text-change-previous-20-filled"></span></button>';
-                    }
-                } elseif ($invoice->status == INVOICE_STATUS_PAID) {
-                    $html .= '<button type="button" class="p-1 tbl-action-btn view" data-detailsurl="' . route('owner.invoice.details', $invoice->id) . '" title="' . __('View') . '"><span class="iconify" data-icon="carbon:view-filled"></span></button>';
+                $html .= '<button type="button" class="p-1 tbl-action-btn view" data-detailsurl="' . route('owner.invoice.details', $invoice->id) . '" title="' . __('View') . '"><span class="iconify" data-icon="carbon:view-filled"></span></button>';
+                if ($invoice->gatewaySlug == 'cash' || $invoice->gatewaySlug == 'bank' || $invoice->gatewaySlug == '' || $invoice->gatewaySlug == null) {
+                    $html .= '<button type="button" class="p-1 tbl-action-btn payStatus" data-detailsurl="' . route('owner.invoice.details', $invoice->id) . '" title="' . __('Payment Status Change') . '"><span class="iconify" data-icon="fluent:text-change-previous-20-filled"></span></button>';
+                    $html .= '<button type="button" onclick="deleteItem(\'' . route('owner.invoice.destroy', $invoice->id) . '\', \'paidInvoiceDataTable\')" class="p-1 tbl-action-btn" title="' . __('Delete') . '"><span class="iconify" data-icon="ep:delete-filled"></span></button>';
+                }
+                if ($invoice->gatewaySlug == 'bank') {
+                    $html .= '<a href="' . getFileUrl($invoice->folder_name, $invoice->file_name) . '"  class="p-1 tbl-action-btn" title="' . __('Bank slip download') . '" download><span class="iconify" data-icon="fa6-solid:download"></span></a>';
                 }
                 $html .= '</div>';
                 return $html;
             })
-            ->rawColumns(['invoice', 'property', 'status', 'action'])
+            ->rawColumns(['invoice', 'property', 'status', 'gateway', 'action'])
             ->make(true);
     }
 
@@ -264,28 +271,18 @@ class InvoiceService
                 return currencyPrice(invoiceItemTotalAmount($invoice->id));
             })
             ->addColumn('status', function ($invoice) {
-                if ($invoice->status == INVOICE_STATUS_PAID) {
-                    return '<div class="status-btn status-btn-blue font-13 radius-4">Paid</div>';
-                } elseif ($invoice->status == INVOICE_STATUS_OVER_DUE) {
-                    return '<div class="status-btn status-btn-red font-13 radius-4">Due</div>';
-                } else {
-                    return '<div class="status-btn status-btn-orange font-13 radius-4">Pending</div>';
-                }
+                return '<div class="status-btn status-btn-orange font-13 radius-4">Pending</div>';
             })
             ->addColumn('action', function ($invoice) {
                 $html = '<div class="tbl-action-btns d-inline-flex">';
-                if ($invoice->status == INVOICE_STATUS_PENDING) {
-                    $html .= '<button type="button" class="p-1 tbl-action-btn edit" data-detailsurl="' . route('owner.invoice.details', $invoice->id) . '" title="' . __('Edit') . '"><span class="iconify" data-icon="clarity:note-edit-solid"></span></button>';
-                    $html .= '<button type="button" class="p-1 tbl-action-btn view" data-detailsurl="' . route('owner.invoice.details', $invoice->id) . '" title="' . __('View') . '"><span class="iconify" data-icon="carbon:view-filled"></span></button>';
-                    $html .= '<button type="button" onclick="deleteItem(\'' . route('owner.invoice.destroy', $invoice->id) . '\', \'allInvoiceDatatable\')" class="p-1 tbl-action-btn" title="Delete"><span class="iconify" data-icon="ep:delete-filled"></span></button>';
-                    if ($invoice->gatewaySlug == 'bank') {
-                        $html .= '<a href="' . getFileUrl($invoice->folder_name, $invoice->file_name) . '"  class="p-1 tbl-action-btn" title="' . __('Bank slip download') . '" download><span class="iconify" data-icon="fa6-solid:download"></span></a>';
-                        $html .= '<button type="button" class="p-1 tbl-action-btn payStatus" data-detailsurl="' . route('owner.invoice.details', $invoice->id) . '" title="' . __('Payment Status Change') . '"><span class="iconify" data-icon="fluent:text-change-previous-20-filled"></span></button>';
-                    } else {
-                        $html .= '<button type="button" class="p-1 tbl-action-btn payStatus" data-detailsurl="' . route('owner.invoice.details', $invoice->id) . '" title="' . __('Payment Status Change') . '"><span class="iconify" data-icon="fluent:text-change-previous-20-filled"></span></button>';
-                    }
-                } elseif ($invoice->status == INVOICE_STATUS_PAID) {
-                    $html .= '<button type="button" class="p-1 tbl-action-btn view" data-detailsurl="' . route('owner.invoice.details', $invoice->id) . '" title="' . __('View') . '"><span class="iconify" data-icon="carbon:view-filled"></span></button>';
+                $html .= '<button type="button" class="p-1 tbl-action-btn edit" data-detailsurl="' . route('owner.invoice.details', $invoice->id) . '" title="' . __('Edit') . '"><span class="iconify" data-icon="clarity:note-edit-solid"></span></button>';
+                $html .= '<button type="button" class="p-1 tbl-action-btn view" data-detailsurl="' . route('owner.invoice.details', $invoice->id) . '" title="' . __('View') . '"><span class="iconify" data-icon="carbon:view-filled"></span></button>';
+                $html .= '<button type="button" class="p-1 tbl-action-btn payStatus" data-detailsurl="' . route('owner.invoice.details', $invoice->id) . '" title="' . __('Payment Status Change') . '"><span class="iconify" data-icon="fluent:text-change-previous-20-filled"></span></button>';
+                $html .= '<button type="button" onclick="deleteItem(\'' . route('owner.invoice.destroy', $invoice->id) . '\', \'pendingInvoiceDatatable\')" class="p-1 tbl-action-btn" title="Delete"><span class="iconify" data-icon="ep:delete-filled"></span></button>';
+                $html .= '<button type="button" class="p-1 tbl-action-btn reminder" data-id="' . $invoice->id . '" title="' . __('Send Reminder') . '"><span class="iconify" data-icon="ri:send-plane-fill"></span></button>';
+                
+                if ($invoice->gatewaySlug == 'bank') {
+                    $html .= '<a href="' . getFileUrl($invoice->folder_name, $invoice->file_name) . '"  class="p-1 tbl-action-btn" title="' . __('Bank slip download') . '" download><span class="iconify" data-icon="fa6-solid:download"></span></a>';
                 }
                 $html .= '</div>';
                 return $html;
@@ -299,10 +296,12 @@ class InvoiceService
         $invoice = Invoice::query()
             ->join('orders', 'invoices.order_id', '=', 'orders.id')
             ->join('gateways', 'orders.gateway_id', '=', 'gateways.id')
+            ->leftJoin('properties', 'invoices.property_id', '=', 'properties.id')
+            ->leftJoin('property_units', 'property_units.id', '=', 'invoices.property_unit_id')
             ->join('file_managers', ['orders.deposit_slip_id' => 'file_managers.id', 'file_managers.origin_type' => (DB::raw("'App\\\Models\\\Order'"))])
             ->leftJoin('tenants', 'invoices.tenant_id', '=', 'tenants.id')
             ->leftJoin('users', 'tenants.user_id', '=', 'users.id') 
-            ->select(['invoices.*', 'gateways.title as gatewayTitle', 'gateways.slug as gatewaySlug', 'file_managers.file_name', 'file_managers.folder_name', 'users.contact_number', DB::raw("CONCAT(users.first_name, ' ', users.last_name) AS tenant_full_name")])
+            ->select(['invoices.*', 'properties.name as property_name', 'property_units.unit_name', 'gateways.title as gatewayTitle', 'gateways.slug as gatewaySlug', 'file_managers.file_name', 'file_managers.folder_name', 'users.contact_number', DB::raw("CONCAT(users.first_name, ' ', users.last_name) AS tenant_full_name")])
             ->where('gateways.slug', 'bank')
             ->where('invoices.owner_user_id', auth()->id())
             ->orderByDesc('invoices.id')
@@ -338,15 +337,10 @@ class InvoiceService
                 return currencyPrice(invoiceItemTotalAmount($invoice->id));
             })
             ->addColumn('gateway', function ($invoice) {
-                if ($invoice->gatewaySlug == 'bank') {
-                    return '<a href="' . getFileUrl($invoice->folder_name, $invoice->file_name) . '" title="Bank slip download" download>' . $invoice->gatewayTitle . '</a>';
-                }
-                return $invoice->gatewayTitle;
+                return '<a href="' . getFileUrl($invoice->folder_name, $invoice->file_name) . '" title="Bank slip download" download>' . $invoice->gatewayTitle . '</a>';
             })
             ->addColumn('status', function ($invoice) {
-                if ($invoice->status == INVOICE_STATUS_PAID) {
-                    return '<div class="status-btn status-btn-blue font-13 radius-4">Paid</div>';
-                } elseif ($invoice->status == INVOICE_STATUS_OVER_DUE) {
+                if ($invoice->status == INVOICE_STATUS_OVER_DUE) {
                     return '<div class="status-btn status-btn-red font-13 radius-4">Due</div>';
                 } else {
                     return '<div class="status-btn status-btn-orange font-13 radius-4">Pending</div>';
@@ -354,17 +348,11 @@ class InvoiceService
             })
             ->addColumn('action', function ($invoice) {
                 $html = '<div class="tbl-action-btns d-inline-flex">';
-                if ($invoice->status == INVOICE_STATUS_PENDING) {
-                    $html .= '<button type="button" class="p-1 tbl-action-btn edit" data-detailsurl="' . route('owner.invoice.details', $invoice->id) . '" title="' . __('Edit') . '"><span class="iconify" data-icon="clarity:note-edit-solid"></span></button>';
-                    $html .= '<button type="button" class="p-1 tbl-action-btn view" data-detailsurl="' . route('owner.invoice.details', $invoice->id) . '" title="' . __('View') . '"><span class="iconify" data-icon="carbon:view-filled"></span></button>';
-                    $html .= '<button type="button" onclick="deleteItem(\'' . route('owner.invoice.destroy', $invoice->id) . '\', \'allInvoiceDatatable\')" class="p-1 tbl-action-btn" title="' . __('Delete') . '"><span class="iconify" data-icon="ep:delete-filled"></span></button>';
-                    if ($invoice->gatewaySlug == 'bank') {
-                        $html .= '<a href="' . getFileUrl($invoice->folder_name, $invoice->file_name) . '"  class="p-1 tbl-action-btn" title="' . __('Bank slip download') . '" download><span class="iconify" data-icon="fa6-solid:download"></span></a>';
-                        $html .= '<button type="button" class="p-1 tbl-action-btn payStatus" data-detailsurl="' . route('owner.invoice.details', $invoice->id) . '" title="' . __('Payment Status Change') . '"><span class="iconify" data-icon="fluent:text-change-previous-20-filled"></span></button>';
-                    }
-                } elseif ($invoice->status == INVOICE_STATUS_PAID) {
-                    $html .= '<button type="button" class="p-1 tbl-action-btn view" data-detailsurl="' . route('owner.invoice.details', $invoice->id) . '" title="' . __('View') . '"><span class="iconify" data-icon="carbon:view-filled"></span></button>';
-                }
+                $html .= '<button type="button" class="p-1 tbl-action-btn edit" data-detailsurl="' . route('owner.invoice.details', $invoice->id) . '" title="' . __('Edit') . '"><span class="iconify" data-icon="clarity:note-edit-solid"></span></button>';
+                $html .= '<button type="button" class="p-1 tbl-action-btn view" data-detailsurl="' . route('owner.invoice.details', $invoice->id) . '" title="' . __('View') . '"><span class="iconify" data-icon="carbon:view-filled"></span></button>';
+                $html .= '<button type="button" class="p-1 tbl-action-btn payStatus" data-detailsurl="' . route('owner.invoice.details', $invoice->id) . '" title="' . __('Payment Status Change') . '"><span class="iconify" data-icon="fluent:text-change-previous-20-filled"></span></button>';
+                $html .= '<button type="button" onclick="deleteItem(\'' . route('owner.invoice.destroy', $invoice->id) . '\', \'bankPendingInvoiceDatatable\')" class="p-1 tbl-action-btn" title="' . __('Delete') . '"><span class="iconify" data-icon="ep:delete-filled"></span></button>';
+                $html .= '<a href="' . getFileUrl($invoice->folder_name, $invoice->file_name) . '"  class="p-1 tbl-action-btn" title="' . __('Bank slip download') . '" download><span class="iconify" data-icon="fa6-solid:download"></span></a>';
                 $html .= '</div>';
                 return $html;
             })
@@ -419,19 +407,16 @@ class InvoiceService
                 return currencyPrice(invoiceItemTotalAmount($invoice->id));
             })
             ->addColumn('status', function ($invoice) {
-                if ($invoice->status == INVOICE_STATUS_PAID) {
-                    return '<div class="status-btn status-btn-blue font-13 radius-4">Paid</div>';
-                } elseif ($invoice->status == INVOICE_STATUS_OVER_DUE) {
-                    return '<div class="status-btn status-btn-red font-13 radius-4">Due</div>';
-                } else {
-                    return '<div class="status-btn status-btn-orange font-13 radius-4">Pending</div>';
-                }
+                return '<div class="status-btn status-btn-red font-13 radius-4">Due</div>';
+                
             })
             ->addColumn('action', function ($invoice) {
                 return '<div class="tbl-action-btns d-inline-flex">
                             <a href="#" data-updateurl="' . route('owner.invoice.update', $invoice->id) . '" class="p-1 tbl-action-btn edit" data-id="' . $invoice->id . '" data-detailsurl="' . route('owner.invoice.details', $invoice->id) . '" title="' . __('Edit') . '"><span class="iconify" data-icon="clarity:note-edit-solid"></span></a>
                             <a href="#" class="p-1 tbl-action-btn" title="View"><span class="iconify" data-icon="carbon:view-filled"></span></a>
+                            <button type="button" class="p-1 tbl-action-btn payStatus" data-detailsurl="' . route('owner.invoice.details', $invoice->id) . '" title="' . __('Payment Status Change') . '"><span class="iconify" data-icon="fluent:text-change-previous-20-filled"></span></button>
                             <button onclick="deleteItem(\'' . route('owner.invoice.destroy', $invoice->id) . '\', \'overdueInvoiceDatatable\')" class="p-1 tbl-action-btn" title="' . __('Delete') . '"><span class="iconify" data-icon="ep:delete-filled"></span></button>
+                            <button type="button" class="p-1 tbl-action-btn reminder" data-id="' . $invoice->id . '" title="' . __('Send Reminder') . '"><span class="iconify" data-icon="ri:send-plane-fill"></span></button>
                         </div>';
             })
             ->rawColumns(['invoice', 'property','due_date', 'status', 'action'])
@@ -828,36 +813,38 @@ class InvoiceService
         DB::beginTransaction();
         try {
 
-            if ($request->status == INVOICE_STATUS_PAID) {
-                $invoice = Invoice::where('owner_user_id', auth()->id())->findOrFail($request->id);
-                $order = Order::find($invoice->order_id);
-                if (is_null($order)) {
-                    $order = Order::create([
-                        'user_id' => $invoice->tenant->user->id,
-                        'invoice_id' => $invoice->id,
-                        'amount' => $invoice->amount,
-                        'system_currency' => Currency::where('current_currency', 'on')->first()->currency_code,
-                        'conversion_rate' => 1,
-                        'subtotal' => $invoice->amount,
-                        'total' => $invoice->amount,
-                        'transaction_amount' => $invoice->amount * 1,
-                        'payment_status' => INVOICE_STATUS_PENDING,
-                        'bank_id' => null,
-                        'bank_name' => null,
-                        'bank_account_number' => null,
-                        'deposit_by' => null,
-                        'deposit_slip_id' => null
-                    ]);
-                }
-
-                $order->payment_status = INVOICE_STATUS_PAID;
-                $order->transaction_id = str_replace("-", "", uuid_create(UUID_TYPE_RANDOM));
-                $order->save();
-
-                $invoice->order_id = $order->id;
-                $invoice->status = INVOICE_STATUS_PAID;
-                $invoice->save();
+            $invoice = Invoice::where('owner_user_id', auth()->id())->findOrFail($request->id);
+            $order = Order::find($invoice->order_id);
+            $gateway = Gateway::where(['owner_user_id' => auth()->id(), 'slug' => 'cash', 'status' => ACTIVE])->firstOrFail();
+            $gatewayCurrency = GatewayCurrency::where(['owner_user_id' => auth()->id(), 'gateway_id' => $gateway->id, 'currency' => 'KES'])->firstOrFail();
+            if (is_null($order)) {
+                $order = Order::create([
+                    'user_id' => $invoice->tenant->user->id,
+                    'invoice_id' => $invoice->id,
+                    'amount' => $invoice->amount,
+                    'system_currency' => Currency::where('current_currency', 'on')->first()->currency_code,
+                    'gateway_id' => $gateway->id,
+                    'gateway_currency' => $gatewayCurrency->currency,
+                    'conversion_rate' => 1,
+                    'subtotal' => $invoice->amount,
+                    'total' => $invoice->amount,
+                    'transaction_amount' => $invoice->amount * 1,
+                    'payment_status' => INVOICE_STATUS_PENDING,
+                    'bank_id' => null,
+                    'bank_name' => null,
+                    'bank_account_number' => null,
+                    'deposit_by' => null,
+                    'deposit_slip_id' => null
+                ]);
             }
+
+            $order->payment_status = $request->status;
+            $order->transaction_id = str_replace("-", "", uuid_create(UUID_TYPE_RANDOM));
+            $order->save();
+
+            $invoice->order_id = $order->id;
+            $invoice->status = $request->status;
+            $invoice->save();
             DB::commit();
             $message = __(UPDATED_SUCCESSFULLY);
             return $this->success([], $message);

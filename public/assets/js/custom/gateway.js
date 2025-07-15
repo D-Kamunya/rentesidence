@@ -232,16 +232,37 @@ function getDataEditRes(response) {
 
         $(".mpesa-div-append").html(mpesaHtml);
     } else {
+        const modeSelect = selector.find("select[name='mode']");
+        const statusSelect = selector.find("select[name='status']");
+            
         if (response.data.gateway.slug == "cash") {
             selector.find(".url-div").hide();
             selector.find(".key-secret-div").hide();
             selector.find(".bank-div").hide();
             selector.find(".mpesa-div").hide();
+            modeSelect.on("mousedown focus", function (e) {
+                e.preventDefault();
+            }).css({
+                "pointer-events": "none",
+                "background-color": "#e9ecef", // Optional: make it look grayed out like readonly
+                "opacity": "1" // Keep text readable
+            });
+
+            statusSelect.on("mousedown focus", function (e) {
+                e.preventDefault();
+            }).css({
+                "pointer-events": "none",
+                "background-color": "#e9ecef",
+                "opacity": "1"
+            });
         } else {
             selector.find(".url-div").show();
             selector.find(".key-secret-div").show();
             selector.find(".bank-div").hide();
             selector.find(".mpesa-div").hide();
+            modeSelect.off("mousedown focus").css("pointer-events", "").css("background-color", "").css("opacity", "");
+            statusSelect.off("mousedown focus").css("pointer-events", "").css("background-color", "").css("opacity", "");
+
         }
     }
     var html = "";

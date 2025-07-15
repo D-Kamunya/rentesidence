@@ -587,6 +587,7 @@
             { data: "due_date", name: "invoices.due_date" },
             { data: "amount", name: "invoices.amount" },
             { data: "status" },
+            { data: "gateway" },
             { data: "action" },
         ],
     });
