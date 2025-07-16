@@ -100,8 +100,9 @@ class InvoiceService
             <a href="tel:' . $invoice->contact_number . '">' . $invoice->contact_number . '</a></p>';
             })
             ->addColumn('month', function ($item) {
-                $html = $item->month;
-                return $html;
+                $month = $item->month;
+                $year = Carbon::parse($item->created_at)->format('Y');
+                return $month . ' ' . $year;
             })
             ->addColumn('due_date', function ($item) {
                 $html = $item->due_date;
@@ -193,8 +194,9 @@ class InvoiceService
             <a href="tel:' . $invoice->contact_number . '">' . $invoice->contact_number . '</a></p>';
             })
             ->addColumn('month', function ($item) {
-                $html = $item->month;
-                return $html;
+                $month = $item->month;
+                $year = Carbon::parse($item->created_at)->format('Y');
+                return $month . ' ' . $year;
             })
             ->addColumn('due_date', function ($item) {
                 return $item->due_date;
@@ -260,8 +262,9 @@ class InvoiceService
             <a href="tel:' . $invoice->contact_number . '">' . $invoice->contact_number . '</a></p>';
             })
             ->addColumn('month', function ($item) {
-                $html = $item->month;
-                return $html;
+                $month = $item->month;
+                $year = Carbon::parse($item->created_at)->format('Y');
+                return $month . ' ' . $year;
             })
             ->addColumn('due_date', function ($item) {
                 $html = $item->due_date;
@@ -330,8 +333,9 @@ class InvoiceService
             <a href="tel:' . $invoice->contact_number . '">' . $invoice->contact_number . '</a></p>';
             })
             ->addColumn('month', function ($item) {
-                $html = $item->month;
-                return $html;
+                $month = $item->month;
+                $year = Carbon::parse($item->created_at)->format('Y');
+                return $month . ' ' . $year;
             })
             ->addColumn('due_date', function ($item) {
                 return $item->due_date;
@@ -394,8 +398,9 @@ class InvoiceService
             <a href="tel:' . $invoice->contact_number . '">' . $invoice->contact_number . '</a></p>';
             })
             ->addColumn('month', function ($item) {
-                $html = $item->month;
-                return $html;
+                $month = $item->month;
+                $year = Carbon::parse($item->created_at)->format('Y');
+                return $month . ' ' . $year;
             })
             ->addColumn('due_date', function ($item) {
                 $html = $item->due_date;
