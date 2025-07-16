@@ -452,7 +452,7 @@ class InvoiceService
     {
         if ($tenant==null){
             $tenant = $this->getTenant($request->property_unit_id);
-            $this->validateInvoiceExistence($request, $id);
+            $this->validateInvoiceExistence($request, $id, $tenant);
         }else{
             $tenant=$tenant;
         }
@@ -514,13 +514,14 @@ class InvoiceService
         return $tenant;
     }
 
-    private function validateInvoiceExistence($request, $id)
+    private function validateInvoiceExistence($request, $id, $tenant)
     {
         $invoiceExist = Invoice::query()
             ->where('property_id', $request->property_id)
             ->where('property_unit_id', $request->property_unit_id)
             ->where('owner_user_id', auth()->id())
             ->where('month', $request->month)
+            ->where('tenant_id', $tenant->id)
             ->whereYear('created_at', '=', date('Y'))
             ->where(function ($q) use ($id) {
                 if ($id != '') {

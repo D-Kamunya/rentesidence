@@ -48,6 +48,7 @@ class GenerateInvoice extends Command
                         ->where('property_id', $invoiceRecurring->property_id)
                         ->where('property_unit_id', $invoiceRecurring->property_unit_id)
                         ->where('month', month(now()->format('n')))
+                        ->where('tenant_id', $tenant->id)
                         ->whereYear('created_at', '=', now()->format('Y'))
                         ->exists();
                     if (!$invoiceExist) {
@@ -60,6 +61,7 @@ class GenerateInvoice extends Command
                     $invoiceExist = Invoice::query()
                         ->where('property_id', $invoiceRecurring->property_id)
                         ->where('property_unit_id', $invoiceRecurring->property_unit_id)
+                        ->where('tenant_id', $tenant->id)
                         ->whereYear('created_at', '=', now()->format('Y'))
                         ->exists();
                     if (!$invoiceExist) {
@@ -72,6 +74,7 @@ class GenerateInvoice extends Command
                     $invoiceExist = Invoice::query()
                         ->where('property_id', $invoiceRecurring->property_id)
                         ->where('property_unit_id', $invoiceRecurring->property_unit_id)
+                        ->where('tenant_id', $tenant->id)
                         ->whereDate('created_at', '>', now()->subDays($invoiceRecurring->cycle_day))
                         ->exists();
                     if (!$invoiceExist) {
