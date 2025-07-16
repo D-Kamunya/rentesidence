@@ -20,6 +20,7 @@ use Exception;
 use Illuminate\Support\Facades\DB;
 use App\Jobs\SendSmsJob;
 use App\Jobs\SendInvoiceNotificationAndEmailJob;
+use Carbon\Carbon;
 
 class InvoiceService
 {
@@ -76,7 +77,7 @@ class InvoiceService
             ->leftJoin('tenants', 'invoices.tenant_id', '=', 'tenants.id')
             ->leftJoin('users', 'tenants.user_id', '=', 'users.id') 
             ->orderByDesc('invoices.id')
-            ->select(['invoices.*', 'gateways.title as gatewayTitle', 'gateways.slug as gatewaySlug', 'file_managers.file_name', 'file_managers.folder_name', 'properties.name as property_name', 'property_units.unit_name', 'users.contact_number', DB::raw("CONCAT(users.first_name, ' ', users.last_name) AS tenant_full_name")]);
+            ->select(['invoices.*', 'gateways.title as gatewayTitle', 'gateways.slug as gatewaySlug', 'file_managers.file_name', 'file_managers.folder_name', 'properties.name as property_name', 'property_units.unit_name', 'users.contact_number', DB::raw("CONCAT(users.first_name, ' ', users.last_name) AS tenant_full_name,orders.updated_at as paidDate")]);
 
         return datatables($invoice)
             ->filterColumn('property', function ($query, $keyword) {
@@ -116,7 +117,8 @@ class InvoiceService
             })
             ->addColumn('status', function ($invoice) {
                 if ($invoice->status == INVOICE_STATUS_PAID) {
-                    return '<div class="status-btn status-btn-blue font-13 radius-4">' . __('Paid') . '</div>';
+                    $paidDate = Carbon::parse($invoice->paidDate)->format('M d, Y \a\t g:i A');
+                    return '<div class="status-btn status-btn-blue font-13 radius-4">' . __('Paid (' . $paidDate . ')') . '</div>';
                 } elseif ($invoice->status == INVOICE_STATUS_OVER_DUE) {
                     return '<div class="status-btn status-btn-red font-13 radius-4">' . __('Due') . '</div>';
                 } else {
@@ -168,7 +170,7 @@ class InvoiceService
             ->leftJoin('tenants', 'invoices.tenant_id', '=', 'tenants.id')
             ->leftJoin('users', 'tenants.user_id', '=', 'users.id') 
             ->orderByDesc('invoices.id')
-            ->select(['invoices.*', 'gateways.title as gatewayTitle', 'gateways.slug as gatewaySlug', 'file_managers.file_name', 'file_managers.folder_name', 'properties.name as property_name', 'property_units.unit_name', 'users.contact_number', DB::raw("CONCAT(users.first_name, ' ', users.last_name) AS tenant_full_name")])
+            ->select(['invoices.*', 'gateways.title as gatewayTitle', 'gateways.slug as gatewaySlug', 'file_managers.file_name', 'file_managers.folder_name', 'properties.name as property_name', 'property_units.unit_name', 'users.contact_number', DB::raw("CONCAT(users.first_name, ' ', users.last_name) AS tenant_full_name,orders.updated_at as paidDate")])
             ->where('invoices.status', INVOICE_STATUS_PAID);
         return datatables($invoice)
             ->filterColumn('property', function ($query, $keyword) {
@@ -201,7 +203,8 @@ class InvoiceService
                 return currencyPrice(invoiceItemTotalAmount($invoice->id));
             })
             ->addColumn('status', function ($invoice) {
-                return '<div class="status-btn status-btn-blue font-13 radius-4">Paid</div>';
+                $paidDate = Carbon::parse($invoice->paidDate)->format('M d, Y \a\t g:i A');
+                return '<div class="status-btn status-btn-blue font-13 radius-4">' . __('Paid (' . $paidDate . ')') . '</div>';
             })
             ->addColumn('gateway', function ($invoice) {
                 if ($invoice->gatewaySlug == 'bank') {
@@ -784,8 +787,28 @@ class InvoiceService
 
     public function getByTenantId($id)
     {
-        $invoices = Invoice::where('owner_user_id', auth()->user()->owner_user_id)->where('tenant_id', $id)->get();
-        return $invoices?->makeHidden(['updated_at', 'deleted_at', 'invoice_recurring_setting_id']);
+        $invoices = Invoice::where('invoices.owner_user_id', auth()->user()->owner_user_id)
+            ->where('invoices.tenant_id', $id)
+            ->leftJoin('orders', 'invoices.order_id', '=', 'orders.id')
+            ->orderByDesc('invoices.id')
+            ->select([
+                'invoices.*',
+                DB::raw("orders.updated_at as paidDate")
+            ])
+            ->get();
+
+        return $invoices->map(function ($invoice) {
+            // Optional: hide fields if needed
+            $invoice->makeHidden(['updated_at', 'deleted_at', 'invoice_recurring_setting_id']);
+
+            // Format the paid date
+            if ($invoice->paidDate) {
+                $invoice->paid_date_label = Carbon::parse($invoice->paidDate)->format('M d, Y \a\t g:i A');
+            } else {
+                $invoice->paid_date_label = null;
+            }
+            return $invoice;
+        });
     }
 
     public function getOrderById($id)

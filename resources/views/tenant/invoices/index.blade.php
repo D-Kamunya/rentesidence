@@ -69,7 +69,7 @@
                                                             title="{{ __('Pay Now') }}">{{ __('Pay Now') }}</a>
                                                     @elseif ($invoice->status == INVOICE_STATUS_PAID)
                                                         <div class="status-btn status-btn-green"
-                                                            title="{{ __('Paid') }}">{{ __('Paid') }}</div>
+                                                            title="{{ __('Paid') }}">{{ __('Paid') }} ({{ $invoice->paid_date_label }})</div>
                                                     @endif
                                                 </td>
                                             </tr>
