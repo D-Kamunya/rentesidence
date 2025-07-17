@@ -31,7 +31,7 @@
                                             <th>{{ __('SL') }}</th>
                                             <th class="all">{{ __('Invoice No') }}.</th>
                                             <th class="all">{{ __('Name') }}</th>
-                                            <th class="desktop">{{ __('Issue Date') }}</th>
+                                            <th class="desktop">{{ __('Invoice Month') }}</th>
                                             <th class="desktop">{{ __('Due Date') }}</th>
                                             <th class="desktop">{{ __('Amount') }}</th>
                                             <th class="all">{{ __('Receipt') }}</th>
@@ -44,7 +44,7 @@
                                                 <td>{{ $loop->iteration }}</td>
                                                 <td>{{ $invoice->invoice_no }}</td>
                                                 <td>{{ $invoice->name }}</td>
-                                                <td>{{ $invoice->created_at->format('d M Y') }}</td>
+                                                <td>{{ $invoice->month }} {{ $invoice->created_at->format('Y')}}</td>
                                                 <td>
                                                     {{ $invoice->due_date }}
                                                     @if ($invoice->status != INVOICE_STATUS_PAID)
@@ -69,7 +69,7 @@
                                                             title="{{ __('Pay Now') }}">{{ __('Pay Now') }}</a>
                                                     @elseif ($invoice->status == INVOICE_STATUS_PAID)
                                                         <div class="status-btn status-btn-green"
-                                                            title="{{ __('Paid') }}">{{ __('Paid') }}</div>
+                                                            title="{{ __('Paid') }}">{{ __('Paid') }} ({{ $invoice->paid_date_label }})</div>
                                                     @endif
                                                 </td>
                                             </tr>

@@ -178,7 +178,7 @@
                                                     <input type="number" step="any" min="0"
                                                         name="propertyUnit[monthly_due_day][]"
                                                         value="{{ $propertyUnit->monthly_due_day }}"
-                                                        class="form-control" placeholder="Type day of month: 1 to 30" required>
+                                                        class="form-control" placeholder="Type day of month: 1 to 30">
                                                 </div>
                                             </div>
                                         </div>
@@ -195,7 +195,7 @@
                                                         name="propertyUnit[yearly_due_day][]"
                                                         value="{{ $propertyUnit->yearly_due_day }}"
                                                         class="form-control"
-                                                        placeholder="{{ __('Type month of year: 1 to 12') }}" required>
+                                                        placeholder="{{ __('Type month of year: 1 to 12') }}">
                                                 </div>
                                             </div>
                                         </div>
@@ -244,7 +244,7 @@
                                                                 name="propertyUnit[lease_payment_due_date][]"
                                                                 value="{{ $propertyUnit->lease_payment_due_date }}"
                                                                 class="datepicker form-control" autocomplete="off"
-                                                                placeholder="dd-mm-yy" required>
+                                                                placeholder="dd-mm-yy">
                                                             <i class="ri-calendar-2-line"></i>
                                                         </div>
                                                     </div>
