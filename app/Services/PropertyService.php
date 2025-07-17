@@ -8,6 +8,9 @@ use App\Models\PropertyDetail;
 use App\Models\PropertyImage;
 use App\Models\PropertyUnit;
 use App\Models\Tenant;
+use App\Models\InvoiceRecurringSetting;
+use App\Models\InvoiceRecurringSettingItem;
+use App\Models\InvoiceType;
 use App\Traits\ResponseTrait;
 use Exception;
 use Illuminate\Support\Facades\Log;
@@ -459,6 +462,8 @@ public function getEmptyUnitsByProperty($propertyId)
             $property_unit->description = $request->description;
             $property_unit->save();
 
+            $this->updateRecurringRentAmounts($property_unit->id, $property_unit->general_rent);
+
             if (isset($request->unit_image)) {
                 $exitFile = FileManager::where('origin_type', 'App\Models\PropertyUnit')->where('origin_id', $property_unit->id)->first();
                 if ($exitFile) {
@@ -599,6 +604,7 @@ public function getEmptyUnitsByProperty($propertyId)
                 $property_unit->lease_end_date = ($request->propertyUnit['rent_type'][$i] == PROPERTY_UNIT_RENT_TYPE_CUSTOM) ? date('Y-m-d', strtotime($request->propertyUnit['lease_end_date'][$i])) : null;
                 $property_unit->lease_payment_due_date = ($request->propertyUnit['rent_type'][$i] == PROPERTY_UNIT_RENT_TYPE_CUSTOM) ? date('Y-m-d', strtotime($request->propertyUnit['lease_payment_due_date'][$i])) : null;
                 $property_unit->save();
+                $this->updateRecurringRentAmounts($property_unit->id, $property_unit->general_rent);
             }
             DB::commit();
             $response['property'] = $property;
@@ -874,4 +880,37 @@ public function getEmptyUnitsByProperty($propertyId)
             return redirect()->back()->with('error', $e->getMessage());
         }
     }
+
+    public function updateRecurringRentAmounts($unitId, $newRent)
+    {
+        $rentType = InvoiceType::where('name', 'Rent')
+                    ->where('owner_user_id', auth()->id())
+                    ->first();
+        if (!$rentType) return;
+
+        // Fetch ALL recurring settings for the given unit
+        $recurringSettings = InvoiceRecurringSetting::where('property_unit_id', $unitId)->get();
+
+        foreach ($recurringSettings as $setting) {
+            $rentItems = $setting->items()
+                ->where('invoice_type_id', $rentType->id)
+                ->get();
+
+            if ($rentItems->isEmpty()) {
+                continue;
+            }
+
+            $totalOldAmount = $rentItems->sum('amount');
+            $totalNewAmount = $rentItems->count() * $newRent;
+
+            foreach ($rentItems as $item) {
+                $item->amount = $newRent;
+                $item->save();
+            }
+
+            $setting->amount = $setting->amount - $totalOldAmount + $totalNewAmount;
+            $setting->save();
+        }
+    }
+
 }
