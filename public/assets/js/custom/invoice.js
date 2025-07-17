@@ -270,7 +270,7 @@
             getPropertyUnitsRoute,
             getPropertyUnitsRes,
             getPropertyUnitsRes,
-            { property_id: property_id }
+            { property_id: property_id,active_tenants: true }
         );
     }
 

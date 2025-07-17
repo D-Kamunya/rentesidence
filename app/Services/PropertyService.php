@@ -832,18 +832,37 @@ public function getEmptyUnitsByProperty($propertyId)
         }
     }
 
-    public function getUnitsByPropertyId($id)
+    public function getUnitsByPropertyId($id,$activeTenants)
     {
         $propertyUnits = PropertyUnit::query()
             ->leftJoin('tenants', 'property_units.id', '=', 'tenants.unit_id')
             ->leftJoin('users', function ($q) {
                 $q->on('tenants.user_id', 'users.id')->whereNull('users.deleted_at');
             })
-            ->leftJoin('file_managers', ['property_units.id' => 'file_managers.origin_id', 'file_managers.origin_type' => (DB::raw("'App\\\Models\\\PropertyUnit'"))])
-            ->select('property_units.*', 'tenants.status as tenant_status', 'tenants.user_id', 'users.first_name', 'users.last_name', 'users.email', 'file_managers.file_name', 'file_managers.folder_name')
-            ->where('property_units.property_id', $id)
+            ->leftJoin('file_managers', function ($q) {
+                $q->on('property_units.id', '=', 'file_managers.origin_id')
+                ->where('file_managers.origin_type', '=', 'App\\Models\\PropertyUnit');
+            })
+            ->select(
+                'property_units.*',
+                'tenants.status as tenant_status',
+                'tenants.user_id',
+                'users.first_name',
+                'users.last_name',
+                'users.email',
+                'file_managers.file_name',
+                'file_managers.folder_name'
+            )
+            ->where('property_units.property_id', $id);
+
+        if ($activeTenants) {
+            $propertyUnits->where('tenants.status', TENANT_STATUS_ACTIVE);
+        }
+
+        $propertyUnits = $propertyUnits
             ->groupBy('property_units.id')
             ->get();
+
         return $this->success($propertyUnits);
     }
 

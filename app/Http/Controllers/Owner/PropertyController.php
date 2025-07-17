@@ -219,7 +219,7 @@ class PropertyController extends Controller
 
     public function getPropertyUnits(Request $request)
     {
-        return $this->propertyService->getUnitsByPropertyId($request->property_id);
+        return $this->propertyService->getUnitsByPropertyId($request->property_id,filter_var($request->active_tenants, FILTER_VALIDATE_BOOLEAN));
     }
 
     public function getPropertyWithUnitsById(Request $request)
