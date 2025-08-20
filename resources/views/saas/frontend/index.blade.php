@@ -1,665 +1,369 @@
 @extends('saas.frontend.layouts.app')
-
 @section('content')
-    @if (getOption('home_hero_section_status', 1) == 1)
-        <header id="home" class="hero-area position-relative">
-            <div class="hero-area-top-part position-relative">
-                <div class="container">
-                    <div class="row align-items-center justify-content-center">
-                        <div class="col-md-12 col-lg-12 col-xl-8">
-                            <div class="hero-content text-center position-relative">
-                                <h1 class="hero-main-title">
-                                    {!! nl2br(getOption('home_hero_title', 'Property Management Software Made Easy')) !!}</h1>
-                                <p class="hero-sub-title">
-                                    {!! getOption('home_hero_summery') !!}
-                                </p>
-                                <a href="{{ route('frontend') }}#contact-us" class="theme-btn position-relative"
-                                    title="{{ __('Request a Demo') }}">{{ __('Request a Demo') }}</a>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <div class="hero-area-bottom-part position-relative">
-                <div class="container">
-                    <div class="row justify-content-center">
-                        <div class="col-md-12 col-lg-12 col-xl-12">
-                            <div class="hero-area-img position-relative">
-                                <img src="{{ asset('frontend/assets/img/hero-round-strock.png') }}"
-                                    alt="{!! nl2br(getOption('app_name')) !!}" class="img-fluid hero-strock-img position-absolute">
-                                <div class="hero-backdrop-strock-wrap position-absolute">
-                                </div>
-                                <div class="hero-main-big-img-wrap position-relative text-center">
-                                    <img src="{{ getSettingImage('home_hero_image') }}" alt="{!! nl2br(getOption('app_name')) !!}"
-                                        class="img-fluid">
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </header>
-    @endif
 
-    @if (getOption('home_feature_section_status'))
-        <section id="feature" class="generate-content-area section-t-space">
-            <div class="container">
-                <div class="row">
-                    <div class="col-md-12">
-                        <div class="section-title">
-                            <h6 class="section-tag-heading green-color">{!! nl2br(getOption('home_features_name')) !!}</h6>
-                            <h2 class="section-heading">{!! nl2br(getOption('home_features_title')) !!}</h2>
-                            <p class="section-sub-heading">{!! nl2br(getOption('home_features_summery')) !!}</p>
-                        </div>
-                    </div>
-                </div>
-                <div class="generate-content-row-wrap">
-                    <div class="row">
-                        <div class="col-md-12 col-lg-6 col-xl-6 col-xxl-6">
-                            <div class="faq-content-box faq-left-part generate-content-faq">
-                                <div class="accordion" id="accordionExample3">
-                                    @foreach ($features as $key => $feature)
-                                        <div class="accordion-item">
-                                            <h4 class="accordion-header" id="headingEleven{{ $key }}">
-                                                <button
-                                                    class="accordion-button font-semibold {{ $key != 0 ? 'collapsed' : '' }}"
-                                                    type="button" data-bs-toggle="collapse"
-                                                    data-bs-target="#collapseEleven{{ $key }}" aria-expanded="true"
-                                                    aria-controls="collapseOne">
-                                                    {{ $feature->title }}
-                                                </button>
-                                            </h4>
-                                            <div id="collapseEleven{{ $key }}"
-                                                class="accordion-collapse collapse {{ $key == 0 ? 'show' : '' }}"
-                                                aria-labelledby="headingEleven{{ $key }}"
-                                                data-bs-parent="#accordionExample3">
-                                                <div class="accordion-body">
-                                                    {!! nl2br($feature->summary) !!}
-                                                </div>
-                                            </div>
-                                        </div>
-                                    @endforeach
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-md-12 col-lg-6 col-xl-6 col-xxl-6">
-                            <div
-                                class="generate-content-right feature-content-right bg-secondary text-center position-relative">
-                                <img src="{{ getSettingImage('home_features_image') }}" alt="{!! nl2br(getOption('app_name')) !!}"
-                                    class="img-fluid">
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </section>
-    @endif
+{{-- Hero Section --}}
+<section class="hero-silhouette">
+  <div class="container">
+      <h1 class="display-5 fw-bold mb-3">
+          Property Management Made <span style="color:#3685FC">Simple</span>
+      </h1>
+      <p class="lead text-muted mx-auto" style="max-width: 720px;">
+          Streamline rent collection, manage tenants, and track maintenance in one beautiful dashboard.
+      </p>
 
-    @if (getOption('home_about_us_section_status', 1) == ACTIVE)
-        <section id="about" class="about-us-area section-t-space">
-            <div class="container position-relative">
-                <img src="{{ asset('frontend/assets/img/about-us-bg-strock.png') }}" alt="{!! nl2br(getOption('app_name')) !!}"
-                    class="img-fluid about-us-bg-strock-img position-absolute">
+      <a href="{{ route('frontend') }}#contact-us"
+         class="theme-btn position-relative mt-4"
+         title="{{ __('Get Started') }}">
+          {{ __('Get Started') }} 
+          <span class="iconify" data-icon="akar-icons:arrow-right"></span>
+      </a>
+      <div class="container text-center">
+        <div class="d-flex justify-content-center mt-4 position-relative property-stack" style="padding-top: 30px;">
+            <img src="{{ asset('assets/images/properties-img/1.jpg') }}" alt="Property 1" class="property-img property-img-left">
+            <img src="{{ asset('assets/images/properties-img/2.jpg') }}" alt="Property 2" class="property-img property-img-center">
+            <img src="{{ asset('assets/images/properties-img/3.jpg') }}" alt="Property 3" class="property-img property-img-right">
+        </div> 
+    </div>
+  </div>
+</section>
 
-                <div class="row">
-                    <div class="col-md-12">
-                        <div class="section-title">
-                            <h6 class="section-tag-heading green-color">{!! nl2br(getOption('home_about_us_name')) !!}</h6>
-                            <h2 class="section-heading">{!! nl2br(getOption('home_about_us_title')) !!}</h2>
-                        </div>
-                    </div>
-                </div>
-                <div class="row">
-                    <div class="col-12 col-md-12">
-                        <div class="about-top-img-wrap radius-20 position-relative mb-25">
-                            <img src="{{ getSettingImage('home_about_us_image') }}" alt="{!! nl2br(getOption('app_name')) !!}"
-                                class="img-fluid w-100">
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </section>
-    @endif
+{{-- Key Features --}}
 
-    @if (getOption('home_how_it_word_section_status', 1) == ACTIVE)
-        <!-- How It Works Area Start -->
-        <section id="how-it-works" class="how-it-works-area section-t-small-space section-b-space position-relative">
-            <div class="container">
-                <div class="row">
-                    <div class="col-md-12">
-                        <div class="section-title">
-                            <h6 class="section-tag-heading green-color">{!! nl2br(getOption('home_how_it_word_section_name')) !!}
-                            </h6>
-                            <h2 class="section-heading">{!! nl2br(getOption('home_how_it_word_section_title')) !!}</h2>
-                            <p class="section-sub-heading">{!! nl2br(getOption('home_how_it_word_section_summery')) !!}</p>
-                        </div>
-                    </div>
-                </div>
-                <div class="how-it-works-wrap position-relative">
-                    @foreach ($howItWorks as $howItWork)
-                        <div class="how-it-works-item">
-                            <div class="row">
-                                <div class="col-12">
-                                    <div
-                                        class="how-it-works-area row align-items-center justify-content-center position-relative">
-                                        <div class="col-md-6">
-                                            <div class="how-it-works-item-left position-relative">
-                                                <img src="{{ asset('frontend/assets/img/how-it-works-strock-bg1.png') }}"
-                                                    alt="{!! nl2br(getOption('app_name')) !!}"
-                                                    class="img-fluid position-absolute how-it-works-strock-bg">
-                                                <img src="{{ $howItWork->image }}" alt="{!! nl2br(getOption('app_name')) !!}"
-                                                    class="img-fluid position-relative how-it-works-main-img">
-                                            </div>
-                                        </div>
-                                        <div class="col-md-6">
-                                            <div class="how-it-works-item-right">
-                                                <h3 class="how-it-works-item-title font-semi-bold">{{ $howItWork->title }}
-                                                </h3>
-                                                <p class="mt-25">{{ $howItWork->summary }}</p>
-                                                @if ($howItWork->content)
-                                                    <ul class="how-it-works-features mt-25">
-                                                        @foreach (explode(',', $howItWork->content) as $content)
-                                                            <li class="d-flex mb-3">
-                                                                <span
-                                                                    class="price-check-icon flex-shrink-0 d-inline-flex align-items-center justify-content-center status-btn-blue radius-50 me-2">
-                                                                    <span class="iconify font-16"
-                                                                        data-icon="material-symbols:check-small-rounded"></span>
-                                                                </span>
-                                                                <span class="flex-grow-1">{{ $content }}</span>
-                                                            </li>
-                                                        @endforeach
-                                                    </ul>
-                                                @endif
-                                            </div>
-                                        </div>
-                                        <div class="timeline-number position-absolute">
-                                            {{ $loop->iteration >= 10 ? $loop->iteration : '0' . $loop->iteration }}
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    @endforeach
-                </div>
+<section class="py-5 bg-light">
+    <div id="features" class="container">
+        <h3 class="text-center mb-4 fw-bold">What we're all about</h3>
+        <div id="featuresCarousel" 
+             class="carousel slide" 
+             data-bs-ride="carousel" 
+             data-bs-interval="3000" 
+             data-bs-wrap="true">
 
-            </div>
-        </section>
-        <!-- How It Works Area End -->
-    @endif
-
-    @if (getOption('home_core_pages_section_status', 1) == ACTIVE)
-        <!-- Core Pages Area Start -->
-        <section id="core-pages" class="core-pages-area bg-secondary section-t-space section-b-space">
-            <div class="container">
-                <div class="row">
-                    <div class="col-md-12">
-                        <div class="section-title">
-                            <h6 class="section-tag-heading green-color">{!! nl2br(getOption('home_core_pages_section_name')) !!}
-                            </h6>
-                            <h2 class="section-heading">{!! nl2br(getOption('home_core_pages_section_title')) !!}</h2>
-                            <p class="section-sub-heading">
-                                {!! nl2br(getOption('home_core_pages_section_summery')) !!}
-                            </p>
-                        </div>
-                    </div>
-                </div>
-                <div class="row">
-                    <div class="col-md-12">
-                        <div class="core-pages-tab">
-                            <div class="core-pages-nav-tabs-wrap">
-                                <ul class="nav nav-tabs core-pages-nav-tabs justify-content-center mx-auto" id="myTab"
-                                    role="tablist">
-                                    @foreach ($corePages as $key => $corePage)
-                                        <li class="nav-item" role="presentation">
-                                            <button class="nav-link {{ $key == 0 ? 'active' : '' }}"
-                                                id="dashboard-tab{{ $key }}" data-bs-toggle="tab"
-                                                data-bs-target="#dashboard-tab-pane{{ $key }}" type="button"
-                                                role="tab" aria-controls="dashboard-tab-pane{{ $key }}"
-                                                aria-selected="true">{{ $corePage->name }}</button>
-                                        </li>
-                                    @endforeach
-                                </ul>
-                            </div>
-                            <div class="tab-content core-pages-tab-content" id="myTabContent">
-                                @foreach ($corePages as $key => $corePage)
-                                    <div class="tab-pane fade {{ $key == 0 ? 'show active' : '' }}"
-                                        id="dashboard-tab-pane{{ $key }}" role="tabpanel"
-                                        aria-labelledby="dashboard-tab{{ $key }}" tabindex="0">
-                                        <div class="core-pages-tab-content">
-                                            <div class="row align-items-center">
-                                                <div class="col-md-6 col-lg-7">
-                                                    <div class="core-pages-content-left position-relative">
-                                                        <img src="{{ $corePage->image }}" alt="{!! nl2br(getOption('app_name')) !!}"
-                                                            class="img-fluid core-pages-main-img position-relative">
-                                                    </div>
-                                                </div>
-                                                <div class="col-md-6 col-lg-5">
-                                                    <div class="core-pages-content-right">
-                                                        <h3 class="mb-20 font-semi-bold">{{ $corePage->title }}</h3>
-                                                        <p>{{ $corePage->summary }}</p>
-                                                        <ul class="pricing-features">
-                                                            @if ($corePage->content)
-                                                                @foreach (explode(',', $corePage->content) as $content)
-                                                                    <li class="d-flex align-items-center mb-3">
-                                                                        <span
-                                                                            class="price-check-icon flex-shrink-0 d-inline-flex align-items-center justify-content-center status-btn-blue radius-50 me-2">
-                                                                            <span class="iconify font-16"
-                                                                                data-icon="material-symbols:check-small-rounded"></span>
-                                                                        </span>
-                                                                        <span
-                                                                            class="flex-grow-1">{{ $content }}</span>
-                                                                    </li>
-                                                                @endforeach
-                                                            @endif
-                                                        </ul>
-                                                    </div>
-                                                </div>
-                                            </div>
+            <div class="carousel-inner">
+                @php
+                    $features = [
+                        ['icon' => 'mdi:home', 'title' => 'Vacant Unit Listings', 'desc' => 'Vacant units are auto listed to our house hunt page to reduce vacancies.'],
+                        ['icon' => 'mdi:shield-check', 'title' => 'Automate rent collection', 'desc' => 'Centresidence sends rent invoices, tracks payments, and manages tenant queries automatically.'],
+                        ['icon' => 'mdi:chart-bar', 'title' => 'Ticketing System', 'desc' => 'Replace calls with a smart ticketing system. Tenants submit maintenance requests and photo evidence directly from their accounts.'],
+                        ['icon' => 'mdi:bell-outline', 'title' => 'Notice Board', 'desc' => 'Make important announcements to your tenants easily within their accounts'],
+                        ['icon' => 'mdi:search', 'title' => 'Tenant Screening', 'desc' => 'Centresidence auto-screens new tenants, flags behavioral issues from past records, and alerts you instantly.'],
+                        ['icon' => 'mdi:shop', 'title' => 'Marketplace', 'desc' => 'Centresidence’s marketplace lets you earn extra by selling to tenants—SMS alerts and direct payments included.'],
+                        ['icon' => 'mdi:chart-line', 'title' => 'Reports & Insights', 'desc' => 'Get detailed reports to optimize property management.'],
+                        ['icon' => 'mdi:cloud-check', 'title' => 'Cloud Access', 'desc' => 'Access your dashboard from anywhere, anytime.'],
+                    ];
+                @endphp
+                @foreach(array_chunk($features, 4) as $index => $featureGroup)
+                    <div class="carousel-item {{ $index == 0 ? 'active' : '' }}">
+                        <div class="row text-center">
+                            @foreach($featureGroup as $f)
+                                <div class="col-md-3">
+                                    <div class="card feature-card border-0 h-100 shadow-hover">
+                                        <div class="card-body py-4">
+                                            <span class="iconify fs-1" data-icon="{{ $f['icon'] }}" style="color: #3685FC;"></span>
+                                            <h5 class="fw-bold mt-3">{{ $f['title'] }}</h5>
+                                            <p class="text-muted small">{{ $f['desc'] }}</p>
                                         </div>
-                                    </div>
-                                @endforeach
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </section>
-        <!-- Core Pages Area End -->
-    @endif
-    @if (getOption('home_pricing_section_status', 1) == ACTIVE)
-        <!-- Pricing Area Start -->
-        <section id="pricing" class="pricing-area section-t-space bg-white">
-            <div class="pricing-area-top-part text-center position-relative">
-                <div class="container position-relative">
-                    <div class="row">
-                        <div class="col-md-12 position-relative">
-                            <div class="pricing-top-part-content-wrap">
-                                <div class="pricing-top-part-content position-relative">
-                                    <div class="section-title">
-                                        <h6 class="section-tag-heading green-color">
-                                            {!! nl2br(getOption('home_price_section_name')) !!}</h6>
-                                        <h2 class="section-heading text-white">{!! nl2br(getOption('home_price_section_title')) !!}
-                                        </h2>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <div class="pricing-area-bottom-part position-relative">
-                <div class="container">
-                    <div class="row">
-                        <div class="col-md-12">
-                            <!-- Choose a plan content Start -->
-                            <div class="choose-plan-area">
-                                <div class="pricing-plan-area">
-                                    <div class="row price-table-wrap">
-                                        @foreach ($packages as $package)
-                                            <div class="col-md-6 col-lg-4 mb-25 singlePackage">
-                                                <form action="{{ route('owner.subscription.index') }}" method="GET">
-                                                    <input type="hidden" name="id" value="{{ $package->id }}">
-                                                    <input type="hidden" class="plan_type" name="duration_type"
-                                                        value="1">
-                                                    <input type="hidden" name="per_monthly_price"
-                                                        value="{{ $package->per_monthly_price }}">
-                                                    <input type="hidden" name="per_yearly_price"
-                                                        value="{{ $package->per_yearly_price }}">
-                                                    <div
-                                                        class="price-card-item h-100 p-30 {{ $package->is_default == 1 ? 'active' : '' }}">
-                                                        <h4 class="font-medium price-table-title">{{ $package->name }}
-                                                        </h4>
-                                                        <hr>
-                                                        <h2 class="price-title mb-4">
-                                                            {{ currencyPrice($package->monthly_price) }}<span
-                                                                class="font-18 font-semi-bold">/{{ __('monthly') }}</span>
-                                                        </h2>
-                                                        @if (in_array($package->type, [PACKAGE_TYPE_PROPERTY, PACKAGE_TYPE_UNIT, PACKAGE_TYPE_TENANT]))
-                                                            <p class="font-13 font-medium price-monthly per_monthly_price">
-                                                                {{ currencyPrice($package->per_monthly_price) }}*1={{ $package->per_monthly_price * 1 }}
-                                                            </p>
-                                                            <p
-                                                                class="font-13 font-medium d-none price-yearly per_yearly_price">
-                                                                {{ currencyPrice($package->per_yearly_price) }}*1={{ $package->per_yearly_price * 1 }}
-                                                            </p>
-                                                        @endif
-                                                        <ul class="pricing-features set-auto-height">
-                                                            @if ($package->type == PACKAGE_TYPE_PROPERTY)
-                                                                <li class="d-flex align-items-center mb-3">
-                                                                    <span
-                                                                        class="price-check-icon flex-shrink-0 d-inline-flex align-items-center justify-content-center status-btn-blue radius-50 me-2">
-                                                                        <span class="iconify font-16"
-                                                                            data-icon="material-symbols:check-small-rounded"></span>
-                                                                    </span>
-                                                                    <span
-                                                                        class="flex-grow-1">{{ __('Add ' . currencyPrice($package->per_monthly_price) . ' Per Properties') }}</span>
-                                                                </li>
-                                                            @elseif ($package->type == PACKAGE_TYPE_UNIT)
-                                                                <li class="d-flex align-items-center mb-3">
-                                                                    <span
-                                                                        class="price-check-icon flex-shrink-0 d-inline-flex align-items-center justify-content-center status-btn-blue radius-50 me-2">
-                                                                        <span class="iconify font-16"
-                                                                            data-icon="material-symbols:check-small-rounded"></span>
-                                                                    </span>
-                                                                    <span
-                                                                        class="flex-grow-1">{{ __('Add ' . currencyPrice($package->per_monthly_price) . ' Per Units') }}</span>
-                                                                </li>
-                                                            @elseif ($package->type == PACKAGE_TYPE_TENANT)
-                                                                <li class="d-flex align-items-center mb-3">
-                                                                    <span
-                                                                        class="price-check-icon flex-shrink-0 d-inline-flex align-items-center justify-content-center status-btn-blue radius-50 me-2">
-                                                                        <span class="iconify font-16"
-                                                                            data-icon="material-symbols:check-small-rounded"></span>
-                                                                    </span>
-                                                                    <span
-                                                                        class="flex-grow-1">{{ __('Add ' . currencyPrice($package->per_monthly_price) . ' Per Tenants') }}</span>
-                                                                </li>
-                                                            @endif
-
-                                                            <li class="d-flex align-items-center mb-3">
-                                                                <span
-                                                                    class="price-check-icon flex-shrink-0 d-inline-flex align-items-center justify-content-center status-btn-blue radius-50 me-2">
-                                                                    <span class="iconify font-16"
-                                                                        data-icon="material-symbols:check-small-rounded"></span>
-                                                                </span>
-                                                                <span>
-                                                                    {{ $package->max_maintainer == -1 ? __('Add Unlimited Maintainers') : __('Add ' . $package->max_maintainer . ' Maintainers') }}</span>
-                                                            </li>
-                                                            <li class="d-flex align-items-center mb-3">
-                                                                <span
-                                                                    class="price-check-icon flex-shrink-0 d-inline-flex align-items-center justify-content-center status-btn-blue radius-50 me-2">
-                                                                    <span class="iconify font-16"
-                                                                        data-icon="material-symbols:check-small-rounded"></span>
-                                                                </span>
-                                                                <span>
-                                                                    {{ $package->max_invoice == -1 ? __('Unlimited Invoice Generate') : __('Add ' . $package->max_invoice . ' Invoices') }}</span>
-                                                            </li>
-                                                            <li class="d-flex align-items-center mb-3">
-                                                                <span
-                                                                    class="price-check-icon flex-shrink-0 d-inline-flex align-items-center justify-content-center status-btn-blue radius-50 me-2">
-                                                                    <span class="iconify font-16"
-                                                                        data-icon="material-symbols:check-small-rounded"></span>
-                                                                </span>
-                                                                <span>{{ $package->max_auto_invoice == -1 ? __('Unlimited Auto Invoices Generate') : __($package->max_auto_invoice . ' Auto Invoices Generate') }}</span>
-                                                            </li>
-                                                            @if ($package->ticket_support == 1)
-                                                                <li class="d-flex align-items-center mb-3">
-                                                                    <span
-                                                                        class="price-check-icon flex-shrink-0 d-inline-flex align-items-center justify-content-center status-btn-blue radius-50 me-2">
-                                                                        <span class="iconify font-16"
-                                                                            data-icon="material-symbols:check-small-rounded"></span>
-                                                                    </span>
-                                                                    <span
-                                                                        class="flex-grow-1">{{ __('Ticket Support') }}</span>
-                                                                </li>
-                                                            @endif
-                                                            @if ($package->notice_support == 1)
-                                                                <li class="d-flex align-items-center mb-3">
-                                                                    <span
-                                                                        class="price-check-icon flex-shrink-0 d-inline-flex align-items-center justify-content-center status-btn-blue radius-50 me-2">
-                                                                        <span class="iconify font-16"
-                                                                            data-icon="material-symbols:check-small-rounded"></span>
-                                                                    </span>
-                                                                    <span
-                                                                        class="flex-grow-1">{{ __('Notice Support') }}</span>
-                                                                </li>
-                                                            @endif
-                                                            @if (in_array($package->type, [PACKAGE_TYPE_PROPERTY, PACKAGE_TYPE_UNIT, PACKAGE_TYPE_TENANT]))
-                                                                <li class="d-flex align-items-center">
-                                                                    <div class="input-group">
-                                                                        <input type="number" min="0"
-                                                                            step="any"
-                                                                            class="form-control rounded-0 rounded-start quantity"
-                                                                            name="quantity" value="1"
-                                                                            placeholder="{{ __('Quantity') }}">
-                                                                        <span
-                                                                            class="input-group-text">{{ __('Quantity') }}</span>
-                                                                    </div>
-                                                                </li>
-                                                            @endif
-                                                        </ul>
-                                                        <button type="submit" href="?id={{ $package->id }}"
-                                                            class="theme-btn-outline mt-1"
-                                                            title="{{ __('Subscribe Now') }}">
-                                                            {{ __('Subscribe Now') }}
-                                                        </button>
-                                                    </div>
-                                                </form>
-                                            </div>
-                                        @endforeach
-                                    </div>
-                                </div>
-                            </div>
-                            <!-- Choose a plan content End -->
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </section>
-        <!-- Pricing Area End -->
-    @endif
-    @if (getOption('home_integration_section_status', 1) == ACTIVE)
-        <!-- Integrations Area Start -->
-        <section id="integrations" class="integrations-area section-t-small-space">
-            <div class="container position-relative">
-                <div class="row">
-                    <div class="col-md-12">
-                        <div class="section-title">
-                            <h6 class="section-tag-heading green-color">{!! nl2br(getOption('home_integration_section_name')) !!}
-                            </h6>
-                            <h2 class="section-heading">{!! nl2br(getOption('home_integration_section_title')) !!}</h2>
-                            <p class="section-sub-heading">{!! nl2br(getOption('home_integration_section_summary')) !!}</p>
-                        </div>
-                    </div>
-                </div>
-                <div class="row">
-                    <div class="col-md-12">
-                        <div class="integrations-logo-list">
-                            <div class="integrations-logo-wrap position-relative">
-                                <div class="logo-item">
-                                    <img src="{{ getSettingImage('home_integration_section_image') }}"
-                                        alt="{{ getOption('app_name') }}" class="img-fluid">
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </section>
-        <!-- Integrations Area End -->
-    @endif
-    @if (getOption('home_testimonial_section_status', 1) == ACTIVE)
-        <!-- Customer Testimonial Area Start -->
-        <section id="testimonial" class="customer-testimonial-area section-t-small-space">
-            <div class="container">
-                <div class="row">
-                    <div class="col-md-12">
-                        <div class="section-title">
-                            <h6 class="section-tag-heading green-color">{!! nl2br(getOption('home_testimonial_section_name')) !!}
-                            </h6>
-                            <h2 class="section-heading">{!! nl2br(getOption('home_testimonial_section_title')) !!}</h2>
-                        </div>
-                    </div>
-                </div>
-                <div class="row justify-content-center">
-                    <div class="col-md-12">
-                        <div class="owl-big owl-carousel owl-theme customer-testimonial-slider">
-                            <!-- Testimonial Item Start -->
-                            @foreach ($testimonials as $testimonial)
-                                <div class="customer-testimonial-item position-relative bg-secondary p-25">
-                                    <div
-                                        class="testimonial-top-part d-flex justify-content-between align-content-center mb-25">
-                                        <div class="customer-testimonial-img d-inline-flex align-items-center">
-                                            <img src="{{ asset($testimonial->image) }}" alt="{!! nl2br(getOption('app_name')) !!}"
-                                                class="fit-image rounded-circle">
-                                            <div>
-                                                <h4 class="testimonial-client-name font-semi-bold">
-                                                    {{ $testimonial->name }}</h4>
-                                                <p class="font-normal theme-text-color font-15">
-                                                    {{ $testimonial->designation }}</p>
-                                            </div>
-                                        </div>
-                                        <div class="testimonial-quote">
-                                            <span class="iconify" data-icon="clarity:block-quote-line"></span>
-                                        </div>
-                                    </div>
-                                    <div class="testimonial-text-wrap">
-                                        <p class="customer-testimonial-text theme-text-color">
-                                            {{ $testimonial->comment }}
-                                        </p>
-                                    </div>
-                                    <div class="d-flex justify-content-between align-items-center">
-                                        <div class="customer-testimonial-rating">
-                                            {!! reviewStar($testimonial->star) !!}
-                                        </div>
-                                        <div class="testimonial-bottom-line"></div>
                                     </div>
                                 </div>
                             @endforeach
-                            <!-- Testimonial Item End -->
                         </div>
                     </div>
-                </div>
+                @endforeach
             </div>
-        </section>
-        <!-- Customer Testimonial Area End -->
-    @endif
-    @if (getOption('home_faq_section_status', 1) == ACTIVE)
-        <!-- FAQ Area Start -->
-        <section id="faqs" class="faqs-area section-t-small-space section-b-small-space position-relative">
-            <div class="container position-relative">
-                <div class="row">
-                    <div class="col-md-12">
-                        <div class="section-title">
-                            <h6 class="section-tag-heading green-color">{!! nl2br(getOption('home_faq_section_name')) !!}</h6>
-                            <h2 class="section-heading">{!! nl2br(getOption('home_faq_section_title')) !!}</h2>
-                        </div>
-                    </div>
-                </div>
-                <div class="row faq-accordion-wrap position-relative">
-                    <img src="{{ asset('frontend/assets/img/faq-strock-bg.png') }}" alt="{!! nl2br(getOption('app_name')) !!}"
-                        class="img-fluid faq-floating-img position-absolute">
-                    <div class="col-md-12 col-lg-6 position-relative">
-                        <div class="faq-content-box faq-left-part">
-                            <!-- Accordion Start -->
-                            <div class="accordion" id="accordionExample1">
-                                @php
-                                    $i = 1;
-                                    $take = count($faqs);
-                                @endphp
-                                @foreach ($faqs->take($take / 2) as $faq)
-                                    <div class="accordion-item">
-                                        <h5 class="accordion-header" id="headingOne{{ $i }}">
-                                            <button class="accordion-button font-medium {{ $i == 1 ? '' : 'collapsed' }}"
-                                                type="button" data-bs-toggle="collapse"
-                                                data-bs-target="#collapseOne{{ $i }}"
-                                                aria-expanded="{{ $i == 1 ? true : false }}"
-                                                aria-controls="collapseOne{{ $i }}">
-                                                {{ $i }}. {{ $faq->question }}
-                                            </button>
-                                        </h5>
-                                        <div id="collapseOne{{ $i }}"
-                                            class="accordion-collapse collapse {{ $i == 1 ? 'show' : '' }}"
-                                            aria-labelledby="headingOne{{ $i }}"
-                                            data-bs-parent="#accordionExample1">
-                                            <div class="accordion-body">
-                                                {{ $faq->answer }}
-                                            </div>
-                                        </div>
-                                    </div>
-                                    @php $i++; @endphp
-                                @endforeach
-                            </div>
-                            <!-- Accordion End -->
-                        </div>
-                    </div>
-                    <div class="col-md-12 col-lg-6 position-relative">
-                        <div class="faq-content-box faq-right-part">
-                            <!-- Accordion Start -->
-                            <div class="accordion" id="accordionExample2">
-                                @foreach ($faqs->skip($take / 2)->take($take / 2) as $faq)
-                                    <div class="accordion-item">
-                                        <h5 class="accordion-header" id="headingSix">
-                                            <button class="accordion-button font-medium collapsed" type="button"
-                                                data-bs-toggle="collapse"
-                                                data-bs-target="#collapseTwo{{ $i }}" aria-expanded="false"
-                                                aria-controls="collapseTwo{{ $i }}">
-                                                {{ $i }}. {{ $faq->question }}
-                                            </button>
-                                        </h5>
-                                        <div id="collapseTwo{{ $i }}" class="accordion-collapse collapse"
-                                            aria-labelledby="headingSix" data-bs-parent="#accordionExample2">
-                                            <div class="accordion-body">
-                                                {{ $faq->answer }}
-                                            </div>
-                                        </div>
-                                    </div>
-                                    @php $i++; @endphp
-                                @endforeach
-                            </div>
-                            <!-- Accordion End -->
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </section>
-        <!-- FAQ Area End -->
-    @endif
-    <section id="support" class="py-5">
-        <div class="container mt-5 p-5">
-            <div id="contact-us" class="support-area p-5">
-                <div class="text-center">
-                    <h2 class=" fw-bold mb-3 text-white">{{ __('Contact Us') }}</h2>
-                    <p class="text-white">
-                        {{ __('Lets get the conversation started. Provide feedback, request support, and pricing quotes for bulk purchases.') }}
-                    </p>
-                </div>
-                <div>
-                    <form class="ajax mt-5" action="{{ route('contact.message.store') }}" method="POST"
-                        data-handler="getShowMessage">
-                        @csrf
-                        <div class="row my-3">
-                            <div class="col-md-6">
-                                <label class="text-white">{{ __('First Name') }}</label>
-                                <input type="text" name="first_name" class="form-control"
-                                    placeholder="{{ __('First Name') }}">
-                            </div>
-                            <div class="col-md-6">
-                                <label class="text-white">{{ __('Last Name') }}</label>
-                                <input type="text" name="last_name" class="form-control"
-                                    placeholder="{{ __('Last Name') }}">
-                            </div>
-                        </div>
-                        <div class="row my-3">
-                            <div class="col-md-6">
-                                <label class="text-white">{{ __('Email') }}</label>
-                                <input type="email" name="email" class="form-control"
-                                    placeholder="{{ __('Email') }}">
-                            </div>
-                            <div class="col-md-6">
-                                <label class="text-white">{{ __('Phone Number') }}</label>
-                                <input type="text" name="phone" class="form-control"
-                                    placeholder="{{ __('Phone Number') }}">
-                            </div>
-                        </div>
-                        <div class="row my-3">
-                            <div class="col-md-12 mb-3">
-                                <label class="text-white">{{ __('Subject') }}</label>
-                                <input type="text" name="subject" class="form-control"
-                                    placeholder="{{ __('Subject') }}">
-                            </div>
-                            <div class="col-md-12">
-                                <label class="text-white">{{ __('Message') }}</label>
-                                <textarea name="message" id="" cols="30" rows="5" class="form-control"
-                                    placeholder="{{ __('Message') }}"></textarea>
-                            </div>
-                        </div>
-                        <input type="submit" class="btn btn-primary w-100 py-3 mt-3" value="send">
-                    </form>
+            <!-- Controls -->
+            <button class="carousel-control-prev custom-carousel-btn" type="button" data-bs-target="#featuresCarousel" data-bs-slide="prev">
+                <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-chevron-left">
+                    <polyline points="15 18 9 12 15 6"></polyline>
+                </svg>
+            </button>
+            <button class="carousel-control-next custom-carousel-btn" type="button" data-bs-target="#featuresCarousel" data-bs-slide="next">
+                <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-chevron-right">
+                    <polyline points="9 18 15 12 9 6"></polyline>
+                </svg>
+            </button>
+        </div>
+    </div>
+</section>
+
+{{-- House Hunt section --}}
+<section class="info-section text-light py-5">
+<div class="container">
+  <div class="row align-items-center">
+    
+    <!-- Image -->
+    <div class="col-md-6 mb-4 mb-md-0">
+      <img src="{{ asset('assets/images/househunthome.jpg') }}" alt="Vacant Property" class="img-fluid rounded-3 shadow-lg">
+    </div>
+
+    <!-- Text + CTA -->
+    <div class="col-md-6">
+      <h3 class="fw-bold mb-3">Find Your Next Home</h3>
+      <p class="mb-4">
+        Easily browse through available vacant properties in real-time. 
+        Our platform helps you connect directly with landlords and agents, 
+        making your house hunt faster, simpler, and stress-free.
+      </p>
+      <a href="{{ route('house.hunt') }}" class="btn btn-gradient px-4 py-2">
+        Browse Vacant Properties
+      </a>
+    </div>
+  </div>
+</div>
+</section>
+
+
+{{-- How It Works --}}
+@php
+$tenantSteps = [
+    ['icon' => 'mdi:magnify', 'title' => 'Search Rentals', 'desc' => 'Browse and find available rental units in real-time.'],
+    ['icon' => 'mdi:file-document-edit-outline', 'title' => 'Apply Online', 'desc' => 'Submit your rental application instantly with just a few clicks.'],
+    ['icon' => 'mdi:account-check-outline', 'title' => 'Get Approved', 'desc' => 'Landlords review and approve applications quickly.'],
+    ['icon' => 'mdi:key-outline', 'title' => 'Move In', 'desc' => 'Once approved, sign your lease and get your keys.'],
+];
+
+$agentSteps = [
+    ['icon' => 'mdi:domain', 'title' => 'List Properties', 'desc' => 'Easily add and manage rental properties on the platform.'],
+    ['icon' => 'mdi:clipboard-list-outline', 'title' => 'Track Applications', 'desc' => 'Monitor tenant applications and approve or decline them in real-time.'],
+    ['icon' => 'mdi:cash-multiple', 'title' => 'Collect Rent', 'desc' => 'Streamline rent collection and automate reminders.'],
+    ['icon' => 'mdi:chart-line', 'title' => 'Grow Your Business', 'desc' => 'Gain insights with reports and manage your portfolio effortlessly.'],
+];
+@endphp
+
+<section class="py-5 bg-light">
+<div id="howitworks" class="container">
+    <div class="text-center mb-5">
+        <h3 class="fw-bold">How It Works</h3>
+        <p class="text-muted">Choose your journey and see how it works for you.</p>
+
+        <!-- Toggle Buttons -->
+        <div class="btn-group mt-3">
+            <button class="btn btn-outline-primary active" id="toggleTenant">For Tenants</button>
+            <button class="btn btn-outline-primary" id="toggleAgent">For Agents</button>
+        </div>
+    </div>
+
+    <!-- Steps Container -->
+    <div class="row g-4 how-it-works-container">
+        @foreach($tenantSteps as $step)
+        <div class="col-md-3 step-card tenant-card fade-slide show">
+            <div class="card feature-card border-0 h-100 shadow-hover text-center rounded-3">
+                <div class="card-body py-4">
+                    <span class="iconify fs-1" data-icon="{{ $step['icon'] }}" style="color: #3685FC;"></span>
+                    <h5 class="mt-3">{{ $step['title'] }}</h5>
+                    <p class="text-muted small">{{ $step['desc'] }}</p>
                 </div>
             </div>
         </div>
-    </section>
+        @endforeach
+
+        @foreach($agentSteps as $step)
+        <div class="col-md-3 step-card agent-card fade-slide">
+            <div class="card feature-card border-0 h-100 shadow-hover text-center rounded-3">
+                <div class="card-body py-4">
+                    <span class="iconify fs-1" data-icon="{{ $step['icon'] }}" style="color: #3685FC;"></span>
+                    <h5 class="mt-3">{{ $step['title'] }}</h5>
+                    <p class="text-muted small">{{ $step['desc'] }}</p>
+                </div>
+            </div>
+        </div>
+        @endforeach
+    </div>
+</div>
+</section>
+
+{{-- Use Case --}}
+@php
+$useCases = [
+    // Core Users
+    ['icon' => 'mdi:office-building', 'title' => 'Property Owners', 'desc' => 'Easily manage tenants, leases, and rent collection.', 'type' => 'Core User'],
+    ['icon' => 'mdi:account-tie', 'title' => 'Property Managers', 'desc' => 'Track multiple properties and automate management tasks.', 'type' => 'Core User'],
+    ['icon' => 'mdi:domain', 'title' => 'Real Estate Agencies', 'desc' => 'Streamline agency operations with centralized tools.', 'type' => 'Core User'],
+    ['icon' => 'mdi:city', 'title' => 'Property Developers', 'desc' => 'Sell and manage new developments seamlessly.', 'type' => 'Core User'],
+    ['icon' => 'mdi:warehouse', 'title' => 'Facility Managers', 'desc' => 'Handle large buildings and estates with efficiency.', 'type' => 'Core User'],
+    ['icon' => 'mdi:home', 'title' => 'Condominium Boards', 'desc' => 'Manage resident associations, fees, and notices.', 'type' => 'Core User'],
+    ['icon' => 'mdi:school', 'title' => 'Student Housing Providers', 'desc' => 'Easily allocate rooms and manage student rentals.', 'type' => 'Core User'],
+
+    // Extended Users
+    ['icon' => 'mdi:store', 'title' => 'Co-working Spaces', 'desc' => 'Manage memberships, bookings, and payments.', 'type' => 'Extended User'],
+    ['icon' => 'mdi:beach', 'title' => 'Vacation Rentals', 'desc' => 'Automate bookings, cleaning schedules, and guest check-ins.', 'type' => 'Extended User'],
+    ['icon' => 'mdi:factory', 'title' => 'Industrial Parks', 'desc' => 'Track warehouses, factories, and commercial leases.', 'type' => 'Extended User'],
+    ['icon' => 'mdi:shopping', 'title' => 'Shopping Malls', 'desc' => 'Oversee shop leases, utilities, and tenant billing.', 'type' => 'Extended User'],
+    ['icon' => 'mdi:warehouse', 'title' => 'Logistics Hubs', 'desc' => 'Allocate storage units and manage rental agreements.', 'type' => 'Extended User'],
+    ['icon' => 'mdi:hotel', 'title' => 'Serviced Apartments', 'desc' => 'Handle bookings, utilities, and recurring payments.', 'type' => 'Extended User'],
+    ['icon' => 'mdi:church', 'title' => 'Community & Religious Centers', 'desc' => 'Manage halls, facilities, and rental spaces.', 'type' => 'Extended User'],
+    ['icon' => 'mdi:account-group', 'title' => 'Government Housing Projects', 'desc' => 'Digitize housing allocation and rent collection.', 'type' => 'Extended User'],
+];
+
+// Split into groups of 8 (4 per row, 2 rows per slide)
+$chunks = array_chunk($useCases, 8);
+@endphp
+
+<section class="py-5">
+<div class="container">
+    <h3 class="text-center mb-5 fw-bold">Who Should Use Our Software?</h3>
+    <div id="useCasesCarousel" class="carousel slide" data-bs-ride="carousel" data-bs-interval="5000">
+        <div class="carousel-inner">
+            @foreach($chunks as $i => $chunk)
+            <div class="carousel-item @if($i==0) active @endif">
+                <div class="row row-cols-1 row-cols-md-4 g-4">
+                    @foreach($chunk as $case)
+                    <div class="col">
+                        <div class="card h-100 shadow-sm position-relative">
+                            <!-- Ribbon -->
+                            <div class="ribbon 
+                                @if($case['type'] === 'Core User') ribbon-core-left 
+                                @else ribbon-extended-right @endif">
+                                    {{ $case['type'] }}
+                            </div>
+                            <div class="card-body text-center">
+                                <span class="iconify fs-1 mb-3" data-icon="{{ $case['icon'] }}" style="color: #3685FC;"></span>
+                                <h6 class="fw-bold">{{ $case['title'] }}</h6>
+                                <p class="text-muted small">{{ $case['desc'] }}</p>
+                            </div>
+                        </div>
+                    </div>
+                    @endforeach
+                </div>
+            </div>
+            @endforeach
+        </div>
+        <button class="carousel-control-prev custom-carousel-btn" type="button" data-bs-target="#useCasesCarousel" data-bs-slide="prev">
+                <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-chevron-left">
+                    <polyline points="15 18 9 12 15 6"></polyline>
+                </svg>
+            </button>
+            <button class="carousel-control-next custom-carousel-btn" type="button" data-bs-target="#useCasesCarousel" data-bs-slide="next">
+                <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-chevron-right">
+                    <polyline points="9 18 15 12 9 6"></polyline>
+                </svg>
+            </button>
+    </div>
+</div>
+</section>
+
+{{--Testimonials--}}
+<section class="py-5 bg-light">
+  <div class="container">
+    <div class="row align-items-center">
+      
+      <!-- Left Side -->
+      <div class="col-md-4 mb-4 mb-md-0">
+        <h3 class="fw-bold">What Our People Say</h3>
+        <p class="text-muted">Real feedback from real users who love our platform.</p>
+        <div class="mt-3">
+          <button class="btn-control btn-pause" id="pauseScroll">Pause</button>
+          <button class="btn-control btn-resume" id="resumeScroll">Resume</button>
+        </div>
+      </div>
+
+      <!-- Right Side: Infinite Scroll -->
+      <div class="col-md-8">
+        <div class="testimonial-wrapper">
+          <div class="testimonial-track">
+            
+            <!-- Testimonial Card -->
+            <div class="testimonial-card">
+              <img src="{{ asset('assets/images/alex.jpg') }}" class="reviewer-img" alt="">
+              <h5 class="fw-bold">Alex</h5>
+              <p>"This platform has transformed how I manage my properties. Super easy to use!"</p>
+              <div class="stars">★★★★★</div>
+            </div>
+            
+            <div class="testimonial-card">
+              <img src="{{ asset('assets/images/sarah.jpg') }}" class="reviewer-img" alt="">
+              <h5 class="fw-bold">Sarah M.</h5>
+              <p>"The customer support is top-notch. I feel valued and supported always."</p>
+              <div class="stars">★★★★★</div>
+            </div>
+            
+            <div class="testimonial-card">
+              <img src="{{ asset('assets/images/mike.jpg') }}" class="reviewer-img" alt="">
+              <h5 class="fw-bold">Michael B.</h5>
+              <p>"I love how automated everything is. It saves me hours of manual work."</p>
+              <div class="stars">★★★★☆</div>
+            </div>
+            
+            <div class="testimonial-card">
+              <img src="{{ asset('assets/images/emily.jpg') }}" class="reviewer-img" alt="">
+              <h5 class="fw-bold">Emily R.</h5>
+              <p>"The software is smooth, modern, and very reliable. Highly recommend!"</p>
+              <div class="stars">★★★★★</div>
+            </div>
+            
+            <div class="testimonial-card">
+              <img src="{{ asset('assets/images/david.jpg') }}" class="reviewer-img" alt="">
+              <h5 class="fw-bold">David K.</h5>
+              <p>"Affordable pricing and amazing features. Worth every penny!"</p>
+              <div class="stars">★★★★★</div>
+            </div>
+
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+{{-- Contact Us --}}
+<!-- Contact Us Section -->
+<section class="py-5">
+  <div id="contact-us" class="container">
+    <div class="row align-items-center">
+      
+      <!-- Left Side (Image) -->
+      <div class="col-md-6 mb-4 mb-md-0">
+        <img src="{{ asset('assets/images/newlogo.png') }}" alt="Contact Us" class="img-fluid rounded shadow-lg">
+      </div>
+      
+      <!-- Right Side (Form) -->
+      <div class="col-md-6">
+        <div class="card shadow-lg contact-card p-4">
+          <h4 class="fw-bold mb-2">Talk to Us</h4>
+          <p class="text-muted mb-4">We’d love to hear from you. Please fill out the form below and we’ll get back to you shortly.</p>
+
+          <form class="ajax" action="{{ route('contact.message.store') }}" method="POST" data-handler="getShowMessage">
+            @csrf
+            <div class="row">
+              <div class="col-md-6 mb-3">
+                <input type="text" name="first_name" class="form-control rounded-3" placeholder="{{ __('First Name') }}">
+              </div>
+              <div class="col-md-6 mb-3">
+                <input type="text" name="last_name" class="form-control rounded-3" placeholder="{{ __('Last Name') }}">
+              </div>
+            </div>
+            
+            <div class="col-md-6 mb-3">
+                <input type="email" name="email" class="form-control rounded-3" placeholder="{{ __('Email') }}">
+              </div>
+            <div class="mb-3">
+              <input type="tel" name="phone" class="form-control rounded-3" placeholder="{{ __('Phone Number') }}">
+            </div>
+
+            <div class="mb-3">
+              <input type="text" name="subject" class="form-control rounded-3" placeholder="{{ __('Subject') }}">
+            </div>
+
+            <div class="mb-3">
+              <textarea name="message" id="" class="form-control rounded-3" rows="4" placeholder="{{ __('Message') }}"></textarea>
+            </div>
+
+            <button type="submit" class="contactus-btn w-100">Send Inquiry</button>
+          </form>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+
+
+{{-- CTA --}}
+<section class="py-5 bg-light text-center text-light">
+    <h3 class="fw-bold mb-3">Are You a Property Owner or Agent?</h3>
+    <p class="mb-4">List your properties with us and reach more tenants instantly.</p>
+    <a href="{{ route('frontend') }}#contact-us"  class="theme-btn position-relative">Request Demo</a>
+</section>
 @endsection
 @push('script')
     <script src="{{ asset('assets/js/custom/frontend-index.js') }}"></script>

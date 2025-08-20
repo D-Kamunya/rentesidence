@@ -48,3 +48,85 @@
         },
     });
 })(jQuery); // End of use strict
+
+/*---------------------------------
+Hero Section Images
+-----------------------------------*/
+
+const stack = document.querySelector('.property-stack');
+
+stack.addEventListener('mousemove', (e) => {
+    const { offsetWidth: width, offsetHeight: height } = stack;
+    const { offsetX: x, offsetY: y } = e;
+
+    // Calculate rotation values
+    const rotateX = ((y / height) - 0.5) * 15; // tilt up/down
+    const rotateY = ((x / width) - 0.5) * -15; // tilt left/right
+
+    stack.style.transform = `rotateX(${rotateX}deg) rotateY(${rotateY}deg)`;
+});
+
+stack.addEventListener('mouseleave', () => {
+    stack.style.transform = `rotateX(0deg) rotateY(0deg)`; // Reset
+});
+
+
+/*---------------------------------
+Testimonial section
+-----------------------------------*/
+
+const track = document.querySelector('.testimonial-track');
+const cards = document.querySelectorAll('.testimonial-card');
+
+let index = 0;
+let cardWidth = cards[0].offsetWidth + 16; // card + margin
+let visibleCards = 3;
+
+  const pauseBtn = document.getElementById('pauseScroll');
+  const resumeBtn = document.getElementById('resumeScroll');
+
+  pauseBtn.addEventListener('click', () => {
+    track.style.animationPlayState = 'paused';
+  });
+  
+  resumeBtn.addEventListener('click', () => {
+    track.style.animationPlayState = 'running';
+  });
+
+  /*---------------------------------
+How it works toggle buttons script
+-----------------------------------*/
+document.addEventListener("DOMContentLoaded", function () {
+    const tenantBtn = document.getElementById("toggleTenant");
+    const agentBtn = document.getElementById("toggleAgent");
+    const tenantCards = document.querySelectorAll(".tenant-card");
+    const agentCards = document.querySelectorAll(".agent-card");
+
+    function showCards(cardsToShow, cardsToHide, activeBtn, inactiveBtn) {
+        // Remove active from all buttons first
+        activeBtn.classList.add("active");
+        inactiveBtn.classList.remove("active");
+
+        // Hide cards smoothly
+        cardsToHide.forEach(card => {
+            card.classList.remove("show");
+            setTimeout(() => card.style.display = "none", 400);
+        });
+
+        // Show cards smoothly
+        setTimeout(() => {
+            cardsToShow.forEach(card => {
+                card.style.display = "block";
+                setTimeout(() => card.classList.add("show"), 50);
+            });
+        }, 400);
+    }
+
+    tenantBtn.addEventListener("click", () => {
+        showCards(tenantCards, agentCards, tenantBtn, agentBtn);
+    });
+
+    agentBtn.addEventListener("click", () => {
+        showCards(agentCards, tenantCards, agentBtn, tenantBtn);
+    });
+});

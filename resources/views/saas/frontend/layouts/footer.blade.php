@@ -1,98 +1,76 @@
- <!-- Footer Start -->
- <footer class="footer-area position-relative">
-     <div class="container position-relative">
-         <!-- footer-widget-area -->
-         <div class="row footer-top-part">
-             <div class="col-12 col-sm-12 col-md-12 col-lg-3">
-                 <div class="footer-widget footer-about">
-                     <a href="{{ route('frontend') }}"><img src="{{ getSettingImage('app_logo_white') }}"
-                             alt="{{ getOption('app_name') }}"  class="img-fluid" 
-                             style="max-width: 300px;"></a>
-                     <address class="big-para">
-                         <p>{{ getOption('app_footer_text') }}</p>
-                     </address>
-                     <div class="footer-social mt-20">
-                         <ul class="d-flex align-items-center">
-                             @if (getOption('facebook_url'))
-                                 <li><a href="{{ getOption('facebook_url') }}" target="_blank"><span class="iconify"
-                                             data-icon="brandico:facebook"></span></a></li>
-                             @endif
-                             @if (getOption('twitter_url'))
-                                 <li><a href="{{ getOption('twitter_url') }}" target="_blank"><span class="iconify"
-                                             data-icon="akar-icons:twitter-fill"></span></a></li>
-                             @endif
-                             @if (getOption('linkedin_url'))
-                                 <li><a href="{{ getOption('linkedin_url') }}" target="_blank"><span class="iconify"
-                                             data-icon="jam:linkedin"></span></a></li>
-                             @endif
-                             @if (getOption('skype_url'))
-                                 <li><a href="{{ getOption('skype_url') }}" target="_blank"><span class="iconify"
-                                             data-icon="ant-design:skype-filled"></span></a></li>
-                             @endif
-                         </ul>
-                     </div>
-                 </div>
-             </div>
-             <div class="col-12 col-sm-6 col-md-4 col-lg-3">
-                 <div class="footer-widget">
-                     <h4 class="footer-widget-title font-medium">{{ __('Product') }}</h4>
-                     <div class="footer-links d-flex">
-                         <ul>
-                             <li><a href="{{ route('login') }}">{{ __('Dashboard') }}</a></li>
-                             @if (getOption('home_pricing_section_status', 1) == ACTIVE)
-                                 <li><a href="{{ route('frontend') }}#pricing">{{ __('Pricing') }}</a></li>
-                             @endif
-                             @if (getOption('home_testimonial_section_status', 1) == ACTIVE)
-                                 <li><a href="{{ route('frontend') }}#testimonial">{{ __('Testimonials') }}</a></li>
-                             @endif
-                         </ul>
-                     </div>
-                 </div>
-             </div>
-             <div class="col-12 col-sm-6 col-md-4 col-lg-3">
-                 <div class="footer-widget">
-                     <h4 class="footer-widget-title font-medium">{{ __('Pages') }}</h4>
-                     <div class="footer-links d-flex">
-                         <ul>
-                             <li><a href="{{ route('terms-conditions') }}">{{ __('Terms & Conditions') }}</a></li>
-                             <li><a href="{{ route('privacy-policy') }}">{{ __('Privacy Policy') }}</a></li>
-                             <li><a href="{{ route('cookie-policy') }}">{{ __('Cookie Policy') }}</a></li>
-                         </ul>
-                     </div>
-                 </div>
-             </div>
-             <div class="col-12 col-sm-6 col-md-4 col-lg-3">
-                 <div class="footer-widget">
-                     <h4 class="footer-widget-title font-medium">{{ __('Support') }}</h4>
-                     <div class="footer-links d-flex">
-                         <ul>
-                             @if (getOption('home_faq_section_status', 1) == ACTIVE)
-                                 <li><a href="{{ route('frontend') }}#faqs">{{ __('Faqs') }}</a></li>
-                             @endif
-                             @if (getOption('home_about_us_section_status', 1) == ACTIVE)
-                                 <li><a href="{{ route('frontend') }}#about">{{ __('About Us') }}</a></li>
-                             @endif
-                             @if (getOption('home_how_it_word_section_status', 1) == ACTIVE)
-                                 <li><a href="{{ route('frontend') }}#how-it-works">{{ __('How it Works') }}</a></li>
-                             @endif
-                             <li><a href="{{ route('frontend') }}#support">{{ __('Contact Us') }}</a></li>
-                         </ul>
-                     </div>
-                 </div>
-             </div>
-         </div>
-     </div>
-     <div class="copyright-wrapper">
-         <div class="container">
-             <!--copyright-text-->
-             <div class="row">
-                 <div class="col-12 col-md-12">
-                     <div class="copyright-text text-center">
-                         <p>{{ getOption('app_copyright') }}</p>
-                     </div>
-                 </div>
-             </div>
-         </div>
-     </div>
- </footer>
- <!-- Footer End -->
+<!-- Footer Start -->
+<footer class="footer-area text-white position-relative pt-5">
+    <div class="container">
+        <div class="row footer-top-part g-4">
+
+            <!-- Brand / About -->
+            <div class="col-12 col-sm-12 col-md-6 col-lg-3">
+                <div class="footer-widget footer-about">
+                    <a href="{{ route('frontend') }}">
+                        <img src="{{ asset('assets/images/newlogo.png') }}" alt="Centresidence" 
+                             class="img-fluid mb-3 rounded shadow-lg" style="max-width: 200px;">
+                    </a>
+                    <p class="small text-white-50">
+                        Simplifying property management for owners, managers, and tenants. 
+                        Manage rentals, payments, and tenants all in one platform.
+                    </p>
+                    <div class="footer-social mt-4">
+                        <ul class="list-unstyled d-flex gap-3">
+                            <li><a href="#" class="text-white fs-5 footer-social-link"><span class="iconify" data-icon="mdi:facebook"></span></a></li>
+                            <li><a href="#" class="text-white fs-5 footer-social-link"><span class="iconify" data-icon="mdi:twitter"></span></a></li>
+                            <li><a href="#" class="text-white fs-5 footer-social-link"><span class="iconify" data-icon="mdi:linkedin"></span></a></li>
+                            <li><a href="#" class="text-white fs-5 footer-social-link"><span class="iconify" data-icon="mdi:instagram"></span></a></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Product -->
+            <div class="col-6 col-md-6 col-lg-3">
+                <div class="footer-widget">
+                    <h5 class="fw-bold mb-4 text-white">Product</h5>
+                    <ul class="list-unstyled small">
+                        <li class="mb-2"><a href="{{ route('login') }}" class="footer-link">Dashboard</a></li>
+                        <li class="mb-2"><a href="#pricing" class="footer-link">Pricing</a></li>
+                        <li class="mb-2"><a href="#testimonial" class="footer-link">Testimonials</a></li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Pages -->
+            <div class="col-6 col-md-6 col-lg-3">
+                <div class="footer-widget">
+                    <h5 class="fw-bold mb-4 text-white">Pages</h5>
+                    <ul class="list-unstyled small">
+                        <li class="mb-2"><a href="{{ route('terms-conditions') }}" class="footer-link">Terms & Conditions</a></li>
+                        <li class="mb-2"><a href="{{ route('privacy-policy') }}" class="footer-link">Privacy Policy</a></li>
+                        <li class="mb-2"><a href="{{ route('cookie-policy') }}" class="footer-link">Cookie Policy</a></li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Support -->
+            <div class="col-12 col-md-6 col-lg-3">
+                <div class="footer-widget">
+                    <h5 class="fw-bold mb-4 text-white">Support</h5>
+                    <ul class="list-unstyled small">
+                        <li class="mb-2"><a href="#faqs" class="footer-link">FAQs</a></li>
+                        <li class="mb-2"><a href="#about" class="footer-link">About Us</a></li>
+                        <li class="mb-2"><a href="#how-it-works" class="footer-link">How it Works</a></li>
+                        <li class="mb-2"><a href="#support" class="footer-link">Contact Us</a></li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- Divider -->
+        <hr class="border-secondary my-4">
+
+        <!-- Copyright -->
+        <div class="row">
+            <div class="col-12 text-center">
+                <p class="bottom-text small text-white-50 mb-0">&copy; {{ date('Y') }} Centresidence. All Rights Reserved.</p>
+            </div>
+        </div>
+    </div>
+</footer>
