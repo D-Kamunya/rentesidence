@@ -25,7 +25,12 @@ class OwnerAuthController extends Controller
      */
     public function __construct()
     {
-        $this->middleware('guest')->except('logout');
+         $this->middleware(function ($request, $next) {
+            if (auth()->guest() || auth()->user()->role !== USER_ROLE_ADMIN) {
+                return redirect()->route('login');
+            }
+            return $next($request);
+        })->except('logout');
     }
 
     public function owner_register_form()

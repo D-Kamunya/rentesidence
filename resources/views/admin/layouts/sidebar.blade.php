@@ -53,9 +53,9 @@
                     </li>
                 @endif
                 <li>
-                    <a href="{{ route('admin.owner.index') }}">
+                    <a class="{{ @$navOwnerAddMMShowClass }}" href="{{ route('admin.owner.index') }}">
                         <i class="ri-user-line"></i>
-                        <span>{{ __('Owner') }}</span>
+                        <span>{{ __('Owners') }}</span>
                     </a>
                 </li>
                 <li>

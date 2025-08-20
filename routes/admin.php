@@ -17,6 +17,10 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'middleware' => ['auth', 'a
 
     Route::group(['prefix' => 'owner', 'as' => 'owner.'], function () {
         Route::get('/', [OwnerController::class, 'index'])->name('index');
+         // register owner
+        Route::get('register', [OwnerController::class, 'owner_register_form'])->name('register.form');
+        Route::post('register', [OwnerController::class, 'owner_register_store'])->name('register.store');
+
     });
 
     Route::group(['prefix' => 'language', 'as' => 'language.'], function () {

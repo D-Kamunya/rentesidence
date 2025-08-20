@@ -23,6 +23,16 @@
                         </div>
                     </div>
                     <div class="row">
+                        <div class="col-xl-12 col-xxl-6">
+                            <div class="row justify-content-end">
+                                <div class="col-auto mb-25">
+                                    <a href="{{ route('admin.owner.register.form') }}" class="theme-btn w-auto"
+                                        title="{{ __('Add New Owner') }}">{{ __('Add New Owner') }}</a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
                         <div class="billing-center-area bg-off-white theme-border radius-4 p-25">
                             <table id="allOwnerDataTable" class="table responsive theme-border p-20 ">
                                 <thead>
