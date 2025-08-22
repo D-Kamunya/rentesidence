@@ -127,6 +127,560 @@ img::selection {
     box-shadow: none;
 }
 
+/* Menu Logo
+------------------------------- */
+.logo-wrapper {
+    position: relative;
+    display: inline-block;
+    border-radius: 50px; /* pill wrapper */
+    overflow: hidden; /* keep shimmer inside pill */
+}
+
+/* Glassy pill image */
+.logo-img-glass {
+    width: 110px; 
+    height: auto;
+    object-fit: contain;
+    border-radius: 50px;
+    padding: 8px;
+
+    background: linear-gradient(145deg, #ffffff, #f1f1f1);
+    box-shadow: 
+        0 4px 6px rgba(0, 0, 0, 0.15), 
+        0 8px 12px rgba(0, 0, 0, 0.1), 
+        inset 0 2px 4px rgba(255, 255, 255, 0.6);
+
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+
+    transition: transform 0.25s ease, box-shadow 0.25s ease;
+}
+
+.logo-img-glass:hover {
+    transform: translateY(-4px) scale(1.03);
+    box-shadow: 
+        0 6px 12px rgba(0, 0, 0, 0.2), 
+        0 12px 20px rgba(0, 0, 0, 0.15), 
+        inset 0 3px 6px rgba(255, 255, 255, 0.7);
+}
+
+/* Shimmer effect */
+.shimmer {
+    position: absolute;
+    top: 0;
+    left: -75%;
+    width: 50%;
+    height: 100%;
+    background: linear-gradient(
+        120deg, 
+        rgba(255, 255, 255, 0) 0%, 
+        rgba(255, 255, 255, 0.5) 50%, 
+        rgba(255, 255, 255, 0) 100%
+    );
+    transform: skewX(-20deg);
+    animation: shimmer-sweep 3s infinite;
+}
+
+@keyframes shimmer-sweep {
+    0% { left: -75%; }
+    100% { left: 125%; }
+}
+
+
+
+/* Dashboard button
+------------------------------- */
+.nav-dash .nav-dash-link {
+    display: inline-block;
+    padding: 10px 24px;
+    border-radius: 50px;                  /* pill look */
+    font-weight: 600;
+    border: 2px solid #0d6efd;
+    background: #f8f9fa;
+    color: #0d6efd;
+    transition: all 0.25s ease-in-out;
+    box-shadow: 0 6px 12px rgba(0,0,0,0.15); /* base shadow */
+}
+
+/* Hover effect */
+.nav-dash .nav-dash-link:hover {
+    background: #e6f0ff;
+    transform: translateY(-1px);
+    box-shadow: 
+        0 8px 14px rgba(13,110,253,0.25),
+        0 0 10px rgba(13,110,253,0.35);     /* subtle glow */
+}
+
+/* Active glowing state for Dashboard */
+.nav-dash .nav-dash-link[href*="dashboard"] {
+    background: #0d6efd;
+    color: #fff;
+    transform: translateY(-2px);
+    box-shadow: 
+        0 8px 16px rgba(13,110,253,0.35),
+        0 0 15px rgba(13,110,253,0.55);     /* glowing aura */
+}
+
+/* Pressed effect */
+.nav-dash .nav-dash-link:active {
+    transform: translateY(1px);
+    box-shadow: 
+        0 3px 6px rgba(0,0,0,0.2),
+        0 0 6px rgba(13,110,253,0.4);
+}
+
+
+/* Hero section property images 
+------------------------------- */
+.property-stack {
+    height: 300px;
+    position: relative;
+    perspective: 2000px; /* Depth for 3D */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    transform-style: preserve-3d;
+    transition: transform 0.3s ease;
+}
+
+.property-img {
+    width: 250px;
+    height: 200px;
+    object-fit: cover;
+    border-radius: 12px;
+    position: absolute;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    transform-style: preserve-3d;
+    box-shadow: 0 15px 30px rgba(0,0,0,0.25);
+    transition:
+        transform 0.6s cubic-bezier(0.25, 0.8, 0.25, 1),
+        box-shadow 0.6s cubic-bezier(0.25, 0.8, 0.25, 1);
+}
+
+/* Left card */
+.property-img-left {
+    transform: rotateY(-20deg) rotateZ(-5deg) translateX(-220px) translateZ(-50px);
+    z-index: 1;
+}
+
+/* Center card */
+.property-img-center {
+    transform: translateZ(50px) scale(1.05);
+    z-index: 2;
+}
+
+/* Right card */
+.property-img-right {
+    transform: rotateY(20deg) rotateZ(5deg) translateX(220px) translateZ(-50px);
+    z-index: 1;
+}
+
+
+    #faq .accordion-button {
+        background-color: #fff;
+        color: #333;
+        transition: all 0.2s ease-in-out;
+    }
+    #faq .accordion-button:hover {
+        background-color: #f8f9fa;
+        color: #3685FC;
+    }
+    #faq .accordion-button:focus {
+        box-shadow: none;
+    }
+    #faq .accordion-body {
+        background-color: #fff;
+        font-size: 0.95rem;
+        line-height: 1.6;
+    }
+
+  /* Hero section property silhouette background */
+  .hero-silhouette {
+      position: relative;
+      background: #ffffff;              /* keep your white hero */
+      min-height: 70vh;                 /* your desired height */
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding-top: 150px;                /* prevent navbar overlap; tweak to your navbar height */
+      overflow: hidden;                 /* clip the silhouette nicely */
+      isolation: isolate;               /* keep z-index layers tidy */
+  }
+
+  .hero-silhouette::after {
+      content: "";
+      position: absolute;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      height: 70vh;                     /* skyline height */
+      background-repeat: no-repeat;
+      background-position: center bottom;
+      background-size: 120% auto;       /* a little wider than the viewport for nice bleed */
+      opacity: 0.10;                    /* subtle! adjust 0.06–0.15 as you like */
+      pointer-events: none;
+      /* Inline SVG (color = #3685FC at low opacity via parent) */
+      background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 300" preserveAspectRatio="none"><rect width="1440" height="300" fill="transparent"/><g fill="%233685FC"><rect x="40" y="140" width="90" height="160" rx="3"/><rect x="150" y="170" width="110" height="130" rx="3"/><rect x="290" y="120" width="95" height="180" rx="3"/><rect x="400" y="190" width="120" height="110" rx="3"/><rect x="550" y="150" width="85" height="150" rx="3"/><rect x="650" y="100" width="110" height="200" rx="3"/><rect x="790" y="175" width="100" height="125" rx="3"/><rect x="920" y="135" width="95" height="165" rx="3"/><rect x="1030" y="185" width="120" height="115" rx="3"/><rect x="1180" y="155" width="90" height="145" rx="3"/><rect x="1285" y="200" width="70" height="100" rx="3"/><!-- Rooflines / antennas for variety --><path d="M340 120 l20 -20 l20 20 v180 h-40z"/><path d="M690 100 l18 -26 l18 26 v200 h-36z"/><rect x="865" y="110" width="4" height="40"/><rect x="1218" y="130" width="3" height="25"/></g><!-- Base strip --> <rect x="0" y="285" width="1440" height="15" fill="%233685FC"/></svg>');
+  }
+
+  /* Optional: ensure hero content stays above the silhouette */
+  .hero-silhouette > * {
+      position: relative;
+      z-index: 1;
+  }
+
+  /* Features/use case Carousel Controls */
+  .custom-carousel-btn {
+    width: 45px;
+    height: 45px;
+    border-radius: 50%;
+    background: rgba(54, 133, 252, 0.2); /* subtle transparent bg */
+    backdrop-filter: blur(6px); /* glassy effect */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: none;
+    transition: all 0.3s ease;
+    opacity: 0.7;
+  }
+  
+  .custom-carousel-btn:hover {
+    background: linear-gradient(135deg, #3685FC, #4facfe);
+    box-shadow: 0 4px 12px rgba(54, 133, 252, 0.4);
+    transform: scale(1.1);
+    opacity: 1;
+  }
+  
+  .custom-carousel-btn svg {
+    stroke: #fff; /* white arrows */
+    transition: stroke 0.3s ease;
+  }
+  
+  /*----House hunt section----*/
+  .info-section {
+    width: 100%;
+    background: linear-gradient(135deg, #f8faff, #eef4ff);
+    color: #fff;
+  }
+  
+  .btn-gradient {
+    background: linear-gradient(135deg, #ffffff, #b0c4de);
+    color: #3685FC;
+    font-weight: 600;
+    border: none;
+    border-radius: 50px;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 12px rgba(255, 255, 255, 0.2);
+  }
+  
+  .btn-gradient:hover {
+    background: linear-gradient(135deg, #f8faff, #cfe2ff);
+    color: #2563eb;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 18px rgba(255, 255, 255, 0.3);
+  }
+  
+  /*----How it works section buttons----*/
+
+.step-card {
+    opacity: 0;
+    transform: translateY(20px);
+    transition: opacity 0.4s ease, transform 0.4s ease;
+    display: none;
+}
+.step-card.show {
+    display: block;
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.btn-group .btn {
+    padding: 12px 28px;
+    border-radius: 50px;          /* pill shape */
+    font-weight: 600;
+    border: 2px solid #0d6efd;
+    transition: all 0.25s ease-in-out;
+    box-shadow: 0 6px 12px rgba(0,0,0,0.15); /* base 3D shadow */
+}
+
+/* Inactive state */
+.btn-group .btn.btn-outline-primary {
+    background: #f8f9fa;
+    color: #0d6efd;
+}
+
+/* Active state */
+.btn-group .btn.active {
+    background: #0d6efd;
+    color: #fff;
+    transform: translateY(-2px);  
+    box-shadow: 
+        0 8px 16px rgba(13,110,253,0.35),   /* stronger shadow */
+        0 0 15px rgba(13,110,253,0.5);      /* glowing border */
+}
+
+/* Hover effect */
+.btn-group .btn:hover {
+    background: #e6f0ff;
+    color: #0d6efd;
+    transform: translateY(-1px);
+    box-shadow: 
+        0 8px 14px rgba(13,110,253,0.25),
+        0 0 10px rgba(13,110,253,0.35);     /* subtle glow */
+}
+
+/* Pressed (clicking) effect */
+.btn-group .btn:active {
+    transform: translateY(1px);
+    box-shadow: 
+        0 3px 6px rgba(0,0,0,0.2),
+        0 0 6px rgba(13,110,253,0.4);       /* compressed glow */
+}
+
+  /*----Use case section----*/
+.ribbon {
+    width: 150px;
+    position: absolute;
+    text-align: center;
+    line-height: 20px;
+    letter-spacing: 0.5px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: #fff;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+    padding: 4px 0;
+}
+
+.ribbon-core-left {
+    top: 12px;
+    left: -40px;
+    transform: rotate(-45deg);
+    background: linear-gradient(135deg, #6366f1, #4f46e5); /* Indigo gradient */
+}
+
+.ribbon-extended-right {
+    top: 12px;
+    right: -40px;
+    transform: rotate(45deg);
+    background: linear-gradient(135deg, #34d399, #10b981); /* Emerald gradient */
+}
+
+.card {
+    position: relative;
+    overflow: hidden; /* Clips ribbon overflow */
+    border-radius: 0.75rem; /* keeps rounded corners intact */
+}
+
+  /*----Testimonial section----*/
+  .testimonial-section {
+    padding: 60px 10%;
+    background: #f9f9f9;
+  }
+  
+  .testimonial-container {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 40px;
+  }
+  
+  .testimonial-carousel {
+    overflow: visible; /* Prevents cards from being clipped */
+    padding-top: 60px; /* Space for hover pop */
+    padding-bottom: 60px;
+  }
+  
+
+  /* LEFT SIDE */
+  .testimonial-left {
+    flex: 1;
+  }
+  
+  .testimonial-left h2 {
+    font-size: 2rem;
+    margin-bottom: 10px;
+  }
+  
+  .muted-text {
+    color: #777;
+    margin-bottom: 20px;
+  }
+  
+  .nav-buttons {
+    display: flex;
+    gap: 10px;
+  }
+  
+  .nav-btn {
+    background: #fff;
+    border: 1px solid #ddd;
+    padding: 10px 15px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+  }
+  
+  .nav-btn:hover {
+    background: #222;
+    color: #fff;
+  }
+  
+  /* RIGHT SIDE */
+  .testimonial-right {
+    flex: 2;
+    overflow: hidden;
+    position: relative;
+  }
+  
+  .testimonial-slider {
+    display: flex;
+    gap: 20px;
+    transition: transform 0.5s ease-in-out;
+  }
+  
+  /* CARD STYLE */
+  .testimonial-card {
+    background: #fff;
+    padding: 20px;
+    border-radius: 15px;
+    min-width: 280px;
+    max-width: 280px;
+    box-shadow: 0 8px 20px rgba(0,0,0,0.1);
+    transition: transform 0.4s ease, box-shadow 0.4s ease;
+    flex-shrink: 0;
+    text-align: center;
+    transform-style: preserve-3d;
+  }
+  
+  .testimonial-card:hover {
+    transform: translateY(-10px) scale(1.03);
+    box-shadow: 0 15px 40px rgba(0,0,0,0.2);
+  }
+  
+  .reviewer-img {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    margin-bottom: 15px;
+    object-fit: cover;
+  }
+  
+  .review-text {
+    font-size: 0.95rem;
+    color: #555;
+    margin: 10px 0 15px;
+    line-height: 1.4;
+  }
+  
+  .stars {
+    font-size: 1.2rem;
+    color: gold;
+  }
+  
+  .testimonial-section {
+    background: #f9f9f9;
+  }
+  
+  .testimonial-track {
+    transition: transform 0.8s ease-in-out;
+    display: flex;
+    gap: 20px;
+    animation: scroll 25s linear infinite;
+  }
+  
+  .testimonial-card {
+    flex: 0 0 280px;
+    transform-style: preserve-3d;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    background: white;
+    padding: 20px;
+    border-radius: 15px;
+    box-shadow: 0 8px 20px rgba(0,0,0,0.1);
+    text-align: center;
+  }
+  
+  .testimonial-card:hover {
+    transform: scale(1.05) rotate3d(1, 1, 0, 10deg);
+    box-shadow: 0 12px 30px rgba(0,0,0,0.2);
+  }
+  
+  .testimonial-wrapper {
+    overflow: hidden;
+    position: relative;
+    padding-top: 60px; /* Space for hover pop */
+    padding-bottom: 60px;
+  }
+
+  @keyframes scroll {
+    0% { transform: translateX(0); }
+    100% { transform: translateX(-50%); }
+  }
+
+  /* testimonial Button styling */
+  .btn-control {
+    padding: 10px 22px;
+    border: none;
+    border-radius: 30px;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    color: #fff;
+    background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+  }
+  
+  .btn-control:hover {
+    transform: translateY(-3px) scale(1.05);
+    box-shadow: 0 6px 16px rgba(0,0,0,0.25);
+  }
+  
+  .btn-control:active {
+    transform: translateY(1px) scale(0.98);
+    box-shadow: 0 3px 8px rgba(0,0,0,0.2);
+  }
+  
+  .btn-pause {
+    background: linear-gradient(135deg, #ff6a00 0%, #ee0979 100%);
+  }
+  
+  .btn-resume {
+    background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
+  }
+  
+  /*----contact us section----*/
+.contact-card {
+  border-radius: 1rem;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+.contact-card:hover {
+  transform: translateY(-6px);
+  box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+}
+.form-control::placeholder {
+    font-size: 0.9rem;       /* smaller font size */
+    color: #6c757d;          /* Bootstrap’s muted gray */
+    opacity: 0.8;            /* slightly faded */
+    font-weight: 400;        /* light weight for minimal look */
+    letter-spacing: 0.3px;   /* subtle spacing */
+  }
+
+.contactus-btn {
+  background: linear-gradient(135deg, #3685FC, #5AA9FF);
+  color: #fff;
+  font-weight: 500;
+  padding: 0.75rem;
+  border-radius: 1rem;
+  border: none;
+  transition: all 0.3s ease;
+}
+.contactus-btn:hover {
+  background: linear-gradient(135deg, #2f73d9, #4f94e6);
+  transform: scale(1.05);
+}
+
+
 /*----Form Control Reset CSS----*/
 .form-control,
 .form-select {
@@ -2316,107 +2870,45 @@ hr {
 /*-------------------------------------------
   17. Footer Area Start
 -------------------------------------------*/
+
 .footer-area {
-    background-color: var(--footer-bg);
-    padding: 140px 0 0;
+    background: linear-gradient(135deg, #141E30, #243B55);
+    color: white;
+    font-size: 0.9rem;
+    position: relative;
+    box-shadow: 0 -4px 12px rgba(54, 133, 252, 0.4); /* glow effect */
+  }
+  
+  .footer-area bottom-text {
+    margin: 0;
+    opacity: 0.9;
+  }
+
+.footer-link {
+    color: rgba(255, 255, 255, 0.7);
+    text-decoration: none;
+    transition: all 0.3s ease;
+}
+.footer-link:hover {
+    color: #fff;
+    padding-left: 4px;
 }
 
-.footer-top-part {
-    padding-bottom: 140px;
+/* Social icons hover */
+.footer-social-link {
+    transition: all 0.3s ease;
 }
-.footer-bg-img {
-    top: 0;
-    left: 0;
-    width: 100%;
-    max-height: 100%;
-}
-/* Footer Widget */
-.footer-widget {
-    float: right;
+.footer-social-link:hover {
+    color: #0dcaf0; /* Bootstrap cyan for modern accent */
+    transform: scale(1.2);
 }
 
-.footer-subscribe-content form input {
-    background-color: #343e53;
-    border-color: transparent;
-    color: var(--white-color);
-    min-width: 255px;
-}
-.footer-subscribe-content form .form-control::placeholder {
-    color: var(--white-color);
-}
-.footer-subscribe-content form .form-control:focus {
-    background-color: #343e53;
-    color: var(--white-color);
-    border-color: transparent;
-}
-.footer-about img {
-    margin-bottom: 17px;
-}
-.footer-widget > h4 {
-    margin-bottom: 41px;
-}
-.footer-widget .footer-widget-title {
-    color: var(--white-color);
-}
-.footer-widget.footer-about p {
-    color: var(--footer-text-color);
-}
-/*Footer social */
-.footer-social ul li a {
-    width: 39px;
-    height: 39px;
-    border: 1px solid var(--white-color);
-    display: flex;
-    border-radius: 50%;
-    font-size: 18px;
-    justify-content: center;
-    align-items: center;
-    margin-inline-end: 15px;
-}
-
-.footer-social ul li a:hover {
-    background-color: var(--primary-color);
-    border: 1px solid var(--primary-color);
-}
-.footer-social ul li a .iconify {
-    color: var(--white-color);
-}
-.footer-links li a,
-.footer-links ul li {
-    color: var(--footer-text-color);
-}
-.footer-about address,
-.footer-subscribe-content p {
-    color: var(--footer-text-color);
-    margin-bottom: 0;
-}
-.footer-links li a:hover,
-.footer-bottom-nav ul li a:hover {
-    color: var(--primary-color);
-    text-decoration-line: underline;
-}
-.footer-links ul li {
-    padding: 0 0 18px;
-}
-.footer-links ul li:last-child {
-    padding-bottom: 0;
-}
-.footer-contact-info ul li img {
-    margin-right: 22px;
-}
-.copyright-text {
-    padding: 16px 0;
-    border-top: 1px solid rgba(255, 255, 255, 0.2);
-}
-.copyright-text p,
-.copyright-text a {
-    color: var(--footer-text-color);
-    font-size: 15px;
-    line-height: 27px;
-}
-.copyright-text p a:hover {
-    color: var(--primary-color);
-    text-decoration: underline;
+/* Footer headings spacing */
+.footer-widget h5 {
+    font-size: 1.1rem;
+    border-bottom: 2px solid rgba(255,255,255,0.15);
+    padding-bottom: .5rem;
+    display: inline-block;
 }
 /*-------------------------------------------
   17. Footer Area End
