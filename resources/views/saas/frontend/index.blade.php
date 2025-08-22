@@ -242,7 +242,7 @@ $chunks = array_chunk($useCases, 8);
 
 {{--Testimonials--}}
 <section class="py-5 bg-light">
-  <div class="container">
+  <div id="testimonials" class="container">
     <div class="row align-items-center">
       
       <!-- Left Side -->

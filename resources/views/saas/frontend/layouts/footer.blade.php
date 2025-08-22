@@ -31,8 +31,9 @@
                     <h5 class="fw-bold mb-4 text-white">Product</h5>
                     <ul class="list-unstyled small">
                         <li class="mb-2"><a href="{{ route('login') }}" class="footer-link">Dashboard</a></li>
-                        <li class="mb-2"><a href="#pricing" class="footer-link">Pricing</a></li>
-                        <li class="mb-2"><a href="#testimonial" class="footer-link">Testimonials</a></li>
+                        <li class="mb-2"><a href="{{ route('frontend') }}#testimonials" class="footer-link">Testimonials</a></li>
+                        <li class="mb-2"><a href="{{ route('frontend') }}#features" class="footer-link">Features</a></li>
+                        <li class="mb-2"><a href="{{ route('house.hunt') }}" class="footer-link">House Hunt</a></li>
                     </ul>
                 </div>
             </div>
@@ -55,9 +56,9 @@
                     <h5 class="fw-bold mb-4 text-white">Support</h5>
                     <ul class="list-unstyled small">
                         <li class="mb-2"><a href="#faqs" class="footer-link">FAQs</a></li>
-                        <li class="mb-2"><a href="#about" class="footer-link">About Us</a></li>
-                        <li class="mb-2"><a href="#how-it-works" class="footer-link">How it Works</a></li>
-                        <li class="mb-2"><a href="#support" class="footer-link">Contact Us</a></li>
+                        <li class="mb-2"><a href="{{ route('frontend') }}#features" class="footer-link">About Us</a></li>
+                        <li class="mb-2"><a href="{{ route('frontend') }}#howitworks" class="footer-link">How it Works</a></li>
+                        <li class="mb-2"><a href="{{ route('frontend') }}#contact-us" class="footer-link">Contact Us</a></li>
                     </ul>
                 </div>
             </div>
