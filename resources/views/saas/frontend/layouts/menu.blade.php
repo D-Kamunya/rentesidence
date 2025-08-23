@@ -46,6 +46,9 @@
                     <ul class="navbar-nav mb-2 mb-lg-0 col-lg-6 col-xl-6 navbar-nav-middle">
                         @if (getOption('home_feature_section_status'))
                             <li class="nav-item">
+                                    <a class="nav-link" href="{{ route('frontend') }}">Home</a>
+                            </li>
+                            <li class="nav-item">
                                 <a class="nav-link {{ request()->is('/') ? 'active' : '' }}" aria-current="page"
                                     href="{{ route('frontend') }}#features"><span>{{ __('Features') }}</span></a>
                             </li>
