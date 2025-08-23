@@ -41,14 +41,14 @@
             <div class="carousel-inner">
                 @php
                     $features = [
-                        ['icon' => 'mdi:home', 'title' => 'Vacant Unit Listings', 'desc' => 'Vacant units are auto listed to our house hunt page to reduce vacancies.'],
+                        ['icon' => 'mdi:home', 'title' => 'Vacant Unit Listings', 'desc' => 'Vacant units are auto listed to our house hunt page to reduce vacancies and increase your cash flow.'],
                         ['icon' => 'mdi:shield-check', 'title' => 'Automate rent collection', 'desc' => 'Centresidence sends rent invoices, tracks payments, and manages tenant queries automatically.'],
                         ['icon' => 'mdi:chart-bar', 'title' => 'Ticketing System', 'desc' => 'Replace calls with a smart ticketing system. Tenants submit maintenance requests and photo evidence directly from their accounts.'],
                         ['icon' => 'mdi:bell-outline', 'title' => 'Notice Board', 'desc' => 'Make important announcements to your tenants easily within their accounts'],
                         ['icon' => 'mdi:search', 'title' => 'Tenant Screening', 'desc' => 'Centresidence auto-screens new tenants, flags behavioral issues from past records, and alerts you instantly.'],
-                        ['icon' => 'mdi:shop', 'title' => 'Marketplace', 'desc' => 'Centresidence’s marketplace lets you earn extra by selling to tenants—SMS alerts and direct payments included.'],
+                        ['icon' => 'mdi:shop', 'title' => 'Marketplace', 'desc' => 'Centresidence’s marketplace lets you earn extra by selling to tenants. SMS alerts and direct payments included all built to help you increase your cashflow'],
                         ['icon' => 'mdi:chart-line', 'title' => 'Reports & Insights', 'desc' => 'Get detailed reports to optimize property management.'],
-                        ['icon' => 'mdi:cloud-check', 'title' => 'Cloud Access', 'desc' => 'Access your dashboard from anywhere, anytime.'],
+                        ['icon' => 'mdi:cloud-check', 'title' => 'Cloud Access', 'desc' => 'Access your dashboard from anywhere in the world, anytime.'],
                     ];
                 @endphp
                 @foreach(array_chunk($features, 4) as $index => $featureGroup)
