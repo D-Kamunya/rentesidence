@@ -7,6 +7,7 @@ const USER_ROLE_OWNER = 1;
 const USER_ROLE_TENANT = 2;
 const USER_ROLE_MAINTAINER = 3;
 const USER_ROLE_ADMIN = 4;
+const USER_ROLE_AFFILIATE = 5;
 
 // Gateway
 const GATEWAY_MODE_LIVE = 1;

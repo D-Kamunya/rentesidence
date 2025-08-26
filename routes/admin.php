@@ -6,6 +6,7 @@ use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\LanguageController;
 use App\Http\Controllers\Admin\MailController;
 use App\Http\Controllers\Admin\OwnerController;
+use App\Http\Controllers\Admin\AffiliateController;
 use App\Http\Controllers\Admin\SettingController;
 use App\Http\Controllers\VersionUpdateController;
 use Illuminate\Support\Facades\Route;
@@ -20,6 +21,14 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'middleware' => ['auth', 'a
          // register owner
         Route::get('register', [OwnerController::class, 'owner_register_form'])->name('register.form');
         Route::post('register', [OwnerController::class, 'owner_register_store'])->name('register.store');
+
+    });
+
+    Route::group(['prefix' => 'affiliates', 'as' => 'affiliates.'], function () {
+        Route::get('/', [AffiliateController::class, 'index'])->name('index');
+         // register affiliate
+        Route::get('register', [AffiliateController::class, 'affiliate_register_form'])->name('register.form');
+        Route::post('register', [AffiliateController::class, 'affiliate_register_store'])->name('register.store');
 
     });
 

@@ -33,6 +33,7 @@ use Illuminate\Support\Facades\Artisan;
 use App\Jobs\SendPaymentsSuccessEmailJob;
 use App\Jobs\SendInvoiceNotificationAndEmailJob;
 use App\Jobs\SendSmsJob;
+use App\Jobs\SendLoginDetailsJob;
 
 function getOption($option_key, $default = '')
 {
@@ -1281,6 +1282,17 @@ if (!function_exists('getExistingAutoInvoice')) {
                 ->where('owner_user_id', $userId)
                 ->count();
             return $totalCount;
+        }
+    }
+}
+
+if (!function_exists('sendLoginDetails')) {
+    function sendLoginDetails($user,$password)
+    {
+        try {
+            SendLoginDetailsJob::dispatch($user, $password);
+        } catch (Exception $e) {
+            return back()->with('error', $e->getMessage());
         }
     }
 }
