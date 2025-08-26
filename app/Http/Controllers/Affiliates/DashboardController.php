@@ -11,19 +11,64 @@ class DashboardController extends Controller
 {
     public function dashboard()
     {
-        // For now, mock some data for agents and affiliate earnings.
-        $owners = [
-            ['name' => 'John Doe', 'package' => '1-50 Units', 'package_cost' => 5000, 'status' => 'active'],
-            ['name' => 'Jane Smith', 'package' => '51-100 Units', 'package_cost' => 10000, 'status' => 'active'],
-            ['name' => 'Bob Lee', 'package' => '101-150 Units', 'package_cost' => 15000, 'status' => 'dormant'],
+           // Dummy summary stats
+        $summary = [
+            'total_commissions' => 25400.75,
+            'total_clients' => 37,
+            'recurring_clients' => 22,
+            'tier' => 'Gold',
+            'tier_rate' => '15%',
+            'pending_payout' => 4200.50,
+            'total_payouts' => 19800.25,
+            'total_referrals' => 15
         ];
 
-        // For demonstration, you can calculate 7% of each owner's package
-        foreach ($owners as &$owner) {
-            $owner['affiliate_earning'] = $owner['package_cost'] * 0.07;
-        }
+        // Dummy commission trends (last 6 months)
+        $commissionTrends = [
+            ['month' => 'Mar', 'amount' => 3200],
+            ['month' => 'Apr', 'amount' => 4500],
+            ['month' => 'May', 'amount' => 3800],
+            ['month' => 'Jun', 'amount' => 5200],
+            ['month' => 'Jul', 'amount' => 6100],
+            ['month' => 'Aug', 'amount' => 4100],
+        ];
+
+        // Dummy recent commissions table
+        $recentCommissions = [
+            [
+                'date' => '2025-08-14',
+                'owner' => 'John Doe',
+                'package' => 'Premium Plan',
+                'type' => 'New',
+                'amount' => 1500.00,
+                'status' => 'Paid'
+            ],
+            [
+                'date' => '2025-08-10',
+                'owner' => 'Sarah Johnson',
+                'package' => 'Basic Plan',
+                'type' => 'Recurring',
+                'amount' => 800.00,
+                'status' => 'Pending'
+            ],
+            [
+                'date' => '2025-08-08',
+                'owner' => 'Michael Lee',
+                'package' => 'Pro Plan',
+                'type' => 'New',
+                'amount' => 2000.00,
+                'status' => 'Paid'
+            ]
+        ];
+
+        // Dummy top clients
+        $topClients = [
+            ['name' => 'John Doe', 'total' => 4500],
+            ['name' => 'Sarah Johnson', 'total' => 3800],
+            ['name' => 'Michael Lee', 'total' => 3200],
+        ];
 
         // Pass the data to the view
-        return view('affiliates.dashboard', compact('owners'));
+        return view('affiliates.dashboard', compact('summary', 'commissionTrends', 'recentCommissions', 'topClients'));
     }
 }

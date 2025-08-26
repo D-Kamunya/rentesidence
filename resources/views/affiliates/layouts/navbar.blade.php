@@ -45,7 +45,9 @@
                 <button type="button" class="header-item noti-icon" id="page-header-notifications-dropdown"
                     data-bs-toggle="dropdown" aria-expanded="false">
                     <i class="ri-notification-2-fill"></i>
+                    @if (count(getNotificationLimit(auth()->id())) > 0)
                         <span class="noti-dot pulse"></span>
+                    @endif
                 </button>
                 <div class="dropdown-menu dropdown-menu-lg {{ selectedLanguage()->rtl == 1 ? 'dropdown-menu-start' : 'dropdown-menu-end' }} p-0"
                     aria-labelledby="page-header-notifications-dropdown">
@@ -91,17 +93,17 @@
                 <button type="button" class="header-item" id="page-header-user-dropdown" data-bs-toggle="dropdown"
                     aria-haspopup="true" aria-expanded="false">
                     <img class="rounded-circle avatar-xs fit-image header-profile-user"
-                        title="Kelvin Brown" src="C:\Users\dgito\tosh\rentesidence\storage\app\public\files\User\1726500330.jpeg"
-                        alt="Kelvin Brown">
-                    <span class="d-none d-xl-inline-block ms-1 font-medium">Kelvin Brown</span>
+                        src="{{ auth()->user()->image }}" alt="Header Avatar">
+                    <span class="d-none d-xl-inline-block ms-1 font-medium">{{ auth()->user()->name }}</span>
                     <i class="mdi mdi-chevron-down d-xl-inline-block"></i>
                 </button>
                 <div class="dropdown-menu {{ selectedLanguage()->rtl == 1 ? 'dropdown-menu-start' : 'dropdown-menu-end' }}"
                     aria-labelledby="page-header-user-dropdown">
-                    <a class="dropdown-item"><i
-                            class="ri-user-line align-middle me-1"></i>{{ __('Profile') }}</a>
+                    <!-- item-->
+                    <a class="dropdown-item" href="{{ route('profile') }}"><i
+                            class="ri-user-line align-middle me-1"></i> {{ __('Profile') }}</a>
                     <div class="dropdown-divider"></div>
-                    <a class="dropdown-item"><i
+                    <a class="dropdown-item" href="{{ route('logout') }}"><i
                             class="ri-shut-down-line align-middle me-1"></i> {{ __('Logout') }}</a>
                 </div>
             </div>
