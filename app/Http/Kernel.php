@@ -11,6 +11,7 @@ use App\Http\Middleware\Owner;
 use App\Http\Middleware\SaasModuleMiddleware;
 use App\Http\Middleware\TenancyMiddleware;
 use App\Http\Middleware\Tenant;
+use App\Http\Middleware\Affiliate;
 use App\Http\Middleware\VersionUpdate;
 use Illuminate\Foundation\Http\Kernel as HttpKernel;
 
@@ -82,5 +83,6 @@ class Kernel extends HttpKernel
         'version.update' => VersionUpdate::class,
         'addon.update' => SaasModuleMiddleware::class,
         'isFrontend' => IsFrontend::class,
+        'affiliate' => Affiliate::class,
     ];
 }

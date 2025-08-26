@@ -96,6 +96,8 @@ class LoginController extends Controller
                 return redirect()->route('maintainer.dashboard');
             } elseif (isset($user) && ($user->role == USER_ROLE_ADMIN)) {
                 return redirect()->route('admin.dashboard');
+            } elseif (isset($user) && ($user->role == USER_ROLE_AFFILIATE)) {
+                return redirect()->route('affiliate.dashboard');
             } else {
                 Auth::logout();
                 return redirect("login")->with('error', __(SOMETHING_WENT_WRONG));
