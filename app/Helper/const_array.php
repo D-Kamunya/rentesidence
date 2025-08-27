@@ -779,13 +779,22 @@ function getDurationTypes($input = null)
 function getPropertyAmenities($input = null)
 {
     $output = [
-        PROPERTY_AMENITY_FIRE_SECURITY => __('File Security'),
+        PROPERTY_AMENITY_FIRE_SECURITY => __('Fire Security'),
         PROPERTY_AMENITY_ELECTRICITY => __('Electricity'),
-        PROPERTY_AMENITY_KITCHEN => __('Kitchen'),
+        PROPERTY_AMENITY_CINEMA => __('Cinema'),
         PROPERTY_AMENITY_GARAGE => __('Garage'),
         PROPERTY_AMENITY_SWIMMING_POOL => __('Swimming Pool'),
-        PROPERTY_AMENITY_SECURITY_PRIVACY => __('Security Privacy'),
+        PROPERTY_AMENITY_SECURITY => __('Security'),
         PROPERTY_AMENITY_ECO_FRIENDLY_ENERGY => __('Eco - Friendly Energy'),
+        PROPERTY_AMENITY_WI_FI => __('WI-FI'),
+        PROPERTY_AMENITY_PARKING => __('Parking'),
+        PROPERTY_AMENITY_BALCONY => __('Balcony'),
+        PROPERTY_AMENITY_GARDEN => __('Garden'),
+        PROPERTY_AMENITY_LAUNDRY_ROOM => __('Laundry Room'),
+        PROPERTY_AMENITY_AIR_CONDITIONING => __('Air Conditioning'),
+        PROPERTY_AMENITY_CENTRAL_HEATING => __('Central Heating'),
+        PROPERTY_AMENITY_FITNESS_CENTER => __('Fitness Center'),
+        PROPERTY_AMENITY_SPA  => __('Spa'),
     ];
 
 
