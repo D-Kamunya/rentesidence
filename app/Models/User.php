@@ -31,6 +31,11 @@ class User extends Authenticatable
         return $this->hasOne(Maintainer::class, 'user_id', 'id');
     }
 
+
+    public function affiliate()
+    {
+        return $this->hasOne(Affiliate::class, 'user_id', 'id');
+    }
     /**
      * The attributes that should be hidden for serialization.
      *

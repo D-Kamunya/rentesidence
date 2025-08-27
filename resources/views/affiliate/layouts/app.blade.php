@@ -45,16 +45,16 @@
     @endif
 
     <div id="layout-wrapper">
-        @include('affiliates.layouts.navbar')
-        @include('affiliates.layouts.sidebar')
+        @include('affiliate.layouts.navbar')
+        @include('affiliate.layouts.sidebar')
         @yield('content')
     </div>
 
     @include('common.layouts.script')
-    @stack('script')
 
     <!-- App Custom js -->
     <script src="{{ asset('assets/js/custom.js') }}"></script>
+    @stack('scripts')
 </body>
 
 </html>

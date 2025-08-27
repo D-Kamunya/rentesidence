@@ -6,6 +6,9 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use App\Services\AffiliateCommissionService;
+use Illuminate\Support\Facades\Log;
+use App\Models\OwnerPackage;
 
 class SubscriptionOrder extends Model
 {
@@ -41,5 +44,26 @@ class SubscriptionOrder extends Model
     public function user(): HasOne
     {
         return $this->hasOne(User::class, 'id', 'user_id');
+    }
+
+    public function package()
+    {
+        return $this->belongsTo(OwnerPackage::class, 'package_id');
+    }
+    
+    protected static function booted()
+    {
+        static::created(function ($order) {
+            Log::info('Subscription order created: ' . $order->id);
+            app(AffiliateCommissionService::class)->handleSubscriptionPayment($order);
+        });
+
+        static::updated(function ($order) {
+            // Optional: only recalc if payment status or amount changes
+            if ($order->wasChanged(['payment_status'])) {
+                Log::info('Subscription order updated: ' . $order->id);
+                app(AffiliateCommissionService::class)->handleSubscriptionPayment($order);
+            }
+        });
     }
 }
