@@ -19,44 +19,109 @@
                         </div>
                     </div>
 
-                     <!-- Summary Cards -->
+                    <!-- Summary Cards -->
                     <div class="row g-3 mb-4">
+
+                        <!-- Total Earnings -->
                         <div class="col-md-3">
-                            <div class="card shadow-sm border-0 rounded-3">
+                            <div class="card shadow-sm border-0 rounded-3 bg-light">
                                 <div class="card-body">
-                                    <small class="text-muted">Total Earnings</small>
-                                    <h4 class="fw-bold text-success mb-0">Ksh {{ number_format($summary['total_commissions'], 2) }}</h4>
+                                    <small class="text-muted">
+                                        <i class="bi bi-cash-stack me-1 text-success"></i> Total Earnings
+                                    </small>
+                                    <h4 class="fw-bold text-success mb-0">
+                                        Ksh {{ number_format($summary['total_commissions'], 2) }}
+                                    </h4>
                                 </div>
                             </div>
                         </div>
 
+                        <!-- This Month -->
                         <div class="col-md-3">
-                            <div class="card shadow-sm border-0 rounded-3">
+                            <div class="card shadow-sm border-0 rounded-3 bg-light">
                                 <div class="card-body">
-                                    <small class="text-muted">This Month</small>
-                                    <h4 class="fw-bold text-primary mb-0">Ksh {{ number_format($summary['total_payouts'], 2) }}</h4>
+                                    <small class="text-muted">
+                                        <i class="bi bi-calendar-event me-1 text-primary"></i> This Month
+                                    </small>
+                                    <h4 class="fw-bold text-primary mb-0">
+                                        Ksh {{ number_format($summary['current_monthly_earning'], 2) }}
+                                    </h4>
                                 </div>
                             </div>
                         </div>
 
+                        <!-- New Clients (This Month) -->
                         <div class="col-md-3">
-                            <div class="card shadow-sm border-0 rounded-3">
+                            <div class="card shadow-sm border-0 rounded-3 bg-light">
                                 <div class="card-body">
-                                    <small class="text-muted">Active Referrals</small>
-                                    <h4 class="fw-bold text-dark mb-0">{{ $summary['recurring_clients'] }}</h4>
+                                    <small class="text-muted">
+                                        <i class="bi bi-person-plus me-1 text-info"></i> New Clients
+                                    </small>
+                                    <h4 class="fw-bold text-info mb-0">
+                                        {{ $summary['new_clients'] }}
+                                    </h4>
                                 </div>
                             </div>
                         </div>
 
+                        <!-- Active Referrals (Recurring Clients) -->
                         <div class="col-md-3">
-                            <div class="card shadow-sm border-0 rounded-3">
+                            <div class="card shadow-sm border-0 rounded-3 bg-light">
                                 <div class="card-body">
-                                    <small class="text-muted">Tier Level</small>
-                                    <h4 class="fw-bold text-warning mb-0">{{ $summary['tier'] }}</h4>
+                                    <small class="text-muted">
+                                        <i class="bi bi-people-fill me-1 text-dark"></i> Active Referrals
+                                    </small>
+                                    <h4 class="fw-bold text-dark mb-0">
+                                        {{ $summary['recurring_clients'] }}
+                                    </h4>
                                 </div>
                             </div>
                         </div>
+
+                        <!-- Available Balance -->
+                        <div class="col-md-3">
+                            <div class="card shadow-sm border-0 rounded-3 bg-light">
+                                <div class="card-body">
+                                    <small class="text-muted">
+                                        <i class="bi bi-wallet2 me-1 text-warning"></i> Available Balance
+                                    </small>
+                                    <h4 class="fw-bold text-warning mb-0">
+                                        Ksh {{ number_format($summary['available_balance'], 2) }}
+                                    </h4>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Total Payouts -->
+                        <div class="col-md-3">
+                            <div class="card shadow-sm border-0 rounded-3 bg-light">
+                                <div class="card-body">
+                                    <small class="text-muted">
+                                        <i class="bi bi-bank me-1 text-secondary"></i> Total Payouts
+                                    </small>
+                                    <h4 class="fw-bold text-secondary mb-0">
+                                        Ksh {{ number_format($summary['total_payouts'], 2) }}
+                                    </h4>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Total Referrals -->
+                        <div class="col-md-3">
+                            <div class="card shadow-sm border-0 rounded-3 bg-light">
+                                <div class="card-body">
+                                    <small class="text-muted">
+                                        <i class="bi bi-link-45deg me-1 text-danger"></i> Total Referrals
+                                    </small>
+                                    <h4 class="fw-bold text-danger mb-0">
+                                        {{ $summary['total_referrals'] }}
+                                    </h4>
+                                </div>
+                            </div>
+                        </div>
+
                     </div>
+
 
                     <!-- Chart Section -->
                     <div class="card shadow-sm border-0 rounded-3 mb-4">
@@ -75,7 +140,7 @@
                                     <tr>
                                         <th>Date</th>
                                         <th>Client</th>
-                                        <th>Subscription ID</th>
+                                        <th>Subscription</th>
                                         <th>Type</th>
                                         <th>Amount</th>
                                     </tr>
@@ -87,8 +152,8 @@
                                             <td>{{ $commission['owner'] }}</td>
                                             <td>{{ $commission['package'] }}</td>
                                             <td>
-                                                <span class="badge {{ $commission['type'] == 'New' ? 'bg-success' : 'bg-secondary' }}">
-                                                    {{ $commission['type'] }}
+                                                <span class="badge {{ $commission['type'] == NEW_CLIENT ? 'bg-success' : 'bg-secondary' }}">
+                                                    {{ $commission['type'] == NEW_CLIENT ? 'New Client' : 'Recurring Client' }}
                                                 </span>
                                             </td>
                                             <td>Ksh {{ number_format($commission['amount'], 2) }}</td>
@@ -113,14 +178,15 @@
 @push('scripts')
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
+document.addEventListener('DOMContentLoaded', function () {
     var ctx = document.getElementById('earningsChart').getContext('2d');
     var earningsChart = new Chart(ctx, {
         type: 'line',
         data: {
-            labels: {!! json_encode(array_column($commissionTrends, 'month')) !!},
+            labels: @json(array_column($commissionTrends, 'month')),
             datasets: [{
                 label: 'Monthly Earnings (Ksh)',
-                data: {!! json_encode(array_column($commissionTrends, 'amount')) !!},
+                data: @json(array_column($commissionTrends, 'amount')),
                 borderColor: '#4CAF50',
                 backgroundColor: 'rgba(76, 175, 80, 0.1)',
                 tension: 0.4,
@@ -135,7 +201,7 @@
             }
         }
     });
-
+});
 </script>
 @endpush
 

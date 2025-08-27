@@ -271,4 +271,11 @@ class AffiliateCommissionService
     {
         return $this->getLifetimeEarningsMinusWithdrawals($affiliateId);
     }
+
+    public function getLifeTimeGrossCommissions(int $affiliateId): float
+    {
+        return $this->getLifetimeEarningsMinusWithdrawals($affiliateId) + 
+                         \App\Models\AffiliateWithdrawal::where('affiliate_id', $affiliateId)
+                            ->whereIn('status',[AFFILIATE_WITHDRAWAL_APPROVED])->sum('amount');
+    }
 }

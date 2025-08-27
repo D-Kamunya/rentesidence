@@ -51,10 +51,10 @@
     </div>
 
     @include('common.layouts.script')
-    @stack('script')
 
     <!-- App Custom js -->
     <script src="{{ asset('assets/js/custom.js') }}"></script>
+    @stack('scripts')
 </body>
 
 </html>

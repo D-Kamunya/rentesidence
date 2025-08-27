@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use App\Services\AffiliateCommissionService;
 use Illuminate\Support\Facades\Log;
+use App\Models\OwnerPackage;
 
 class SubscriptionOrder extends Model
 {
@@ -45,6 +46,11 @@ class SubscriptionOrder extends Model
         return $this->hasOne(User::class, 'id', 'user_id');
     }
 
+    public function package()
+    {
+        return $this->belongsTo(OwnerPackage::class, 'package_id');
+    }
+    
     protected static function booted()
     {
         static::created(function ($order) {
