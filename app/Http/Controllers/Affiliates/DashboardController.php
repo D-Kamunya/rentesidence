@@ -103,6 +103,6 @@ class DashboardController extends Controller
             ->toArray();
 
         // Pass the data to the view
-        return view('affiliates.dashboard', compact('summary', 'commissionTrends', 'recentCommissions'));
+        return view('affiliate.dashboard', compact('summary', 'commissionTrends', 'recentCommissions'));
     }
 }

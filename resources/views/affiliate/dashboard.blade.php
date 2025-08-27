@@ -1,5 +1,5 @@
 
-@extends('affiliates.layouts.app')
+@extends('affiliate.layouts.app')
 
 @section('content')
 <div class="main-content">

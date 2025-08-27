@@ -45,8 +45,8 @@
     @endif
 
     <div id="layout-wrapper">
-        @include('affiliates.layouts.navbar')
-        @include('affiliates.layouts.sidebar')
+        @include('affiliate.layouts.navbar')
+        @include('affiliate.layouts.sidebar')
         @yield('content')
     </div>
 

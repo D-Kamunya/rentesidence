@@ -427,6 +427,7 @@ if (!function_exists('getLayout')) {
             USER_ROLE_OWNER => 'owner',
             USER_ROLE_TENANT => 'tenant',
             USER_ROLE_MAINTAINER => 'maintainer',
+            USER_ROLE_AFFILIATE => 'affiliate',
         ];
 
         return $output[auth()->user()->role];
