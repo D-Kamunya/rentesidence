@@ -832,7 +832,7 @@ public function getEmptyUnitsByProperty($propertyId)
         }
     }
 
-    public function getUnitsByPropertyId($id,$activeTenants)
+    public function getUnitsByPropertyId($id,$activeTenants=False)
     {
         $propertyUnits = PropertyUnit::query()
             ->leftJoin('tenants', 'property_units.id', '=', 'tenants.unit_id')
