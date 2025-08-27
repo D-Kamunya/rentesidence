@@ -2,20 +2,28 @@
 @section('content')
 <link href="https://fonts.googleapis.com/css2?family=Josefin+Sans:wght@400;500;600&display=swap" rel="stylesheet">
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600&family=Poppins:wght@400;600&display=swap" rel="stylesheet">
-<div class="row">
-    <div class="col-md-12 property-banner text-white position-relative" 
-        style="position: relative; background-image: url('https://picsum.photos/1200/400?random={{ rand(1, 1000) }}'); background-size: cover; background-position: center; height: 500px; border-radius: 12px; overflow: hidden;">
+<div class="col-md-12 property-banner text-white position-relative" 
+    style="position: relative; 
+            background-image: url('{{ asset('assets/images/exterior.jpg') }}'); 
+            background-size: cover; 
+            background-position: center; 
+            height: 600px; 
+            border-radius: 12px; 
+            overflow: hidden;">
         
-        <!-- Black overlay -->
-         h-100  position-relative
-        <div style="position: absolute; inset: 0; background: rgba(0, 0, 0, 0.45); display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 20px;">
-            <h5 style="color: #fff; font-size: 2rem; font-family: 'Poppins', sans-serif; font-weight: bold; letter-spacing: 1px; text-shadow: 0 2px 8px rgba(0,0,0,0.7); margin-bottom: 5px;">
-                {{ __('Find Your Next Home') }}
-            </h5>
-            <p style="color: #fff; font-size: 1.1rem; font-family: 'Poppins', sans-serif; text-shadow: 0 2px 6px rgba(0,0,0,0.6); margin: 0;">
-                {{ __('Browse vacant properties and discover your perfect match') }}
-            </p>
-        </div>
+    <!-- Black overlay -->
+    <div style="position: absolute; inset: 0; background: rgba(0, 0, 0, 0.45); 
+                display: flex; flex-direction: column; align-items: center; 
+                justify-content: center; text-align: center; padding: 20px;">
+        <h5 style="color: #fff; font-size: 2rem; font-family: 'Poppins', sans-serif; 
+                font-weight: bold; letter-spacing: 1px; 
+                text-shadow: 0 2px 8px rgba(0,0,0,0.7); margin-bottom: 5px;">
+            {{ __('Find Your Next Home') }}
+        </h5>
+        <p style="color: #fff; font-size: 1.1rem; font-family: 'Poppins', sans-serif; 
+                text-shadow: 0 2px 6px rgba(0,0,0,0.6); margin: 0;">
+            {{ __('Browse vacant properties and discover your perfect match') }}
+        </p>
     </div>
 </div>
 <div class="property-details mt-5">
@@ -27,15 +35,14 @@
                         <div class="property-item rounded overflow-hidden">
                             <div class="single-properties">
                                 <div class="properties-img position-relative">
-                                    <img 
-                                        src="{{ $property->thumbnail_url ?? 'https://picsum.photos/600/400?random=' . $property->property_id }}" 
-                                        onerror="this.onerror=null; this.src='https://picsum.photos/600/400?random={{ $property->property_id }}';" 
-                                        alt="Thumbnail" 
-                                        style="width:100%; height:250px; object-fit:cover; border-radius:12px;">
-                                        <span class="badge bg-primary position-absolute top-0 start-0 m-2 px-3 py-2">
-                                {{ $unit->listing_type ?? __('For Rent') }}
-                            </span>
-                                    
+                                <img 
+                                    src="{{ $property->thumbnail_url ?? asset('assets/images/property.png') }}" 
+                                    onerror="this.onerror=null; this.src='{{ asset('assets/images/property.png') }}';" 
+                                    alt="Thumbnail" 
+                                    style="width:100%; height:250px; object-fit:cover; border-radius:12px;">
+                                <span class="badge bg-primary position-absolute top-0 start-0 m-2 px-3 py-2">
+                                    {{ $unit->listing_type ?? __('For Rent') }}
+                                </span>
                                     {{-- No Image Provided Tag --}}
                                     @if(!$property->thumbnail_url)
                                         <span style="position:absolute; bottom:8px; right:12px; background:rgba(0,0,0,0.7); color:#fff; font-size:12px; padding:3px 8px; border-radius:6px;">
