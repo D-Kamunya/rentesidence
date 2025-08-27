@@ -21,13 +21,13 @@
         }
 
         if (!$heroImage) {
-            $heroImage = "https://picsum.photos/1200/400?random={$property['id']}";
+            $heroImage = asset('assets/images/interior.jpg');
             $isFallbackHero = true;
         }
     @endphp
     <div class="row">
         <div class="col-md-12 property-banner text-white position-relative" 
-            style="background-image: url('{{ $heroImage }}'); background-size: cover; background-position: center; height: 350px;">
+            style="background-image: url('{{ $heroImage }}'); background-size: cover; background-position: center; height: 450px;">
             
             <!-- Black overlay -->
             <div class="position-absolute top-0 start-0 w-100 h-100" 
@@ -71,7 +71,7 @@
 
                 // If no uploaded image → fallback to picsum
                 if (!$unitImage) {
-                    $unitImage = "https://picsum.photos/400/300?random={$unit->id}";
+                    $unitImage = asset('assets/images/unit.png');
                     $isFallback = true;
                 }
             @endphp
