@@ -15,8 +15,14 @@ class Kernel extends ConsoleKernel
      */
     protected function schedule(Schedule $schedule)
     {
-        $schedule->command('reminder:invoice')->daily();
-        $schedule->command('generate:invoice')->daily();
+        $schedule->command('reminder:invoice')->dailyAt('06:00')
+        ->appendOutputTo(storage_path('logs/reminder_scheduler.log'));
+        $schedule->command('generate:invoice')->dailyAt('06:00')
+        ->appendOutputTo(storage_path('logs/generate_invoice_scheduler.log'));
+        $schedule->command('queue:work --stop-when-empty --timeout=120 --tries=3 --memory=512')
+            ->everyMinute()
+            ->withoutOverlapping()
+            ->appendOutputTo(storage_path('logs/queue_worker.log'));
     }
 
     /**
