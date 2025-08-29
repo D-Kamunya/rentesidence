@@ -9,40 +9,45 @@ use Illuminate\Support\Facades\File;
 class DatabaseBackup extends Command
 {
     protected $signature = 'backup:database';
-    protected $description = 'Backup the database to database/backups/';
+    protected $description = 'Backup the database without using mysqldump (handles FK issues)';
 
     public function handle()
     {
-        $db = config('database.connections.mysql.database');
-        $user = config('database.connections.mysql.username');
-        $pass = config('database.connections.mysql.password');
-        $host = config('database.connections.mysql.host');
+        $database = DB::getDatabaseName();
+        $tables = DB::select('SHOW TABLES');
 
-        // Detect OS and set mysqldump path
-        if (strtoupper(substr(PHP_OS, 0, 3)) === 'WIN') {
-            // Windows: Set full path to mysqldump (adjust XAMPP/WAMP path)
-            $mysqldumpPath = 'C:\\xampp\\mysql\\bin\\mysqldump.exe';
-        } else {
-            // Linux/Mac: Use mysqldump from system PATH
-            $mysqldumpPath = 'mysqldump';
+        $filePath = base_path('database/backups/' . date('Y-m-d_H-i-s') . '.sql');
+        File::ensureDirectoryExists(dirname($filePath));
+        $handle = fopen($filePath, 'w+');
+
+        fwrite($handle, "SET FOREIGN_KEY_CHECKS=0;\n\n");
+
+        foreach ($tables as $table) {
+            $tableName = array_values((array)$table)[0];
+
+            // Drop table if exists
+            fwrite($handle, "DROP TABLE IF EXISTS `$tableName`;\n");
+
+            // Create statement
+            $create = DB::select("SHOW CREATE TABLE `$tableName`")[0]->{'Create Table'};
+            fwrite($handle, $create . ";\n\n");
+
+            // Data inserts
+            $rows = DB::table($tableName)->get();
+            foreach ($rows as $row) {
+                $vals = array_map(function ($v) {
+                    return is_null($v) ? 'NULL' : "'" . addslashes($v) . "'";
+                }, (array) $row);
+
+                fwrite($handle, "INSERT INTO `$tableName` VALUES(" . implode(',', $vals) . ");\n");
+            }
+            fwrite($handle, "\n\n");
         }
 
-        // Backup path
-        $backupPath = base_path('database/backups');
-        if (!File::exists($backupPath)) {
-            File::makeDirectory($backupPath, 0755, true);
-        }
+        fwrite($handle, "SET FOREIGN_KEY_CHECKS=1;\n");
 
-        $filename = $backupPath . '/' . date('Y-m-d_H-i-s') . '_backup.sql';
+        fclose($handle);
 
-        $command = "\"{$mysqldumpPath}\" --user={$user} --password={$pass} --host={$host} {$db} > \"{$filename}\"";
-
-        system($command, $output);
-
-        if ($output === 0) {
-            $this->info("Backup created: {$filename}");
-        } else {
-            $this->error("Backup failed.");
-        }
+        $this->info("Database backup saved to: $filePath");
     }
 }
