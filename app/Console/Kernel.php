@@ -23,6 +23,9 @@ class Kernel extends ConsoleKernel
             ->everyMinute()
             ->withoutOverlapping()
             ->appendOutputTo(storage_path('logs/queue_worker.log'));
+        $schedule->command('backup:database')
+            ->dailyAt('00:00')
+            ->appendOutputTo(storage_path('logs/db_backup.log'));
     }
 
     /**
