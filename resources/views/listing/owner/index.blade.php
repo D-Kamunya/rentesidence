@@ -64,7 +64,7 @@
                                                             fill="#A5ABBA" />
                                                     </svg>
                                                 </div>
-                                                <p>{{ Str::limit($listing->address, 40, '...') }}</p>
+                                                <p>{{ $listing->city }} , {{ $listing->state }}</p>
                                             </div>
                                             <div class="room-details">
                                                 <div class="single-option">
@@ -86,8 +86,7 @@
                                                     <p>{{ $listing->type }}</p>
                                                 </div>
                                                 <p class="price-properties">{{ __('Price') }} :
-                                                    {{ currencyPrice($listing->price) }}
-                                                    / {{ getDurationTypes($listing->price_duration_type) }}</p>
+                                                    {{ currencyPrice($listing->price) }}</p>
                                             </div>
                                             <a href="{{ route('listing.details', $listing->slug) }}" target="_blank"
                                                 class="btn theme-btn upload-count-plus w-100 py-3 mt-3">{{ __('View Details') }}</a>

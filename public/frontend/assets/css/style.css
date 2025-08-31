@@ -680,6 +680,138 @@ img::selection {
   transform: scale(1.05);
 }
 
+/*----Properties for sale display page.------*/
+
+.font-josefin, .font-josefin * {
+    font-family: 'Josefin Sans', sans-serif;
+}
+
+.property-quick-header .sale-badge{
+    background: #16a34a; /* green */
+    color: #fff;
+    border-radius: 9999px;
+    padding: .35rem .75rem;
+    font-weight: 600;
+    letter-spacing: .3px;
+}
+
+.property-quick-header .property-title{
+    font-size: clamp(1.5rem, 2.2vw, 2.25rem);
+    font-weight: 700;
+    line-height: 1.2;
+}
+
+.property-quick-header .property-price{
+    font-size: clamp(1.125rem, 1.8vw, 1.75rem);
+    font-weight: 700;
+    white-space: nowrap;
+}
+/*nearby facilities cards styling*/
+@media (max-width: 575.98px){
+    .property-quick-header .property-price{ white-space: normal; }
+}
+.single-nearby-info {
+    transition: transform 0.25s ease, box-shadow 0.25s ease;
+    cursor: pointer;
+}
+.single-nearby-info:hover {
+    transform: translateY(-6px);
+    box-shadow: 0 10px 20px rgba(0,0,0,0.12);
+}
+.nearby-name {
+    font-size: 1rem;
+}
+.nearby-details {
+    line-height: 1.4;
+}
+.theme-text {
+    color: var(--theme-color); /* match your main brand color */
+    font-weight: 500;
+}
+.theme-text:hover {
+    text-decoration: underline;
+}
+
+/*related properties section styling*/
+.related-title {
+    font-size: 1.6rem;
+    position: relative;
+    display: inline-block;
+}
+
+.related-title + .divider {
+    width: 60px;
+    height: 3px;
+    background: var(--theme-color, #4CAF50);
+    margin-top: 10px;
+    border-radius: 50px;
+}
+
+.property-card {
+    background: #fff;
+    border-radius: 15px;
+    overflow: hidden;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+    transition: all 0.3s ease;
+}
+
+.property-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 20px rgba(0,0,0,0.12);
+}
+
+.property-image {
+    position: relative;
+    height: 200px;
+    overflow: hidden;
+}
+
+.property-image img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.4s ease;
+}
+
+.property-card:hover .property-image img {
+    transform: scale(1.05);
+}
+
+.price-tag {
+    position: absolute;
+    bottom: 15px;
+    left: 15px;
+    background: var(--theme-color, #4CAF50);
+    color: #fff;
+    padding: 6px 12px;
+    border-radius: 50px;
+    font-size: 0.9rem;
+    font-weight: 600;
+}
+
+.property-info h5 {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: #333;
+}
+
+.property-info p {
+    font-size: 0.9rem;
+    margin-bottom: 0;
+}
+
+.theme-btn {
+    background: var(--theme-color, #4CAF50);
+    color: #fff;
+    padding: 10px 15px;
+    transition: 0.3s ease;
+}
+
+.theme-btn:hover {
+    background: #333;
+    color: #fff;
+}
+
 
 /*----Form Control Reset CSS----*/
 .form-control,

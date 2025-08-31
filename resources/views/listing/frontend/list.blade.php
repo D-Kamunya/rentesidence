@@ -98,11 +98,6 @@
             </div>
             <div class="row">
                 @if (count($listings))
-                    <div class="col-lg-4">
-                        <div class="map-area h-100">
-                            <div id="map" class="w-100 map-property-h"></div>
-                        </div>
-                    </div>
                     <div class="col-lg-8 pe-lg-5 margin-top-1">
                         <div class="row">
                             @foreach ($listings as $listing)
@@ -141,14 +136,7 @@
                                                         <p>{{ $listing->type }}</p>
                                                     </div>
                                                     <p class="price-properties">{{ __('Price') }} :
-                                                        {{ currencyPrice($listing->price) }} /
-                                                        @if ($listing->price_duration_type == DURATION_TYPE_MONTHLY)
-                                                            {{ __('Month') }}
-                                                        @elseif($listing->price_duration_type == DURATION_TYPE_YEARLY)
-                                                            {{ __('Yearly') }}
-                                                        @else
-                                                            {{ __('Custom') }}
-                                                        @endif
+                                                        {{ currencyPrice($listing->price) }}
                                                     </p>
                                                 </div>
                                                 <a href="{{ route('listing.details', $listing->slug) }}"

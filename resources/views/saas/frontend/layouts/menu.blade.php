@@ -1,3 +1,4 @@
+<link href="https://fonts.googleapis.com/css2?family=Josefin+Sans:wght@400;500;600&display=swap" rel="stylesheet">
 @if (env('LOGIN_HELP') == 'active')
     <div class="alert alert-danger text-center mb-0" role="alert">
         This page only for addon
@@ -5,7 +6,7 @@
                 aria-hidden="true">&times;</span></button>
     </div>
 @endif
-<section class="menu-section-area">
+<section class="menu-section-area" style="font-family: 'Josefin Sans', sans-serif;">
     <!-- Navigation -->
     <nav class="navbar sticky-header navbar-expand-lg" aria-label="Dark offcanvas navbar" id="mainNav">
         <div class="container">
@@ -56,14 +57,14 @@
                                     <a class="nav-link" href="{{ route('house.hunt') }}">House Hunt</a>
                             </li>
                         @endif
-                        @if (isAddonInstalled('PROTYLISTING') > 0)
+                        <!-- @if (isAddonInstalled('PROTYLISTING') > 0)
                             @if (getOption('LISTING_STATUS', 0) == ACTIVE)
                                 <li class="nav-item">
                                     <a class="nav-link {{ request()->is('properties') || request()->is('properties/*') ? 'active' : '' }}"
                                         href="{{ route('listings') }}"><span>{{ __('Properties') }}</span></a>
                                 </li>
                             @endif
-                        @endif
+                        @endif -->
                         <li class="nav-item">
                                 <a class="nav-link"
                                     href="{{ route('frontend') }}#contact-us"><span>{{ __('Contact Us') }}</span></a>

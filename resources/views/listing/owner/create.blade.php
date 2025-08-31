@@ -49,12 +49,12 @@
                                                                     <input type="number" step="any"
                                                                         class="form-control" name="price"
                                                                         placeholder="{{ __('Price') }}" id="price">
-                                                                    <select name="price_duration_type" class="form-control">
+                                                                    <!-- <select name="price_duration_type" class="form-control">
                                                                         @foreach (getDurationTypes() as $key => $durationType)
                                                                             <option value="{{ $key }}">
                                                                                 {{ $durationType }}</option>
                                                                         @endforeach
-                                                                    </select>
+                                                                    </select> -->
                                                                 </div>
                                                             </div>
                                                         </div>
