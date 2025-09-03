@@ -49,12 +49,12 @@
                                                                     <input type="number" step="any"
                                                                         class="form-control" name="price"
                                                                         placeholder="{{ __('Price') }}" id="price">
-                                                                    <select name="price_duration_type" class="form-control">
+                                                                    <!-- <select name="price_duration_type" class="form-control">
                                                                         @foreach (getDurationTypes() as $key => $durationType)
                                                                             <option value="{{ $key }}">
                                                                                 {{ $durationType }}</option>
                                                                         @endforeach
-                                                                    </select>
+                                                                    </select> -->
                                                                 </div>
                                                             </div>
                                                         </div>
@@ -82,14 +82,14 @@
                                                         </div>
                                                         <div class="col-lg-6">
                                                             <div class="single-upload-input-from">
-                                                                <label for="state">{{ __('State') }}</label>
+                                                                <label for="state">{{ __('State/County') }}</label>
                                                                 <input type="text" class="form-control" name="state"
                                                                     placeholder="{{ __('State') }}" id="state">
                                                             </div>
                                                         </div>
                                                         <div class="col-lg-6">
                                                             <div class="single-upload-input-from">
-                                                                <label for="city">{{ __('City') }}</label>
+                                                                <label for="city">{{ __('City/Town') }}</label>
                                                                 <input type="text" class="form-control" name="city"
                                                                     placeholder="{{ __('City') }}" id="city">
                                                             </div>
@@ -138,8 +138,8 @@
                                                         </div>
                                                         <div class="col-lg-12">
                                                             <div class="single-upload-input-from">
-                                                                <label>{{ __('Details') }}</label>
-                                                                <textarea name="details" placeholder="{{ __('Details') }}" cols="30" rows="10"></textarea>
+                                                                <label>{{ __('Description') }}</label>
+                                                                <textarea name="details" placeholder="{{ __('Description') }}" cols="30" rows="10"></textarea>
                                                             </div>
                                                         </div>
                                                     </div>
@@ -155,21 +155,21 @@
                                                         <div class="col-lg-6">
                                                             <div class="single-upload-input-from">
                                                                 <label for="bed_room">{{ __('Bedrooms') }}</label>
-                                                                <input type="text" name="bed_room" id="bed_room"
+                                                                <input type="number" name="bed_room" id="bed_room"
                                                                     placeholder="{{ __('Bedrooms') }}" id="bed_room">
                                                             </div>
                                                         </div>
                                                         <div class="col-lg-6">
                                                             <div class="single-upload-input-from">
                                                                 <label for="bath_room">{{ __('Bathrooms') }}</label>
-                                                                <input type="text" name="bath_room" id="bath_room"
+                                                                <input type="number" name="bath_room" id="bath_room"
                                                                     placeholder="{{ __('Bathrooms') }}">
                                                             </div>
                                                         </div>
                                                         <div class="col-lg-6">
                                                             <div class="single-upload-input-from">
                                                                 <label for="kitchen_room">{{ __('Kitchen Room') }}</label>
-                                                                <input type="text" name="kitchen_room"
+                                                                <input type="number" name="kitchen_room"
                                                                     id="kitchen_room"
                                                                     placeholder="{{ __('Kitchen Room') }}">
                                                             </div>
@@ -177,21 +177,21 @@
                                                         <div class="col-lg-6">
                                                             <div class="single-upload-input-from">
                                                                 <label for="dining_room">{{ __('Dining Room') }}</label>
-                                                                <input type="text" name="dining_room" id="dining_room"
+                                                                <input type="number" name="dining_room" id="dining_room"
                                                                     placeholder="{{ __('Dining Room') }}">
                                                             </div>
                                                         </div>
                                                         <div class="col-lg-6">
                                                             <div class="single-upload-input-from">
                                                                 <label for="living_room">{{ __('Living Room') }}</label>
-                                                                <input type="text" name="living_room" id="living_room"
+                                                                <input type="number" name="living_room" id="living_room"
                                                                     placeholder="{{ __('Living Room') }}">
                                                             </div>
                                                         </div>
                                                         <div class="col-lg-6">
                                                             <div class="single-upload-input-from">
                                                                 <label for="storage_room">{{ __('Storage Room') }}</label>
-                                                                <input type="text" name="storage_room"
+                                                                <input type="number" name="storage_room"
                                                                     id="storage_room"
                                                                     placeholder="{{ __('Storage Room') }}">
                                                             </div>
@@ -201,7 +201,7 @@
                                                                 <label for="other_room">{{ __('Other Room') }}</label>
                                                                 <input type="text" name="other_room" id="other_room"
                                                                     placeholder="{{ __('Other Room') }}">
-                                                                <small>{{ __('Separet by comma.') }}
+                                                                <small>{{ __('Separate by comma.') }}
                                                                     {{ __('Ex : 2 bed rooms, 1 kichen room') }}</small>
                                                             </div>
                                                         </div>
@@ -216,9 +216,13 @@
                                                     <div class="row">
                                                         <div class="col-lg-6">
                                                             <div class="single-upload-input-from">
-                                                                <label for="interior">{{ __('Interior') }}</label>
-                                                                <input type="text" name="interior" id="interior"
-                                                                    placeholder="{{ __('Interior') }}">
+                                                                <label for="interior">{{ __('Development') }}</label>
+                                                                <select name="interior" class="form-control">
+                                                                        <option> {{ __('Complete') }}
+                                                                        </option>
+                                                                        <option> {{ __('Off plan') }}
+                                                                        </option>
+                                                                    </select>
                                                             </div>
                                                         </div>
                                                         <div class="col-lg-6">

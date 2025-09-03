@@ -69,7 +69,7 @@
                     }
                 }
 
-                // If no uploaded image → fallback to picsum
+                // If no uploaded image → fallback to unit image
                 if (!$unitImage) {
                     $unitImage = asset('assets/images/unit.png');
                     $isFallback = true;

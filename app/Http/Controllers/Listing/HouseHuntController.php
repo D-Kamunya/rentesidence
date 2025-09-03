@@ -3,6 +3,7 @@ namespace App\Http\Controllers\Listing;
 
 use App\Http\Controllers\Controller;
 use App\Services\PropertyService;
+use App\Services\Listing\ListingService;
 use App\Models\Property;
 use App\Models\HouseHuntApplication;
 use App\Http\Requests\HouseApplicationRequest;
@@ -16,10 +17,48 @@ class HouseHuntController extends Controller
 {
     use ResponseTrait;
 
-    public function index()
+    public function index(Request $request)
     {
-        $properties = app(PropertyService::class)->getEmptyUnitsGroupedByProperty();
-        return view('listing.frontend.house-hunt.househunt', compact('properties'));
+        $rentals = app(PropertyService::class)->getEmptyUnitsGroupedByProperty();
+        $sales   = app(ListingService::class)->getAllActive($request);
+
+        $listings = collect();
+
+        // Normalize Rentals
+        foreach ($rentals as $property) {
+            $listings->push((object)[
+                'id'            => $property->property_id,
+                'name'          => $property->property_name,
+                'address'       => $property->city . ', ' . $property->state,
+                'country'       => $property->country,
+                'image'         => $property->thumbnail_url ?? asset('assets/images/property.png'),
+                'price'         => null, // rentals don’t have single price, handled in view
+                'units'         => $property->empty_units_count,
+                'agent'         => $property->owner_first_name . ' ' . $property->owner_last_name,
+                'slug'          => $property->property_id, // for route
+                'type'          => 'rental'
+            ]);
+        }
+
+        // Normalize Sales
+        foreach ($sales as $sale) {
+            $listings->push((object)[
+                'id'            => $sale->id,
+                'name'          => $sale->name,
+                'address'       => $sale->address,
+                'country'       => $sale->country,
+                'state'         => $sale->state,
+                'city'          => $sale->city,
+                'image'         => assetUrl($sale->folder_name . '/' . $sale->file_name),
+                'price'         => $sale->price,
+                'units'         => null,
+                'agent'         => $sale->owner->name ?? '',
+                'slug'          => $sale->slug,
+                'type'          => 'sale'
+            ]);
+        }
+
+        return view('listing.frontend.house-hunt.househunt', compact('listings'));
     }
 
 
