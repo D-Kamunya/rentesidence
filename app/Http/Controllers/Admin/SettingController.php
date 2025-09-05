@@ -260,4 +260,11 @@ class SettingController extends Controller
         Artisan::call('cache:clear');
         return redirect()->back()->with('success', 'Cached Clear Successfully');
     }
+
+    public function affiliateSetting()
+    {
+        $data['pageTitle'] = __("Affiliate Setting");
+        $data['subAffiliateSettingActiveClass'] = 'active';
+        return view('admin.setting.affiliate-setting')->with($data);
+    }
 }

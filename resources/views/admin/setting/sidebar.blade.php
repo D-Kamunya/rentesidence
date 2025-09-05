@@ -44,6 +44,13 @@
                     </li>
                 @endif
                 <li>
+                    <a href="{{ route('admin.setting.affiliate.setting') }}"
+                        class="account-settings-menu-item {{ @$subAffiliateSettingActiveClass }}">
+                        <span class="iconify"
+                            data-icon="fluent:payment-16-regular"></span>{{ __('Affiliate Commissions') }}
+                    </a>
+                </li>
+                <li>
                     <a href="{{ route('admin.setting.smtp.setting') }}"
                         class="account-settings-menu-item {{ @$subSmtpSettingActiveClass }}">
                         <span class="iconify" data-icon="mdi:git-issue"></span>{{ __('SMTP Setting') }}
