@@ -25,13 +25,10 @@ class AffiliateCommissionService
      */
     public function handleSubscriptionPayment(SubscriptionOrder $order, ?int $affiliateId = null)
     {
-        Log::info('Subscription order payment status: ' .$order->payment_status);
         // Only process paid orders
         if (!in_array(strtolower($order->payment_status), [ORDER_PAYMENT_STATUS_PAID])) {
-            Log::info('Subscription not paid');
             return null;
         }
-        Log::info('Subscription order paid: ' .$order->payment_status);
 
         // Determine period month/year
         $paidAt = $order->created_at ?? Carbon::now();
@@ -41,7 +38,6 @@ class AffiliateCommissionService
         // Resolve affiliate id:
         $affiliateId = $this->findAffiliateForOwner($order->user_id); // try lookup by owner user id
 
-        Log::info('Resolved affiliate ID: ' . $affiliateId);
         if (empty($affiliateId)) {
             // No affiliate attached — nothing to do
             return null;
@@ -63,7 +59,6 @@ class AffiliateCommissionService
             // 1) Determine if ever existed (new vs recurring)
             $everExists = AffiliateCommission::where('affiliate_id', $affiliateId)
                 ->where('owner_id', $ownerId)
-                ->where('subscription_id', $subscriptionId)
                 ->exists();
 
             $type = $everExists ? RECURRING_CLIENT:NEW_CLIENT;
@@ -80,6 +75,27 @@ class AffiliateCommissionService
             //     // nothing to do (already counted this period)
             //     return null;
             // }
+            $firstCommission = AffiliateCommission::where('affiliate_id', $affiliateId)
+                ->where('owner_id', $ownerId)
+                ->orderBy('created_at', 'asc')
+                ->first();
+
+            if (!$firstCommission) {
+                // No commission exists yet — this is the first one, so allow creation
+                $monthsElapsed = 0;
+            } else {
+                $startDate = $firstCommission->created_at;
+                $monthsElapsed = Carbon::parse($startDate)->diffInMonths(now());
+            }
+
+            if (getOption('RECURRING_COMMISSION_RATE') === null || getOption('RECURRING_COMMISSION_MONTHS') === null || getOption('FIRST_TIME_COMMISSION_RATE') === null) {
+                return;
+            }
+
+            // Stop if limit reached
+            if ($monthsElapsed >= (int) getOption('RECURRING_COMMISSION_MONTHS')) {
+                return; // Do not generate new commission
+            }
 
             // 3) Create commission record
             $commission = AffiliateCommission::create([
@@ -92,6 +108,8 @@ class AffiliateCommissionService
                 'period_month' => $periodMonth,
                 'period_year' => $periodYear,
             ]);
+
+            
 
             // 4) Recalculate & store the commission payment summary for this affiliate & period
             $this->recalculatePeriodSummary($affiliateId, $periodMonth, $periodYear);
@@ -121,7 +139,6 @@ class AffiliateCommissionService
             ->where('type', NEW_CLIENT)
             ->where('period_month', $month)
             ->where('period_year', $year);
-
         $newCommissionsCount = $newCommissionsQuery->count();
         $newCommissionsAmount = (float) $newCommissionsQuery->sum('subscription_amount');
 
@@ -130,18 +147,13 @@ class AffiliateCommissionService
             ->where('type', RECURRING_CLIENT)
             ->where('period_month', $month)
             ->where('period_year', $year);
-
         // total recurring clients (distinct owners) - tier is based on number of recurring clients
         $recurringClientsCount = (int) $recurringCommissionsQuery->distinct('owner_id')->count('owner_id');
         $recurringCommissionsAmount = (float) $recurringCommissionsQuery->get()->sum('subscription_amount');
-        Log::info('Recurring commission amount: ' . $recurringCommissionsAmount);
         // Compute payouts
-        $newRate = $this->determineNewClientRate($newCommissionsAmount);
-        $newCommissionPayout = round($newCommissionsAmount * $newRate, 2);
 
-        $tierRate = $this->determineTierRate($recurringClientsCount);
-        $recurringCommissionPayout = round($recurringCommissionsAmount * $tierRate, 2);
-
+        $newCommissionPayout = round($newCommissionsAmount * ((float) getOption('FIRST_TIME_COMMISSION_RATE') / 100), 2);
+        $recurringCommissionPayout = round($recurringCommissionsAmount * ((float) getOption('RECURRING_COMMISSION_RATE') / 100), 2);
         $totalCommissionPayout = round($newCommissionPayout + $recurringCommissionPayout, 2);
 
         // Insert a new AffiliateCommissionPayment row (we keep history of recalculations)
@@ -159,50 +171,6 @@ class AffiliateCommissionService
         ]);
 
         return $payment;
-    }
-
-    /**
-     * Determine tier rate based on count of recurring clients.
-     * Relies on config('affiliate.tiers') structure:
-     * [
-     *   ['min'=>1,'max'=>5,'rate'=>0.05],
-     *   ...
-     * ]
-     *
-     * @param int $recurringClientsCount
-     * @return float
-     */
-    protected function determineTierRate(int $recurringClientsCount): float
-    {
-        $tiers = config('affiliate.tiers', []);
-        foreach ($tiers as $tier) {
-            if ($recurringClientsCount >= $tier['min'] && $recurringClientsCount <= $tier['max']) {
-                return (float) $tier['rate'];
-            }
-        }
-        return 0.0;
-    }
-
-    /**
-     * Determine commission rate for new clients based on total monthly sale of new client.
-     * Relies on config('affiliate.new_rates') structure:
-     * [
-     *   ['min'=>1,'max'=>5,'rate'=>0.05],
-     *   ...
-     * ]
-     *
-     * @param ifloat $newCommissionsAmount
-     * @return float
-     */
-    protected function determineNewClientRate(float $newCommissionsAmount): float
-    {
-        $rates = config('affiliate.new_rates', []);
-        foreach ($rates as $rate) {
-            if ($newCommissionsAmount >= $rate['min'] && $newCommissionsAmount <= $rate['max']) {
-                return (float) $rate['rate'];
-            }
-        }
-        return 0.0;
     }
 
     /**

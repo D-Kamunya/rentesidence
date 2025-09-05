@@ -143,6 +143,8 @@
                                         <th>Subscription</th>
                                         <th>Type</th>
                                         <th>Amount</th>
+                                        <th>Commission Rate (%)</th>
+                                        <th>Commission Payout (Ksh)</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -157,6 +159,8 @@
                                                 </span>
                                             </td>
                                             <td>Ksh {{ number_format($commission['amount'], 2) }}</td>
+                                            <td> {{ $commission['type'] == NEW_CLIENT ? getOption('FIRST_TIME_COMMISSION_RATE') : getOption('RECURRING_COMMISSION_RATE') }}%</td>
+                                            <td>Ksh {{ number_format($commission['type'] == NEW_CLIENT ? $commission['amount'] * (getOption('FIRST_TIME_COMMISSION_RATE') / 100) : $commission['amount'] * (getOption('RECURRING_COMMISSION_RATE') / 100), 2) }}</td>
                                         </tr>
                                     @empty
                                         <tr>
