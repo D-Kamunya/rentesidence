@@ -10,7 +10,7 @@
                 <!-- Header -->
                 <div class="row mb-4 text-center text-md-start">
                     <div class="col-12">
-                        <h2 class="fw-bold mb-1">{{ __('Marketing Dashboard') }}</h2>
+                        <h2 class="fw-bold mb-1">{{ __('Marketing Tools') }}</h2>
                     </div>
                 </div>
 

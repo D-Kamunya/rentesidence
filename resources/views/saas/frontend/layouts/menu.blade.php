@@ -91,6 +91,9 @@
                                 @elseif (auth()->user()->role == USER_ROLE_MAINTAINER)
                                     <a href="{{ route('maintainer.dashboard') }}"
                                         class="nav-dash-link"><span>{{ __('Dashboard') }}</span></a>
+                                @elseif (auth()->user()->role == USER_ROLE_AFFILIATE)
+                                    <a href="{{ route('affiliate.dashboard') }}"
+                                        class="nav-dash-link"><span>{{ __('Dashboard') }}</span></a>
                                 @endif
                             @else
                                 <a href="{{ route('login') }}" class="theme-btn-outline"><span>{{ __('Sign In') }}</span></a>
