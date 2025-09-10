@@ -14,7 +14,7 @@
                 </li>
             
                 <li>
-                    <a href="javascript:void(0)">
+                    <a href="{{ route('affiliate.marketing-tools') }}">
                         <i class="ri-lightbulb-line"></i>
                         <span>{{ __('Marketing Tools') }}</span>
                     </a>

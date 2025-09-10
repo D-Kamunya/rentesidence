@@ -19,8 +19,9 @@ use Illuminate\Support\Facades\DB;
 class FrontendController extends Controller
 {
     use ResponseTrait;
-    public function index()
+    public function index(Request $request)
     {
+        $referral = $request->query('referral');
         $data['pageTitle'] = __('Welcome');
         $featureService = new FeatureService;
         $data['features'] = $featureService->getActiveAll();
