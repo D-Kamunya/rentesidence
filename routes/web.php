@@ -75,6 +75,8 @@ Route::group(['prefix' => 'payment'], function () {
     Route::get('products/verify-redirect/{type?}', [PaymentController::class, 'verifyRedirect'])->name('payment.products.verify.redirect');
 });
 
+Route::get('/get-filters', [HouseHuntController::class, 'getFiltersByType'])->name('get.filters');
+Route::get('/get-cities', [HouseHuntController::class, 'getCitiesByState'])->name('get.cities');
 Route::get('/house-hunt', [HouseHuntController::class, 'index'])->name('house.hunt');
 Route::get('/house-hunt/view/{propertyId}', [HouseHuntController::class, 'viewProperty'])->name('house-hunt.view');
 Route::get('/owner/tenants/applications', function () {return view('owner.tenants.applications');})->name('owner.tenants.applications');

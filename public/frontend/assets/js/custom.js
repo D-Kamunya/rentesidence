@@ -130,3 +130,23 @@ document.addEventListener("DOMContentLoaded", function () {
         showCards(agentCards, tenantCards, agentBtn, tenantBtn);
     });
 });
+/*--------------------------------------
+Hide price on filter if rent is selected
+---------------------------------------*/
+document.addEventListener("DOMContentLoaded", function () {
+    const listingType = document.getElementById("listingType");
+    const priceFilter = document.getElementById("priceFilter");
+
+    function togglePriceFilter() {
+        if (listingType.value === "sale") {
+            priceFilter.style.display = "block";
+        } else {
+            priceFilter.style.display = "none";
+        }
+    }
+
+    // Run on page load & whenever changed
+    togglePriceFilter();
+    listingType.addEventListener("change", togglePriceFilter);
+});
+
