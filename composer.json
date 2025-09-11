@@ -14,7 +14,6 @@
         "docusign/esign-client": "^6.12",
         "docusign/esign-laravel": "^1.1",
         "guzzlehttp/guzzle": "^7.2",
-        "iankumu/mpesa": "^1.3",
         "jorenvanhocht/laravel-share": "*",
         "laravel/framework": "^9.19",
         "laravel/passport": "^11.8",
@@ -33,8 +32,7 @@
         "stancl/tenancy": "^3.7",
         "stripe/stripe-php": "^9.6",
         "twilio/sdk": "^7.4",
-        "yajra/laravel-datatables-oracle": "~9.0",
-        "zainiklab/zai-installer": "^1.8"
+        "yajra/laravel-datatables-oracle": "~9.0"
     },
     "require-dev": {
         "barryvdh/laravel-debugbar": "^3.7",
