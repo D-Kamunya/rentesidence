@@ -10,4 +10,10 @@ class Owner extends Model
 {
     use HasFactory, SoftDeletes;
     protected $fillable = ['user_id'];
+
+    public function affiliate()
+    {
+        return $this->belongsTo(Affiliate::class);
+    }
+
 }
