@@ -15,9 +15,10 @@
                         <div class="invoice-heading-part">
                             <div class="invoice-heading-left">
                                 @if ($owner->print_name)
-                                    <img src="{{ assetUrl($owner->folder_name . '/' . $owner->file_name) }}">
+                                    <img src="{{ assetUrl($owner->folder_name . '/' . $owner->file_name) }}" alt="Print Logo" 
+                                    class="img-fluid invoice-logo shadow-sm rounded">
                                 @else
-                                    <img src="{{ getSettingImage('app_logo') }}">
+                                    <img src="{{ getSettingImage('app_logo') }}" alt="App Logo" class="img-fluid invoice-logo shadow-sm rounded">
                                 @endif
                                 <h4>{{ $invoice->invoice_no }}</h4>
                                 <p>{{ $invoice->updated_at->format('Y-m-d') }}</p>

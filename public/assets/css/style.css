@@ -4495,6 +4495,18 @@ hr {
     background-color: var(--primary-color);
 }
 
+.invoice-logo {
+    max-width: 120px;   /* keep logo uniform */
+    height: auto;
+    object-fit: contain; /* keeps proportions neat */
+    background-color: #fff; /* optional clean backdrop */
+    padding: 4px;  
+    border-radius: 8px;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.1);  
+    border: 2px solid #eee;      /* optional breathing room */
+}
+
+
 @media (min-width: 68px) and (max-width: 768.98px) {
     .exclamation-btu {
         display: block;

@@ -457,7 +457,9 @@
                     <div class="invoice-preview-wrap">
                         <div class="invoice-heading-part">
                             <div class="invoice-heading-left">
-                                <img src="{{ getSettingImage('app_logo') }}" alt="">
+                                <img src="{{ getSettingImage('app_logo') }}" 
+                                    alt="App Logo" 
+                                    class="img-fluid invoice-logo shadow-sm rounded">
                                 <h4 class="invoiceNo"></h4>
                                 <p class="invoicePayDate"></p>
                                 <p class="invoiceMonth"></p>

@@ -158,7 +158,6 @@
     });
 
     function getDetailsViewRes(response) {
-        console.log(response);
 
         const selector = $("#invoicePreviewModal");
         selector.modal("show");

@@ -763,7 +763,7 @@ class InvoiceService
             $userId = auth()->user()->owner_user_id;
         }
         $data = Invoice::where('owner_user_id', $userId)->findOrFail($id);
-        return $data?->makeHidden(['created_at', 'updated_at', 'deleted_at', 'invoice_recurring_setting_id']);
+        return $data?->makeHidden(['created_at', 'deleted_at', 'invoice_recurring_setting_id']);
     }
 
     public function getByIdCheckTenantAuthId($id)
