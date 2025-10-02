@@ -11,6 +11,26 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 class Tenant extends Model
 {
     use HasFactory, SoftDeletes;
+
+    /**
+     * Mass assignable attributes
+     */
+    protected $fillable = [
+        'user_id',
+        'property_id',
+        'unit_id',
+        'rent_type',
+        'due_date',
+        'lease_start_date',
+        'lease_end_date',
+        'general_rent',
+        'security_deposit_type',
+        'security_deposit',
+        'late_fee_type',
+        'late_fee',
+        'incident_receipt',
+        // add any other tenant fields you want mass-assignable
+    ];
     /**
      * Get the user associated with the Tenant
      *

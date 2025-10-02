@@ -11,6 +11,7 @@ use App\Models\Tenant;
 use App\Models\InvoiceRecurringSetting;
 use App\Models\InvoiceRecurringSettingItem;
 use App\Models\InvoiceType;
+use App\Services\TenantService;
 use App\Traits\ResponseTrait;
 use Exception;
 use Illuminate\Support\Facades\Log;
@@ -19,6 +20,12 @@ use Illuminate\Support\Facades\DB;
 class PropertyService
 {
     use ResponseTrait;
+    public $tenantService;
+
+    public function __construct()
+    {
+        $this->tenantService = new TenantService();
+    }
 
     public function getAll($paginate=true)
     {
@@ -463,6 +470,7 @@ public function getEmptyUnitsByProperty($propertyId)
             $property_unit->save();
 
             $this->updateRecurringRentAmounts($property_unit->id, $property_unit->general_rent);
+            $this->tenantService->updateUnitTenant($property_unit);
 
             if (isset($request->unit_image)) {
                 $exitFile = FileManager::where('origin_type', 'App\Models\PropertyUnit')->where('origin_id', $property_unit->id)->first();
@@ -605,6 +613,7 @@ public function getEmptyUnitsByProperty($propertyId)
                 $property_unit->lease_payment_due_date = ($request->propertyUnit['rent_type'][$i] == PROPERTY_UNIT_RENT_TYPE_CUSTOM) ? date('Y-m-d', strtotime($request->propertyUnit['lease_payment_due_date'][$i])) : null;
                 $property_unit->save();
                 $this->updateRecurringRentAmounts($property_unit->id, $property_unit->general_rent);
+                $this->tenantService->updateUnitTenant($property_unit);
             }
             DB::commit();
             $response['property'] = $property;
@@ -930,6 +939,23 @@ public function getEmptyUnitsByProperty($propertyId)
             $setting->amount = $setting->amount - $totalOldAmount + $totalNewAmount;
             $setting->save();
         }
+    }
+
+    public function updateUnitTenant($unit)
+    {
+        $tenant = Tenant::where('owner_user_id', auth()->id())->findOrFail($request->id);
+        $tenant->property_id = $request->property_id;
+        $tenant->unit_id = $request->unit_id;
+        $tenant->lease_start_date = $request->lease_start_date;
+        $tenant->lease_end_date = $request->lease_end_date;
+        $tenant->general_rent = $request->general_rent;
+        $tenant->security_deposit_type = $request->security_deposit_type;
+        $tenant->security_deposit = $request->security_deposit;
+        $tenant->late_fee_type = $request->late_fee_type;
+        $tenant->late_fee = $request->late_fee;
+        $tenant->incident_receipt = $request->incident_receipt;
+        $tenant->due_date = $request->due_date;
+        $tenant->save();
     }
 
 }

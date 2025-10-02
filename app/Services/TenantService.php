@@ -550,4 +550,41 @@ class TenantService
             return $this->error([],  $message);
         }
     }
+
+    public function updateUnitTenant($unit)
+    {
+        $tenants = Tenant::where('unit_id', $unit->id)->get();
+
+        if ($tenants->isEmpty()) {
+            return;
+        }
+        
+        if ($unit->rent_type == PROPERTY_UNIT_RENT_TYPE_MONTHLY) {
+            $due_date = $unit->monthly_due_day;
+        } elseif ($unit->rent_type == PROPERTY_UNIT_RENT_TYPE_YEARLY) {
+            $due_date = $unit->yearly_due_day;
+        } elseif ($unit->rent_type == PROPERTY_UNIT_RENT_TYPE_CUSTOM) {
+            $due_date = $unit->lease_payment_due_date;
+        }
+
+        foreach ($tenants as $tenant) {
+            $tenant->update([
+                'property_id' => $unit->property_id,
+                'unit_id' => $unit->id,
+                'rent_type' => $unit->rent_type,
+                'due_date' => $due_date,
+                'lease_start_date' => $unit->lease_start_date,
+                'lease_end_date' => $unit->lease_end_date,
+                'general_rent' => $unit->general_rent,
+                'security_deposit_type' => $unit->security_deposit_type,
+                'security_deposit' => $unit->security_deposit,
+                'late_fee_type' => $unit->late_fee_type,
+                'late_fee' => $unit->late_fee,
+                'incident_receipt' => $unit->incident_receipt,
+            ]);
+        }
+    }
+
 }
+
+       
