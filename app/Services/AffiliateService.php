@@ -112,4 +112,14 @@ class AffiliateService
         return $affiliates->makeHidden(['created_at', 'updated_at', 'deleted_at']);
     }
 
+    public function getAllActive()
+    {
+        return Affiliate::query()
+        ->leftJoin('users', 'affiliates.user_id', '=', 'users.id')
+        ->where('affiliates.status', AFFILIATE_STATUS_ACTIVE)
+        ->orderBy('users.first_name', 'asc')
+        ->select('affiliates.*', 'users.first_name', 'users.last_name', 'users.email')
+        ->get();
+    }
+
 }

@@ -40,7 +40,7 @@
                                     <th data-priority="1">{{ __('Name') }}</th>
                                     <th>{{ __('Email') }}</th>
                                     <th>{{ __('Contact Number') }}</th>
-                                    <th>{{ __('Domain') }}</th>
+                                    <th>{{ __('Affiliate') }}</th>
                                     <th>{{ __('Status') }}</th>
                                 </thead>
                             </table>

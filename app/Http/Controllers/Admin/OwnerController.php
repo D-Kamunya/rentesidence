@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Services\OwnerService;
+use App\Services\AffiliateService;
 use Illuminate\Http\Request;
 use App\Http\Requests\OwnerRegisterRequest;
 use App\Models\EmailTemplate;
@@ -21,9 +22,11 @@ use Illuminate\Support\Str;
 class OwnerController extends Controller
 {
     public $ownerService;
+    public $affiliateService;
     public function __construct()
     {
         $this->ownerService = new OwnerService;
+        $this->affiliateService = new AffiliateService;
     }
 
     public function index(Request $request)
@@ -40,6 +43,7 @@ class OwnerController extends Controller
     {
         $data['pageTitle'] = __('Add Owner');
         $data['navOwnerAddMMShowClass'] = 'active';
+        $data['affiliates'] = $this->affiliateService->getAllActive();
         return view('admin.owner.add', $data);
     }
 
@@ -60,6 +64,7 @@ class OwnerController extends Controller
 
             $owner = new Owner();
             $owner->user_id = $user->id;
+            $owner->affiliate_id = $request->affiliate_id;
             $owner->save();
 
             $duration = (int) getOption('trail_duration', 1);

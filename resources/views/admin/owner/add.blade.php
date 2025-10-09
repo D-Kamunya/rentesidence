@@ -91,6 +91,30 @@
                                                     <div class="row">
                                                         <div class="col-md-6 mb-25">
                                                             <label
+                                                                class="label-text-title color-heading font-medium mb-2">{{ __('Affiliate') }}
+                                                                <span class="text-danger"></span></label>
+                                                            <select class="form-select" name="affiliate_id">
+                                                                <option value="">{{ __('Select Affiliate') }}</option>
+                                                                @foreach ($affiliates as $affiliate)
+                                                                    <option value="{{ $affiliate->id }}" {{ old('affiliate_id') == $affiliate->id ? 'selected' : '' }}>{{ $affiliate->first_name }}  {{ $affiliate->last_name }} ({{ $affiliate->referral_code }})</option>
+                                                                @endforeach
+                                                            </select>
+                                                            @error('affiliate_id')
+                                                                <span class="text-danger">{{ $message }}</span>
+                                                            @enderror
+                                                        </div>
+                                                        <div class="col-md-6 mb-25">
+                                                            <label
+                                                                class="label-text-title color-heading font-medium mb-2">{{ __('How Did You Hear About Us?') }}
+                                                                <span class="text-danger"></span></label>
+                                                            <input type="text" name="how_did_you_hear_about_us"
+                                                                class="form-control"
+                                                                placeholder="{{ __('How Did You Hear About Us?') }}" value="{{ old('how_did_you_hear_about_us') }}">
+                                                        </div>
+                                                    </div>
+                                                     <div class="row">
+                                                        <div class="col-md-6 mb-25">
+                                                            <label
                                                                 class="label-text-title color-heading font-medium mb-2">{{ __('Password') }}
                                                                 <span class="text-danger">*</span></label>
                                                             <input type="password" name="password"

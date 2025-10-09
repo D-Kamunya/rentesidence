@@ -13,25 +13,35 @@ class OwnerService
     public function getAllData($request)
     {
         $owners = Owner::query()
-            ->join('users', 'owners.user_id', '=', 'users.id')
-            ->leftJoin('domains', 'owners.user_id', '=', 'domains.owner_user_id')
-            ->select('users.*', 'domains.domain')
-            ->orderBy('owners.id', 'desc');
+            ->join('users as owner_user', 'owners.user_id', '=', 'owner_user.id')
+            ->leftJoin('affiliates', 'owners.affiliate_id', '=', 'affiliates.id')
+            ->leftJoin('users as affiliate_user', 'affiliates.user_id', '=', 'affiliate_user.id')
+            ->select(
+                'owners.id as owner_id',
+                'owner_user.first_name as owner_first_name',
+                'owner_user.last_name as owner_last_name',
+                'owner_user.email as owner_email',
+                'owner_user.contact_number as owner_contact_number',
+                'affiliate_user.first_name as affiliate_first_name',
+                'affiliate_user.last_name as affiliate_last_name'
+            )
+            ->orderBy('owners.id', 'desc')
+            ->get();
 
         return datatables($owners)
             ->addIndexColumn()
             ->addColumn('name', function ($owner) {
-                return $owner->first_name . ' ' . $owner->last_name;
+                return $owner->owner_first_name . ' ' . $owner->owner_last_name;
             })
             ->addColumn('email', function ($owner) {
-                return $owner->email;
+                return $owner->owner_email;
             })
             ->addColumn('contact_number', function ($owner) {
-                return $owner->contact_number;
+                return $owner->owner_contact_number;
             })
-            ->addColumn('domain', function ($owner) {
-                if ($owner->domain) {
-                    return $owner->domain;
+            ->addColumn('affiliate', function ($owner) {
+                if ($owner->affiliate_first_name) {
+                    return $owner->affiliate_first_name . ' ' . $owner->affiliate_last_name;
                 } else {
                     return '';
                 }
@@ -43,7 +53,7 @@ class OwnerService
                     return '<div class="status-btn status-btn-orange font-13 radius-4">Deactivate</div>';
                 }
             })
-            ->rawColumns(['name', 'status', 'trail', 'action'])
+            ->rawColumns(['name', 'status', 'contact_number', 'trail', 'action'])
             ->make(true);
     }
 
