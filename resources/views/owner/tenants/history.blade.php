@@ -42,7 +42,7 @@
 
                                         <!-- Account Settings Content Box Start -->
                                         <div class="account-settings-content-box">
-                                            <div class="tenants-details-payment-history-table">
+                                            <div style="overflow-x: auto;" class="tenants-details-payment-history-table">
                                                 <!-- datatable Start -->
                                                 <table id="allClosingTenantDataTable"
                                                     class="table responsive theme-border p-20">

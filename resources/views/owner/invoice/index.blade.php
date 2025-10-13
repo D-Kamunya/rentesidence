@@ -486,7 +486,7 @@
                         </div>
                         <div class="invoice-table-part">
                             <h4 class="invoice-generate-title invoice-heading-color">{{ __('Invoice Items') }}</h4>
-                            <div class="">
+                            <div style="overflow-x: auto;" class="">
                                 <table class="table">
                                     <thead>
                                         <tr>
@@ -511,7 +511,7 @@
                         </div>
                         <div class="transaction-table-part">
                             <h4 class="invoice-generate-title invoice-heading-color">{{ __('Transaction Details') }}</h4>
-                            <div class="">
+                            <div style="overflow-x: auto;" class="">
                                 <table class="table">
                                     <thead>
                                         <tr>
