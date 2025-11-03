@@ -52,13 +52,13 @@
                                                                         class="form-control" name="price"
                                                                         placeholder="{{ __('Price') }}" id="price"
                                                                         value="{{ $listing->price }}">
-                                                                    <select name="price_duration_type" class="form-control">
+                                                                    <!-- <select name="price_duration_type" class="form-control">
                                                                         @foreach (getDurationTypes() as $key => $durationType)
                                                                             <option value="{{ $key }}"
                                                                                 {{ $listing->price_duration_type == $key ? 'selected' : '' }}>
                                                                                 {{ $durationType }}</option>
                                                                         @endforeach
-                                                                    </select>
+                                                                    </select> -->
                                                                 </div>
                                                             </div>
                                                         </div>
@@ -90,7 +90,7 @@
                                                         </div>
                                                         <div class="col-lg-6">
                                                             <div class="single-upload-input-from">
-                                                                <label for="state">{{ __('State') }}</label>
+                                                                <label for="state">{{ __('State/County') }}</label>
                                                                 <input type="text" class="form-control" name="state"
                                                                     value="{{ $listing->state }}"
                                                                     placeholder="{{ __('State') }}" id="state">
@@ -98,7 +98,7 @@
                                                         </div>
                                                         <div class="col-lg-6">
                                                             <div class="single-upload-input-from">
-                                                                <label for="city">{{ __('City') }}</label>
+                                                                <label for="city">{{ __('City/Town') }}</label>
                                                                 <input type="text" class="form-control" name="city"
                                                                     value="{{ $listing->city }}"
                                                                     placeholder="{{ __('City') }}" id="city">
@@ -150,8 +150,8 @@
                                                         </div>
                                                         <div class="col-lg-12">
                                                             <div class="single-upload-input-from">
-                                                                <label>{{ __('Details') }}</label>
-                                                                <textarea name="details" placeholder="{{ __('Details') }}" cols="30" rows="10">{{ $listing->details }}</textarea>
+                                                                <label>{{ __('Description') }}</label>
+                                                                <textarea name="details" placeholder="{{ __('Description') }}" cols="30" rows="10">{{ $listing->details }}</textarea>
                                                             </div>
                                                         </div>
                                                     </div>
@@ -220,7 +220,7 @@
                                                                 <input type="text" name="other_room" id="other_room"
                                                                     placeholder="{{ __('Other Room') }}"
                                                                     value="{{ $listing->other_room }}">
-                                                                <small>{{ __('Separet by comma.') }}
+                                                                <small>{{ __('Separate by comma.') }}
                                                                     {{ __('Ex : 2 bed rooms, 1 kichen room') }}</small>
                                                             </div>
                                                         </div>
@@ -236,9 +236,14 @@
                                                         <div class="col-lg-6">
                                                             <div class="single-upload-input-from">
                                                                 <label for="interior">{{ __('Interior') }}</label>
-                                                                <input type="text" name="interior" id="interior"
-                                                                    placeholder="{{ __('Interior') }}"
-                                                                    value="{{ $listing->interior }}">
+                                                                <select name="interior" id="interior" class="form-control">
+                                                                    <option value="Complete" {{ $listing->interior == 'Complete' ? 'selected' : '' }}>
+                                                                        {{ __('Complete') }}
+                                                                    </option>
+                                                                    <option value="Off plan" {{ $listing->interior == 'Off plan' ? 'selected' : '' }}>
+                                                                        {{ __('Off plan') }}
+                                                                    </option>
+                                                                </select>
                                                             </div>
                                                         </div>
                                                         <div class="col-lg-6">

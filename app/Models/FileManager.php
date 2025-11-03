@@ -22,10 +22,17 @@ class FileManager extends Model
                 throw new Exception('Invalid File');
             }
 
+            // Ive commented this line out as it was responsible for image duplication on the listing upload form as a result of similar time stamps. I have hence added a unique id in place of the time stamp.
+            // if ($name == '') {
+            //     $file_name = time() . '.' . $extension;
+            // } else {
+            //     $file_name = $name . '-' . time() . '.' . $extension;
+            // }
+            $uniqueId = uniqid('', true);
             if ($name == '') {
-                $file_name = time() . '.' . $extension;
+                $file_name = $uniqueId . '.' . $extension;
             } else {
-                $file_name = $name . '-' . time() . '.' . $extension;
+                $file_name = $name . '-' . $uniqueId . '.' . $extension;
             }
             $file_name = str_replace(' ', '_', $file_name);
 
@@ -60,10 +67,17 @@ class FileManager extends Model
                 throw new Exception('Invalid File');
             }
 
+            // Ive commented this line out as it was responsible for image duplication on the listing upload form as a result of similar time stamps. I have hence added a unique id in place of the time stamp.
+            // if ($name == '') {
+            //     $file_name = time() . '.' . $extension;
+            // } else {
+            //     $file_name = $name . '-' . time() . '.' . $extension;
+            // }
+            $uniqueId = uniqid('', true);
             if ($name == '') {
-                $file_name = time() . '.' . $extension;
+                $file_name = $uniqueId . '.' . $extension;
             } else {
-                $file_name = $name . '-' . time() . '.' . $extension;
+                $file_name = $name . '-' . $uniqueId . '.' . $extension;
             }
             $file_name = str_replace(' ', '_', $file_name);
 
