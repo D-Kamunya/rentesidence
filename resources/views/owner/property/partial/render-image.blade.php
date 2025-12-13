@@ -40,7 +40,7 @@
                                     <div class="dropzone-upload-sign-icon mb-2">
                                         <i class="ri-upload-2-fill"></i>
                                     </div>
-                                    <p class="theme-link font-13">{{ __('Browse More Image..') }}</p>
+                                    <p class="theme-link font-13">{{ __('Add More Images..') }}</p>
                                 </div>
                             </div>
                         </div>
@@ -71,8 +71,8 @@
                                             <div class="">
                                                 <div class="avatar-sm bg-light rounded text-center">
                                                     <img data-dz-thumbnail class="img-fluid rounded"
-                                                        src="{{ @$propertyImage?->single_image?->file_url }}"
-                                                        alt="{{ @$propertyImage?->single_image?->file_name }}"
+                                                        src="{{ $propertyImage->single_image }}"
+                                                        alt="{{ $propertyImage->file?->file_name ?? 'Property Image' }}"
                                                         width="175" height="120">
                                                 </div>
                                             </div>

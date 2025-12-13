@@ -18,6 +18,9 @@ function stepChange(response) {
         type = "success";
         toastr.success(response.data.message);
         $("#addHtmlForm").html(response.data.view);
+        if (response.data.step == 3) {
+            initUnitImagePreviewer();
+        }
         stepActiveClass(response.data.step);
         if (response.data.step == 4) {
             propertyUnitIds = response.data.propertyUnitIds;
@@ -387,6 +390,7 @@ function getUnitByPropertyId(property_id) {
 function getUnitRes(response) {
     $("#addHtmlForm").html(response.data.view);
     datePicker();
+    initUnitImagePreviewer();
 }
 
 function getRentCharge(property_id) {
@@ -551,3 +555,122 @@ $(document).on("click", ".add-field", function () {
         </div>`
     );
 });
+
+function initUnitImagePreviewer() {
+    const inputs = document.querySelectorAll('.multiple-images');
+
+    inputs.forEach((input) => {
+        if (input.dataset.previewBound === "true") return;
+        input.dataset.previewBound = "true";
+
+        // Create or find preview container
+        let previewContainer = input.closest('.row')?.nextElementSibling;
+        if (!previewContainer || !previewContainer.classList.contains('image-preview-container')) {
+            previewContainer = document.createElement('div');
+            previewContainer.classList.add('image-preview-container', 'mt-2');
+            input.closest('.row')?.after(previewContainer);
+        }
+
+        // Full-width styling
+        previewContainer.style.display = 'flex';
+        previewContainer.style.flexWrap = 'nowrap';
+        previewContainer.style.overflowX = 'auto';
+        previewContainer.style.width = '100%';
+        previewContainer.style.gap = '12px';
+        previewContainer.style.padding = '10px 0';
+        previewContainer.style.scrollbarWidth = 'thin';
+        previewContainer.style.scrollbarColor = '#ccc transparent';
+        previewContainer.style.borderTop = '1px solid #eee';
+
+        input.addEventListener('change', function () {
+            previewContainer.innerHTML = '';
+
+            // Convert FileList to array so we can modify it later
+            let filesArray = Array.from(this.files);
+
+            filesArray.forEach((file, index) => {
+                if (!file.type.startsWith('image/')) return;
+
+                const reader = new FileReader();
+                reader.onload = e => {
+                    const wrapper = document.createElement('div');
+                    wrapper.style.position = 'relative';
+                    wrapper.style.display = 'inline-block';
+
+                    const img = document.createElement('img');
+                    img.src = e.target.result;
+                    img.style.width = '150px';
+                    img.style.height = '150px';
+                    img.style.objectFit = 'cover';
+                    img.style.borderRadius = '8px';
+                    img.style.boxShadow = '0 2px 6px rgba(0,0,0,0.15)';
+                    img.style.flexShrink = '0';
+
+                    // Remove button
+                    const removeBtn = document.createElement('button');
+                    removeBtn.innerHTML = '<i class="ri-delete-bin-5-line"></i>';
+                    removeBtn.style.fontSize = '18px';
+                    removeBtn.type = 'button';
+                    removeBtn.style.position = 'absolute';
+                    removeBtn.style.top = '5px';
+                    removeBtn.style.right = '5px';
+                    removeBtn.style.background = 'rgba(0,0,0,0.6)';
+                    removeBtn.style.color = '#fff';
+                    removeBtn.style.border = 'none';
+                    removeBtn.style.borderRadius = '50%';
+                    removeBtn.style.width = '24px';
+                    removeBtn.style.height = '24px';
+                    removeBtn.style.cursor = 'pointer';
+                    removeBtn.style.fontSize = '16px';
+                    removeBtn.style.lineHeight = '22px';
+                    removeBtn.style.textAlign = 'center';
+
+                    removeBtn.addEventListener('click', () => {
+                        wrapper.remove();
+                        filesArray.splice(index, 1);
+                        // Update input files dynamically
+                        const dataTransfer = new DataTransfer();
+                        filesArray.forEach(f => dataTransfer.items.add(f));
+                        input.files = dataTransfer.files;
+                    });
+
+                    wrapper.appendChild(img);
+                    wrapper.appendChild(removeBtn);
+                    previewContainer.appendChild(wrapper);
+                };
+                reader.readAsDataURL(file);
+            });
+        });
+    });
+}
+
+// delete unit image
+
+document.addEventListener('click', function (e) {
+    if (e.target.closest('.remove-existing-image')) {
+        let button = e.target.closest('.remove-existing-image');
+        let imageId = button.dataset.imageId;
+
+        let csrf = document.querySelector('meta[name="csrf-token"]').getAttribute("content");
+
+        fetch(`/owner/unit-image/${imageId}`, {
+            method: "DELETE",
+            headers: {
+                "X-CSRF-TOKEN": csrf,
+                "Accept": "application/json",
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success || data.status === 'success') {
+                // Remove image box from DOM
+                button.closest('.existing-unit-image-box').remove();
+            } else {
+                console.error("Error:", data);
+                alert("Server error!");
+            }
+        })
+        .catch(err => console.error("Fetch error:", err));
+    }
+});
+

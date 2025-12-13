@@ -197,7 +197,7 @@ $(document).on("click", ".deleteItem", function () {
         if (result.value) {
             $("#" + form_id).submit();
         } else if (result.dismiss === "cancel") {
-            Swal.fire("Cancelled", "Your imaginary file is safe :)", "error");
+            Swal.fire("Cancelled", "Your file is safe :)", "error");
         }
     });
 });
@@ -216,7 +216,7 @@ $(document).on("click", ".subscriptionCancel", function () {
         if (result.value) {
             stateSelect.closest("form").submit();
         } else if (result.dismiss === "cancel") {
-            Swal.fire("Cancelled", "Your imaginary file is safe :)", "error");
+            Swal.fire("Cancelled", "Your file is safe :)", "error");
         }
     });
 });
@@ -288,7 +288,7 @@ $(document).on("click", ".statusChange", function () {
                 },
             });
         } else if (result.dismiss === "cancel") {
-            Swal.fire("Cancelled", "Your imaginary file is safe :)", "error");
+            Swal.fire("Cancelled", "Your file is safe :)", "error");
         }
     });
 });

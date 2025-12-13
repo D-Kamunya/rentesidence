@@ -9,18 +9,35 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 class PropertyImage extends Model
 {
     use HasFactory, SoftDeletes;
-    protected $appends = ['single_image'];
 
-    public function getSingleImageAttribute()
+    protected $appends = ['image_url', 'thumbnail_url', 'single_image'];
+
+    public function file()
     {
-        if ($this->fileAttachSingle) {
-            return $this->fileAttachSingle;
+        return $this->belongsTo(FileManager::class, 'file_id', 'id');
+    }
+    public function thumbnail()
+    {
+        return $this->belongsTo(FileManager::class, 'thumbnail_id', 'id');
+    }
+    public function getImageUrlAttribute()
+    {
+        if ($this->file && $this->file->file_url) {
+            return $this->file->file_url;
         }
+
         return asset('assets/images/no-image.jpg');
     }
-
-    public function fileAttachSingle()
+    public function getThumbnailUrlAttribute()
     {
-        return $this->hasOne(FileManager::class, 'id', 'file_id');
+        if ($this->thumbnail && $this->thumbnail->file_url) {
+            return $this->thumbnail->file_url;
+        }
+
+        return $this->image_url; // Fallback to main image
+    }
+    public function getSingleImageAttribute()
+    {
+        return $this->image_url;
     }
 }

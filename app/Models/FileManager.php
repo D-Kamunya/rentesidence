@@ -21,11 +21,13 @@ class FileManager extends Model
             if (!in_array($mime_type, allowMimes()) || !in_array($extension, allowExtensions())) {
                 throw new Exception('Invalid File');
             }
+            
+            $signature = time() . '_' . uniqid();
 
             if ($name == '') {
-                $file_name = time() . '.' . $extension;
+                $file_name = $signature . '.' . $extension;
             } else {
-                $file_name = $name . '-' . time() . '.' . $extension;
+                $file_name = $name . '-' . $signature . '.' . $extension;
             }
             $file_name = str_replace(' ', '_', $file_name);
 
@@ -60,10 +62,12 @@ class FileManager extends Model
                 throw new Exception('Invalid File');
             }
 
+            $signature = time() . '_' . uniqid();
+
             if ($name == '') {
-                $file_name = time() . '.' . $extension;
+                $file_name = $signature . '.' . $extension;
             } else {
-                $file_name = $name . '-' . time() . '.' . $extension;
+                $file_name = $name . '-' . $signature . '.' . $extension;
             }
             $file_name = str_replace(' ', '_', $file_name);
 

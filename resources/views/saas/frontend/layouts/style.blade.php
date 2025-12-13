@@ -18,6 +18,7 @@
 
 <link rel="stylesheet" href="{{ asset('assets/libs/owl-carousel/owl.carousel.min.css') }}">
 <link rel="stylesheet" href="{{ asset('assets/libs/owl-carousel/owl.theme.default.min.css') }}">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/venobox/2.0.4/venobox.min.css" />
 
 <!-- Icons -->
 <link href="{{ asset('assets/css/icons.min.css') }}" rel="stylesheet">

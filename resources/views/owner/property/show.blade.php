@@ -81,9 +81,9 @@
                                         @forelse (@$property->propertyImages as $propertyImage)
                                             <div class="gallery-item radius-4">
                                                 <div class="gallery-img">
-                                                    <a href="{{ @$propertyImage->single_image->file_url }}" class="venobox"
+                                                    <a href="{{ @$propertyImage->single_image }}" class="venobox"
                                                         data-gall="gallery01">
-                                                        <img src="{{ @$propertyImage->single_image->file_url }}"
+                                                        <img src="{{ @$propertyImage->single_image }}"
                                                             alt="" class="img-fluid">
                                                     </a>
                                                 </div>
@@ -216,7 +216,9 @@
                                                         <td>{{ Str::limit($propertyUnit->description, 100, '...') }}</td>
                                                         <td>
                                                             <img class="rounded-circle avatar-md tbl-user-image"
-                                                                src="{{ assetUrl($propertyUnit->folder_name . '/' . $propertyUnit->file_name) }}">
+                                                                src="{{ $propertyUnit->first_image 
+                                                                        ? asset('storage/' . $propertyUnit->first_image->folder_name . '/' . $propertyUnit->first_image->file_name)
+                                                                        : asset('images/default-unit.png') }}">
                                                         </td>
                                                         <td>
                                                             @if (@$propertyUnit->first_name != null)
