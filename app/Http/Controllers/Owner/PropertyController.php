@@ -12,6 +12,8 @@ use App\Services\PropertyService;
 use App\Traits\ResponseTrait;
 use Illuminate\Http\Request;
 use Illuminate\Pagination\LengthAwarePaginator;
+use App\Models\PropertyUnitImage; 
+use Illuminate\Support\Facades\Storage;
 
 class PropertyController extends Controller
 {
@@ -103,14 +105,35 @@ class PropertyController extends Controller
         // Get property details
         $data['property'] = $this->propertyService->getDetailsById($id);
 
-        // Extract data from the JSON response
+        // Extract unit data from JSON response
         $unitsResponse = $this->propertyService->getUnitsByPropertyId($id);
         $units = collect($unitsResponse->getData()->data);
 
-        // Paginate the collection
-        $perPage = 10; // Set your desired number of items per page
-        $currentPage = request()->get('page', 1);
+        /**
+         * 🔥 Attach images for each unit
+         */
+        $unitIds = $units->pluck('id')->toArray();
+
+        // Load all images for all units in one query
+        $images = \App\Models\PropertyUnitImage::whereIn('unit_id', $unitIds)
+        ->select('id', 'unit_id', 'folder_name', 'file_name')
+        ->get()
+        ->groupBy('unit_id');
         
+        // Assign relation-like structure for each unit
+        $units = $units->map(function ($unit) use ($images) {
+            $unitImages = $images[$unit->id] ?? collect([]);
+            $unit->images = $unitImages;
+            $unit->first_image = $unitImages->first();
+            return $unit;
+        });
+
+        /**
+         * Pagination
+         */
+        $perPage = 10;
+        $currentPage = request()->get('page', 1);
+
         $paginator = new LengthAwarePaginator(
             $units->slice(($currentPage - 1) * $perPage, $perPage)->values(),
             $units->count(),
@@ -121,7 +144,28 @@ class PropertyController extends Controller
 
         $data['units'] = $paginator;
 
-        return view('owner.property.show')->with($data);
+        return view('owner.property.show', $data);
+    }
+
+
+    
+    public function deleteUnitImage($id)
+    {
+        $image = PropertyUnitImage::find($id);
+
+        if (!$image || !$image->unit || !$image->unit->property) {
+            return response()->json(['status' => 'error', 'message' => 'Image or unit not found'], 404);
+        }
+
+        if ($image->unit->property->owner_user_id !== auth()->id()) {
+            return response()->json(['status' => 'error', 'message' => 'Unauthorized'], 403);
+        }
+
+        Storage::disk('public')->delete($image->folder_name . '/' . $image->file_name);
+
+        $image->delete();
+
+        return response()->json(['status' => 'success']);
     }
 
     public function edit($id)

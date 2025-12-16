@@ -59,7 +59,7 @@
                                                                 <td>{{ $unit->unit_name }}</td>
                                                                 <td>
                                                                     <img class="rounded-circle avatar-md tbl-user-image"
-                                                                        src="{{ assetUrl($unit->folder_name . '/' . $unit->file_name) }}">
+                                                                        src="{{ $unit->first_image_url }}">
                                                                 </td>
                                                                 <td>{{ $unit->property_name }}</td>
                                                                 <td>

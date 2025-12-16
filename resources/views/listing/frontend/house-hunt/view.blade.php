@@ -11,30 +11,51 @@
     <!-- Hero section -->
 <div class="property-details-area">
     @php
-        $heroImage = null;
-        $isFallbackHero = false;
+    // Hero image logic
+    $thumb = trim($property->thumbnail_image ?? '');
+    $systemPlaceholder = asset('assets/images/no-image.jpg');
+    $hasHeroImage = $thumb && $thumb !== $systemPlaceholder;
+    $heroImage = $hasHeroImage ? $thumb : asset('assets/images/interior.jpg');
+    $isFallbackHero = !$hasHeroImage;
 
-        if (!empty($property['thumbnail_image'])) {
-            if (\Illuminate\Support\Facades\Storage::exists("public/{$property['thumbnail_image']}")) {
-                $heroImage = asset("storage/{$property['thumbnail_image']}");
-            }
-        }
-
-        if (!$heroImage) {
-            $heroImage = asset('assets/images/interior.jpg');
-            $isFallbackHero = true;
-        }
+    // Additional images
+    $additionalImages = $property->propertyImages ?? [];
     @endphp
     <div class="row">
-        <div class="col-md-12 property-banner text-white position-relative" 
-            style="background-image: url('{{ $heroImage }}'); background-size: cover; background-position: center; height: 450px;">
-            
-            <!-- Black overlay -->
-            <div class="position-absolute top-0 start-0 w-100 h-100" 
-                style="background: rgba(0, 0, 0, 0.45); z-index:1;"></div>
+        <div class="col-md-12 position-relative" style="height:450px;">
+            <!-- Carousel -->
+            <div id="propertyCarousel" class="carousel slide h-100" data-bs-ride="carousel">
+                <div class="carousel-inner h-100">
+                    <!-- Hero Image -->
+                    <div class="carousel-item active h-100">
+                        <img src="{{ $heroImage }}" 
+                            class="d-block w-100 h-100" 
+                            style="object-fit:cover;" 
+                            alt="Hero Image">
+                    </div>
 
-            <!-- Centered text -->
-            <div class="d-flex flex-column justify-content-center align-items-center h-100 text-center position-relative" style="z-index:2;">
+                    <!-- Additional property images -->
+                    @forelse($additionalImages as $propertyImage)
+                        @php
+                            $imgUrl = $propertyImage->single_image ?? asset('assets/images/no-image.jpg');
+                        @endphp
+                        <div class="carousel-item h-100">
+                            <img src="{{ $imgUrl }}" 
+                                class="d-block w-100 h-100" 
+                                style="object-fit:cover;" 
+                                alt="Property Image">
+                        </div>
+                    @empty
+                    @endforelse
+                </div>
+            </div>
+
+            <!-- Black overlay (above carousel images) -->
+            <div class="position-absolute top-0 start-0 w-100 h-100" 
+                style="background: rgba(0,0,0,0.45); z-index:1;"></div>
+
+            <!-- Text overlay (absolutely positioned over carousel) -->
+            <div class="d-flex flex-column justify-content-center align-items-center h-100 text-center position-absolute w-100" style="z-index:2; top:0; left:0;">
                 <h2 class="property-title fw-bold" 
                     style="font-family: 'Playfair Display', serif; color: #fff; text-shadow: 2px 2px 8px rgba(0,0,0,0.7);">
                     {{ $property['name'] }}
@@ -48,6 +69,7 @@
                 </div>
             </div>
 
+            <!-- Fallback badge -->
             @if($isFallbackHero)
                 <span class="badge bg-primary position-absolute bottom-0 end-0 m-3 px-4 py-3 fs-6" style="z-index:2;">
                     No Image Provided
@@ -79,17 +101,50 @@
                 <div class="property-item rounded overflow-hidden">
                     <div class="single-properties">
                         <div class="properties-img position-relative">
-                            <img src="{{ $unitImage }}" 
-                                class="img-fluid w-100" 
-                                alt="Property Image">
-                                <span class="badge bg-primary position-absolute top-0 start-0 m-2 px-3 py-2">
-                                    {{ $unit->listing_type ?? __('For Rent') }}
+                            @if($unit->images->count() > 0)
+                                <div id="carouselUnit{{ $unit->id }}" class="carousel slide" data-bs-ride="carousel">
+                                    
+                                    <div class="carousel-inner">
+                                        @foreach($unit->images as $index => $img)
+                                            @php
+                                                $imgUrl = asset('storage/' . $img->folder_name . '/' . $img->file_name);
+                                            @endphp
+
+                                            <div class="carousel-item {{ $index === 0 ? 'active' : '' }}">
+                                                <a class="venobox" 
+                                                data-gall="gallery{{ $unit->id }}" 
+                                                href="{{ $imgUrl }}"
+                                                title="Unit {{ $unit->unit_name ?? $unit->id }}">
+                                                
+                                                    <img src="{{ $imgUrl }}" 
+                                                        class="d-block w-100 img-fluid" 
+                                                        alt="Unit Image"
+                                                        style="cursor: zoom-in;">
+                                                </a>
+                                                </div>
+                                        @endforeach
+                                    </div>
+
+                                    <button class="carousel-control-prev" type="button"
+                                            data-bs-target="#carouselUnit{{ $unit->id }}" data-bs-slide="prev">
+                                        <span class="carousel-control-prev-icon"></span>
+                                    </button>
+
+                                    <button class="carousel-control-next" type="button"
+                                            data-bs-target="#carouselUnit{{ $unit->id }}" data-bs-slide="next">
+                                        <span class="carousel-control-next-icon"></span>
+                                    </button>
+
+                                </div>
+
+                            @else
+                                <img src="{{ asset('assets/images/unit.png') }}" 
+                                    class="img-fluid w-100" 
+                                    alt="No Image">
+                                <span class="badge bg-dark position-absolute bottom-0 end-0 m-2 px-3 py-2">
+                                    No Image Provided
                                 </span>
-                                @if($isFallback)
-                                    <span class="badge bg-dark position-absolute bottom-0 end-0 m-2 px-3 py-2">
-                                        No Image Provided
-                                    </span>
-                                @endif
+                            @endif
                         </div>
                         <div class="card-body p-3" style="font-family: 'Josefin Sans', sans-serif;">
                             <h4 class="property-item-title mb-2"><strong>Unit {{ $unit->unit_name ?? 'Unit ' . $unit->id }}</strong></h4>
@@ -331,4 +386,16 @@
             commonHandler(data);
         }
     }
+</script>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        new VenoBox({
+            selector: '.venobox',
+            numeration: true,       // Shows "1 of 5"
+            infinigall: true,       // Infinite looping through gallery
+            share: true,            // Show share buttons
+            spinner: 'rotating-plane' // specific loading spinner
+        });
+    });
 </script>

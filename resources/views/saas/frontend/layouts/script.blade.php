@@ -15,7 +15,8 @@
 
 {{-- <script src="assets/js/owl.carousel.min.js"></script> --}}
 <script src="{{ asset('assets/libs/owl-carousel/owl.carousel.min.js') }}"></script>
-
+<script src="https://cdnjs.cloudflare.com/ajax/libs/venobox/2.0.4/venobox.min.js"></script>
+ 
 <!--Wow Script-->
 <script src="{{ asset('frontend/assets/js/wow.min.js') }}"></script>
 

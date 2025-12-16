@@ -110,7 +110,7 @@ $(document).on("click", ".accept", function () {
         } else if (result.dismiss === "cancel") {
             Swal.fire(
                 "Cancelled",
-                "Your imaginary data is safe :)",
+                "Your data is safe :)",
                 "error"
             )
         }

@@ -32,6 +32,7 @@ Route::group(['prefix' => 'owner', 'as' => 'owner.', 'middleware' => ['auth', 'o
     Route::get('top-search', [DashboardController::class, 'topSearch'])->name('top.search');
     Route::get('notification', [DashboardController::class, 'notification'])->name('notification');
     Route::get('send-login-dets', [TenantController::class, 'sendLoginDets'])->name('send.tenant.logins');
+    Route::delete('unit-image/{id}', [PropertyController::class, 'deleteUnitImage'])->name('unit.image.delete');
 
     Route::group(['prefix' => 'property', 'as' => 'property.'], function () {
         Route::get('all-property', [PropertyController::class, 'allProperty'])->name('allProperty');
