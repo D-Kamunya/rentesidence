@@ -42,7 +42,7 @@ class BasePaymentService
         if ($this->type == 'subscription') {
             $userId = User::where('role', USER_ROLE_ADMIN)->first()->id;
         } else {
-            $userId = auth()->user()->owner_user_id;
+            $userId = auth()->user()->owner_user_id ?? $object['owner_id'];
         }
         $this->gateway = Gateway::where(['owner_user_id' => $userId, 'slug' => $this->paymentMethod])->first();
         $this->gatewayCurrency = GatewayCurrency::where(['owner_user_id' => $userId, 'gateway_id' => $this->gateway->id, 'currency' => $this->currency])->firstOrFail();

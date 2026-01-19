@@ -11,6 +11,7 @@ use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
 use App\Jobs\SendSmsJob;
 use App\Jobs\SendInvoiceNotificationAndEmailJob;
+use Illuminate\Support\Str;
 
 class GenerateInvoice extends Command
 {
@@ -102,6 +103,8 @@ class GenerateInvoice extends Command
             $invoice->property_unit_id = $invoiceRecurring->property_unit_id;
             $invoice->month = month($now->format('n'));
             $invoice->due_date = $now->addDays($invoiceRecurring->due_day_after)->endOfDay();
+            $invoice->payment_token = Str::uuid(); 
+            $invoice->payment_token_expires_at = now()->addDays(7);
             $invoice->save();
             $totalAmount = 0;
             foreach ($invoiceRecurring->items as $item) {
@@ -117,11 +120,11 @@ class GenerateInvoice extends Command
             $invoice->save();
             DB::commit();
 
-            $message = __('New '.$invoice->month.' invoice  from Centresidence . '.$invoice->invoice_no . ' ' . 'due on date' . ' ' . $invoice->due_date);
+            $message = __('New '.$invoice->month.' invoice  from Centresidence due on' . ' ' . $invoice->due_date.'. Pay instantly: ').route('instant.invoice.pay', ['token' => $invoice->payment_token]);
             SendSmsJob::dispatch([$tenant->user->contact_number], $message, $invoice->owner_user_id);
             
             $emailData = (object) [
-                'subject'   => __('Invoice') . ' ' . $invoice->invoice_no . ' ' . __('due on date') . ' ' . $invoice->due_date,
+                'subject'   => __('Invoice') . ' ' . $invoice->invoice_no . ' ' . __('due on') . ' ' . $invoice->due_date,
                 'title'     => __('A new invoice was generated!'),
                 'message'   => __('You have a new invoice'),
             ];

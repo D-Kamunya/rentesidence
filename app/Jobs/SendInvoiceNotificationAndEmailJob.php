@@ -58,6 +58,7 @@ class SendInvoiceNotificationAndEmailJob implements ShouldQueue
             $amount  = $this->invoice->amount;
             $dueDate = $this->invoice->due_date;
             $month   = $this->invoice->month;
+            $token   = $this->invoice->payment_token;
             $invoiceNo = $this->invoice->invoice_no;
             $status  = __('Pending');
 
@@ -78,7 +79,7 @@ class SendInvoiceNotificationAndEmailJob implements ShouldQueue
                 $content = getEmailTemplate($template->body, $customizedFieldsArray);
                 $mailService->sendCustomizeMail($emails, $template->subject, $content);
             } else {
-                $mailService->sendInvoiceMail($ownerUserId, $status, $emails, $subject, $message, $title, $amount, $dueDate, $month, $invoiceNo);
+                $mailService->sendInvoiceMail($ownerUserId, $status, $emails, $subject, $message, $title, $amount, $token, $dueDate, $month, $invoiceNo);
             }
         }
     }

@@ -58,19 +58,19 @@ class ReminderInvoice extends Command
     private function sendReminder($mailService, $invoice, $overDue=false)
     {
         $emailData = (object) [
-            'subject'   => $overDue ? __('Payment remainder') . ' ' . $invoice->invoice_no . ' ' . __('overdue on date') . ' ' . $invoice->due_date :  __('Payment remainder') . ' ' . $invoice->invoice_no . ' ' . __('due on date') . ' ' . $invoice->due_date,
+            'subject'   => $overDue ? __('Payment remainder') . ' ' . $invoice->invoice_no . ' ' . __('overdue on') . ' ' . $invoice->due_date :  __('Payment remainder') . ' ' . $invoice->invoice_no . ' ' . __('due on') . ' ' . $invoice->due_date,
             'title'     => __('Payment remainder!'),
             'message'   => $overDue ? __('You have an overdue invoice'): __('You have a due invoice'),
         ];
         $notificationData = (object) [
             'title'   => __('Payment remainder!'),
-            'body'     => $overDue ? __('Payment remainder') . ' ' . $invoice->invoice_no . ' ' . __('overdue on date') . ' ' . $invoice->due_date :  __('Payment remainder') . ' ' . $invoice->invoice_no . ' ' . __('due on date') . ' ' . $invoice->due_date,
+            'body'     => $overDue ? __('Payment remainder') . ' ' . $invoice->invoice_no . ' ' . __('overdue on') . ' ' . $invoice->due_date :  __('Payment remainder') . ' ' . $invoice->invoice_no . ' ' . __('due on') . ' ' . $invoice->due_date,
             'url'     => route('tenant.invoice.index')
         ];
         SendInvoiceNotificationAndEmailJob::dispatch($invoice,$emailData,$notificationData);
 
-        $message = $overDue ? __($invoice->month.' Payment Remainder from Centresidence . '.$invoice->invoice_no . ' ' . 'overdue on date' . ' ' . $invoice->due_date):
-        __($invoice->month.' Payment Remainder from Centresidence . '.$invoice->invoice_no . ' ' . 'due on date' . ' ' . $invoice->due_date);
+        $message = $overDue ? __($invoice->month.' Payment Remainder from Centresidence overdue on' . ' ' . $invoice->due_date.'. Pay instantly: ').route('instant.invoice.pay', ['token' => $invoice->payment_token]):
+        __($invoice->month.' Payment Remainder from Centresidence due on' . ' ' . $invoice->due_date.'. Pay instantly: ').route('instant.invoice.pay', ['token' => $invoice->payment_token]);
         SendSmsJob::dispatch([$invoice->tenant->user->contact_number], $message, $invoice->owner_user_id);
     }
 }

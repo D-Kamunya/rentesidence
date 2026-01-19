@@ -76,6 +76,13 @@
             @endif
         }
     </style>
+    <script src="https://js.pusher.com/8.2.0/pusher.min.js"></script>
+    <script>
+        window.Laravel = {!! json_encode([
+            'pusher_key' => config('app.pusher_key'),
+            'pusher_cluster' => config('app.pusher_cluster'),
+        ]) !!};
+    </script>
 </head>
 
 <body class="{{ selectedLanguage()->rtl == 1 ? 'direction-rtl' : 'direction-ltr' }}">

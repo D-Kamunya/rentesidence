@@ -8,6 +8,7 @@ use App\Http\Controllers\Tenant\ProductOrderController;
 use App\Http\Controllers\Tenant\MaintenanceRequestController;
 use App\Http\Controllers\Tenant\TicketController;
 use App\Http\Controllers\ProductController;
+use App\Http\Controllers\PaymentController;
 use Illuminate\Support\Facades\Route;
 
 Route::group(['prefix' => 'tenant', 'as' => 'tenant.', 'middleware' => ['auth', 'tenant']], function () {
@@ -66,3 +67,9 @@ Route::group(['prefix' => 'tenant', 'as' => 'tenant.', 'middleware' => ['auth', 
     });
 
 });
+
+Route::get('/pay/invoice/{token}', [InvoiceController::class, 'instantRentPayShow'])
+    ->name('instant.invoice.pay');
+
+Route::post('/instant-invoice-pay/{token}', [PaymentController::class, 'instantCheckout'])->name('instant.payment.checkout');
+

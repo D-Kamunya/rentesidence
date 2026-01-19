@@ -48,6 +48,18 @@ class Invoice extends Model
         return $this->belongsTo(Tenant::class, 'tenant_id', 'id');
     }
 
+    public function landlord()
+    {
+        return $this->belongsTo(User::class, 'owner_user_id');
+    }
+
+    public function paidOrder()
+    {
+        return $this->hasOne(Order::class)
+            ->where('payment_status', 1)
+            ->latest();
+    }
+
     protected static function boot()
     {
         parent::boot();

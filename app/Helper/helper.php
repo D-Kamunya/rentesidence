@@ -880,7 +880,7 @@ if (!function_exists('handleProductPaymentConfirmation')) {
 
 
 if (!function_exists('handlePaymentConfirmation')) {
-    function handlePaymentConfirmation($order, $payerId = null, $gateway_slug, $paymentCheck = null)
+    function handlePaymentConfirmation($order, $token=null, $payerId = null, $gateway_slug, $paymentCheck = null)
     {
         try {
             $gateway = Gateway::find($order->gateway_id);
@@ -894,12 +894,11 @@ if (!function_exists('handlePaymentConfirmation')) {
 
             $gatewayBasePayment = new Payment($gateway->slug, ['currency' => $order->gateway_currency, 'type' => 'RentPayment']);
             $payment_data = $gatewayBasePayment->paymentConfirmation($payment_id, $payerId);
-            
+            $redirect=auth()->check() ? route('tenant.invoice.index') : route('instant.invoice.pay', ['token' => $token]);
             if ($payment_data['success']) {
                 if ($payment_data['data']['payment_status'] == 'success') {
                     $order->payment_status = INVOICE_STATUS_PAID;
                     $order->save();
-                    $invoice = Invoice::find($order->invoice_id);
                     $invoice->status = INVOICE_STATUS_PAID;
                     $invoice->order_id = $order->id;
                     $invoice->save();
@@ -918,10 +917,10 @@ if (!function_exists('handlePaymentConfirmation')) {
                     SendInvoiceNotificationAndEmailJob::dispatch($invoice,$emailData,$notificationData);
 
                     if ($gateway_slug == 'mpesa') {
-                        return redirect()->route('tenant.invoice.index')->with('success', __('Mpesa Payment Successful!'));
+                        return redirect($redirect)->with('success', __('Mpesa Payment Successful!'));
                     }
 
-                    return redirect()->route('tenant.invoice.index')->with('success', __('Payment Successful!'));
+                    return redirect($redirect)->with('success', __('Payment Successful!'));
                 }
             } else {
                 if ($gateway_slug == 'mpesa') {
@@ -931,7 +930,7 @@ if (!function_exists('handlePaymentConfirmation')) {
                     //     $paymentCheck->save();
                     //     DB::commit();
                     // }
-                    return redirect()->route('tenant.invoice.index')->with('error', __($payment_data['data']['error']));
+                    return redirect($redirect)->with('error', __($payment_data['data']['error']));
                 }
                 // if ($paymentCheck!==null){
                 //     $paymentCheck->increment('check_count');
@@ -940,11 +939,11 @@ if (!function_exists('handlePaymentConfirmation')) {
                 //     DB::commit();
                 // }
 
-                return redirect()->route('tenant.invoice.index')->with('error', __('Payment Failed!'));
+                return redirect($redirect)->with('error', __('Payment Failed!'));
             }
         } catch (\Exception $e) {
             DB::rollBack();
-            return redirect()->route('tenant.invoice.index')->with('error', __('Payment Failed!'));
+            return redirect($redirect)->with('error', __('Payment Failed!'));
         }
     }
 }
@@ -1295,5 +1294,13 @@ if (!function_exists('sendLoginDetails')) {
         } catch (Exception $e) {
             return back()->with('error', $e->getMessage());
         }
+    }
+}
+
+if (!function_exists('mpesaPhoneFromReference')) {
+    function mpesaPhoneFromReference($reference)
+    {
+        $last9 = substr(preg_replace('/\D/', '', $reference), -9);
+        return '0' . $last9;
     }
 }

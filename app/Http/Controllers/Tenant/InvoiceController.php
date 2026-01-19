@@ -9,6 +9,7 @@ use App\Services\TenantService;
 use App\Models\Order;
 use App\Models\PaymentCheck;
 use App\Models\Gateway;
+use App\Models\Invoice;
 use App\Traits\ResponseTrait;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Session;
@@ -108,5 +109,14 @@ class InvoiceController extends Controller
     {
         $data = $this->invoiceService->getCurrencyByGatewayId($request->id);
         return $this->success($data);
+    }
+
+    public function instantRentPayShow($token)
+    {
+        $invoice = Invoice::where('payment_token', $token)
+            ->where('payment_token_expires_at', '>', now())
+            ->firstOrFail();
+
+        return view('tenant.invoices.instant-pay', compact('invoice'));
     }
 }

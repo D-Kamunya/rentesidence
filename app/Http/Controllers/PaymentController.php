@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\CheckoutRequest;
+use App\Http\Requests\InstantCheckoutRequest;
 use App\Models\Bank;
 use App\Models\MpesaAccount;
 use App\Models\Currency;
@@ -123,10 +124,66 @@ class PaymentController extends Controller
         }
     }
 
+    public function instantCheckout(InstantCheckoutRequest $request,string $token)
+    {
+        $invoice = Invoice::where('payment_token', $token)
+            ->where('payment_token_expires_at', '>', now())
+            ->where('status', [INVOICE_STATUS_PENDING, INVOICE_STATUS_OVER_DUE])
+            ->firstOrFail();
+        $gateway = Gateway::where(['owner_user_id' => $invoice->owner_user_id, 'slug' => 'mpesa', 'status' => ACTIVE])->firstOrFail();
+        $gatewayCurrency = GatewayCurrency::where(['owner_user_id' => $invoice->owner_user_id, 'gateway_id' => $gateway->id, 'currency' => 'KES'])->firstOrFail();
+         
+        $mpesaAccount = MpesaAccount::where(['gateway_id' => $gateway->id])->first();
+        if (is_null($mpesaAccount)) {
+            throw new Exception('Mpesa Account not found');
+        }
+        $paymentData['mpesaAccount'] = $mpesaAccount;
+        $paymentData['mpesaNumber'] = $request->mpesa_number;
+        $order = $this->placeOrder($invoice, $gateway, $gatewayCurrency);
+
+        $object = [
+            'id' => $order->id,
+            'owner_id' => $invoice->owner_user_id,
+            'gateway' => $gateway->slug,
+            'callback_url' => route('payment.verify'),
+            'currency' => $gatewayCurrency->currency,
+            'type' => 'RentPayment'
+        ];
+
+        $payment = new Payment($gateway->slug, $object);
+        $paymentData['amount'] = $order->total;
+        $responseData = $payment->makePayment($paymentData);
+        if ($responseData['success']) {
+            $order->payment_id = $responseData['payment_id'];
+            $order->save();
+            if($gateway->slug=='mpesa'){
+                $url=$responseData['redirect_url'] . '&merchant_id=' . $responseData['merchant_request_id']. '&checkout_id=' . $responseData['checkout_request_id']. '&payment_token=' . $invoice->payment_token;
+                $transactionId=$responseData['checkout_request_id'];
+                return response()->json([
+                    'success' => true,
+                    'redirect_url' => $url,
+                    'transaction_id' => $transactionId
+                ]);
+            }else{
+                return redirect($responseData['redirect_url']);
+            }
+        } else {
+            if($gateway->slug=='mpesa'){
+                return response()->json([
+                    'success' => false,
+                    'error' => $responseData['message']
+                ]);
+            }
+            else{
+                return redirect()->back()->with('error', $responseData['message']);
+            }
+        }
+    }
+
     public function placeOrder($invoice, $gateway, $gatewayCurrency, $bank_id = null, $bank_name = null, $bank_account_number = null, $deposit_by = null, $deposit_slip_id = null,$mpesa_transaction_code = null)
     {
         return Order::create([
-            'user_id' => auth()->id(),
+            'user_id' => auth()->id() ?? $invoice->tenant->user_id,
             'invoice_id' => $invoice->id,
             'amount' => $invoice->amount,
             'system_currency' => Currency::where('current_currency', 'on')->first()->currency_code,
@@ -157,23 +214,24 @@ class PaymentController extends Controller
         $merchant_id = $request->get('merchant_id', NULL);
         $checkout_id = $request->get('checkout_id', NULL);
         $formattedGateway = ucfirst(strtolower($gateway_slug));
-
+        $payment_token = $request->get('payment_token', NULL);
+        $redirect=auth()->check() ? route('tenant.invoice.index') : route('instant.invoice.pay', ['token' => $payment_token]);
         if(filter_var($callback, FILTER_VALIDATE_BOOLEAN)===true){
             if(filter_var($stkSuccess, FILTER_VALIDATE_BOOLEAN)===true){
-                return redirect()->route('tenant.invoice.index')->with('success', __($formattedGateway.' STK Payment Successfull. \nRent Paid!'));
+                return redirect($redirect)->with('success', __($formattedGateway.' STK Payment Successfull. \nRent Paid!'));
             }else {
-                return redirect()->route('tenant.invoice.index')->with('error', __($formattedGateway.' STK Payment Declined! \nRent Not Paid'));
+                return redirect($redirect)->with('error', __($formattedGateway.' STK Payment Declined! \nRent Not Paid'));
             }
         }
 
         $order = Order::findOrFail($order_id);
         if ($order->payment_status == INVOICE_STATUS_PAID) {
-            return redirect()->route('tenant.invoice.index')->with('success', __($formattedGateway.' Payment Successful.\nRent Paid!'));
+            return redirect($redirect)->with('success', __($formattedGateway.' Payment Successful.\nRent Paid!'));
         }elseif ($order->payment_status == ORDER_PAYMENT_STATUS_CANCELLED) {
-            return redirect()->route('tenant.invoice.index')->with('error', __($formattedGateway.' Payment Declined! \nRent Not Paid'));
+            return redirect($redirect)->with('error', __($formattedGateway.' Payment Declined! \nRent Not Paid'));
         }
-        
-        return handlePaymentConfirmation($order,$payerId,$gateway_slug,null);
+
+        return handlePaymentConfirmation($order,$payment_token,$payerId,$gateway_slug,null);
     }
 
     public function verifyRedirect($type = 'error')

@@ -21,6 +21,7 @@ use Illuminate\Support\Facades\DB;
 use App\Jobs\SendSmsJob;
 use App\Jobs\SendInvoiceNotificationAndEmailJob;
 use Carbon\Carbon;
+use Illuminate\Support\Str;
 
 class InvoiceService
 {
@@ -467,7 +468,7 @@ class InvoiceService
         $this->saveInvoiceItems($request, $invoice, $totalAmountAndTax['totalAmount'], $totalAmountAndTax['totalTax']);
 
         $emailData = (object) [
-                'subject'   => __('Invoice') . ' ' . $invoice->invoice_no . ' ' . __('due on date') . ' ' . $invoice->due_date,
+                'subject'   => __('Invoice') . ' ' . $invoice->invoice_no . ' ' . __('due on') . ' ' . $invoice->due_date,
                 'title'     => __('A new invoice was generated!'),
                 'message'   => __('You have a new invoice'),
             ];
@@ -477,8 +478,8 @@ class InvoiceService
             'url'     => route('tenant.invoice.index')
         ];
         SendInvoiceNotificationAndEmailJob::dispatch($invoice,$emailData,$notificationData);
-    
-        $message = __('New '.$invoice->month.' invoice  from Centresidence . '.$invoice->invoice_no . ' ' . 'due on date' . ' ' . $invoice->due_date);
+
+        $message = __('New '.$invoice->month.' invoice  from Centresidence due on' . ' ' . $invoice->due_date.'. Pay instantly: ').route('instant.invoice.pay', ['token' => $invoice->payment_token]);
         SendSmsJob::dispatch([$tenant->user->contact_number], $message, auth()->id());
     }
 
@@ -558,6 +559,8 @@ class InvoiceService
         $invoice->property_unit_id = $tenant->unit_id;
         $invoice->month = $request->month;
         $invoice->due_date = $request->due_date;
+        $invoice->payment_token = Str::uuid(); 
+        $invoice->payment_token_expires_at = now()->addDays(7);
         $invoice->save();
 
         return $invoice;

@@ -278,7 +278,7 @@ class MailService
         }
     }
 
-    public static function sendInvoiceMail($ownerUserId, $status, $emails = [], $subject = null, $message = null, $title = null, $amount = 0, $dueDate = null, $month = null, $invoiceNo = null)
+    public static function sendInvoiceMail($ownerUserId, $status, $emails = [], $subject = null, $message = null, $title = null, $amount = 0, $token=null, $dueDate = null, $month = null, $invoiceNo = null)
     {
         if (env('MAIL_STATUS', 0) == 1 && env('MAIL_USERNAME')) {
             if (count($emails)) {
@@ -289,6 +289,7 @@ class MailService
                             $details['message'] = $message;
                             $details['title'] = $title;
                             $details['amount'] = $amount;
+                            $details['token'] = $token;
                             $details['dueDate'] = $dueDate;
                             $details['month'] = $month;
                             $details['invoiceNo'] = $invoiceNo;

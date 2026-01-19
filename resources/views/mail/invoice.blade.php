@@ -180,7 +180,7 @@
                                                     <td>
                                                         <div>
                                                             <a style="background-color:#3686FC;border-radius:4px;color:#fff;display:inline-block;font-family:Helvetica, Arial, sans-serif;font-size:18px;font-weight:normal;line-height:50px;text-align:center;text-decoration:none;width:350px;-webkit-text-size-adjust:none;"
-                                                                href="{{ route('login') }}">{{ __('Go Account') }}</a>
+                                                                href="{{ route('instant.invoice.pay', ['token' => $content['token']]) }}">{{ __('PAY INVOICE INSTANTLY') }}</a>
                                                         </div>
                                                         <br>
                                                     </td>
