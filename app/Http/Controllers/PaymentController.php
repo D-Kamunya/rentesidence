@@ -130,9 +130,22 @@ class PaymentController extends Controller
             ->where('payment_token_expires_at', '>', now())
             ->where('status', [INVOICE_STATUS_PENDING, INVOICE_STATUS_OVER_DUE])
             ->firstOrFail();
-        $gateway = Gateway::where(['owner_user_id' => $invoice->owner_user_id, 'slug' => 'mpesa', 'status' => ACTIVE])->firstOrFail();
-        $gatewayCurrency = GatewayCurrency::where(['owner_user_id' => $invoice->owner_user_id, 'gateway_id' => $gateway->id, 'currency' => 'KES'])->firstOrFail();
-         
+        $gateway = Gateway::where(['owner_user_id' => $invoice->owner_user_id, 'slug' => 'mpesa', 'status' => ACTIVE])->first();
+        if (!$gateway) {
+            return response()->json([
+                'success' => false,
+                'error' => 'M-Pesa payment is currently unavailable. Please contact your landlord.',
+            ], 422);
+        }
+
+        $gatewayCurrency = GatewayCurrency::where(['owner_user_id' => $invoice->owner_user_id, 'gateway_id' => $gateway->id, 'currency' => 'KES'])->first();
+        if (!$gatewayCurrency) {
+            return response()->json([
+                'success' => false,
+                'error' => 'M-Pesa payment is currently unavailable. Please contact your landlord.',
+            ], 422);
+        }
+        
         $mpesaAccount = MpesaAccount::where(['gateway_id' => $gateway->id])->first();
         if (is_null($mpesaAccount)) {
             throw new Exception('Mpesa Account not found');
