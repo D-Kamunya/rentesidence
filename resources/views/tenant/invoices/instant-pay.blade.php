@@ -104,6 +104,13 @@
                             </div>
 
                             <div class="row mb-2">
+                                <div class="col-6 text-muted">Issue Date</div>
+                                <div class="col-6 text-end fw-semibold">
+                                {{ $invoice->created_at->format('d M Y') }}
+                                </div>
+                            </div>
+
+                            <div class="row mb-2">
                                 <div class="col-6 text-muted">Status</div>
                                 <div class="col-6 text-end">
                                     <span class="badge rounded-pill bg-{{ $status['class'] }}">
@@ -112,8 +119,35 @@
                                 </div>
                             </div>
 
+                            @if ($invoice->status != 1)
+                                    <div class="row mb-2">
+                                        <div class="col-6 text-muted">Due Date</div>
+                                        <div class="col-6 text-end fw-semibold">
+                                            {{ \Carbon\Carbon::parse($invoice->due_date)->format('d M Y') }}
+                                        </div>
+                                    </div>
+                                @endif
+
+                                @if ($invoice->status == 1 && $invoice->paidOrder)
+                                    @if (Str::startsWith($invoice->paidOrder->payment_id, 'ws_CO'))
+                                        <div class="row mb-2">
+                                            <div class="col-6 text-muted">Paid By</div>
+                                            <div class="col-6 text-end fw-semibold">
+                                                {{ mpesaPhoneFromReference($invoice->paidOrder->payment_id) }}
+                                            </div>
+                                        </div>
+                                    @endif
+
+                                    <div class="row mb-2">
+                                        <div class="col-6 text-muted">Paid On</div>
+                                        <div class="col-6 text-end fw-semibold">
+                                            {{ $invoice->paidOrder->created_at->format('d M Y H:i') }}
+                                        </div>
+                                    </div>
+                                @endif
+
                             <div class="row mb-2 border-top pt-2 mt-2">
-                                <div class="col-6 text-muted">Amount Due</div>
+                                <div class="col-6 text-muted">Amount</div>
                                 <div class="col-6 text-end fw-bold text-primary fs-5">
                                     KES {{ number_format($invoice->amount, 2) }}
                                 </div>
@@ -129,6 +163,20 @@
                             <div class="row mb-1 small">
                                 <div class="col-5 text-muted">Unit</div>
                                 <div class="col-7 text-end fw-semibold text-truncate">{{ $invoice->propertyUnit->unit_name }}</div>
+                            </div>
+                            
+                            <div class="row mb-2">
+                                <div class="col-6 text-muted">Tenant</div>
+                                <div class="col-6 text-end fw-semibold">
+                                    {{ $invoice->tenant->user->name }}
+                                </div>
+                            </div>
+
+                            <div class="row">
+                                <div class="col-6 text-muted">Owner</div>
+                                <div class="col-6 text-end fw-semibold">
+                                    {{ $invoice->landlord->name }}
+                                </div>
                             </div>
                         </div>
 
