@@ -60,7 +60,7 @@ class SendInvoiceNotificationAndEmailJob implements ShouldQueue
             $month   = $this->invoice->month;
             $token   = $this->invoice->payment_token;
             $invoiceNo = $this->invoice->invoice_no;
-            $status  = __('Pending');
+            $status  = $this->invoice->status;
 
             $mailService = new MailService;
             $template = EmailTemplate::where('owner_user_id', $ownerUserId)

@@ -137,7 +137,7 @@ class MpesaController extends Controller
 
                         $emailData = (object) [
                             'subject'   => __("Rent payment verify successfully"),
-                            'title'     =>  __("You have a new invoice"),
+                            'title'     =>  __("INVOICE PAID SUCCESSFULLY"),
                             'message'   => $invoice->invoice_no . ' ' . __('paid successfully'),
                         ];
                         $notificationData = (object) [

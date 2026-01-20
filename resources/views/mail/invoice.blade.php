@@ -150,7 +150,12 @@
                                                                                 style="font-weight:bold;">{{ __('Status') }}:
                                                                                 &nbsp;</span>
                                                                             <span
-                                                                                style="font-weight:lighter;">{{ Str::ucfirst($content['status']) }}
+                                                                                style="font-weight:lighter;">
+                                                                            @if($content['status'] != INVOICE_STATUS_PAID)
+                                                                                {{ __('Pending') }}
+                                                                            @else
+                                                                                {{ __('Paid') }}
+                                                                            @endif
                                                                             </span>
                                                                             <br>
                                                                             <span
@@ -179,8 +184,13 @@
                                                 <tr>
                                                     <td>
                                                         <div>
+                                                            @if($content['status'] != INVOICE_STATUS_PAID)
                                                             <a style="background-color:#3686FC;border-radius:4px;color:#fff;display:inline-block;font-family:Helvetica, Arial, sans-serif;font-size:18px;font-weight:normal;line-height:50px;text-align:center;text-decoration:none;width:350px;-webkit-text-size-adjust:none;"
                                                                 href="{{ route('instant.invoice.pay', ['token' => $content['token']]) }}">{{ __('PAY INVOICE INSTANTLY') }}</a>
+                                                            @else
+                                                            <a style="background-color:#28a745;border-radius:4px;color:#fff;display:inline-block;font-family:Helvetica, Arial, sans-serif;font-size:18px;font-weight:normal;line-height:50px;text-align:center;text-decoration:none;width:350px;-webkit-text-size-adjust:none;"
+                                                                href="{{ route('instant.invoice.pay', ['token' => $content['token']]) }}">{{ __('VIEW PAID INVOICE') }}</a>
+                                                            @endif
                                                         </div>
                                                         <br>
                                                     </td>
