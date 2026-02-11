@@ -151,6 +151,18 @@ class SettingController extends Controller
         return view('admin.setting.reminder-setting')->with($data);
     }
 
+    public function subscriptionReminderSetting()
+    {
+        if (isAddonInstalled('PROTYSMS') < 1) {
+            abort(404);
+        }
+        $data['pageTitle'] = __("Active Subscription Renewal Reminder Setting");
+        $data['pageTitle1'] = __("Expired Subscription Renewal Reminder Setting");
+         $data['navApplicationSettingParentActiveClass'] = 'mm-active';
+        $data['subSubscriptionReminderSettingActiveClass'] = 'active';
+        return view('admin.setting.subscription-reminder-setting')->with($data);
+    }
+
     public function tenancySetting()
     {
         if (isAddonInstalled('PROTYTENANCY') < 1) {

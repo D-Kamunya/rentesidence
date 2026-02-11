@@ -76,6 +76,12 @@
                             <span class="iconify" data-icon="carbon:reminder"></span>{{ __('Invoice Reminder Setting') }}
                         </a>
                     </li>
+                    <li>
+                        <a href="{{ route('admin.setting.subscription.reminder.setting') }}"
+                            class="account-settings-menu-item {{ @$subSubscriptionReminderSettingActiveClass }}">
+                            <span class="iconify" data-icon="carbon:reminder"></span>{{ __('Subscriptions Reminder Setting') }}
+                        </a>
+                    </li>
                 @endif
                 @if (isAddonInstalled('PROTYAGREEMENT', 0) > 0)
                     <li>

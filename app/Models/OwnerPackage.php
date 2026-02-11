@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use App\Models\User;
 
 class OwnerPackage extends Model
 {
@@ -34,4 +35,9 @@ class OwnerPackage extends Model
         'per_monthly_price',
         'per_yearly_price',
     ];
+
+    public function owner()
+    {
+        return $this->belongsTo(User::class, 'user_id');
+    }
 }

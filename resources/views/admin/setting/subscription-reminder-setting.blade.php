@@ -48,36 +48,36 @@
                                                             <div class="col-md-4 mb-25">
                                                                 <label
                                                                     class="label-text-title color-heading font-medium mb-2">{{ __('Status') }}</label>
-                                                                <select name="remainder_status" class="form-control">
+                                                                <select name="subscription_remainder_status" class="form-control">
                                                                     <option value="0"
-                                                                        {{ getOption('remainder_status', 0) != REMAINDER_STATUS_ACTIVE ? 'selected' : '' }}>
+                                                                        {{ getOption('subscription_remainder_status', 0) != SUBSCRIPTION_REMAINDER_STATUS_ACTIVE ? 'selected' : '' }}>
                                                                         {{ __('Disable') }}</option>
                                                                     <option value="1"
-                                                                        {{ getOption('remainder_status', 0) == REMAINDER_STATUS_ACTIVE ? 'selected' : '' }}>
+                                                                        {{ getOption('subscription_remainder_status', 0) == SUBSCRIPTION_REMAINDER_STATUS_ACTIVE ? 'selected' : '' }}>
                                                                         {{ __('Enable') }}</option>
                                                                 </select>
                                                             </div>
                                                             <div class="col-md-4 mb-25">
                                                                 <label
                                                                     class="label-text-title color-heading font-medium mb-2">{{ __('Remind day') }}</label>
-                                                                <select name="remainder_everyday_status" id=""
+                                                                <select name="subscription_remainder_everyday_status" id=""
                                                                     class="form-control">
                                                                     <option value="0"
-                                                                        {{ getOption('remainder_everyday_status', 0) != REMAINDER_EVERYDAY_STATUS_ACTIVE ? 'selected' : '' }}>
+                                                                        {{ getOption('subscription_remainder_everyday_status', 0) != SUBSCRIPTION_REMAINDER_EVERYDAY_STATUS_ACTIVE ? 'selected' : '' }}>
                                                                         {{ __('Custom') }}</option>
                                                                     <option value="1"
-                                                                        {{ getOption('remainder_everyday_status', 0) == REMAINDER_EVERYDAY_STATUS_ACTIVE ? 'selected' : '' }}>
+                                                                        {{ getOption('subscription_remainder_everyday_status', 0) == SUBSCRIPTION_REMAINDER_EVERYDAY_STATUS_ACTIVE ? 'selected' : '' }}>
                                                                         {{ __('Every Day') }}</option>
                                                                 </select>
                                                             </div>
                                                             <div
-                                                                class="col-md-4 mb-25 reminder_day {{ getOption('remainder_everyday_status', 0) == REMAINDER_EVERYDAY_STATUS_ACTIVE ? 'd-none' : '' }}">
+                                                                class="col-md-4 mb-25 subscription_reminder_day {{ getOption('subscription_remainder_everyday_status', 0) == SUBSCRIPTION_REMAINDER_EVERYDAY_STATUS_ACTIVE ? 'd-none' : '' }}">
                                                                 <label
-                                                                    class="label-text-title color-heading font-medium mb-2">{{ __('Reminder before due days') }}</label>
-                                                                <input type="text" name="reminder_days"
-                                                                    value="{{ getOption('reminder_days') }}"
+                                                                    class="label-text-title color-heading font-medium mb-2">{{ __('Reminder before expiration') }}</label>
+                                                                <input type="text" name="subscription_reminder_days"
+                                                                    value="{{ getOption('subscription_reminder_days') }}"
                                                                     class="form-control" placeholder="3">
-                                                                <small>{{ __('Remind Days before due date, separated by comma(,). Set 0 for due date reminder') }}</small>
+                                                                <small>{{ __('Remind Days before expiration, separated by comma(,). Set 0 for due date reminder') }}</small>
                                                             </div>
                                                         </div>
                                                     </div>
@@ -106,36 +106,36 @@
                                                             <div class="col-md-4 mb-25">
                                                                 <label
                                                                     class="label-text-title color-heading font-medium mb-2">{{ __('Status') }}</label>
-                                                                <select name="OVERDUE_REMAINDER_STATUS" class="form-control">
+                                                                <select name="SUBSCRIPTION_OVERDUE_REMAINDER_STATUS" class="form-control">
                                                                     <option value="0"
-                                                                        {{ getOption('OVERDUE_REMAINDER_STATUS', 0) != REMAINDER_STATUS_ACTIVE ? 'selected' : '' }}>
+                                                                        {{ getOption('SUBSCRIPTION_OVERDUE_REMAINDER_STATUS', 0) != SUBSCRIPTION_REMAINDER_STATUS_ACTIVE ? 'selected' : '' }}>
                                                                         {{ __('Disable') }}</option>
                                                                     <option value="1"
-                                                                        {{ getOption('OVERDUE_REMAINDER_STATUS', 0) == REMAINDER_STATUS_ACTIVE ? 'selected' : '' }}>
+                                                                        {{ getOption('SUBSCRIPTION_OVERDUE_REMAINDER_STATUS', 0) == SUBSCRIPTION_REMAINDER_STATUS_ACTIVE ? 'selected' : '' }}>
                                                                         {{ __('Enable') }}</option>
                                                                 </select>
                                                             </div>
                                                             <div class="col-md-4 mb-25">
                                                                 <label
                                                                     class="label-text-title color-heading font-medium mb-2">{{ __('Remind day') }}</label>
-                                                                <select name="OVERDUE_REMAINDER_EVERYDAY_STATUS" id=""
+                                                                <select name="SUBSCRIPTION_OVERDUE_REMAINDER_EVERYDAY_STATUS" id=""
                                                                     class="form-control">
                                                                     <option value="0"
-                                                                        {{ getOption('OVERDUE_REMAINDER_EVERYDAY_STATUS', 0) != REMAINDER_EVERYDAY_STATUS_ACTIVE ? 'selected' : '' }}>
+                                                                        {{ getOption('SUBSCRIPTION_OVERDUE_REMAINDER_EVERYDAY_STATUS', 0) != SUBSCRIPTION_REMAINDER_EVERYDAY_STATUS_ACTIVE ? 'selected' : '' }}>
                                                                         {{ __('Custom') }}</option>
                                                                     <option value="1"
-                                                                        {{ getOption('OVERDUE_REMAINDER_EVERYDAY_STATUS', 0) == REMAINDER_EVERYDAY_STATUS_ACTIVE ? 'selected' : '' }}>
+                                                                        {{ getOption('SUBSCRIPTION_OVERDUE_REMAINDER_EVERYDAY_STATUS', 0) == SUBSCRIPTION_REMAINDER_EVERYDAY_STATUS_ACTIVE ? 'selected' : '' }}>
                                                                         {{ __('Every Day') }}</option>
                                                                 </select>
                                                             </div>
                                                             <div
-                                                                class="col-md-4 mb-25 overdue_reminder_day {{ getOption('OVERDUE_REMAINDER_EVERYDAY_STATUS', 0) == REMAINDER_EVERYDAY_STATUS_ACTIVE ? 'd-none' : '' }}">
+                                                                class="col-md-4 mb-25 subscription_overdue_reminder_day {{ getOption('SUBSCRIPTION_OVERDUE_REMAINDER_EVERYDAY_STATUS', 0) == SUBSCRIPTION_REMAINDER_EVERYDAY_STATUS_ACTIVE ? 'd-none' : '' }}">
                                                                 <label
-                                                                    class="label-text-title color-heading font-medium mb-2">{{ __('Reminder after due days') }}</label>
-                                                                <input type="text" name="OVERDUE_REMAINDER_DAYS" 
-                                                                    value="{{ getOption('OVERDUE_REMAINDER_DAYS') }}"
+                                                                    class="label-text-title color-heading font-medium mb-2">{{ __('Reminder after expiration') }}</label>
+                                                                <input type="text" name="SUBSCRIPTION_OVERDUE_REMAINDER_DAYS" 
+                                                                    value="{{ getOption('SUBSCRIPTION_OVERDUE_REMAINDER_DAYS') }}"
                                                                     class="form-control" placeholder="3">
-                                                                <small>{{ __('Remind Days after due date, separated by comma(,). Set 0 for due date reminder') }}</small>
+                                                                <small>{{ __('Remind Days after expiration, separate by comma(,). Set 0 for due date reminder') }}</small>
                                                             </div>
                                                         </div>
                                                     </div>
@@ -157,21 +157,22 @@
 
 @push('script')
     <script>
-        $('select[name=remainder_everyday_status]').on('change', function() {
-            var remainder_everyday_status = $(this).val();
-            if (remainder_everyday_status == 1) {
-                $('.reminder_day').addClass('d-none');
+        $('select[name=subscription_remainder_everyday_status]').on('change', function() {
+            var subscription_remainder_everyday_status = $(this).val();
+            if (subscription_remainder_everyday_status == 1) {
+                $('.subscription_reminder_day').addClass('d-none');
             } else {
-                $('.reminder_day').removeClass('d-none');
+                $('.subscription_reminder_day').removeClass('d-none');
             }
         });
 
-        $('select[name=OVERDUE_REMAINDER_EVERYDAY_STATUS]').on('change', function() {
+        $('select[name=SUBSCRIPTION_OVERDUE_REMAINDER_EVERYDAY_STATUS]').on('change', function() {
+            
             var overdue_remainder_everyday_status = $(this).val();
             if (overdue_remainder_everyday_status == 1) {
-                $('.overdue_reminder_day').addClass('d-none');
+                $('.subscription_overdue_reminder_day').addClass('d-none');
             } else {
-                $('.overdue_reminder_day').removeClass('d-none');
+                $('.subscription_overdue_reminder_day').removeClass('d-none');
             }
         });
     </script>

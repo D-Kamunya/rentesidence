@@ -16,6 +16,8 @@ class Kernel extends ConsoleKernel
     protected function schedule(Schedule $schedule)
     {
         $schedule->command('reminder:invoice')->dailyAt('06:00')
+        ->appendOutputTo(storage_path('logs/invoice_reminder_scheduler.log'));
+        $schedule->command('reminder:subscription')->dailyAt('06:00')
         ->appendOutputTo(storage_path('logs/reminder_scheduler.log'));
         $schedule->command('generate:invoice')->dailyAt('06:00')
         ->appendOutputTo(storage_path('logs/generate_invoice_scheduler.log'));

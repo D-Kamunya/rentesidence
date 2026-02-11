@@ -57,6 +57,7 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'middleware' => ['auth', 'a
         Route::get('listing-setting', [SettingController::class, 'listingSetting'])->name('listing.setting');
         Route::get('agreement-setting', [SettingController::class, 'agreementSetting'])->name('agreement.setting');
         Route::get('reminder-setting', [SettingController::class, 'reminderSetting'])->name('reminder.setting');
+        Route::get('subscription-reminder-setting', [SettingController::class, 'subscriptionReminderSetting'])->name('subscription.reminder.setting');
         Route::get('cron-setting', [SettingController::class, 'cronSetting'])->name('cron.setting');
         Route::get('affiliate-setting', [SettingController::class, 'affiliateSetting'])->name('affiliate.setting');
 

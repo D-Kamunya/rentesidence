@@ -12,6 +12,7 @@ use App\Mail\ProductOrderSuccessMail;
 use App\Mail\ThankYouMail;
 use App\Mail\UserEmailVerification;
 use App\Mail\WelcomeMail;
+use App\Mail\SubscriptionReminderMail;
 use App\Models\MailHistory;
 use App\Traits\ResponseTrait;
 use Exception;
@@ -388,4 +389,44 @@ class MailService
         $history->error = $error;
         $history->save();
     }
+
+    public static function sendSubscriptionReminderMail($ownerUserId, $emails = [], $subject = null, $message = null, $title = null, $subscription = null)
+    {
+        if (env('MAIL_STATUS', 0) == 1 && env('MAIL_USERNAME')) {
+
+            if (count($emails)) {
+                foreach ($emails as $email) {
+                    try {
+                        if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+                            throw new Exception("Invalid email: {$email}");
+                        }
+
+                        $details = [
+                            'subject' => $subject,
+                            'title' => $title,
+                            'message' => $message,
+                            'subscription' => $subscription,
+                        ];
+
+                        Mail::to($email)->send(new SubscriptionReminderMail($details));
+
+                        Log::channel('sms-mail')->info("Subscription reminder email sent to {$email}");
+
+                        self::historyStore($ownerUserId, $email, $subject, $message, SMS_STATUS_DELIVERED);
+
+                    } catch (Exception $e) {
+                        Log::channel('sms-mail')->error($e->getMessage());
+                        self::historyStore($ownerUserId, $email, $subject, $message, SMS_STATUS_FAILED, $e->getMessage());
+                    }
+                }
+
+                return 'success';
+            }
+
+            return __('No email found');
+        }
+
+        return __('SMTP not enabled');
+    }
+
 }

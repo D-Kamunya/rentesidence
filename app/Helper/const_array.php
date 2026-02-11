@@ -96,6 +96,7 @@ function emailTemplates($input = null)
         EMAIL_TEMPLATE_WELCOME => 'Welcome Mail',
         EMAIL_TEMPLATE_LISTING_REPLY => 'Listing Reply',
         EMAIL_TEMPLATE_LISTING_CONTACT => 'Listing Contact',
+        EMAIL_TEMPLATE_SUBSCRIPTION_REMINDER => 'Subscription Reminder',
     ];
 
     if (is_null($input)) {
