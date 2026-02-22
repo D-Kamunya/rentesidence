@@ -199,6 +199,18 @@ class OwnerSubscriptionOrderService
             }else{
                 $order = SubscriptionOrder::findOrFail($request->id);
             }
+            /**
+             * ✅ IDEMPOTENCY PROTECTION
+             * Prevent double processing of already paid orders
+             */
+            if (
+                $order->payment_status == ORDER_PAYMENT_STATUS_PAID &&
+                $request->status == ORDER_PAYMENT_STATUS_PAID
+            ) {
+                DB::rollBack();
+                $message = __("This order has already been processed.");
+                return $this->success([], $message);
+            }
             if ($request->status == ORDER_PAYMENT_STATUS_PAID) {
                 $order->payment_status = ORDER_PAYMENT_STATUS_PAID;
                 $order->transaction_id = str_replace("-", "", uuid_create(UUID_TYPE_RANDOM));
@@ -209,7 +221,14 @@ class OwnerSubscriptionOrderService
                     $duration = 365;
                 }
                 $package = Package::find($order->package_id);
-                setUserPackage($order->user_id, $package, $duration, $order->quantity, $order->id);
+                setUserPackage(
+                    $order->user_id,
+                    $package,
+                    $duration,
+                    $order->quantity,
+                    $order->id
+                );
+
             } elseif ($request->status == ORDER_PAYMENT_STATUS_CANCELLED) {
                 $order->payment_status = ORDER_PAYMENT_STATUS_CANCELLED;
             } else {
@@ -217,10 +236,28 @@ class OwnerSubscriptionOrderService
             }
             $order->save();
             DB::commit();
-            $invoiceUrl = route('owner.subscription.index');
-            $title = __("You have a new invoice");
-            $body = __("Package Assign Successfully");
-            addNotification($title, $body, $invoiceUrl, null, $order->user_id, auth()->id());
+
+            /**
+             * ✅ FIXED NOTIFICATION LOGIC
+             * Only notify when payment is successful
+             */
+            if ($request->status == ORDER_PAYMENT_STATUS_PAID) {
+
+                $invoiceUrl = route('owner.subscription.index');
+
+                $title = __("Subscription Activated Successfully");
+                $body  = __("Your subscription is now active. Payment received successfully.");
+
+                addNotification(
+                    $title,
+                    $body,
+                    $invoiceUrl,
+                    null,
+                    $order->user_id,
+                    auth()->id()
+                );
+            }
+
             $message = __(UPDATED_SUCCESSFULLY);
             return $this->success([], $message);
         } catch (Exception $e) {
