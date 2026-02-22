@@ -1,4 +1,5 @@
 <header id="page-topbar">
+
     <div class="navbar-header">
         <div class="d-flex">
             <div class="navbar-brand-box">
@@ -21,35 +22,58 @@
                 </div>
             </div> --}}
         </div>
-        @if (isAddonInstalled('PROTYSAAS') > 1)
-            @if (!ownerCurrentPackage(auth()->id()))
-                @if (!checkExpiredOwnerPackage(auth()->id()))
-                    <div class="d-flex exclamation">
-                        <button class="text-danger exclamation-btu">
+        @php
+            $subscriptionService = app(\App\Services\SubscriptionService::class);
+            $subscriptionState = $subscriptionService->getSubscriptionState();
+            $state = $subscriptionState['state'] ?? null;
+            $daysLeft = $subscriptionState['days_left'] ?? null;
+        @endphp
+
+        {{-- Mobile Alert Icon --}}
+        <div class="subscription-alert-toggle" onclick="toggleSubscriptionBanner()">
+            !
+        </div>
+
+        {{-- Subscription Banner --}}
+        @if (isAddonInstalled('PROTYSAAS') > 1 && $state && $state !== 'active')
+            <div id="subscription-banner"
+                class="subscription-banner subscription-{{ $state }}">
+                <div class="banner-content">
+                    <div class="banner-icon">
+                        @if($state === 'none')
                             <i class="fas fa-exclamation-circle"></i>
-                        </button>
-                        <div class="text-center exclamation-area">
-                            {{ __('Currently you have no subscription!') }} <a
-                                href="{{ route('owner.subscription.index', ['current_plan' => 'no']) }}"
-                                class="text-danger px-1" title="{{ __('Choose a plan') }}">{{ __('Choose a plan') }}</a>
-                        </div>
-                        <button type="button" class="close topBannerClose ms-2"><span>&times;</span></button>
+                        @elseif($state === 'expired')
+                            <i class="fas fa-times-circle"></i>
+                        @elseif($state === 'expiring')
+                            <i class="fas fa-hourglass-half"></i>
+                        @endif
                     </div>
-                @else
-                    <div class="d-flex exclamation">
-                        <button class="text-danger exclamation-btu">
-                            <i class="fas fa-exclamation-circle"></i>
-                        </button>
-                        <div class="text-center exclamation-area">
-                            {{ __('Currently your subcription has expired!') }} <a
-                                href="{{ route('owner.subscription.index', ['current_plan' => 'no']) }}"
-                                class="text-danger px-1" title="{{ __('Renew plan') }}">{{ __('Renew plan') }}</a>
-                        </div>
-                        <button type="button" class="close topBannerClose ms-2"><span>&times;</span></button>
+
+                    <div class="banner-text">
+                        @if($state === 'none')
+                            {{ __('You currently have no subscription.') }}
+                            <a href="{{ route('owner.subscription.index', ['current_plan' => 'no']) }}">
+                                {{ __('Choose a plan') }}
+                            </a>
+
+                        @elseif($state === 'expired')
+                            {{ __('Your subscription has expired.') }}
+                            <a href="{{ route('owner.subscription.index', ['current_plan' => 'no']) }}">
+                                {{ __('Renew now') }}
+                            </a>
+
+                        @elseif($state === 'expiring')
+                            {{ __('Your subscription expires in') }}
+                            <strong id="countdown-days">{{ $daysLeft }}</strong>
+                            {{ __('day(s).') }}
+                        @endif
                     </div>
-                @endif
-            @endif
+
+                    <button id="close-banner" class="banner-close">&times;</button>
+                </div>
+            </div>
         @endif
+       
         <div class="d-flex">
             <div class="dropdown d-inline-block">
                 <button type="button" class="header-item noti-icon" id="page-header-languages-dropdown"
@@ -147,4 +171,140 @@
             </div>
         </div>
     </div>
+    <style>
+       .subscription-banner {
+            width: 50%;
+            margin: 8px auto 0 auto;
+            animation: slideDown 0.4s ease forwards;
+            font-size: 0.95rem;
+            font-weight: 500;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+        }
+        /* Alert circle (hidden on desktop) */
+        .subscription-alert-toggle {
+            display: none;
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: #ffb020;
+            color: white;
+            font-weight: bold;
+            text-align: center;
+            line-height: 32px;
+            cursor: pointer;
+        }
+    
+        /* Mobile */
+        @media (max-width: 768px) {
+            .subscription-banner {
+                width: 70%;
+                font-size: 0.85rem;
+                display: none;
+                position: absolute;
+                top: 60px;
+                left:50px;
+                z-index: 1000;
+            }
+
+            .subscription-alert-toggle {
+                display: block;
+            }
+        }
+
+        .banner-content {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 8px 12px;
+            position: relative;
+        }
+        
+
+        .banner-icon {
+            margin-right: 10px;
+            font-size: 1.1rem;
+        }
+
+        .banner-text a {
+            font-weight: 600;
+            text-decoration: underline;
+            margin-left: 6px;
+            color: #fff;
+        }
+
+        .banner-close {
+            position: absolute;
+            right: 15px;
+            border: none;
+            background: transparent;
+            color: white;
+            font-size: 1.3rem;
+            cursor: pointer;
+        }
+        
+
+        /* States */
+        .subscription-none {
+            background: #d93025;
+        }
+
+        .subscription-expired {
+            background: #b71c1c;
+        }
+
+        .subscription-expiring {
+            background: linear-gradient(to right, #fbc02d, #f57c00);
+        }
+
+        /* Animations */
+        @keyframes slideDown {
+            from { transform: translateY(-100%); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+
+        .subscription-expiring .banner-icon {
+            animation: pulse 1.5s infinite;
+        }
+
+        .subscription-expired .banner-icon {
+            animation: shake 0.8s infinite;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.15); }
+            100% { transform: scale(1); }
+        }
+
+        @keyframes shake {
+            0%,100% { transform: translateX(0); }
+            25% { transform: translateX(-3px); }
+            50% { transform: translateX(3px); }
+            75% { transform: translateX(-3px); }
+        }
+    </style>
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+
+            const banner = document.getElementById('subscription-banner');
+            const closeBtn = document.getElementById('close-banner');
+
+            if (banner && closeBtn) {
+                closeBtn.addEventListener('click', function () {
+                    banner.style.transition = "all 0.4s ease";
+                    banner.style.opacity = "0";
+                    banner.style.transform = "translateY(-15px)";
+                    setTimeout(() => banner.remove(), 400);
+                });
+            }
+
+        });
+        function toggleSubscriptionBanner() {
+            const banner = document.getElementById('subscription-banner');
+            banner.style.display =
+                banner.style.display === 'block' ? 'none' : 'block';
+        }
+    </script>
 </header>
