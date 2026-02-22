@@ -184,25 +184,26 @@ class OwnerSubscriptionOrderService
     {
         DB::beginTransaction();
         try {
+
+            // 🔒 Fetch order with row lock to prevent race conditions
             if ($request->has('mpesa_transaction_code')) {
                 try {
-                    // Retrieve the order by id and mpesa_transaction_code
                     $order = SubscriptionOrder::where('id', $request->id)
                         ->where('mpesa_transaction_code', $request->mpesa_transaction_code)
+                        ->lockForUpdate()
                         ->firstOrFail();
                 } catch (Exception $e) {
-                    // Return error if the order does not exist
                     DB::rollBack();
                     $message = __("The submitted Mpesa transaction code does not match the order");
                     return $this->error([], $message);
                 }
-            }else{
-                $order = SubscriptionOrder::findOrFail($request->id);
+            } else {
+                $order = SubscriptionOrder::where('id', $request->id)
+                    ->lockForUpdate()
+                    ->firstOrFail();
             }
-            /**
-             * ✅ IDEMPOTENCY PROTECTION
-             * Prevent double processing of already paid orders
-             */
+
+            // ✅ Idempotency protection
             if (
                 $order->payment_status == ORDER_PAYMENT_STATUS_PAID &&
                 $request->status == ORDER_PAYMENT_STATUS_PAID
@@ -211,16 +212,26 @@ class OwnerSubscriptionOrderService
                 $message = __("This order has already been processed.");
                 return $this->success([], $message);
             }
+
+            // 🔹 Payment status handling
             if ($request->status == ORDER_PAYMENT_STATUS_PAID) {
+
                 $order->payment_status = ORDER_PAYMENT_STATUS_PAID;
+
+                // Optional: track payment timestamp if column exists
+                $order->paid_at = now();
+
                 $order->transaction_id = str_replace("-", "", uuid_create(UUID_TYPE_RANDOM));
+
                 $duration = 0;
                 if ($order->duration_type == PACKAGE_DURATION_TYPE_MONTHLY) {
                     $duration = 30;
                 } elseif ($order->duration_type == PACKAGE_DURATION_TYPE_YEARLY) {
                     $duration = 365;
                 }
+
                 $package = Package::find($order->package_id);
+
                 setUserPackage(
                     $order->user_id,
                     $package,
@@ -230,23 +241,24 @@ class OwnerSubscriptionOrderService
                 );
 
             } elseif ($request->status == ORDER_PAYMENT_STATUS_CANCELLED) {
+
                 $order->payment_status = ORDER_PAYMENT_STATUS_CANCELLED;
+
             } else {
+
                 $order->payment_status = ORDER_PAYMENT_STATUS_PENDING;
             }
+
             $order->save();
             DB::commit();
 
-            /**
-             * ✅ FIXED NOTIFICATION LOGIC
-             * Only notify when payment is successful
-             */
+            // 🔔 Notification — only for successful payment
             if ($request->status == ORDER_PAYMENT_STATUS_PAID) {
 
                 $invoiceUrl = route('owner.subscription.index');
 
                 $title = __("Subscription Activated Successfully");
-                $body  = __("Your subscription is now active. Payment received successfully.");
+                $body  = __("Your subscription package has been activated. Payment received successfully.");
 
                 addNotification(
                     $title,
@@ -260,7 +272,9 @@ class OwnerSubscriptionOrderService
 
             $message = __(UPDATED_SUCCESSFULLY);
             return $this->success([], $message);
+
         } catch (Exception $e) {
+
             DB::rollBack();
             $message = getErrorMessage($e, $e->getMessage());
             return $this->error([], $message);
