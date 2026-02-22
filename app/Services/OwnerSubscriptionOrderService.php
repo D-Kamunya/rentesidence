@@ -215,23 +215,15 @@ class OwnerSubscriptionOrderService
 
             // 🔹 Payment status handling
             if ($request->status == ORDER_PAYMENT_STATUS_PAID) {
-
                 $order->payment_status = ORDER_PAYMENT_STATUS_PAID;
-
-                // Optional: track payment timestamp if column exists
-                $order->paid_at = now();
-
                 $order->transaction_id = str_replace("-", "", uuid_create(UUID_TYPE_RANDOM));
-
                 $duration = 0;
                 if ($order->duration_type == PACKAGE_DURATION_TYPE_MONTHLY) {
                     $duration = 30;
                 } elseif ($order->duration_type == PACKAGE_DURATION_TYPE_YEARLY) {
                     $duration = 365;
                 }
-
                 $package = Package::find($order->package_id);
-
                 setUserPackage(
                     $order->user_id,
                     $package,
@@ -241,22 +233,16 @@ class OwnerSubscriptionOrderService
                 );
 
             } elseif ($request->status == ORDER_PAYMENT_STATUS_CANCELLED) {
-
                 $order->payment_status = ORDER_PAYMENT_STATUS_CANCELLED;
-
             } else {
-
                 $order->payment_status = ORDER_PAYMENT_STATUS_PENDING;
             }
-
             $order->save();
             DB::commit();
 
             // 🔔 Notification — only for successful payment
             if ($request->status == ORDER_PAYMENT_STATUS_PAID) {
-
                 $invoiceUrl = route('owner.subscription.index');
-
                 $title = __("Subscription Activated Successfully");
                 $body  = __("Your subscription package has been activated. Payment received successfully.");
 
