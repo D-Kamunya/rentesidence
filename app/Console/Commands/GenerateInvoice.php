@@ -42,50 +42,53 @@ class GenerateInvoice extends Command
             ->where('status', ACTIVE)
             ->get();
         foreach ($invoiceRecurringSettings as $invoiceRecurring) {
-            $tenant = Tenant::where('unit_id', $invoiceRecurring->property_unit_id)->where('status', TENANT_STATUS_ACTIVE)->first();
-            if (!is_null($tenant)) {
-                if ($invoiceRecurring->recurring_type == INVOICE_RECURRING_TYPE_MONTHLY) {
-                    $invoiceExist = Invoice::query()
-                        ->where('property_id', $invoiceRecurring->property_id)
-                        ->where('property_unit_id', $invoiceRecurring->property_unit_id)
-                        ->where('month', month(now()->format('n')))
-                        ->where('tenant_id', $tenant->id)
-                        ->whereYear('created_at', '=', now()->format('Y'))
-                        ->exists();
-                    if (!$invoiceExist) {
-                        $this->generateInvoice($tenant,$invoiceRecurring);
-                        echo "Created \n";
-                    } else {
-                        echo "Already Created \n";
-                    }
-                } elseif ($invoiceRecurring->recurring_type == INVOICE_RECURRING_TYPE_YEARLY) {
-                    $invoiceExist = Invoice::query()
-                        ->where('property_id', $invoiceRecurring->property_id)
-                        ->where('property_unit_id', $invoiceRecurring->property_unit_id)
-                        ->where('tenant_id', $tenant->id)
-                        ->whereYear('created_at', '=', now()->format('Y'))
-                        ->exists();
-                    if (!$invoiceExist) {
-                        $this->generateInvoice($tenant,$invoiceRecurring);
-                        echo "Created \n";
-                    } else {
-                        echo "Already Created \n";
-                    }
-                } elseif ($invoiceRecurring->recurring_type == INVOICE_RECURRING_TYPE_CUSTOM) {
-                    $invoiceExist = Invoice::query()
-                        ->where('property_id', $invoiceRecurring->property_id)
-                        ->where('property_unit_id', $invoiceRecurring->property_unit_id)
-                        ->where('tenant_id', $tenant->id)
-                        ->whereDate('created_at', '>', now()->subDays($invoiceRecurring->cycle_day))
-                        ->exists();
-                    if (!$invoiceExist) {
-                        $this->generateInvoice($tenant,$invoiceRecurring);
-                        echo "Created \n";
-                    } else {
-                        echo "Already Created \n";
+            if (getOwnerLimit(RULES_AUTO_INVOICE, $invoiceRecurring->owner_user_id) > 0) {
+                $tenant = Tenant::where('unit_id', $invoiceRecurring->property_unit_id)->where('status', TENANT_STATUS_ACTIVE)->first();
+                if (!is_null($tenant)) {
+                    if ($invoiceRecurring->recurring_type == INVOICE_RECURRING_TYPE_MONTHLY) {
+                        $invoiceExist = Invoice::query()
+                            ->where('property_id', $invoiceRecurring->property_id)
+                            ->where('property_unit_id', $invoiceRecurring->property_unit_id)
+                            ->where('month', month(now()->format('n')))
+                            ->where('tenant_id', $tenant->id)
+                            ->whereYear('created_at', '=', now()->format('Y'))
+                            ->exists();
+                        if (!$invoiceExist) {
+                            $this->generateInvoice($tenant,$invoiceRecurring);
+                            echo "Created \n";
+                        } else {
+                            echo "Already Created \n";
+                        }
+                    } elseif ($invoiceRecurring->recurring_type == INVOICE_RECURRING_TYPE_YEARLY) {
+                        $invoiceExist = Invoice::query()
+                            ->where('property_id', $invoiceRecurring->property_id)
+                            ->where('property_unit_id', $invoiceRecurring->property_unit_id)
+                            ->where('tenant_id', $tenant->id)
+                            ->whereYear('created_at', '=', now()->format('Y'))
+                            ->exists();
+                        if (!$invoiceExist) {
+                            $this->generateInvoice($tenant,$invoiceRecurring);
+                            echo "Created \n";
+                        } else {
+                            echo "Already Created \n";
+                        }
+                    } elseif ($invoiceRecurring->recurring_type == INVOICE_RECURRING_TYPE_CUSTOM) {
+                        $invoiceExist = Invoice::query()
+                            ->where('property_id', $invoiceRecurring->property_id)
+                            ->where('property_unit_id', $invoiceRecurring->property_unit_id)
+                            ->where('tenant_id', $tenant->id)
+                            ->whereDate('created_at', '>', now()->subDays($invoiceRecurring->cycle_day))
+                            ->exists();
+                        if (!$invoiceExist) {
+                            $this->generateInvoice($tenant,$invoiceRecurring);
+                            echo "Created \n";
+                        } else {
+                            echo "Already Created \n";
+                        }
                     }
                 }
             }
+            
         }
     }
 
