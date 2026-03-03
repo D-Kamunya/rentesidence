@@ -269,8 +269,8 @@ class PackageService
             setUserPackage($order->user_id, $package, $duration, $order->quantity, $order->id);
             DB::commit();
             $invoiceUrl = route('owner.subscription.index');
-            $title = __("You have a new invoice");
-            $body = __("Package Assign Successfully");
+            $title = __("Subscription Activated Successfully");
+            $body = __("Your subscription package has been successfully activated by the administrator.");
             addNotification($title, $body, $invoiceUrl, null, $ownerUser->id, $adminUser->id);
             return $this->success([], __(ASSIGNED_SUCCESSFULLY));
         } catch (Exception $e) {

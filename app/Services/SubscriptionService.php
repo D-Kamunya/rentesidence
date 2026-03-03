@@ -7,6 +7,7 @@ use App\Models\OwnerPackage;
 use App\Models\Package;
 use App\Models\User;
 use App\Traits\ResponseTrait;
+use Carbon\Carbon;
 
 class SubscriptionService
 {
@@ -54,4 +55,42 @@ class SubscriptionService
             ->whereDate('end_date', '>=', now()->toDateTimeString())
             ->update(['status' => DEACTIVATE]);
     }
+    public function getSubscriptionState($userId = null)
+{
+    $userId = $userId ?? auth()->id();
+
+    $currentPlan = $this->getCurrentPlan($userId);
+
+    if ($currentPlan) {
+        $expiry = Carbon::parse($currentPlan->end_date)->startOfDay();
+        $today = now()->startOfDay();
+        $daysLeft = $today->diffInDays($expiry, false);
+
+        if ($daysLeft <= 3) {
+            return [
+                'state' => 'expiring',
+                'days_left' => $daysLeft,
+                'expiry_date' => $expiry
+            ];
+        }
+
+        return [
+            'state' => 'active',
+            'days_left' => $daysLeft,
+            'expiry_date' => $expiry
+        ];
+    }
+
+    // If no current plan, check if user ever had one
+    $latestPlan = OwnerPackage::query()
+        ->where('user_id', $userId)
+        ->orderByDesc('end_date')
+        ->first();
+
+    if (!$latestPlan) {
+        return ['state' => 'none'];
+    }
+
+    return ['state' => 'expired'];
+}
 }
