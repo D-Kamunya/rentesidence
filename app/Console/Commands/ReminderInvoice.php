@@ -31,22 +31,24 @@ class ReminderInvoice extends Command
             $sendEverydayOverDue = getOption('OVERDUE_REMAINDER_EVERYDAY_STATUS') == REMAINDER_EVERYDAY_STATUS_ACTIVE;
             $reminderDaysOverDue = explode(',', getOption('OVERDUE_REMAINDER_DAYS'));
             foreach ($invoices as $invoice) {
-                $dueDate = Carbon::parse($invoice->due_date)->startOfDay();
-                $diffDay = $dueDate->diffInDays(today());
+                if (getOwnerLimit(RULES_AUTO_INVOICE, $invoice->owner_user_id) > 0) {
+                    $dueDate = Carbon::parse($invoice->due_date)->startOfDay();
+                    $diffDay = $dueDate->diffInDays(today());
 
-                if (getOption('remainder_status', 0) == REMAINDER_STATUS_ACTIVE) {
-                    if ($sendEveryday && $dueDate >= today()) {
-                        $this->sendReminder($mailService, $invoice);
-                    } elseif (!$sendEveryday && in_array($diffDay, $reminderDays) && $dueDate >= today()) {
-                        $this->sendReminder($mailService, $invoice);
+                    if (getOption('remainder_status', 0) == REMAINDER_STATUS_ACTIVE) {
+                        if ($sendEveryday && $dueDate >= today()) {
+                            $this->sendReminder($mailService, $invoice);
+                        } elseif (!$sendEveryday && in_array($diffDay, $reminderDays) && $dueDate >= today()) {
+                            $this->sendReminder($mailService, $invoice);
+                        }
                     }
-                }
 
-                if (getOption('OVERDUE_REMAINDER_STATUS', 0) == REMAINDER_STATUS_ACTIVE) {
-                    if ($sendEverydayOverDue && $dueDate <= today()) {
-                        $this->sendReminder($mailService, $invoice,true);
-                    } elseif (!$sendEverydayOverDue && in_array($diffDay, $reminderDaysOverDue) && $dueDate <= today()) {
-                        $this->sendReminder($mailService, $invoice,true);
+                    if (getOption('OVERDUE_REMAINDER_STATUS', 0) == REMAINDER_STATUS_ACTIVE) {
+                        if ($sendEverydayOverDue && $dueDate <= today()) {
+                            $this->sendReminder($mailService, $invoice,true);
+                        } elseif (!$sendEverydayOverDue && in_array($diffDay, $reminderDaysOverDue) && $dueDate <= today()) {
+                            $this->sendReminder($mailService, $invoice,true);
+                        }
                     }
                 }
             }
