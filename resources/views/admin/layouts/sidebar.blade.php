@@ -59,9 +59,21 @@
                     </a>
                 </li>
                 <li>
+                    <a class="{{ @$navAcademyModulesShowClass }}" href="{{ route('admin.academy.index') }}">
+                    <i class="fa fa-graduation-cap"></i>
+                    <span>{{ __('Academy') }}</span>
+                    </a>
+                </li>
+                <li>
                     <a class="{{ @$navAffiliatesAddMMShowClass }}" href="{{ route('admin.affiliates.index') }}">
                         <i class="ri-user-line"></i>
                         <span>{{ __('Affiliates') }}</span>
+                    </a>
+                </li>
+                <li>
+                    <a class="{{ @$navAffiliatesAddMMShowClass }}" href="{{ route('admin.affiliates.performance') }}">
+                        <i class="fa fa-users" aria-hidden="true"></i>
+                        <span>{{ __('Affiliates Performance') }}</span>
                     </a>
                 </li>
                 <li>
