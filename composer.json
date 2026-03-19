@@ -10,6 +10,7 @@
     "require": {
         "php": "^8.0.2",
         "ext-zip": "*",
+        "barryvdh/laravel-dompdf": "^3.1",
         "doctrine/dbal": "^3.6",
         "docusign/esign-client": "^6.12",
         "docusign/esign-laravel": "^1.1",

@@ -36,7 +36,7 @@ class SendLoginDetailsJob implements ShouldQueue
         $message = "Dear {$this->user->first_name}, Welcome to Centresidence Property Management Technologies! Here are your account details:";
         $message .= " Email: {$this->user->email}";
         $message .= " Password: {$this->password}";
-        $message .= " Please use these to access your account on centresidence.com and update your information. For any questions, contact the admiin for any assistance";
+        $message .= " Please use these to access your account on centresidence.com and update your information. For any questions, contact the admin for any assistance";
         MailService::sendMail([$this->user->email], "Your Account Login Details", $message, $this->user->id);
     }
 }

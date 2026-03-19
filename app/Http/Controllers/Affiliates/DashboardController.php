@@ -5,6 +5,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\UserRequest;
 use App\Services\AffiliateCommissionService;
 use App\Models\User;
+use App\Models\AcademyModule;
 use App\Models\AffiliateCommission;
 use App\Models\AffiliateCommissionPayment;
 use App\Models\AffiliateWithdrawal;
@@ -101,8 +102,15 @@ class DashboardController extends Controller
                 ];
             })
             ->toArray();
-
+            // Academy Certification Status
+            $totalModules = AcademyModule::where('is_active', true)->count();
+            
+            $completedModules = $user->affiliate->academyProgress()
+                ->whereNotNull('completed_at')
+                ->count();
+            
+            $isCertified = $totalModules > 0 && $completedModules === $totalModules;
         // Pass the data to the view
-        return view('affiliate.dashboard', compact('summary', 'commissionTrends', 'recentCommissions'));
+        return view('affiliate.dashboard', compact('summary', 'commissionTrends', 'recentCommissions', 'isCertified'));
     }
 }

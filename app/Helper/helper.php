@@ -1304,3 +1304,12 @@ if (!function_exists('mpesaPhoneFromReference')) {
         return '0' . $last9;
     }
 }
+if (!function_exists('getYoutubeId')) {
+
+    function getYoutubeId($url)
+    {
+        preg_match('/(youtu\.be\/|v=)([^&]+)/', $url, $matches);
+        return $matches[2] ?? null;
+    }
+
+}

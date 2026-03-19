@@ -7,6 +7,7 @@ use App\Http\Controllers\Admin\LanguageController;
 use App\Http\Controllers\Admin\MailController;
 use App\Http\Controllers\Admin\OwnerController;
 use App\Http\Controllers\Admin\AffiliateController;
+use App\Http\Controllers\Admin\AcademyAdminController;
 use App\Http\Controllers\Admin\SettingController;
 use App\Http\Controllers\VersionUpdateController;
 use Illuminate\Support\Facades\Route;
@@ -15,6 +16,22 @@ use Illuminate\Support\Facades\Artisan;
 Route::group(['prefix' => 'admin', 'as' => 'admin.', 'middleware' => ['auth', 'admin']], function () {
     Route::get('/', [DashboardController::class, 'dashboard'])->name('dashboard');
     Route::get('notification', [DashboardController::class, 'notification'])->name('notification');
+    // Academy landing (modules index)
+    Route::get('academy', [AcademyAdminController::class, 'index'])->name('academy.index');
+    // Modules CRUD
+    Route::get('academy/create', [AcademyAdminController::class, 'create'])->name('academy.create');
+    Route::post('academy', [AcademyAdminController::class, 'store'])->name('academy.store');
+    Route::get('academy/{academy}/edit', [AcademyAdminController::class, 'edit'])->name('academy.edit');
+    Route::put('academy/{academy}', [AcademyAdminController::class, 'update'])->name('academy.update');
+    Route::delete('academy/{academy}', [AcademyAdminController::class, 'destroy'])->name('academy.destroy');
+    // Questions
+    Route::get('academy/{module}/questions', [AcademyAdminController::class, 'questions'])->name('academy.questions');
+    Route::get('academy/{module}/questions/create', [AcademyAdminController::class, 'createQuestion'])->name('academy.questions.create');
+    Route::post('academy/{module}/questions', [AcademyAdminController::class, 'storeQuestion'])->name('academy.questions.store');
+    // Affiliate performance
+    Route::get('/affiliates/performance', [AcademyAdminController::class, 'affiliatesPerformance'])->name('affiliates.performance');
+    // Reset failed module
+    Route::post('/affiliate/admin/reset-module/{affiliate}/{module}', [AcademyAdminController::class, 'resetAffiliateModule'])->name('reset-module');
 
     Route::group(['prefix' => 'owner', 'as' => 'owner.'], function () {
         Route::get('/', [OwnerController::class, 'index'])->name('index');

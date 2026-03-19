@@ -12,7 +12,12 @@
                         <span>{{ __('Dashboard') }}</span>
                     </a>
                 </li>
-            
+                <li>
+                    <a href="{{ route('affiliate.academy.index') }}">
+                        <i class="fa fa-graduation-cap"></i>
+                        <span>{{ __('Academy') }}</span>
+                    </a>
+                </li>
                 <li>
                     <a href="{{ route('affiliate.marketing-tools') }}">
                         <i class="ri-lightbulb-line"></i>
@@ -54,7 +59,12 @@
                         <span>{{ __('Leaderboard') }}</span>
                     </a>
                 </li>
-
+                <li>
+                    <a href="javascript:void(0)">
+                        <i class="fa fa-book"></i>
+                        <span>{{ __('Knowledge Base') }}</span>
+                    </a>
+                </li>
             </ul>
         </div>
 

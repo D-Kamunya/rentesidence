@@ -19,4 +19,14 @@ class Affiliate extends Model
     {
         return $this->hasMany(Owner::class);
     }
+
+    public function academyProgress()
+    {
+        return $this->hasMany(AffiliateAcademyProgress::class);
+    }
+
+    public function user()
+    {
+        return $this->belongsTo(User::class);
+    }
 }

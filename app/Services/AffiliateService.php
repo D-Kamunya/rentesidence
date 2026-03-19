@@ -55,7 +55,11 @@ class AffiliateService
                 $subject = __('Account Verification') . ' ' . getOption('app_name');
                 $message = __('Thank you for create new account. Please verify your account');
 
-                $mailService->sendUserEmailVerificationMail($emails, $subject, $message, $user, $affiliateUserId);
+                // BUGFIX: Replaced undefined variable $affiliateUserId with $user->id.
+                // The previous variable caused a Fatal Error (Undefined Variable) in environments 
+                // with strict error reporting or PHP 8+, preventing the registration flow 
+                // from completing when email verification is enabled.
+                $mailService->sendUserEmailVerificationMail($emails, $subject, $message, $user, $user->id);
                 return redirect()->route('user.email.verify', $user->verify_token);
             
             } else {
