@@ -165,7 +165,7 @@
 
                 </div>
                 {{-- Floating Register Lead Button --}}
-                <a href="" class="fab-register-lead" id="fabBtn">
+                <a href="{{ route('affiliate.leads.create') }}" class="fab-register-lead" id="fabBtn">
                     <span class="fab-register-lead__icon">
                         <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
                             <path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/>

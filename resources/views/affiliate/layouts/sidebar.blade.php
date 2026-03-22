@@ -13,6 +13,12 @@
                     </a>
                 </li>
                 <li>
+                    <a href="{{ route('affiliate.leads') }}">
+                        <i class="fa fa-cog" aria-hidden="true"></i>
+                        <span>{{ __('My Leads') }}</span>
+                    </a>
+                </li>
+                <li>
                     <a href="{{ route('affiliate.academy.index') }}">
                         <i class="fa fa-graduation-cap"></i>
                         <span>{{ __('Academy') }}</span>

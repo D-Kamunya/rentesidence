@@ -8,6 +8,7 @@ use App\Http\Controllers\Admin\MailController;
 use App\Http\Controllers\Admin\OwnerController;
 use App\Http\Controllers\Admin\AffiliateController;
 use App\Http\Controllers\Admin\AcademyAdminController;
+use App\Http\Controllers\Admin\AffiliateLeadsController;
 use App\Http\Controllers\Admin\SettingController;
 use App\Http\Controllers\VersionUpdateController;
 use Illuminate\Support\Facades\Route;
@@ -32,6 +33,14 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'middleware' => ['auth', 'a
     Route::get('/affiliates/performance', [AcademyAdminController::class, 'affiliatesPerformance'])->name('affiliates.performance');
     // Reset failed module
     Route::post('/affiliate/admin/reset-module/{affiliate}/{module}', [AcademyAdminController::class, 'resetAffiliateModule'])->name('reset-module');
+    // Leads overview (index page)
+    Route::get('/leads', [AffiliateLeadsController::class, 'index']) ->name('leads.index');
+    // Single lead view (details page)
+    Route::get('/leads/{lead}', [AffiliateLeadsController::class, 'show'])->name('leads.show');
+    // Approve conversion → starts trial
+    Route::post('/leads/{lead}/approve', [AffiliateLeadsController::class, 'approveTrial']) ->name('leads.approve');
+    // Reject conversion
+    Route::post('/leads/{lead}/reject', [AffiliateLeadsController::class, 'rejectTrial']) ->name('leads.reject');
 
     Route::group(['prefix' => 'owner', 'as' => 'owner.'], function () {
         Route::get('/', [OwnerController::class, 'index'])->name('index');

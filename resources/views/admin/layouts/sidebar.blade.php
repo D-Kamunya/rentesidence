@@ -77,6 +77,12 @@
                     </a>
                 </li>
                 <li>
+                    <a class="{{ @$navAffiliatesAddMMShowClass }}" href="{{ route('admin.leads.index') }}">
+                        <i class="fa fa-cog" aria-hidden="true"></i>
+                        <span>{{ __('Affiliates Leads') }}</span>
+                    </a>
+                </li>
+                <li>
                     <a href="{{ route('admin.setting.general-setting') }}">
                         <i class="ri-settings-3-line"></i>
                         <span>{{ __('Settings') }}</span>

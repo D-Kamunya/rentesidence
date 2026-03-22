@@ -28,6 +28,9 @@ class Kernel extends ConsoleKernel
         $schedule->command('backup:database')
             ->dailyAt('00:00')
             ->appendOutputTo(storage_path('logs/db_backup.log'));
+        $schedule->command('trials:expire')->dailyAt('06:00')
+        ->appendOutputTo(storage_path('logs/trials_expire_scheduler.log'));
+            
     }
 
     /**

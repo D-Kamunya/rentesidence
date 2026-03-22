@@ -14,6 +14,7 @@ class Affiliate extends Model
         'user_id',
         'referral_code',
     ];
+    protected $table = 'affiliates';
 
     public function owners(): HasMany
     {
@@ -27,6 +28,11 @@ class Affiliate extends Model
 
     public function user()
     {
-        return $this->belongsTo(User::class);
+        return $this->belongsTo(User::class, 'user_id');
+    }
+
+    public function leads()
+    {
+        return $this->hasMany(Lead::class, 'affiliate_id');
     }
 }

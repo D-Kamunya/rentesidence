@@ -84,7 +84,7 @@ class OwnerController extends Controller
             if (getOption('send_email_status', 0) == ACTIVE) {
                 $emails = [$user->email];
                 $subject = getOption('app_name') . ' ' . __('welcome you');
-                $message = __('You have successfully been registered');
+                $message = __('Welcome to Centresidence. You have successfully been registered');
                 $ownerUserId = $user->id;
 
                 $mailService = new MailService;
@@ -92,7 +92,7 @@ class OwnerController extends Controller
 
                 if (getOption('email_verification_status', 0) == ACTIVE) {
                     $subject = __('Account Verification') . ' ' . getOption('app_name');
-                    $message = __('Thank you for create new account. Please verify your account');
+                    $message = __('Welcome to Centresidence! Please verify your account');
                     $template = EmailTemplate::where('owner_user_id', $ownerUserId)->where('category', EMAIL_TEMPLATE_EMAIL_VERIFY)->where('status', ACTIVE)->first();
                     if ($template) {
                         $customizedFieldsArray = [
