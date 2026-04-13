@@ -8,6 +8,9 @@
                 <div class="page-content-wrapper bg-white p-30 radius-20">
 
                     {{-- Page Title --}}
+                    @php
+                        $pageTitle = 'Affiliate Performance';
+                    @endphp
                     <div class="row">
                         <div class="col-12">
                             <div class="page-title-box d-sm-flex align-items-center justify-content-between border-bottom mb-20">

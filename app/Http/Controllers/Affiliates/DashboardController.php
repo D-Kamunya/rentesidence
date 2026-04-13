@@ -9,6 +9,8 @@ use App\Models\AcademyModule;
 use App\Models\AffiliateCommission;
 use App\Models\AffiliateCommissionPayment;
 use App\Models\AffiliateWithdrawal;
+use App\Models\Lead;
+use App\Models\LeadSuggestion;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
@@ -28,6 +30,7 @@ class DashboardController extends Controller
     {
         $user = auth()->user();
         $affiliateId = $user->affiliate->id; // assume relation user->affiliate
+        $leadsaffiliateId = auth()->id(); // affiliate system resolves the affiliate directly
 
         $month = $request->get('month', Carbon::now()->format('n'));
         $year = $request->get('year', Carbon::now()->format('Y'));
@@ -64,7 +67,7 @@ class DashboardController extends Controller
             'total_commissions' => $lifeTimeGross,
             'total_payouts' => $totalWithdrawals,
             'total_referrals' => $totalReferrals
-        ];
+            ];
 
          $commissionTrends = AffiliateCommissionPayment::select(
                 'period_month',
@@ -110,7 +113,24 @@ class DashboardController extends Controller
                 ->count();
             
             $isCertified = $totalModules > 0 && $completedModules === $totalModules;
+            // Leads and Suggestions display
+            $totalLeads = Lead::where('affiliate_id', $leadsaffiliateId)->count();
+            $leadIds = Lead::where('affiliate_id', $leadsaffiliateId)->pluck('id');
+            $suggestionCounts = LeadSuggestion::where('status', 'pending')
+                ->whereIn('lead_id', $leadIds)
+                ->select(
+                    'lead_id',
+                    \DB::raw('COUNT(*) as total'),
+                    \DB::raw('SUM(CASE WHEN priority = "high" THEN 1 ELSE 0 END) as urgent_count')
+                )
+                ->groupBy('lead_id')
+                ->get()
+                ->keyBy('lead_id');
+    
+            $totalSuggestions = $suggestionCounts->sum('total');
+            $urgentSuggestions = $suggestionCounts->sum('urgent_count');
+            $leadsWithSuggestions = $suggestionCounts->count();
         // Pass the data to the view
-        return view('affiliate.dashboard', compact('summary', 'commissionTrends', 'recentCommissions', 'isCertified'));
+        return view('affiliate.dashboard', compact('summary', 'totalLeads', 'commissionTrends', 'recentCommissions', 'isCertified', 'suggestionCounts', 'totalSuggestions','urgentSuggestions', 'leadsWithSuggestions'));
     }
 }

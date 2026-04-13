@@ -79,6 +79,7 @@
                             $attempts       = $moduleProgress->attempts ?? 0;
                             $completed      = $moduleProgress && $moduleProgress->completed_at;
                             $needsReview    = $moduleProgress && $moduleProgress->needs_review;
+                            $pageTitle      = 'Partner Academy';
                         @endphp
 
                         {{-- Status Alerts --}}

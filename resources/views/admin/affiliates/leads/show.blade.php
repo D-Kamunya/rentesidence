@@ -7,6 +7,9 @@
                 <div class="page-content-wrapper bg-white p-30 radius-20">
 
                     {{-- Page Title --}}
+                    @php
+                        $pageTitle = 'Lead Details';
+                    @endphp
                     <div class="row">
                         <div class="col-12">
                             <div class="page-title-box d-sm-flex align-items-center justify-content-between border-bottom mb-4 pb-2">
@@ -77,12 +80,29 @@
                             $latestTrialActivity = $lead->latestTrialActivity();
                             $isExpiredTrial = $lead->status === 'pending_conversion'
                                 && $latestTrialActivity?->type === 'trial_expired';
-                            $isPendingExtention = $lead->status === 'pending_conversion'
-                                && $latestTrialActivity?->type === 'trial_extention';
+                            $isPendingExtension = $lead->status === 'pending_conversion'
+                                && $latestTrialActivity?->type === 'trial_extension';
                             $isTrialRequested = $lead->status === 'pending_conversion'
                                 && $latestTrialActivity?->type === 'trial_request';
                             $conversionRejectedByAdmin = $lead->status === 'demo_completed'
                                 && $latestTrialActivity?->type === 'conversion_rejected';
+                            // Completeness — passed from controller, also computed inline for field-level display
+                            $fieldMap = [
+                                'Company Name'   => $lead->company->company_name    ?? null,
+                                'Country'        => $lead->company->country         ?? null,
+                                'City'           => $lead->company->city            ?? null,
+                                'Phone'          => $lead->company->phone           ?? null,
+                                'Email'          => $lead->company->email           ?? null,
+                                'Website'        => $lead->company->website         ?? null,
+                                'Property Type'  => $lead->company->property_type   ?? null,
+                                'Est. Units'     => $lead->company->estimated_units ?? null,
+                                'Contact Name'   => $lead->contact_person_name      ?? null,
+                                'Contact Role'   => $lead->contact_person_role      ?? null,
+                            ];
+                            $score      = $completeness;
+                            $scoreColor = $score < 40 ? '#A32D2D' : ($score < 70 ? '#854F0B' : '#0F6E56');
+                            $scoreBg    = $score < 40 ? '#FCEBEB' : ($score < 70 ? '#FAEEDA' : '#E1F5EE');
+                            $barColor   = $score < 40 ? '#E24B4A' : ($score < 70 ? '#FAC775' : '#1D9E75');
                         @endphp
 
                         {{-- ═══════════════════════════════════════════════ --}}
@@ -122,7 +142,7 @@
                                                 </svg>
                                                 Trial expired
                                             </span>
-                                        @elseif($lead->status === 'pending_conversion' && $isPendingExtention)
+                                        @elseif($lead->status === 'pending_conversion' && $isPendingExtension)
                                             <span class="adm-status-badge" style="background: #e7c6a5;border:0.5px solid #e88855;color:#854F0B;"> 
                                                 <svg width="9" height="9" viewBox="0 0 16 16" fill="none">
                                                     <circle cx="8" cy="8" r="6.5" stroke="currentColor" stroke-width="1.5"/>
@@ -267,6 +287,65 @@
                                     </div>
                                 </div>
 
+                                {{-- ── Completeness Breakdown ───────────── --}}
+                                <div class="mps-card mb-4">
+                                    <div class="mps-card__head">
+                                        <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
+                                            <circle cx="8" cy="8" r="6.5" stroke="currentColor" stroke-width="1.5"/>
+                                            <path d="M8 5v3.5l2 1.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                                        </svg>
+                                        Lead Profile Completeness
+                                        <span style="margin-left:auto;font-size:12px;font-weight:500;padding:2px 8px;border-radius:99px;background:{{ $scoreBg }};color:{{ $scoreColor }};">
+                                            {{ $score }}%
+                                        </span>
+                                    </div>
+                                    <div class="mps-card__body">
+
+                                        {{-- Overall bar --}}
+                                        <div class="mps-overall-bar-wrap mb-4">
+                                            <div class="mps-overall-bar" style="width:{{ $score }}%;background:{{ $barColor }};"></div>
+                                        </div>
+
+                                        {{-- Per-field checklist --}}
+                                        <div class="mps-field-list">
+                                            @foreach($fieldMap as $label => $value)
+                                                @php $filled = !is_null($value) && $value !== ''; @endphp
+                                                <div class="mps-field-item">
+                                                    @if($filled)
+                                                        <span class="mps-field-check mps-field-check--done">
+                                                            <svg width="10" height="10" viewBox="0 0 16 16" fill="none">
+                                                                <path d="M3 8.5l3.5 3.5 6.5-7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                                            </svg>
+                                                        </span>
+                                                    @else
+                                                        <span class="mps-field-check mps-field-check--missing">
+                                                            <svg width="10" height="10" viewBox="0 0 16 16" fill="none">
+                                                                <path d="M4 4l8 8M12 4l-8 8" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                                                            </svg>
+                                                        </span>
+                                                    @endif
+                                                    <span class="mps-field-label {{ $filled ? '' : 'mps-field-label--missing' }}">
+                                                        {{ $label }}
+                                                    </span>
+                                                    @if($filled)
+                                                        <span class="mps-field-val">
+                                                            {{ is_string($value) && strlen($value) > 30 ? substr($value, 0, 30) . '…' : $value }}
+                                                        </span>
+                                                    @else
+                                                        <span class="mps-field-missing-tag">Missing</span>
+                                                    @endif
+                                                </div>
+                                            @endforeach
+                                        </div>
+
+                                        @if($score < 100)
+                                            <p style="font-size:11px;color:#9ca3af;margin:12px 0 0;line-height:1.5;">
+                                                Incomplete fields detected
+                                            </p>
+                                        @endif
+                                    </div>
+                                </div>
+
                                 {{-- Demo Info (if scheduled) --}}
                                 @if($lead->demo_scheduled_at)
                                     <div class="adm-card mb-4">
@@ -325,10 +404,16 @@
                                             <path d="M8 5v3.5l2 1.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
                                         </svg>
                                         Activity Timeline
+                                        @if($lead->activities->count() > 0)
+                                            <span style="margin-left:auto;font-size:11px;color:#9ca3af;font-weight:400;">
+                                                {{ $lead->activities->count() }} {{ Str::plural('event', $lead->activities->count()) }}
+                                            </span>
+                                        @endif
                                     </div>
                                     <div class="adm-card__body">
-                                        @forelse($lead->activities as $activity)
-                                            <div class="adm-timeline-item">
+                                        @forelse($lead->activities as $index => $activity)
+                                            <div class="adm-timeline-item activity-entry {{ $index >= 5 ? 'activity-entry--hidden' : '' }}"
+                                                style="{{ $index >= 5 ? 'display:none;' : '' }}">
                                                 <div class="adm-timeline-dot"></div>
                                                 <div class="adm-timeline-content">
                                                     <p class="adm-timeline-time">{{ $activity->created_at->diffForHumans() }}</p>
@@ -338,9 +423,38 @@
                                         @empty
                                             <p style="font-size:13px;color:#9ca3af;margin:0;">No activity recorded yet.</p>
                                         @endforelse
+                                        {{-- Load more / collapse controls --}}
+                                        @if($lead->activities->count() > 5)
+                                            <div class="activity-controls" id="activityControls">
+                                                {{-- Load more button --}}
+                                                <button type="button"
+                                                        class="activity-load-more"
+                                                        id="activityLoadMore"
+                                                        onclick="loadMoreActivities()">
+                                                    <svg width="12" height="12" viewBox="0 0 16 16" fill="none" id="loadMoreIcon">
+                                                        <path d="M8 3v10M3 8h10" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+                                                    </svg>
+                                                    Show {{ min(5, $lead->activities->count() - 5) }} more
+                                                    <span class="activity-load-more__count" id="remainingCount">
+                                                        {{ $lead->activities->count() - 5 }} remaining
+                                                    </span>
+                                                </button>
+                                
+                                                {{-- Collapse button — hidden until expanded --}}
+                                                <button type="button"
+                                                        class="activity-collapse"
+                                                        id="activityCollapse"
+                                                        style="display:none;"
+                                                        onclick="collapseActivities()">
+                                                    <svg width="12" height="12" viewBox="0 0 16 16" fill="none">
+                                                        <path d="M4 10l4-4 4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+                                                    </svg>
+                                                    Collapse
+                                                </button>
+                                            </div>
+                                        @endif
                                     </div>
                                 </div>
-
                             </div>
                             {{-- ═══════════════════════════════════════════ --}}
                             {{-- END LEFT COLUMN                             --}}
@@ -376,7 +490,7 @@
                                             <div>
                                                 <div style="font-weight:600;font-size:14px;">Pending Your Review</div>
                                                 <div style="font-size:12px;opacity:.85;">
-                                                    @if($isPendingExtention)
+                                                    @if($isPendingExtension)
                                                         Affiliate has requested trial extension
                                                     @else
                                                         Affiliate has requested trial conversion
@@ -419,7 +533,17 @@
                                             <form method="POST" action="{{ route('admin.leads.approve', $lead->id) }}" class="mb-3">
                                                 @csrf
                                                 {{-- Approve Trial Extension (existing user with expired trial) --}}
-                                                @if($isPendingExtention)
+                                                    @if($isPendingExtension)
+                                                    @php
+                                                        $extension = $lead->activities->where('type', 'trial_extension')->first();
+                                                    @endphp
+
+                                                    @if($extension)
+                                                        <div class="adm-rejection-reason mt-2" style="font-size:13px;color: #0f7836;">
+                                                            <strong>Extension Reason:</strong> {{ $extension->description }}
+                                                        </div>
+                                                        </br>
+                                                    @endif
                                                     <button type="submit" class="adm-btn adm-btn--success">
                                                         <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
                                                             <path d="M13 8A5 5 0 1 1 8 3" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/>
@@ -488,7 +612,7 @@
                                             </svg>
                                             <div>
                                                 <div style="font-weight:600;font-size:14px;">Trial Active</div>
-                                                <div style="font-size:12px;opacity:.85;">Customer is using a trial account</div>
+                                                <div style="font-size:12px;opacity:.85;">Client is using a trial account</div>
                                             </div>
                                         </div>
                                         <p style="font-size:13px;color:#534AB7;margin:0;line-height:1.6;">
@@ -764,6 +888,155 @@
             padding: 12px;
             font-size: 13px;
         }
+
+        /* ── Completeness overall bar ────────────────────────── */
+        .mps-overall-bar-wrap { height:8px;background:#e5e7eb;border-radius:99px;overflow:hidden; }
+        .mps-overall-bar { height:100%;border-radius:99px;transition:width .4s cubic-bezier(.4,0,.2,1); }
+        
+        /* ── Field checklist ─────────────────────────────────── */
+        .mps-card { background:#fff;border:0.5px solid #e5e7eb;border-radius:12px;overflow:hidden; }
+        .mps-card__head { display:flex;align-items:center;gap:8px;padding:.8rem 1.1rem;border-bottom:0.5px solid #e5e7eb;background:#fafafa;font-size:13px;font-weight:500;color:#374151; }
+        .mps-card__body { padding:1.1rem; }
+        .mps-field-list { display:flex;flex-direction:column;gap:6px; }
+        .mps-field-item { display:flex;align-items:center;gap:8px;font-size:13px; }
+        .mps-field-check {
+            width:18px;height:18px;border-radius:50%;display:inline-flex;align-items:center;
+            justify-content:center;flex-shrink:0;
+        }
+        .mps-field-check--done    { background:#E1F5EE;color:#0F6E56; }
+        .mps-field-check--missing { background:#FCEBEB;color:#A32D2D; }
+        .mps-field-label { flex:1;color:#374151; }
+        .mps-field-label--missing { color:#9ca3af; }
+        .mps-field-val { font-size:12px;color:#6b7280;text-align:right;max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap; }
+        .mps-field-missing-tag { font-size:10px;font-weight:500;padding:2px 7px;border-radius:99px;background:#FCEBEB;color:#A32D2D;white-space:nowrap; }
+
+        /* ── Hidden activity entries ─────────────────────────────── */
+        .activity-entry--hidden { display: none; }
+    
+        /* ── Fade-in for newly revealed entries ──────────────────── */
+        .activity-entry--revealed {
+            animation: activityFadeIn .25s ease forwards;
+        }
+        @keyframes activityFadeIn {
+            from { opacity: 0; transform: translateY(4px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+    
+        /* ── Controls row ────────────────────────────────────────── */
+        .activity-controls {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: .85rem 0 1.1rem;
+            border-top: 0.5px solid #f3f4f6;
+            margin-top: 4px;
+        }
+    
+        /* ── Load more button ────────────────────────────────────── */
+        .activity-load-more {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 12px;
+            font-weight: 500;
+            color: #185FA5;
+            background: #EEF5FD;
+            border: 0.5px solid #B5D4F4;
+            border-radius: 7px;
+            padding: 6px 12px;
+            cursor: pointer;
+            transition: background .15s, transform .15s;
+        }
+        .activity-load-more:hover {
+            background: #dbeeff;
+            transform: translateY(-1px);
+        }
+        .activity-load-more__count {
+            font-size: 10px;
+            font-weight: 500;
+            padding: 1px 6px;
+            border-radius: 99px;
+            background: #B5D4F4;
+            color: #185FA5;
+        }
+    
+        /* ── Collapse button ─────────────────────────────────────── */
+        .activity-collapse {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 12px;
+            font-weight: 500;
+            color: #6b7280;
+            background: transparent;
+            border: 0.5px solid #d1d5db;
+            border-radius: 7px;
+            padding: 6px 12px;
+            cursor: pointer;
+            transition: background .15s;
+        }
+        .activity-collapse:hover { background: #f3f4f6; }
     </style>
+    <script>
+        const BATCH = 5; // how many to reveal per click
+        let visibleCount = 5;
+    
+        function loadMoreActivities() {
+            const all      = document.querySelectorAll('.activity-entry');
+            const total    = all.length;
+            const nextEnd  = Math.min(visibleCount + BATCH, total);
+    
+            // Reveal the next batch
+            for (let i = visibleCount; i < nextEnd; i++) {
+                all[i].style.display = 'flex';
+                all[i].classList.remove('activity-entry--hidden');
+                all[i].classList.add('activity-entry--revealed');
+            }
+    
+            visibleCount = nextEnd;
+    
+            const remaining = total - visibleCount;
+    
+            if (remaining <= 0) {
+                // All shown — hide load-more, show collapse
+                document.getElementById('activityLoadMore').style.display = 'none';
+                document.getElementById('activityCollapse').style.display  = 'inline-flex';
+            } else {
+                // Update the button label and remaining count
+                const nextBatch = Math.min(BATCH, remaining);
+                document.getElementById('activityLoadMore').childNodes[2].textContent =
+                    ' Show ' + nextBatch + ' more ';
+                document.getElementById('remainingCount').textContent = remaining + ' remaining';
+            }
+        }
+    
+        function collapseActivities() {
+            const all = document.querySelectorAll('.activity-entry');
+    
+            // Hide everything beyond the first 5
+            for (let i = 5; i < all.length; i++) {
+                all[i].style.display = 'none';
+                all[i].classList.add('activity-entry--hidden');
+                all[i].classList.remove('activity-entry--revealed');
+            }
+    
+            visibleCount = 5;
+            const remaining = all.length - 5;
+    
+            // Restore load-more button
+            const loadMore = document.getElementById('activityLoadMore');
+            loadMore.style.display = 'inline-flex';
+            loadMore.childNodes[2].textContent = ' Show ' + Math.min(BATCH, remaining) + ' more ';
+            document.getElementById('remainingCount').textContent = remaining + ' remaining';
+    
+            // Hide collapse button
+            document.getElementById('activityCollapse').style.display = 'none';
+    
+            // Scroll back up to the timeline card so they can see the top
+            document.querySelector('.ls-card__head svg[viewBox="0 0 16 16"] + svg, .ls-card__head')
+                .closest('.ls-card')
+                ?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
+    </script>
 
 @endsection

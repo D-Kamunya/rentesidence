@@ -14,9 +14,13 @@ use App\Models\LeadActivity;
 use App\Models\EmailTemplate;
 use App\Models\Owner;
 use App\Models\Package;
+use App\Jobs\Mail\SendTrialExtendedMail;
+use App\Jobs\Mail\SendTrialApprovedMail;
+use App\Jobs\Mail\SendTrialRejectedMail;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
+use Illuminate\Support\Facades\Log;
 use App\Http\Requests\OwnerRegisterRequest;
 use Carbon\Carbon;
 use Exception;
@@ -52,7 +56,10 @@ class AffiliateLeadsController extends Controller
             $query->where('temperature', $request->temperature);
         }
 
-        $leads = $query->latest()->paginate(10)->withQueryString();
+        $leads = $query->whereNotNull('affiliate_id')
+               ->latest()
+               ->paginate(10)
+               ->withQueryString();
 
         // Summary Stats
         $pendingCount = Lead::where('status', 'pending_conversion')->count();
@@ -80,7 +87,8 @@ class AffiliateLeadsController extends Controller
             }
         ]);
 
-        return view('admin.affiliates.leads.show', compact('lead'));
+        $completeness = $this->completenessScore($lead);
+        return view('admin.affiliates.leads.show', compact('lead','completeness'));
     }
 
     public function approveTrial(Request $request, $leadId)
@@ -109,18 +117,22 @@ class AffiliateLeadsController extends Controller
             $isExtension = false;
 
 
-                // ✅ Resolve affiliate via user_id (SAFE for your current structure)
-                $affiliate = Affiliate::where('user_id', $affiliateId)->first();
+            // ✅ Resolve affiliate via user_id (SAFE for current structure)
+            $affiliate = Affiliate::where('user_id', $affiliateId)->with('user')->first();
 
-                if (!$affiliate) {
-                    DB::rollBack();
-                    return back()->with('error', "Affiliate not found for user ID {$affiliateId}. Cannot create owner.");
-                }
+            if (!$affiliate) {
+                DB::rollBack();
+                return back()->with('error', "Affiliate not found for user ID {$affiliateId}. Cannot create owner.");
+            }
 
-                if (!$affiliate || !$affiliate->user) {
-                    DB::rollBack();
-                    return back()->with('error', 'Affiliate or affiliate user is missing.');
-                }
+            if (!$affiliate || !$affiliate->user) {
+                DB::rollBack();
+                return back()->with('error', 'Affiliate or affiliate user is missing.');
+            }
+
+            // ---------------------------------------------------------------
+            // EXISTING USER FLOW (trial extension)
+            // ---------------------------------------------------------------
 
             if ($existingUser) {
                 // User exists - this might be a trial extension
@@ -191,11 +203,19 @@ class AffiliateLeadsController extends Controller
                     'lead_id' => $lead->id,
                     'user_id' => auth()->id(),
                     'type' => 'trial_started',
-                    'description' => 'Trial extended by admin. Customer given additional trial time.'
+                    'description' => 'Trial extended by admin. Client given additional trial time.'
                 ]);
 
                 DB::commit();
 
+                // email — existing user (trial extension)
+                SendTrialExtendedMail::dispatch(
+                    $lead->id,
+                    $company->email,
+                    $trialEndsAt,
+                    $affiliate->user->email,
+                    $affiliate->user->first_name,
+                );
                 return back()->with('success', 'Trial extended successfully for ' . $company->company_name . '!');
             }
 
@@ -221,10 +241,13 @@ class AffiliateLeadsController extends Controller
 
             // 🎯 Assign trial package
             $defaultPackage = Package::where(['is_trail' => ACTIVE])->first();
+            $trialDuration = (int) getOption('trail_duration', 1);
 
             if ($defaultPackage) {
-                setUserPackage($user->id, $defaultPackage, (int) getOption('trail_duration', 1), 1);
+                setUserPackage($user->id, $defaultPackage, $trialDuration, 1);
             }
+            
+            $trialEndsAt   = now()->addDays($trialDuration)->format('M d, Y');
 
             // Setup defaults (only for new users)
             setOwnerGateway($user->id);
@@ -255,6 +278,7 @@ class AffiliateLeadsController extends Controller
 
             // 🔐 Password reset setup (only for new users)
             $passwordResetToken = Str::random(64);
+            $resetLink     = url('/password/reset/' . $passwordResetToken . '?email=' . urlencode($user->email));
 
             DB::table('password_resets')->updateOrInsert(
                 ['email' => $user->email],
@@ -264,35 +288,17 @@ class AffiliateLeadsController extends Controller
                 ]
             );
 
-            // 📧 Send email (only for new users)
-            if (getOption('send_email_status', 0) == ACTIVE) {
+            // 📧 Send email (Acount created and Trial approved only for new users)
+            SendTrialApprovedMail::dispatch(
+                $lead->id,
+                $user->email,
+                $resetLink,
+                $trialEndsAt,
+                $affiliate->user->email,
+                $affiliate->user->first_name,
+            );
 
-                $resetLink = url('/password/reset/' . $passwordResetToken . '?email=' . urlencode($user->email));
-
-                $mailService = new MailService;
-
-                $subject = 'Welcome to ' . getOption('app_name') . ' - Set Your Password';
-
-                $message = "
-                    <div style='font-family:Arial,sans-serif;max-width:600px;margin:0 auto;'>
-                        <h2 style='color:#185FA5;'>Welcome to " . getOption('app_name') . "!</h2>
-                        <p>Hello <strong>{$company->company_name}</strong>,</p>
-                        <p>Great news! Your trial account has been approved and is ready to use.</p>
-                        <p>To get started, please set your password by clicking the button below:</p>
-                        <div style='text-align:center;margin:30px 0;'>
-                            <a href='{$resetLink}' style='background:#185FA5;color:#fff;padding:12px 28px;text-decoration:none;border-radius:8px;display:inline-block;font-weight:500;'>Set My Password</a>
-                        </div>
-                        <p><strong>Your login email:</strong> {$user->email}</p>
-                        <p style='color:#6b7280;font-size:13px;'>This link will expire in 60 minutes. If you didn't request this, please ignore this email.</p>
-                        <hr style='border:none;border-top:1px solid #e5e7eb;margin:30px 0;'>
-                        <p style='color:#9ca3af;font-size:12px;'>If the button doesn't work, copy and paste this link into your browser:<br>{$resetLink}</p>
-                    </div>
-                ";
-
-                $mailService->sendCustomizeMail([$user->email], $subject, $message);
-            }
-
-            return back()->with('success', 'Lead converted successfully! Owner account created for ' . $company->company_name . ' and setup email sent.');
+         return back()->with('success', 'Lead converted successfully! Owner account created for ' . $company->company_name . ' and setup email sent.');
 
         } catch (\Exception $e) {
             DB::rollBack();
@@ -319,6 +325,43 @@ class AffiliateLeadsController extends Controller
             'description' => 'Rejected - ' . $request->rejection_reason,
         ]);
 
+        // Notify affiliate of rejection
+        $affiliate = User::find($lead->affiliate_id);
+        if ($affiliate) {
+            SendTrialRejectedMail::dispatch(
+                $lead->id,
+                $affiliate->email,
+                $affiliate->first_name,
+                $request->rejection_reason,
+            );
+        }
         return back()->with('success', 'Trial account request successfully rejected.');
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // Private helpers
+    // ─────────────────────────────────────────────────────────────────────────
+ 
+    /**
+     * Compute the completeness score (0–100) for a single lead.
+     * Mirrors the blade-side calculation so both stay in sync.
+     */
+    private function completenessScore(Lead $lead): int
+    {
+        $fields = [
+            $lead->company->company_name    ?? null,
+            $lead->company->country         ?? null,
+            $lead->company->city            ?? null,
+            $lead->company->phone           ?? null,
+            $lead->company->email           ?? null,
+            $lead->company->website         ?? null,
+            $lead->company->property_type   ?? null,
+            $lead->company->estimated_units ?? null,
+            $lead->contact_person_name      ?? null,
+            $lead->contact_person_role      ?? null,
+        ];
+ 
+        $filled = count(array_filter($fields, fn($v) => !is_null($v) && $v !== ''));
+        return (int) round(($filled / count($fields)) * 100);
     }
 }

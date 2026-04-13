@@ -13,6 +13,12 @@
                     </a>
                 </li>
                 <li>
+                    <a href="{{ route('affiliate.marketplace.index') }}">
+                        <i class="fa fa-shopping-basket" aria-hidden="true"></i>
+                        <span>{{ __('Lead Marketplace') }}</span>
+                    </a>
+                </li>
+                <li>
                     <a href="{{ route('affiliate.leads') }}">
                         <i class="fa fa-cog" aria-hidden="true"></i>
                         <span>{{ __('My Leads') }}</span>

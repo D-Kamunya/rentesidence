@@ -39,6 +39,12 @@ class ContactMessageService
             ->addColumn('action', function ($message) {
                 return '<div class="tbl-action-btns d-inline-flex">
                     <button type="button" class="p-1 tbl-action-btn reply" data-id="' . $message->id . '" title="' . __('reply') . '"><span class="iconify" data-icon="bi:reply"></span></button>
+                    <form method="POST" action="' . route('admin.message.destroy', $message->id) . '" style="display:inline;">
+                        ' . csrf_field() . method_field('DELETE') . '
+                        <button type="submit" class="p-1 tbl-action-btn delete" title="' . __('delete') . '" onclick="return confirm(\'Are you sure?\')">
+                            <span class="iconify" data-icon="bi:trash"></span>
+                        </button>
+                    </form>
                 </div>';
             })
             ->rawColumns(['name', 'status', 'action'])
@@ -78,4 +84,11 @@ class ContactMessageService
             return $this->error([],  $message);
         }
     }
+
+    public function delete($id)
+    {
+        Message::findOrFail($id)->delete();
+        return redirect()->back()->with('success', 'Message deleted successfully.');
+    }
+        
 }

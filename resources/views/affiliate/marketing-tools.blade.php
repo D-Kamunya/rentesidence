@@ -8,6 +8,9 @@
                 <div class="container">
 
                     {{-- Page Header --}}
+                    @php
+                        $pageTitle = 'Marketing Tools';
+                    @endphp
                     <div class="dash-header mb-4">
                         <div>
                             <h2 class="dash-title">{{ __('Marketing Tools') }}</h2>

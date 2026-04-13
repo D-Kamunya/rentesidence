@@ -28,4 +28,9 @@ class LeadActivity extends Model
     {
         return $this->belongsTo(User::class);
     }
+
+    public function suggestion()
+    {
+        return $this->belongsTo(LeadSuggestion::class, 'suggestion_id');
+    }
 }

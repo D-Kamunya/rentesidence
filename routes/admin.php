@@ -6,9 +6,14 @@ use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\LanguageController;
 use App\Http\Controllers\Admin\MailController;
 use App\Http\Controllers\Admin\OwnerController;
+use App\Http\Controllers\Admin\DemoPrepController;
 use App\Http\Controllers\Admin\AffiliateController;
 use App\Http\Controllers\Admin\AcademyAdminController;
 use App\Http\Controllers\Admin\AffiliateLeadsController;
+use App\Http\Controllers\Admin\MarketingMaterialController;
+use App\Http\Controllers\Admin\ActionTemplateController;
+use App\Http\Controllers\Admin\AdminLeadSuggestionController;
+use App\Http\Controllers\Admin\AdminMarketplaceController;
 use App\Http\Controllers\Admin\SettingController;
 use App\Http\Controllers\VersionUpdateController;
 use Illuminate\Support\Facades\Route;
@@ -41,7 +46,39 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'middleware' => ['auth', 'a
     Route::post('/leads/{lead}/approve', [AffiliateLeadsController::class, 'approveTrial']) ->name('leads.approve');
     // Reject conversion
     Route::post('/leads/{lead}/reject', [AffiliateLeadsController::class, 'rejectTrial']) ->name('leads.reject');
-
+    // Marketing Materials CRUD
+    Route::get('/materials', [MarketingMaterialController::class, 'index'])->name('materials.index');
+    Route::get('/materials/create', [MarketingMaterialController::class, 'create'])->name('materials.create');
+    Route::post('/materials', [MarketingMaterialController::class, 'store'])->name('materials.store');
+    Route::get('/materials/{id}/edit', [MarketingMaterialController::class, 'edit'])->name('materials.edit');
+    Route::put('/materials/{id}', [MarketingMaterialController::class, 'update'])->name('materials.update');
+    Route::delete('/materials/{id}', [MarketingMaterialController::class, 'destroy'])->name('materials.destroy');
+    // Marketing Templates CRUD
+    Route::get('/templates', [ActionTemplateController::class, 'index'])->name('templates.index');
+    Route::get('/templates/create', [ActionTemplateController::class, 'create'])->name('templates.create');
+    Route::post('/templates', [ActionTemplateController::class, 'store'])->name('templates.store');
+    Route::get('/templates/{id}/edit', [ActionTemplateController::class, 'edit'])->name('templates.edit');
+    Route::put('/templates/{id}', [ActionTemplateController::class, 'update'])->name('templates.update');
+    Route::delete('/templates/{id}', [ActionTemplateController::class, 'destroy'])->name('templates.destroy');
+    // Demo Prep Settings
+    Route::get('/demo-prep', [DemoPrepController::class, 'index'])->name('demo_prep.index');
+    Route::post('/demo-prep/settings', [DemoPrepController::class, 'updateSettings'])->name('demo_prep.settings.update');
+    Route::post('/demo-prep/sections', [DemoPrepController::class, 'store'])->name('demo_prep.sections.store');
+    Route::get('/demo-prep/sections/{id}/edit', [DemoPrepController::class, 'edit'])->name('demo_prep.sections.edit');
+    Route::put('/demo-prep/sections/{id}', [DemoPrepController::class, 'update'])->name('demo_prep.sections.update');
+    Route::delete('/demo-prep/sections/{id}', [DemoPrepController::class, 'destroy'])->name('demo_prep.sections.destroy');
+    // Suggestions CRUD
+    Route::get('/suggestions', [AdminLeadSuggestionController::class, 'index'])->name('suggestions.index');
+    Route::get('/suggestions/lead/{lead}', [AdminLeadSuggestionController::class, 'lead'])->name('suggestions.lead');
+    Route::post('/suggestions/generate', [AdminLeadSuggestionController::class, 'generate'])->name('suggestions.generate');
+    Route::delete('/suggestions/{id}', [AdminLeadSuggestionController::class, 'destroy'])->name('suggestions.destroy');
+    // Marketplace CRUD
+    Route::get('/marketplace', [AdminMarketplaceController::class, 'index'])->name('marketplace.index');
+    Route::get('/marketplace/create', [AdminMarketplaceController::class, 'create'])->name('marketplace.create');
+    Route::post('/marketplace', [AdminMarketplaceController::class, 'store'])->name('marketplace.store');
+    Route::get('/marketplace/{lead}', [AdminMarketplaceController::class, 'show'])->name('marketplace.show');
+    Route::delete('/marketplace/{lead}', [AdminMarketplaceController::class, 'destroy'])->name('marketplace.destroy');
+    
     Route::group(['prefix' => 'owner', 'as' => 'owner.'], function () {
         Route::get('/', [OwnerController::class, 'index'])->name('index');
          // register owner

@@ -3,6 +3,9 @@
 use App\Http\Controllers\Affiliates\DashboardController;
 use App\Http\Controllers\Affiliates\MarketingToolController;
 use App\Http\Controllers\Affiliates\AcademyController;
+use App\Http\Controllers\Affiliates\ActionExecutionController;
+use App\Http\Controllers\Affiliates\LeadSuggestionController;
+use App\Http\Controllers\Affiliates\AffiliatesMarketplaceController;
 use App\Http\Controllers\Affiliates\LeadController;
 use Illuminate\Support\Facades\Route;
 
@@ -39,7 +42,7 @@ Route::group([
                 return back()->with('success', 'Withdrawal request submitted!');})->name('withdraw');
             // Certificate
             Route::get('affiliate/academy/certificate', [AcademyController::class, 'certificate'])->name('academy.certificate');
-            // Leads CRUD functions
+            // Affiliates Leads CRUD functions
             Route::get('/affiliate/leads', [LeadController::class,'index'])->name('leads');
             Route::get('/affiliate/leads/create', [LeadController::class,'create'])->name('leads.create');
             Route::post('/affiliate/leads/store', [LeadController::class,'store'])->name('leads.store');
@@ -55,6 +58,18 @@ Route::group([
             Route::post('{lead}/convert', [LeadController::class,'requestTrial'])->name('leads.requesttrial');
             Route::post('{lead}/reject', [LeadController::class,'reject'])->name('leads.reject');
             Route::post('{lead}/lost', [LeadController::class,'lost'])->name('leads.lost');
-
-            });
+            // Affiliate prompt actions
+            Route::get('/action/whatsapp/{lead}/{template}', [ActionExecutionController::class, 'whatsapp'])->name('action.whatsapp');
+            Route::get('/action/email/{lead}/{template}', [ActionExecutionController::class, 'email'])->name('action.email');
+            Route::get('/action/call/{lead}', [ActionExecutionController::class, 'call'])->name('action.call');
+            Route::get('/action/call/{lead}/{template}', [ActionExecutionController::class, 'callView'])->name('action.call.view');
+            // Affiliate suggestions
+            Route::get('/suggestions/lead/{lead}', [LeadSuggestionController::class, 'leadSuggestions'])->name('suggestions.lead');
+            Route::get('/my-suggestions', [LeadSuggestionController::class, 'mySuggestions'])->name('suggestions.mine');
+            Route::post('/suggestions/{id}/complete', [LeadSuggestionController::class, 'complete'])->name('suggestions.complete');
+            Route::post('/suggestions/{id}/dismiss', [LeadSuggestionController::class, 'dismiss'])->name('suggestions.dismiss');
+            // Affiliate Leads Marketplace
+            Route::get('/marketplace', [AffiliatesMarketplaceController::class, 'index'])->name('marketplace.index');
+            Route::post('/marketplace/{lead}/claim', [AffiliatesMarketplaceController::class, 'claim'])->name('marketplace.claim');
+        });
     });

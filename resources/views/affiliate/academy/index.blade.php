@@ -1,5 +1,6 @@
 @extends('affiliate.layouts.app')
 
+
 @section('content')
     <div class="main-content">
         <div class="page-content">
@@ -32,6 +33,7 @@
                             $total = $modules->count();
                             $completedCount = collect($progress)->whereNotNull('completed_at')->count();
                             $percentage = $total > 0 ? ($completedCount / $total) * 100 : 0;
+                            $pageTitle = 'Partner Academy';
                         @endphp
 
                         <div class="mb-4" style="background:#fff;border:0.5px solid #e5e7eb;border-radius:14px;padding:1.5rem;">

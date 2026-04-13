@@ -28,6 +28,12 @@
                         </a>
                     </li>
                     <li>
+                        <a class="{{ @$navOwnerAddMMShowClass }}" href="{{ route('admin.owner.index') }}">
+                            <i class="ri-user-line"></i>
+                            <span>{{ __('Owners') }}</span>
+                        </a>
+                    </li>
+                    <li>
                         <a href="{{ route('admin.message.index') }}">
                             <i class="ri-message-fill"></i>
                             <span>{{ __('Message') }}</span>
@@ -53,34 +59,74 @@
                     </li>
                 @endif
                 <li>
-                    <a class="{{ @$navOwnerAddMMShowClass }}" href="{{ route('admin.owner.index') }}">
-                        <i class="ri-user-line"></i>
-                        <span>{{ __('Owners') }}</span>
-                    </a>
-                </li>
-                <li>
                     <a class="{{ @$navAcademyModulesShowClass }}" href="{{ route('admin.academy.index') }}">
                     <i class="fa fa-graduation-cap"></i>
                     <span>{{ __('Academy') }}</span>
                     </a>
                 </li>
                 <li>
-                    <a class="{{ @$navAffiliatesAddMMShowClass }}" href="{{ route('admin.affiliates.index') }}">
-                        <i class="ri-user-line"></i>
+                    <a href="javascript: void(0);" class="has-arrow">
+                        <i class="fa fa-bullhorn" aria-hidden="true"></i>
+                        <span>{{ __('Marketing') }}</span>
+                    </a>
+                    <ul class="sub-menu" aria-expanded="false">
+                        <li>
+                            <a class="{{ @$navOwnerAddMMShowClass }}" href="{{ route('admin.suggestions.index') }}">
+                                <i class="fa fa-comment" aria-hidden="true"></i>
+                                <span>{{ __('Suggestions') }}</span>
+                            </a>
+                        </li>
+                        <li>
+                            <a class="{{ @$navOwnerAddMMShowClass }}" href="{{ route('admin.templates.index') }}">
+                                <i class="fa fa-file" aria-hidden="true"></i>
+                                <span>{{ __('Templates') }}</span>
+                            </a>
+                        </li>
+                        <li>
+                            <a class="{{ @$navOwnerAddMMShowClass }}" href="{{ route('admin.materials.index') }}">
+                                <i class="fa fa-archive" aria-hidden="true"></i>
+                                <span>{{ __('Materials') }}</span>
+                            </a>
+                        </li>
+                        <li>
+                            <a class="{{ @$navOwnerAddMMShowClass }}" href="{{ route('admin.demo_prep.index') }}">
+                                <i class="fa fa-desktop" aria-hidden="true"></i>
+                                <span>{{ __('Demo Prep') }}</span>
+                            </a>
+                        </li>
+                    </ul>
+                </li>
+                <li>
+                    <a class="{{ @$navAffiliatesAddMMShowClass }}" href="{{ route('admin.marketplace.index') }}">
+                        <i class="fa fa-shopping-basket" aria-hidden="true"></i>
+                        <span>{{ __('Marketplace') }}</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="javascript: void(0);" class="has-arrow">
+                        <i class="fa fa-users" aria-hidden="true"></i>
                         <span>{{ __('Affiliates') }}</span>
                     </a>
-                </li>
-                <li>
-                    <a class="{{ @$navAffiliatesAddMMShowClass }}" href="{{ route('admin.affiliates.performance') }}">
-                        <i class="fa fa-users" aria-hidden="true"></i>
-                        <span>{{ __('Affiliates Performance') }}</span>
-                    </a>
-                </li>
-                <li>
-                    <a class="{{ @$navAffiliatesAddMMShowClass }}" href="{{ route('admin.leads.index') }}">
-                        <i class="fa fa-cog" aria-hidden="true"></i>
-                        <span>{{ __('Affiliates Leads') }}</span>
-                    </a>
+                    <ul class="sub-menu" aria-expanded="false">
+                        <li>
+                            <a class="{{ @$navAffiliatesAddMMShowClass }}" href="{{ route('admin.affiliates.index') }}">
+                            <i class="fa fa-users" aria-hidden="true"></i>
+                                <span>{{ __('Affiliates') }}</span>
+                            </a>
+                        </li>
+                        <li>
+                            <a class="{{ @$navAffiliatesAddMMShowClass }}" href="{{ route('admin.leads.index') }}">
+                                <i class="fa fa-cog" aria-hidden="true"></i>
+                                <span>{{ __('Leads') }}</span>
+                            </a>
+                        </li>
+                        <li>
+                            <a class="{{ @$navAffiliatesAddMMShowClass }}" href="{{ route('admin.affiliates.performance') }}">
+                                <i class="fa fa-trophy" aria-hidden="true"></i>
+                                <span>{{ __('Performance') }}</span>
+                            </a>
+                        </li>
+                    </ul>
                 </li>
                 <li>
                     <a href="{{ route('admin.setting.general-setting') }}">
