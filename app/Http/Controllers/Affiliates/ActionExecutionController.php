@@ -89,7 +89,7 @@ class ActionExecutionController extends Controller
             'follow_up' => 'Following Up — ' . $lead->company->company_name,
             'trial'     => 'Your Trial Account — Next Steps',
             'demo_complete' => 'How was the Demo?',
-            'retention' => 'How are things for - '.$lead->company->company->name,
+            'retention' => 'How are things for - '.$lead->company->company_name,
             'reengage'  => 'Checking In — ' . $lead->company->company_name,
         ];
         $subject = $subjects[$template->category] ?? 'Message from ' . (auth()->user()->first_name ?? 'Your Account Manager');
