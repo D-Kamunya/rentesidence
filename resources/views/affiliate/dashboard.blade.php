@@ -62,6 +62,31 @@
                             </a>
                         </div>
                     @endif
+                    {{-- New modules added nudge bar --}}
+                    @if($newModules)
+                    <div class="notice-bar mb-4">
+                        <div class="notice-bar__left">
+                            <div class="notice-bar__icon">
+                                <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
+                                    <path d="M8 1.5a6.5 6.5 0 100 13 6.5 6.5 0 000-13z" stroke="currentColor" stroke-width="1.4"/>
+                                    <path d="M8 7v4M8 5v.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                                </svg>
+                            </div>
+                            <div>
+                                <div class="notice-bar__text">
+                                    New academy content has been added — please complete your training.
+                                </div>
+                                <div class="notice-bar__sub">Stay up to date to make the most of your leads</div>
+                            </div>
+                        </div>
+                        <a href="{{ route('affiliate.academy.index') }}" class="notice-bar__action">
+                            <svg width="10" height="10" viewBox="0 0 16 16" fill="none">
+                                <path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                            </svg>
+                            Go to academy
+                        </a>
+                    </div>
+                    @endif
                     {{-- Summary Cards --}}
                     <div class="row g-3 mb-4">
 
@@ -460,6 +485,34 @@
         color: #A32D2D; border-radius: 99px;
         font-size: 11px; font-weight: 500; padding: 4px 11px; white-space: nowrap;
     }
+    /* ── Academy notice bar ─────────────────────────────── */
+    .notice-bar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 10px;
+        background: #F0F9F4;
+        border: 0.5px solid #9FE1CB;
+        border-radius: 10px;
+        padding: 10px 16px;
+    }
+    .notice-bar__left { display: flex; align-items: center; gap: 12px; }
+    .notice-bar__icon {
+        width: 30px; height: 30px; border-radius: 8px;
+        background: #E1F5EE; color: #0F6E56;
+        display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+    }
+    .notice-bar__text { font-size: 13px; font-weight: 500; color: #085041; }
+    .notice-bar__sub  { font-size: 12px; color: #0F6E56; margin-top: 2px; }
+    .notice-bar__action {
+        display: inline-flex; align-items: center; gap: 5px;
+        background: #E1F5EE; border: 0.5px solid #9FE1CB;
+        color: #0F6E56; border-radius: 99px;
+        font-size: 11px; font-weight: 500; padding: 4px 11px; white-space: nowrap;
+        text-decoration: none;
+    }
+    .notice-bar__action:hover { background: #9FE1CB; }
 </style>
 
 @push('scripts')

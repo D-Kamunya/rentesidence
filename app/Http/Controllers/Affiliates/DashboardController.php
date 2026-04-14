@@ -113,6 +113,7 @@ class DashboardController extends Controller
                 ->count();
             
             $isCertified = $totalModules > 0 && $completedModules === $totalModules;
+            $newModules = $completedModules < $totalModules;
             // Leads and Suggestions display
             $totalLeads = Lead::where('affiliate_id', $leadsaffiliateId)->count();
             $leadIds = Lead::where('affiliate_id', $leadsaffiliateId)->pluck('id');
@@ -131,6 +132,6 @@ class DashboardController extends Controller
             $urgentSuggestions = $suggestionCounts->sum('urgent_count');
             $leadsWithSuggestions = $suggestionCounts->count();
         // Pass the data to the view
-        return view('affiliate.dashboard', compact('summary', 'totalLeads', 'commissionTrends', 'recentCommissions', 'isCertified', 'suggestionCounts', 'totalSuggestions','urgentSuggestions', 'leadsWithSuggestions'));
+        return view('affiliate.dashboard', compact('summary', 'totalLeads', 'newModules', 'commissionTrends', 'recentCommissions', 'isCertified', 'suggestionCounts', 'totalSuggestions','urgentSuggestions', 'leadsWithSuggestions'));
     }
 }
