@@ -22,6 +22,7 @@ class OwnerService
                 'owner_user.last_name as owner_last_name',
                 'owner_user.email as owner_email',
                 'owner_user.contact_number as owner_contact_number',
+                'owners.status as status',
                 'affiliate_user.first_name as affiliate_first_name',
                 'affiliate_user.last_name as affiliate_last_name'
             )
@@ -46,13 +47,48 @@ class OwnerService
                     return '';
                 }
             })
-            ->addColumn('status', function ($package) {
-                if ($package->status == ACTIVE) {
-                    return '<div class="status-btn status-btn-green font-13 radius-4">Active</div>';
-                } else {
-                    return '<div class="status-btn status-btn-orange font-13 radius-4">Deactivate</div>';
+            ->addColumn('status', function ($owner) {
+                if ($owner->status == ACTIVE) {
+                    return '
+                        <form action="' . route('admin.owner.deactivate', $owner->owner_id) . '" method="POST" style="display:inline;">
+                            ' . csrf_field() . '
+                            <button type="submit" class="btn deactivate"
+                                style="
+                                    display: inline-flex; align-items: center; gap: 5px;
+                                    background: #FDF4F1; border: 0.5px solid #F5C4B3;
+                                    color: #712B13; border-radius: 99px;
+                                    font-size: 11px; font-weight: 500;
+                                    padding: 4px 11px; white-space: nowrap;
+                                    cursor: pointer; line-height: 1.4;
+                                ">
+                                <svg width="10" height="10" viewBox="0 0 16 16" fill="none">
+                                    <path d="M4 4l8 8M12 4l-8 8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                                </svg>
+                                Deactivate
+                            </button>
+                        </form>';
                 }
+
+                return '
+                    <form action="' . route('admin.owner.activate', $owner->owner_id) . '" method="POST" style="display:inline;">
+                        ' . csrf_field() . '
+                        <button type="submit" class="btn activate"
+                            style="
+                                display: inline-flex; align-items: center; gap: 5px;
+                                background: #F0F9F4; border: 0.5px solid #9FE1CB;
+                                color: #085041; border-radius: 99px;
+                                font-size: 11px; font-weight: 500;
+                                padding: 4px 11px; white-space: nowrap;
+                                cursor: pointer; line-height: 1.4;
+                            ">
+                            <svg width="10" height="10" viewBox="0 0 16 16" fill="none">
+                                <path d="M3 8.5l3.5 3.5 6.5-7" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                            </svg>
+                            Activate
+                        </button>
+                    </form>';
             })
+
             ->rawColumns(['name', 'status', 'contact_number', 'trail', 'action'])
             ->make(true);
     }
