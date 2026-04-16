@@ -75,25 +75,35 @@
                                                                     </td>
                                                                     <td>
                                                                         <div class="tbl-action-btns d-inline-flex">
-                                                                            <a class="p-1 tbl-action-btn edit"
-                                                                                data-item="{{ $ticketTopic }}"
-                                                                                title="{{ __('Edit') }}">
-                                                                                <span class="iconify"
-                                                                                    data-icon="clarity:note-edit-solid"></span>
-                                                                            </a>
-                                                                            <a href="#"
-                                                                                class="p-1 tbl-action-btn deleteItem"
-                                                                                data-formid="delete_row_form_{{ $ticketTopic->id }}"
-                                                                                title="Delete"><span class="iconify"
-                                                                                    data-icon="ep:delete-filled"></span></a>
-                                                                            <form
-                                                                                action="{{ route('owner.setting.ticket-topic.destroy', [$ticketTopic->id]) }}"
-                                                                                method="post"
-                                                                                id="delete_row_form_{{ $ticketTopic->id }}">
-                                                                                {{ method_field('DELETE') }}
-                                                                                <input type="hidden" name="_token"
-                                                                                    value="{{ csrf_token() }}">
-                                                                            </form>
+
+                                                                            @if (!$ticketTopic->is_default)
+                                                                                <a class="p-1 tbl-action-btn edit"
+                                                                                    data-item="{{ $ticketTopic }}"
+                                                                                    title="{{ __('Edit') }}">
+                                                                                    <span class="iconify"
+                                                                                        data-icon="clarity:note-edit-solid"></span>
+                                                                                </a>
+
+                                                                                <a href="#"
+                                                                                    class="p-1 tbl-action-btn deleteItem"
+                                                                                    data-formid="delete_row_form_{{ $ticketTopic->id }}"
+                                                                                    title="Delete">
+                                                                                    <span class="iconify"
+                                                                                        data-icon="ep:delete-filled"></span>
+                                                                                </a>
+
+                                                                                <form
+                                                                                    action="{{ route('owner.setting.ticket-topic.destroy', [$ticketTopic->id]) }}"
+                                                                                    method="post"
+                                                                                    id="delete_row_form_{{ $ticketTopic->id }}">
+                                                                                    {{ method_field('DELETE') }}
+                                                                                    <input type="hidden" name="_token"
+                                                                                        value="{{ csrf_token() }}">
+                                                                                </form>
+                                                                            @else
+                                                                                <span class="text-muted font-12">System Default</span>
+                                                                            @endif
+
                                                                         </div>
                                                                     </td>
                                                                 </tr>

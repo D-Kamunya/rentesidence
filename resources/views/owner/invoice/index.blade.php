@@ -274,10 +274,20 @@
                                         <input type="hidden" name="invoiceItem[id][]" class="" value="">
                                         <div class="row">
                                             <div class="col-md-6 mb-25">
-                                                <label
-                                                    class="label-text-title color-heading font-medium mb-2">{{ __('Invoice Type') }}</label>
+                                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                                    <label class="label-text-title color-heading font-medium mb-0">
+                                                        {{ __('Invoice Type') }}
+                                                    </label>
+                                                    <button type="button" 
+                                                            class="theme-secondary-link"
+                                                            data-bs-toggle="modal" 
+                                                            data-bs-target="#addInvoiceTypeModal">
+                                                        + {{ __('Add New Types') }}
+                                                    </button>
+                                                </div>
+
                                                 <select class="form-select flex-shrink-0 invoiceItem-invoice_type_id"
-                                                    name="invoiceItem[invoice_type_id][]">
+                                                        name="invoiceItem[invoice_type_id][]">
                                                     <option value="">--{{ __('Select Type') }}--</option>
                                                     @foreach ($invoiceTypes as $invoiceType)
                                                         <option value="{{ $invoiceType->id }}">{{ $invoiceType->name }}</option>
@@ -657,6 +667,44 @@
         </div>
     </div>
 
+    <div class="modal fade" id="addInvoiceTypeModal" tabindex="-1" aria-labelledby="addInvoiceTypeModalLabel"
+        aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h4 class="modal-title" id="addInvoiceTypeModalLabel">{{ __('Add Invoice Type') }}</h4>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"><span
+                            class="iconify" data-icon="akar-icons:cross"></span>
+                    </button>
+                </div>
+                <form class="ajax" action="{{ route('owner.setting.invoice-type.store') }}" method="post"
+                    data-handler="invoiceTypeStoreDataRes">
+                    <div class="modal-body">
+                        <div class="modal-inner-form-box">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <label class="label-text-title color-heading font-medium mb-2">{{ __('Name') }}</label>
+                                    <input type="text" name="name" class="form-control" placeholder="{{ __('Name') }}">
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="label-text-title color-heading font-medium mb-2">{{ __('Tax') }}
+                                        ({{ taxSetting(auth()->id())->type == TAX_TYPE_PERCENTAGE ? '%' : 'Fixed' }})</label>
+                                    <input type="text" name="tax" class="form-control" placeholder="{{ __('Tax') }}">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer justify-content-start">
+                        <a href="javascript:void(0)" class="theme-btn-back me-3" data-bs-dismiss="modal"
+                            title="{{ __('Back') }}">{{ __('Back') }}</a>
+                        <button type="submit" class="theme-btn me-3"
+                            title="{{ __('Add Invoice Type') }}">{{ __('Submit') }}</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
     <input type="hidden" class="invoiceTypes" value="{{ $invoiceTypes }}">
     <input type="hidden" id="getPropertyUnitsRoute" value="{{ route('owner.property.getPropertyUnits') }}">
     <input type="hidden" id="invoiceIndex" value="{{ route('owner.invoice.index') }}">
@@ -677,6 +725,7 @@
     <!-- Datatable init js -->
     <script src="{{ asset('/') }}assets/js/pages/billing-center-datatables.init.js"></script>
     <script src="{{ asset('assets/js/custom/invoice.js') }}"></script>
+    <script src="{{ asset('assets/js/custom/invoice-type2.js') }}"></script>
     @if (request('id') && request('tab') == 'view')
         <script>
             view("{{ route('owner.invoice.details', request('id')) }}");

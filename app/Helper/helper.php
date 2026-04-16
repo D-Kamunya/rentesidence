@@ -10,6 +10,7 @@ use App\Models\Invoice;
 use App\Models\InvoiceItem;
 use App\Models\InvoiceType;
 use App\Models\MaintenanceIssue;
+use App\Models\TicketTopic;
 use App\Models\InvoiceRecurringSetting;
 use App\Models\Language;
 use App\Models\Maintainer;
@@ -689,6 +690,39 @@ if (!function_exists('setOwnerDefaultMaintenanceIssue')) {
             $maintenanceIssue->owner_user_id = $userId;
             $maintenanceIssue->status = ACTIVE;
             $maintenanceIssue->save();
+        }
+    }
+}
+
+if (!function_exists('setOwnerDefaultTicketTopics')) {
+    function setOwnerDefaultTicketTopics($userId)
+    {   
+        $defaultTopics = [
+            'Maintenance Request',
+            'Rent Payment Issue',
+            'Billing Inquiry',
+            'Lease Agreement Question',
+            'Move-in / Move-out Notice',
+            'Utility Issue (Water, Electricity, etc.)',
+            'Security Concern',
+            'Noise Complaint',
+            'Neighbor Dispute',
+            'Parking Issue',
+            'Cleaning / Garbage Collection',
+            'Internet / Connectivity Issue',
+            'Access / Key / Lock Problem',
+            'Property Damage Report',
+            'General Inquiry',
+            'Other'
+        ];
+
+        foreach ($defaultTopics as $topicName) {
+            $ticketTopic = new TicketTopic;
+            $ticketTopic->name = $topicName;
+            $ticketTopic->owner_user_id = $userId;
+            $ticketTopic->status = ACTIVE;
+            $ticketTopic->is_default = true; // ✅ key line
+            $ticketTopic->save();
         }
     }
 }

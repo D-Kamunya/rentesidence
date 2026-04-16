@@ -10,6 +10,7 @@ use App\Models\Notification;
 use App\Models\Property;
 use App\Models\PropertyUnit;
 use App\Models\Tenant;
+use App\Models\Ticket;
 use App\Services\OwnerService;
 use App\Services\PropertyService;
 use App\Services\TicketService;
@@ -38,6 +39,9 @@ class DashboardController extends Controller
         $data['properties'] = $this->propertyService->getAllCount()->take(3);
         $data['tickets'] = $this->ticketService->getAll();
         $data['totalMaintainers'] = Maintainer::where('owner_user_id', auth()->id())->count();
+        $data['pendingTickets'] = Ticket::where('owner_user_id', auth()->id())
+        ->whereIn('status', [1, 2])
+        ->count();
 
         // Chart Rent overview
         $data['months'] = array_values(month());

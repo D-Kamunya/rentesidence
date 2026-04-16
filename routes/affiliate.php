@@ -7,6 +7,7 @@ use App\Http\Controllers\Affiliates\ActionExecutionController;
 use App\Http\Controllers\Affiliates\LeadSuggestionController;
 use App\Http\Controllers\Affiliates\AffiliatesMarketplaceController;
 use App\Http\Controllers\Affiliates\LeadController;
+use App\Http\Controllers\Affiliates\AffiliateMarketingMaterialController;
 use Illuminate\Support\Facades\Route;
 
 
@@ -71,5 +72,7 @@ Route::group([
             // Affiliate Leads Marketplace
             Route::get('/marketplace', [AffiliatesMarketplaceController::class, 'index'])->name('marketplace.index');
             Route::post('/marketplace/{lead}/claim', [AffiliatesMarketplaceController::class, 'claim'])->name('marketplace.claim');
-        });
+            // Affiliate Marketing materials
+            Route::get('/materials', [AffiliateMarketingMaterialController::class, 'index'])->name('materials.index');
+            });
     });

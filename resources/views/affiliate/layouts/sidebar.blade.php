@@ -38,6 +38,13 @@
                 </li>
 
                 <li>
+                    <a href="{{ route('affiliate.materials.index') }}">
+                        <i class="fa fa-shopping-bag" aria-hidden="true"></i>
+                        <span>{{ __('Marketing Materials') }}</span>
+                    </a>
+                </li>
+
+                <li>
                     <a href="javascript:void(0)">
                         <i class="ri-group-line"></i>
                         <span>{{ __('My Referrals') }}</span>
