@@ -8,9 +8,12 @@
                 <div class="container">
 
                     {{-- Page Header --}}
+                    @php
+                        $pageTitle = 'Partner Dashboard';
+                    @endphp
                     <div class="dash-header mb-4">
                         <div>
-                            <h2 class="dash-title">{{ __('Affiliate Dashboard') }}</h2>
+                            <h2 class="dash-title">{{ __('Partner Dashboard') }}</h2>
                             <p class="dash-subtitle">
                                 {{ __('Welcome back') }}, <strong>{{ auth()->user()->name }}</strong>
                                 <span class="iconify font-24" data-icon="openmoji:waving-hand"></span>
@@ -25,7 +28,65 @@
                             </a>
                         @endif
                     </div>
-
+                    {{-- Suggested actions nudge bar --}}
+                    @if(isset($totalSuggestions) && $totalSuggestions > 0)
+                        <div class="leads-nudge-bar mb-4">
+                            <div class="leads-nudge-bar__left">
+                                <div class="leads-nudge-bar__icon">
+                                    <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
+                                        <path d="M8 2l2 4h4l-3 3 1 4-4-2-4 2 1-4-3-3h4z" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
+                                    </svg>
+                                </div>
+                                <div>
+                                    <div class="leads-nudge-bar__text">
+                                        You have <strong>{{ $totalSuggestions }} suggested {{ Str::plural('action', $totalSuggestions) }}</strong>
+                                        across {{ $leadsWithSuggestions }} {{ Str::plural('lead', $leadsWithSuggestions) }}
+                                    </div>
+                                    @if($urgentSuggestions > 0)
+                                        <div class="leads-nudge-bar__sub">
+                                            {{ $urgentSuggestions }} urgent — act now to move these leads forward
+                                        </div>
+                                    @endif
+                                </div>
+                            </div>
+                            <a href="{{ route('affiliate.leads') }}" >
+                                @if($totalSuggestions > 0)
+                                    <span class="leads-nudge-urgent">
+                                        <svg width="10" height="10" viewBox="0 0 16 16" fill="none">
+                                            <path d="M8 2l6 12H2L8 2z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                                            <path d="M8 7v3M8 12v.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                                        </svg>
+                                        View
+                                    </span>
+                                @endif
+                            </a>
+                        </div>
+                    @endif
+                    {{-- New modules added nudge bar --}}
+                    @if($newModules)
+                    <div class="notice-bar mb-4">
+                        <div class="notice-bar__left">
+                            <div class="notice-bar__icon">
+                                <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
+                                    <path d="M8 1.5a6.5 6.5 0 100 13 6.5 6.5 0 000-13z" stroke="currentColor" stroke-width="1.4"/>
+                                    <path d="M8 7v4M8 5v.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                                </svg>
+                            </div>
+                            <div>
+                                <div class="notice-bar__text">
+                                    New academy content has been added — please complete your training.
+                                </div>
+                                <div class="notice-bar__sub">Stay up to date to make the most of your leads</div>
+                            </div>
+                        </div>
+                        <a href="{{ route('affiliate.academy.index') }}" class="notice-bar__action">
+                            <svg width="10" height="10" viewBox="0 0 16 16" fill="none">
+                                <path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                            </svg>
+                            Go to academy
+                        </a>
+                    </div>
+                    @endif
                     {{-- Summary Cards --}}
                     <div class="row g-3 mb-4">
 
@@ -99,6 +160,28 @@
                             </div>
                         </div>
 
+                        <div class="col-6 col-md-4 col-lg-3">
+                            <div class="stat-card">
+                                <div class="stat-card__icon stat-card__icon--indigo">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                                        <path d="M16 11c1.66 0 3-1.34 3-3s-1.34-3-3-3-3 
+                                            1.34-3 3 1.34 3 3 3zM8 11c1.66 0 3-1.34 
+                                            3-3S9.66 5 8 5 5 6.34 5 8s1.34 3 3 3z" 
+                                            fill="currentColor"/>
+                                            <path d="M8 13c-2.67 0-8 1.34-8 4v2h8v-2c0-1.33 
+                                            .67-2.67 2-3.5C9.33 13.67 8.67 13 8 13zm8 
+                                            0c-.67 0-1.33.67-2 1.5 1.33.83 2 2.17 2 
+                                            3.5v2h8v-2c0-2.66-5.33-4-8-4z" 
+                                            fill="currentColor"/>
+                                    </svg>
+                                </div>
+                                <p class="stat-card__label">Total Leads</p>
+                                <p class="stat-card__value stat-card__value--indigo">
+                                    {{ $totalLeads}}
+                                </p>
+                            </div>
+                        </div>
+
                     </div>
 
                     {{-- Chart --}}
@@ -165,7 +248,7 @@
 
                 </div>
                 {{-- Floating Register Lead Button --}}
-                <a href="" class="fab-register-lead" id="fabBtn">
+                <a href="{{ route('affiliate.leads.create') }}" class="fab-register-lead" id="fabBtn">
                     <span class="fab-register-lead__icon">
                         <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
                             <path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/>
@@ -262,6 +345,7 @@
     .stat-card__icon--amber  { background: #FAEEDA; color: #854F0B; }
     .stat-card__icon--gray   { background: #f3f4f6; color: #5F5E5A; }
     .stat-card__icon--coral  { background: #FAECE7; color: #993C1D; }
+    .stat-card__icon--indigo  { background: #caeef0; color: #1d9944; }
 
     .stat-card__value--green  { color: #0F6E56; }
     .stat-card__value--blue   { color: #185FA5; }
@@ -270,6 +354,7 @@
     .stat-card__value--amber  { color: #854F0B; }
     .stat-card__value--gray   { color: #444441; }
     .stat-card__value--coral  { color: #993C1D; }
+    .stat-card__value--indigo  { color: #1d993a; }
 
     /* ── Shared card ─────────────────────────────────────── */
     .dash-card {
@@ -374,6 +459,60 @@
             padding: 14px;
         }
     }
+    /* ── Nudge bar ───────────────────────────────────────── */
+    .leads-nudge-bar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 10px;
+        background: #FDF4F1;
+        border: 0.5px solid #F5C4B3;
+        border-radius: 10px;
+        padding: 10px 16px;
+    }
+    .leads-nudge-bar__left { display: flex; align-items: center; gap: 12px; }
+    .leads-nudge-bar__icon {
+        width: 30px; height: 30px; border-radius: 8px;
+        background: #FAECE7; color: #993C1D;
+        display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+    }
+    .leads-nudge-bar__text { font-size: 13px; font-weight: 500; color: #712B13; }
+    .leads-nudge-bar__sub  { font-size: 12px; color: #993C1D; margin-top: 2px; }
+    .leads-nudge-urgent {
+        display: inline-flex; align-items: center; gap: 5px;
+        background: #FCEBEB; border: 0.5px solid #F7C1C1;
+        color: #A32D2D; border-radius: 99px;
+        font-size: 11px; font-weight: 500; padding: 4px 11px; white-space: nowrap;
+    }
+    /* ── Academy notice bar ─────────────────────────────── */
+    .notice-bar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 10px;
+        background: #F0F9F4;
+        border: 0.5px solid #9FE1CB;
+        border-radius: 10px;
+        padding: 10px 16px;
+    }
+    .notice-bar__left { display: flex; align-items: center; gap: 12px; }
+    .notice-bar__icon {
+        width: 30px; height: 30px; border-radius: 8px;
+        background: #E1F5EE; color: #0F6E56;
+        display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+    }
+    .notice-bar__text { font-size: 13px; font-weight: 500; color: #085041; }
+    .notice-bar__sub  { font-size: 12px; color: #0F6E56; margin-top: 2px; }
+    .notice-bar__action {
+        display: inline-flex; align-items: center; gap: 5px;
+        background: #E1F5EE; border: 0.5px solid #9FE1CB;
+        color: #0F6E56; border-radius: 99px;
+        font-size: 11px; font-weight: 500; padding: 4px 11px; white-space: nowrap;
+        text-decoration: none;
+    }
+    .notice-bar__action:hover { background: #9FE1CB; }
 </style>
 
 @push('scripts')

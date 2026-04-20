@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\MessageReplyRequest;
 use App\Services\ContactMessageService;
 use Illuminate\Http\Request;
+use App\Models\Message;
 
 class ContactMessageController extends Controller
 {
@@ -35,5 +36,10 @@ class ContactMessageController extends Controller
     public function reply(MessageReplyRequest $request)
     {
         return $this->contactMessageService->reply($request);
+    }
+
+    public function destroy($id)
+    {
+        return $this->contactMessageService->delete($id);
     }
 }

@@ -52,6 +52,8 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'middleware' => ['auth', 'a
         Route::get('/', [ContactMessageController::class, 'index'])->name('index');
         Route::get('get-info', [ContactMessageController::class, 'getInfo'])->name('get.info'); // ajax
         Route::post('reply', [ContactMessageController::class, 'reply'])->name('reply');
+        Route::delete('/message/{id}', [ContactMessageController::class, 'destroy'])->name('destroy');
+
     });
 
     Route::group(['prefix' => 'subscriptions', 'as' => 'subscriptions.'], function () {
