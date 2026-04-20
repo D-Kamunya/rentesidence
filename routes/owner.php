@@ -27,7 +27,8 @@ use App\Http\Controllers\Tenancy\DomainController;
 use App\Http\Controllers\ProductController;
 use Illuminate\Support\Facades\Route;
 
-Route::group(['prefix' => 'owner', 'as' => 'owner.', 'middleware' => ['auth', 'owner']], function () {
+Route::get('/account/suspended', fn() => view('owner.suspended'))->name('owner.suspended');
+Route::group(['prefix' => 'owner', 'as' => 'owner.', 'middleware' => ['auth', 'owner', 'owner.active']], function () {
     Route::get('/', [DashboardController::class, 'dashboard'])->name('dashboard');
     Route::get('top-search', [DashboardController::class, 'topSearch'])->name('top.search');
     Route::get('notification', [DashboardController::class, 'notification'])->name('notification');
@@ -252,3 +253,4 @@ Route::group(['prefix' => 'owner', 'as' => 'owner.', 'middleware' => ['auth', 'o
         Route::delete('destroy/{product}', [ProductController::class, 'destroy'])->name('destroy');
     });
 });
+

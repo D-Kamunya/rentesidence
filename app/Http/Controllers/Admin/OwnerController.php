@@ -124,4 +124,22 @@ class OwnerController extends Controller
             return back()->with('error', $e->getMessage());
         }
     }
+    public function activate($id)
+    {
+        $owner = Owner::findOrFail($id);
+        $owner->status = 1;
+        $owner->save();
+
+        return redirect()->back()->with('success', 'Owner activated successfully.');
+    }
+
+    public function deactivate($id)
+    {
+        $owner = Owner::findOrFail($id);
+        $owner->status = 0;
+        $owner->save();
+
+        return redirect()->back()->with('success', 'Owner deactivated successfully.');
+    }
+
 }

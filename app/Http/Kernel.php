@@ -74,6 +74,7 @@ class Kernel extends HttpKernel
         'academy.completed' => \App\Http\Middleware\EnsureAcademyCompleted::class,
         'throttle' => \Illuminate\Routing\Middleware\ThrottleRequests::class,
         'verified' => \Illuminate\Auth\Middleware\EnsureEmailIsVerified::class,
+        'owner.active' => \App\Http\Middleware\CheckOwnerActive::class,
         'admin' => Admin::class,
         'isDemo' => IsDemo::class,
         'owner' => Owner::class,

@@ -78,6 +78,10 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'middleware' => ['auth', 'a
     Route::post('/marketplace', [AdminMarketplaceController::class, 'store'])->name('marketplace.store');
     Route::get('/marketplace/{lead}', [AdminMarketplaceController::class, 'show'])->name('marketplace.show');
     Route::delete('/marketplace/{lead}', [AdminMarketplaceController::class, 'destroy'])->name('marketplace.destroy');
+    // Activate/deactivate owners
+    Route::post('/owner/activate/{id}', [OwnerController::class, 'activate'])->name('owner.activate');
+    Route::post('/owner/deactivate/{id}', [OwnerController::class, 'deactivate'])->name('owner.deactivate');
+
     
     Route::group(['prefix' => 'owner', 'as' => 'owner.'], function () {
         Route::get('/', [OwnerController::class, 'index'])->name('index');
