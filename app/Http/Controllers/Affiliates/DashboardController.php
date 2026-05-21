@@ -100,8 +100,10 @@ class DashboardController extends Controller
                     'date' => $commission->created_at->format('Y-m-d'),
                     'owner' => $commission->owner->name ?? 'N/A',
                     'package' => $commission->subscription->package->name ?? 'N/A',
-                    'type' => ucfirst($commission->type),
+                    'type' => $commission->type,
                     'amount' => $commission->subscription_amount,
+                    'rate' => $commission->commission_rate,           // 👈 Add this
+                    'commission_amount' => $commission->commission_amount, // 👈 Add this
                 ];
             })
             ->toArray();
@@ -127,11 +129,14 @@ class DashboardController extends Controller
                 ->groupBy('lead_id')
                 ->get()
                 ->keyBy('lead_id');
+            $pendingWithdrawalsCount = AffiliateWithdrawal::where('affiliate_id', $affiliateId)
+                ->where('status', AFFILIATE_WITHDRAWAL_PENDING)
+                ->count();
     
             $totalSuggestions = $suggestionCounts->sum('total');
             $urgentSuggestions = $suggestionCounts->sum('urgent_count');
             $leadsWithSuggestions = $suggestionCounts->count();
         // Pass the data to the view
-        return view('affiliate.dashboard', compact('summary', 'totalLeads', 'newModules', 'commissionTrends', 'recentCommissions', 'isCertified', 'suggestionCounts', 'totalSuggestions','urgentSuggestions', 'leadsWithSuggestions'));
+        return view('affiliate.dashboard', compact('summary', 'totalLeads', 'newModules', 'commissionTrends', 'recentCommissions', 'isCertified', 'suggestionCounts', 'pendingWithdrawalsCount', 'totalSuggestions','urgentSuggestions', 'leadsWithSuggestions'));
     }
 }

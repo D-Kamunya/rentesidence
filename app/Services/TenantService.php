@@ -32,8 +32,9 @@ class TenantService
             ->orderBy('properties.name', 'asc')  // Sort by property name first
             ->orderByRaw("REGEXP_REPLACE(property_units.unit_name, '[0-9]', '') ASC, CAST(REGEXP_REPLACE(property_units.unit_name, '[^0-9]', '') AS UNSIGNED) ASC")
             ->get();
-        return $data?->makeHidden(['created_at', 'updated_at', 'deleted_at']);
+            return $data?->makeHidden(['created_at', 'updated_at', 'deleted_at']);
     }
+
 
     public function getAllTenantsLogins()
     {
@@ -45,20 +46,41 @@ class TenantService
         return $data;
     }
 
-    public function getActiveAll()
+    public function getActiveAll(Request $request = null)
     {
-        return Tenant::query()
-        ->leftJoin('users', 'tenants.user_id', '=', 'users.id')
-        ->leftJoin('properties', 'tenants.property_id', '=', 'properties.id')
-        ->leftJoin('property_units', 'tenants.unit_id', '=', 'property_units.id')
-        ->leftJoin(DB::raw('(select tenant_id, SUM(amount) as due from invoices where status = 0 AND deleted_at IS NULL group By tenant_id) as inv'), ['inv.tenant_id' => 'tenants.id'])
-        ->leftJoin(DB::raw('(select tenant_id, MAX(updated_at) as last_payment from invoices where status = 1 AND deleted_at IS NULL group By tenant_id) as inv_last'), ['inv_last.tenant_id' => 'tenants.id'])
-        ->select(['tenants.*', 'inv.due', 'inv_last.last_payment', 'users.first_name', 'users.last_name', 'users.status as userStatus', 'users.contact_number', 'users.email', 'property_units.unit_name', 'properties.name as property_name'])
-        ->where('tenants.owner_user_id', auth()->id())
-        ->where('tenants.status', TENANT_STATUS_ACTIVE)
-        ->orderBy('properties.name', 'asc')  // Sort by property name first
-        ->orderByRaw("REGEXP_REPLACE(property_units.unit_name, '[0-9]', '') ASC, CAST(REGEXP_REPLACE(property_units.unit_name, '[^0-9]', '') AS UNSIGNED) ASC")
-        ->get();
+        $query = Tenant::query()
+            ->leftJoin('users', 'tenants.user_id', '=', 'users.id')
+            ->leftJoin('properties', 'tenants.property_id', '=', 'properties.id')
+            ->leftJoin('property_units', 'tenants.unit_id', '=', 'property_units.id')
+            ->leftJoin(DB::raw('(select tenant_id, SUM(amount) as due from invoices where status = 0 AND deleted_at IS NULL group By tenant_id) as inv'), ['inv.tenant_id' => 'tenants.id'])
+            ->leftJoin(DB::raw('(select tenant_id, MAX(updated_at) as last_payment from invoices where status = 1 AND deleted_at IS NULL group By tenant_id) as inv_last'), ['inv_last.tenant_id' => 'tenants.id'])
+            ->select(['tenants.*', 'inv.due', 'inv_last.last_payment', 'users.first_name', 'users.last_name', 'users.status as userStatus', 'users.contact_number', 'users.email', 'property_units.unit_name', 'properties.name as property_name'])
+            ->where('tenants.owner_user_id', auth()->id())
+            ->where('tenants.status', TENANT_STATUS_ACTIVE);
+
+        if ($request) {
+            if ($request->filled('search')) {
+                $term = $request->search;
+                $query->where(function ($q) use ($term) {
+                    $q->where('users.first_name', 'like', "%$term%")
+                    ->orWhere('users.last_name', 'like', "%$term%")
+                    ->orWhere('users.email', 'like', "%$term%")
+                    ->orWhere('properties.name', 'like', "%$term%")
+                    ->orWhere('property_units.unit_name', 'like', "%$term%");
+                });
+            }
+            if ($request->filled('property_id') && $request->property_id != '0') {
+                $query->where('tenants.property_id', $request->property_id);
+            }
+            if ($request->filled('unit_id') && $request->unit_id != '0') {
+                $query->where('tenants.unit_id', $request->unit_id);
+            }
+        }
+
+        return $query
+            ->orderBy('properties.name', 'asc')
+            ->orderByRaw("REGEXP_REPLACE(property_units.unit_name, '[0-9]', '') ASC, CAST(REGEXP_REPLACE(property_units.unit_name, '[^0-9]', '') AS UNSIGNED) ASC")
+            ->paginate(50);
     }
 
     public function getAllData()
@@ -139,51 +161,69 @@ class TenantService
             ->leftJoin('property_units', 'tenants.unit_id', '=', 'property_units.id')
             ->select(['tenants.*', 'users.first_name', 'users.last_name', 'users.status as userStatus', 'users.contact_number', 'users.email', 'property_units.unit_name', 'properties.name as property_name'])
             ->where('tenants.owner_user_id', auth()->id());
-
+    
         return datatables($tenants)
             ->addIndexColumn()
             ->addColumn('name', function ($tenant) {
-                return '<div class="tenants-tbl-info-object d-flex align-items-center">
-                        <div class="flex-shrink-0">
-                            <img src="' . $tenant->image . '"
-                            class="rounded-circle avatar-md tbl-user-image"
-                            alt="">
-                        </div>
-                        <div class="flex-grow-1 ms-3">
-                            <h6>' . $tenant->first_name . ' ' . $tenant->last_name . '</h6>
-                            <p class="font-13">' . $tenant->email . '</p>
+                return '
+                    <div style="display:flex;align-items:center;gap:12px;">
+                        <img src="' . e($tenant->image) . '"
+                            alt=""
+                            style="width:36px;height:36px;border-radius:8px;border:2px solid #e0eaf5;object-fit:cover;flex-shrink:0;">
+                        <div>
+                            <div style="font-size:14px;font-weight:600;color:#185FA5;line-height:1.3;">
+                                ' . e($tenant->first_name) . ' ' . e($tenant->last_name) . '
+                            </div>
+                            <div style="font-size:12px;color:#6b7280;margin-top:1px;">
+                                ' . e($tenant->email) . '
+                            </div>
                         </div>
                     </div>';
             })
             ->addColumn('property', function ($tenant) {
-                return $tenant->property_name;
+                return '<span style="font-size:13px;color:#374151;">' . e($tenant->property_name) . '</span>';
             })
             ->addColumn('unit', function ($tenant) {
-                return $tenant->unit_name;
+                return '<span style="font-size:13px;color:#374151;">' . e($tenant->unit_name) . '</span>';
             })
             ->addColumn('status', function ($tenant) {
-                $html = '';
                 if ($tenant->userStatus == USER_STATUS_DELETED) {
-                    $html = ' <div class="status-btn status-btn-orange font-13 radius-4">' . __('Deleted') . '</div>';
-                } else {
-                    if ($tenant->status == TENANT_STATUS_ACTIVE) {
-                        $html = ' <div class="status-btn status-btn-green font-13 radius-4">' . __('Active') . '</div>';
-                    } elseif ($tenant->status == TENANT_STATUS_INACTIVE) {
-                        $html = ' <div class="status-btn status-btn-orange font-13 radius-4">' . __('Inactive') . '</div>';
-                    } elseif ($tenant->status == TENANT_STATUS_DRAFT) {
-                        $html = ' <div class="status-btn status-btn-blue font-13 radius-4">' . __('Draft') . '</div>';
-                    } elseif ($tenant->status == TENANT_STATUS_CLOSE) {
-                        $html = ' <div class="status-btn status-btn-red font-13 radius-4">' . __('Close') . '</div>';
-                    }
+                    return '<span style="display:inline-flex;align-items:center;font-size:11px;font-weight:500;padding:3px 9px;border-radius:99px;background:#F3F4F6;color:#6b7280;border:0.5px solid #e5e7eb;white-space:nowrap;">'
+                        . __('Deleted') . '</span>';
                 }
-                return $html;
+    
+                switch ($tenant->status) {
+                    case TENANT_STATUS_ACTIVE:
+                        return '<span style="display:inline-flex;align-items:center;font-size:11px;font-weight:500;padding:3px 9px;border-radius:99px;background:#E1F5EE;color:#0F6E56;white-space:nowrap;">'
+                            . __('Active') . '</span>';
+    
+                    case TENANT_STATUS_INACTIVE:
+                        return '<span style="display:inline-flex;align-items:center;font-size:11px;font-weight:500;padding:3px 9px;border-radius:99px;background:#FAEEDA;color:#854F0B;border:0.5px solid #F5D9A8;white-space:nowrap;">'
+                            . __('Inactive') . '</span>';
+    
+                    case TENANT_STATUS_DRAFT:
+                        return '<span style="display:inline-flex;align-items:center;font-size:11px;font-weight:500;padding:3px 9px;border-radius:99px;background:#E6F1FB;color:#0C447C;border:0.5px solid #B5D4F4;white-space:nowrap;">'
+                            . __('Draft') . '</span>';
+    
+                    case TENANT_STATUS_CLOSE:
+                        return '<span style="display:inline-flex;align-items:center;font-size:11px;font-weight:500;padding:3px 9px;border-radius:99px;background:#FAECE7;color:#993C1D;white-space:nowrap;">'
+                            . __('Close') . '</span>';
+    
+                    default:
+                        return '—';
+                }
             })
             ->addColumn('action', function ($tenant) {
-                return '<div class="tbl-action-btns d-inline-flex">
-                        <a href="' . route('owner.tenant.details', [$tenant->id, 'tab' => 'profile']) . '" class="p-1 tbl-action-btn" title="Edit"><span class="iconify" data-icon="carbon:view-filled"></span></a>
-                    </div>';
+                return '
+                    <a href="' . route('owner.tenant.details', [$tenant->id, 'tab' => 'profile']) . '"
+                        title="' . __('View') . '"
+                        style="display:inline-flex;align-items:center;justify-content:center;width:30px;height:30px;border-radius:7px;background:#f0f4fa;color:#185FA5;border:0.5px solid #e5e7eb;transition:all .13s;text-decoration:none;"
+                        onmouseover="this.style.background=\'#185FA5\';this.style.color=\'#fff\';"
+                        onmouseout="this.style.background=\'#f0f4fa\';this.style.color=\'#185FA5\';">
+                        <span class="iconify" data-icon="carbon:view-filled" style="font-size:13px;"></span>
+                    </a>';
             })
-            ->rawColumns(['name', 'property', 'status', 'action'])
+            ->rawColumns(['name', 'property', 'unit', 'status', 'action'])
             ->make(true);
     }
 

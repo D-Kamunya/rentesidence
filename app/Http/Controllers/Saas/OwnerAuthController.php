@@ -70,6 +70,8 @@ class OwnerAuthController extends Controller
 
             setOwnerDefaultMaintenanceIssue($user->id);
 
+            setOwnerDefaultTicketTopics($user->id);
+
             DB::commit();
             if (getOption('send_email_status', 0) == ACTIVE) {
                 $emails = [$user->email];

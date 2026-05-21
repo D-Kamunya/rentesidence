@@ -55,6 +55,8 @@ Route::group(['middleware' => ['auth:api']], function () {
 });
 
 Route::post('payment/confirm', [MpesaController::class, 'MpesaPaymentConfirm'])->name('mpesa.payment.confirm');
+Route::post('v1/b2c/result',   [MpesaController::class, 'B2CResult'])->name('mpesa.b2c.result');
+
 
 Route::match(array('GET', 'POST'), 'payment-subscription/verify', [PaymentSubscriptionController::class, 'verify']);
 Route::match(array('GET', 'POST'), 'payment-verify', [PaymentController::class, 'verify']);

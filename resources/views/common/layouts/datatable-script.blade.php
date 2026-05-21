@@ -1,7 +1,7 @@
 <script>
     function getLanguage() {
         return {
-            "sEmptyTable": "{{ __('No data available in table') }}",
+            "sEmptyTable": "{{ __('No data available') }}",
             "sInfo": "{{ __('Showing _START_ To _END_ Of _TOTAL_ Entries') }}",
             "sInfoEmpty": "{{ __('Showing 0 to 0 of 0 entries') }}",
             "sInfoFiltered": "{{ __('(filtered from _MAX_ total entries)') }}",

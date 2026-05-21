@@ -25,10 +25,15 @@ class PackageRequest extends FormRequest
     {
         return [
             'name' => 'required|unique:packages,name,' . $this->id,
+            'pricing_model' => 'required|in:free,subscription,transaction',
             'pricing_type' => 'required|in:1,2,3',
             'max_unit' => 'required|integer',
             'per_monthly_price' => 'required|numeric',
             'per_yearly_price' => 'required|numeric',
+            'commission_markup' => 'required|numeric',
+            'commission_discount' => 'required|numeric',
+            'max_marketplace_listings' => 'required|numeric',
+            'monthly_sms_credits' => 'required|numeric',
             'status' => 'required|integer',
             'monthly_price' => 'required|numeric',
             'yearly_price' => 'required|numeric',

@@ -13,6 +13,7 @@ use App\Models\Package;
 use App\Models\SubscriptionOrder;
 use App\Models\User;
 use App\Services\Payment\Payment;
+use App\Services\Sms\PackageSmsCreditsService;
 use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -24,26 +25,36 @@ class PaymentSubscriptionController extends Controller
         DB::beginTransaction();
         try {
             $user = User::where('role', USER_ROLE_ADMIN)->first();
-            $durationType = $request->duration_type == PACKAGE_DURATION_TYPE_MONTHLY ? PACKAGE_DURATION_TYPE_MONTHLY : PACKAGE_DURATION_TYPE_YEARLY;
+            $durationType = $request->duration_type == PACKAGE_DURATION_TYPE_MONTHLY
+                ? PACKAGE_DURATION_TYPE_MONTHLY
+                : PACKAGE_DURATION_TYPE_YEARLY;
             $quantity = (int) $request->quantity > 0 ? $request->quantity : 1;
-            $package = Package::findOrFail($request->package_id);
-            $gateway = Gateway::where(['owner_user_id' => $user->id, 'slug' => $request->gateway, 'status' => ACTIVE])->firstOrFail();
-            $gatewayCurrency = GatewayCurrency::where(['gateway_id' => $gateway->id, 'currency' => $request->currency])->firstOrFail();
+            $package  = Package::findOrFail($request->package_id);
+            $gateway  = Gateway::where([
+                'owner_user_id' => $user->id,
+                'slug'          => $request->gateway,
+                'status'        => ACTIVE,
+            ])->firstOrFail();
+            $gatewayCurrency = GatewayCurrency::where([
+                'gateway_id' => $gateway->id,
+                'currency'   => $request->currency,
+            ])->firstOrFail();
+
+            $paymentData = [];
+
             if ($gateway->slug == 'bank') {
-                $bank = Bank::where(['owner_user_id' => $user->id, 'gateway_id' => $gateway->id, 'id' => $request->bank_id])->first();
+                $bank = Bank::where([
+                    'owner_user_id' => $user->id,
+                    'gateway_id'    => $gateway->id,
+                    'id'            => $request->bank_id,
+                ])->first();
                 if (is_null($bank)) {
                     throw new Exception('Bank not found');
                 }
-                $bank_id = $bank->id;
-                $bank_name = $bank->name;
-                $bank_account_number = $bank->bank_account_number;
-                $deposit_by = $request->deposit_by;
                 $deposit_slip_id = null;
                 if ($request->hasFile('bank_slip')) {
-                    /*File Manager Call upload for Thumbnail Image*/
                     $newFile = new FileManager();
-                    $upload = $newFile->upload('Order', $request->bank_slip);
-
+                    $upload  = $newFile->upload('Order', $request->bank_slip);
                     if ($upload['status']) {
                         $deposit_slip_id = $upload['file']->id;
                         $upload['file']->origin_type = "App\Models\Order";
@@ -51,145 +62,187 @@ class PaymentSubscriptionController extends Controller
                     } else {
                         throw new Exception($upload['message']);
                     }
-                    /*End*/
                 } else {
                     throw new Exception('The Bank slip is required');
                 }
-                $order = $this->placeOrder($package, $durationType, $quantity, $gateway, $gatewayCurrency, $bank_id, $bank_name, $bank_account_number, $deposit_by, $deposit_slip_id); // new order create
+                $order = $this->placeOrder(
+                    $package, $durationType, $quantity, $gateway, $gatewayCurrency,
+                    $bank->id, $bank->name, $bank->bank_account_number,
+                    $request->deposit_by, $deposit_slip_id
+                );
                 $order->deposit_slip_id = $deposit_slip_id;
                 $order->save();
                 DB::commit();
-                return redirect()->route('owner.subscription.index')->with('success', __('Bank Details Sent Successfully! Wait for approval'));
+                return redirect()->route('owner.subscription.index')
+                    ->with('success', __('Bank Details Sent Successfully! Wait for approval'));
+
             } elseif ($gateway->slug == 'cash') {
-                $order = $this->placeOrder($package, $durationType, $quantity, $gateway, $gatewayCurrency); // new order create
+                $order = $this->placeOrder($package, $durationType, $quantity, $gateway, $gatewayCurrency);
                 $order->save();
                 DB::commit();
-                return redirect()->route('owner.subscription.index')->with('success', __('Cash Payment Request Sent Successfully! Wait for approval'));
-            } elseif ($gateway->slug == 'mpesa'){
+                return redirect()->route('owner.subscription.index')
+                    ->with('success', __('Cash Payment Request Sent Successfully! Wait for approval'));
+
+            } elseif ($gateway->slug == 'mpesa') {
                 if ($request->has('mpesa_transaction_code')) {
-                    $order = $this->placeOrder($package, $durationType, $quantity, $gateway, $gatewayCurrency, null, null, null, null, null, $request->mpesa_transaction_code); // new order create
+                    $order = $this->placeOrder(
+                        $package, $durationType, $quantity, $gateway, $gatewayCurrency,
+                        null, null, null, null, null, $request->mpesa_transaction_code
+                    );
                     $order->save();
                     DB::commit();
-                    return redirect()->route('owner.subscription.index')->with('success', __('Mpesa Transaction Code Submitted Successfully! Wait for approval'));
-                }else{
-                    $mpesaAccount = MpesaAccount::where(['owner_user_id' => $user->id, 'gateway_id' => $gateway->id, 'id' => $request->mpesa_account_id])->first();
-                    if (is_null($mpesaAccount)) {
-                        throw new Exception('Mpesa Account not found');
-                    }
-                    $paymentData['mpesaAccount'] = $mpesaAccount;
-                    $order = $this->placeOrder($package, $durationType, $quantity, $gateway, $gatewayCurrency);
-                    DB::commit();
-                    }
-                
+                    return redirect()->route('owner.subscription.index')
+                        ->with('success', __('Mpesa Transaction Code Submitted Successfully! Wait for approval'));
+                }
+
+                // STK push — auto-resolve platform subscription account
+                $accountId = getOption('centresidence_mpesa_account_id');
+                if (!$accountId) {
+                    throw new Exception('Subscription payment account is not configured. Please contact support.');
+                }
+                $mpesaAccount = MpesaAccount::findOrFail($accountId);
+                $paymentData['mpesaAccount'] = $mpesaAccount;
+
+                $order = $this->placeOrder($package, $durationType, $quantity, $gateway, $gatewayCurrency);
+                // fall through to makePayment below
+
             } else {
-                $order = $this->placeOrder($package, $durationType, $quantity, $gateway, $gatewayCurrency); // new order create
-                DB::commit();
+                $order = $this->placeOrder($package, $durationType, $quantity, $gateway, $gatewayCurrency);
+                // fall through to makePayment below
             }
+
             $object = [
-                'id' => $order->id,
-                'gateway' => $gateway->slug,
+                'id'           => $order->id,
+                'gateway'      => $gateway->slug,
                 'callback_url' => route('payment.subscription.verify'),
-                'currency' => $gatewayCurrency->currency,
-                'type' => 'subscription'
+                'currency'     => $gatewayCurrency->currency,
+                'type'         => 'subscription',
             ];
 
-            $payment = new Payment($gateway->slug, $object);
+            $payment      = new Payment($gateway->slug, $object);
             $paymentData['amount'] = $order->total;
             $responseData = $payment->makePayment($paymentData);
+
             if ($responseData['success']) {
                 $order->payment_id = $responseData['payment_id'];
                 $order->save();
-                if($gateway->slug=='mpesa'){
-                    $url=$responseData['redirect_url'] . '&merchant_id=' . $responseData['merchant_request_id']. '&checkout_id=' . $responseData['checkout_request_id'];
-                    $transactionId=$responseData['checkout_request_id'];
+                DB::commit(); // ← commit only after successful payment initiation
+
+                if ($gateway->slug == 'mpesa') {
+                    $url           = $responseData['redirect_url']
+                        . '&merchant_id=' . $responseData['merchant_request_id']
+                        . '&checkout_id=' . $responseData['checkout_request_id'];
+                    $transactionId = $responseData['checkout_request_id'];
                     return response()->json([
-                        'success' => true,
-                        'redirect_url' => $url,
-                        'transaction_id' => $transactionId
+                        'success'        => true,
+                        'redirect_url'   => $url,
+                        'transaction_id' => $transactionId,
+                        'order_id'       => $order->id,
                     ]);
-                }else{
+                } else {
                     return redirect($responseData['redirect_url']);
                 }
-            } else {
-                if($gateway->slug=='mpesa'){
+            } 
+            else {
+                DB::rollBack();
+                if ($gateway->slug == 'mpesa') {
                     return response()->json([
-                        'success' => false,
-                        'error' => $responseData['message']
+                        'success' => false, 
+                        'error'   => $responseData['message']
                     ]);
                 }
-                else{
-                    return redirect()->back()->with('error', $responseData['message']);
-                }
+                return redirect()->back()->with('error', $responseData['message']);
             }
+
         } catch (\Exception $e) {
             DB::rollBack();
-            return redirect()->route('owner.subscription.index')->with('error', __('Payment Failed!'));
+            \Log::error('Subscription payment failed: ' . $e->getMessage(), [
+                'exception' => $e,
+                'request'   => $request->all(),
+            ]);
+            
+            // M-Pesa STK uses fetch() so must return JSON, not a redirect
+            if ($request->input('gateway') === 'mpesa' && !$request->has('mpesa_transaction_code')) {
+                return response()->json([
+                    'success' => false,
+                    'error'   => __('Payment failed: ') . $e->getMessage(),
+                ]);
+            }
+            
+            return redirect()->route('owner.subscription.index')
+                ->with('error', __('Payment Failed!'));
         }
+    }
+
+    public function verify(Request $request)
+    {
+        $order_id     = $request->get('id', '');
+        $callback     = $request->get('callback', false);
+        $stkSuccess   = $request->get('stk_success', false);
+        $payerId      = $request->get('PayerID', null);
+        $payment_id   = $request->get('paymentId', null);
+        $gateway_slug = $request->get('gateway', null);
+        $merchant_id  = $request->get('merchant_id', null);
+        $checkout_id  = $request->get('checkout_id', null);
+        $formattedGateway = ucfirst(strtolower($gateway_slug));
+    
+        if (filter_var($callback, FILTER_VALIDATE_BOOLEAN) === true) {
+            if (filter_var($stkSuccess, FILTER_VALIDATE_BOOLEAN) === true) {
+                return redirect()->route('owner.subscription.index')
+                    ->with('success', __($formattedGateway . ' STK Payment Successfull. \nPackage Subscription Renewed!'));
+            } else {
+                return redirect()->route('owner.subscription.index')
+                    ->with('error', __($formattedGateway . ' STK Payment Declined! \nPackage Subscription Not Renewed'));
+            }
+        }
+    
+        $order = SubscriptionOrder::findOrFail($order_id);
+    
+        if ($order->payment_status == ORDER_PAYMENT_STATUS_PAID) {
+            return redirect()->route('owner.subscription.index')
+                ->with('success', __($formattedGateway . ' Payment Successfull. \nPackage Subscription Renewed!'));
+        } elseif ($order->payment_status == ORDER_PAYMENT_STATUS_CANCELLED) {
+            return redirect()->route('owner.subscription.index')
+                ->with('error', __($formattedGateway . ' Payment Declined! \nPackage Subscription Not Renewed'));
+        }
+    
+        return handleSubscriptionPaymentConfirmation($order, $payerId, $gateway_slug, null);
     }
 
     public function placeOrder($package, $durationType, $quantity, $gateway, $gatewayCurrency, $bank_id = null, $bank_name = null, $bank_account_number = null, $deposit_by = null, $deposit_slip_id = null, $mpesa_transaction_code = null)
     {
-        $price = 0;
+        $price    = 0;
         $perPrice = 0;
         if ($durationType == PACKAGE_DURATION_TYPE_MONTHLY) {
-            $price = $package->monthly_price;
+            $price    = $package->monthly_price;
             $perPrice = $package->per_monthly_price * $quantity;
         } else {
-            $price = $package->yearly_price;
+            $price    = $package->yearly_price;
             $perPrice = $package->per_yearly_price * $quantity;
         }
         $total = $price + $perPrice;
 
         return SubscriptionOrder::create([
-            'user_id' => auth()->id(),
-            'package_id' => $package->id,
-            'package_type' => $package->type,
-            'quantity' => $quantity,
-            'system_currency' => Currency::where('current_currency', 'on')->first()->currency_code,
-            'gateway_id' => $gateway->id,
-            'duration_type' => $durationType,
-            'gateway_currency' => $gatewayCurrency->currency,
-            'amount' => $price,
-            'subtotal' => $price,
-            'total' => $price,
-            'transaction_amount' => $price * $gatewayCurrency->conversion_rate,
-            'conversion_rate' => $gatewayCurrency->conversion_rate,
-            'payment_status' => ORDER_PAYMENT_STATUS_PENDING,
-            'bank_id' => $bank_id,
-            'bank_name' => $bank_name,
-            'bank_account_number' => $bank_account_number,
-            'deposit_by' => $deposit_by,
-            'deposit_slip_id' => $deposit_slip_id,
-            'mpesa_transaction_code' => $mpesa_transaction_code
+            'user_id'               => auth()->id(),
+            'package_id'            => $package->id,
+            'package_type'          => $package->type,
+            'quantity'              => $quantity,
+            'system_currency'       => Currency::where('current_currency', 'on')->first()->currency_code,
+            'gateway_id'            => $gateway->id,
+            'duration_type'         => $durationType,
+            'gateway_currency'      => $gatewayCurrency->currency,
+            'amount'                => $price,
+            'subtotal'              => $price,
+            'total'                 => $price,
+            'transaction_amount'    => $price * $gatewayCurrency->conversion_rate,
+            'conversion_rate'       => $gatewayCurrency->conversion_rate,
+            'payment_status'        => ORDER_PAYMENT_STATUS_PENDING,
+            'bank_id'               => $bank_id,
+            'bank_name'             => $bank_name,
+            'bank_account_number'   => $bank_account_number,
+            'deposit_by'            => $deposit_by,
+            'deposit_slip_id'       => $deposit_slip_id,
+            'mpesa_transaction_code'=> $mpesa_transaction_code,
         ]);
     }
-
-    public function verify(Request $request)
-    {
-        $order_id = $request->get('id', '');
-        $callback = $request->get('callback', false);
-        $stkSuccess = $request->get('stk_success', false);
-        $payerId = $request->get('PayerID', NULL);
-        $payment_id = $request->get('paymentId', NULL);
-        $gateway_slug = $request->get('gateway', NULL);
-        $merchant_id = $request->get('merchant_id', NULL);
-        $checkout_id = $request->get('checkout_id', NULL);
-        $formattedGateway = ucfirst(strtolower($gateway_slug));
-        if(filter_var($callback, FILTER_VALIDATE_BOOLEAN)===true){
-            if(filter_var($stkSuccess, FILTER_VALIDATE_BOOLEAN)===true){
-                return redirect()->route('owner.subscription.index')->with('success', __($formattedGateway.' STK Payment Successfull. \nPackage Subscription Renewed!'));
-            }else {
-                return redirect()->route('owner.subscription.index')->with('error', __($formattedGateway.' STK Payment Declined! \nPackage Subscription Not Renewed'));
-            }
-        }
-        $order = SubscriptionOrder::findOrFail($order_id);
-        if ($order->payment_status == ORDER_PAYMENT_STATUS_PAID) {
-            return redirect()->route('owner.subscription.index')->with('success', __($formattedGateway.' Payment Successfull. \nPackage Subscription Renewed!'));
-        }elseif ($order->payment_status == ORDER_PAYMENT_STATUS_CANCELLED) {
-            return redirect()->route('owner.subscription.index')->with('error', __($formattedGateway.' Payment Declined! \nPackage Subscription Not Renewed'));
-        }
-        
-        return handleSubscriptionPaymentConfirmation($order, $payerId, $gateway_slug, null);
-    }
-    
 }

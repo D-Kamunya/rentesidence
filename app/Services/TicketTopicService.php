@@ -50,12 +50,23 @@ class TicketTopicService
     public function delete($id)
     {
         try {
-            $ticket = TicketTopic::where('owner_user_id', auth()->id())->findOrFail($id);
+            $ticket = TicketTopic::where('owner_user_id', auth()->id())
+                ->where('id', $id)
+                ->firstOrFail();
+
+            if ((int)$ticket->is_default === 1) {
+                return redirect()->back()
+                    ->with('error', 'Default topics cannot be deleted.');
+            }
+
             $ticket->delete();
-            return redirect()->back()->with('success', __(DELETED_SUCCESSFULLY));
+
+            return redirect()->back()
+                ->with('success', __(DELETED_SUCCESSFULLY));
+
         } catch (Exception $e) {
             $message = getErrorMessage($e, $e->getMessage());
-            return $this->error([],  $message);
+            return redirect()->back()->with('error', $message);
         }
     }
 }

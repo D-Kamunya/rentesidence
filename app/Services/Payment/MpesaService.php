@@ -34,26 +34,42 @@ class MpesaService extends BasePaymentService
 
     public function makePayment($paymentData)
     {
-        $customerPhoneNumber=auth()->user()->contact_number ?? $paymentData['mpesaNumber'];
+        $customerPhoneNumber = $paymentData['phone'] 
+            ?? $paymentData['mpesaNumber'] 
+            ?? auth()->user()->contact_number;
+
         $this->setAmount($paymentData['amount']);
-        $mpesaAccount=$paymentData['mpesaAccount'];
-        $amount = $this->amount;
-        $transaction_type=$this->payment['type'];
-        $callbackurl=  $this->callbackUrl;
-        $response = $this->stkpush($customerPhoneNumber, $amount, $mpesaAccount,$transaction_type, config('MPESA_CALLBACK_URL'));
+        $mpesaAccount    = $paymentData['mpesaAccount'];
+        $amount          = $this->amount;
+        $transaction_desc = $this->payment['type'];
+        $callbackurl     = $this->callbackUrl;
+
+        $callbackWithParams = config('mpesa.callback_url')
+            . '?type=' . urlencode($this->payment['type'])
+            . '&id='   . urlencode($this->payment['id']);
+
+        $response = $this->stkpush(
+            $customerPhoneNumber,
+            $amount,
+            $mpesaAccount,
+            $transaction_desc,
+            $callbackWithParams
+        );
+
         $result = json_decode((string)$response, true);
 
-        $data['success'] = false;
+        $data['success']      = false;
         $data['redirect_url'] = $callbackurl;
-        $data['payment_id'] = '';
-        $data['message'] = __(SOMETHING_WENT_WRONG);
+        $data['payment_id']   = '';
+        $data['message']      = __(SOMETHING_WENT_WRONG);
+
         try {
-            if (isset($result['ResponseCode']) && $result['ResponseCode']==DEACTIVATE) { 
+            if (isset($result['ResponseCode']) && $result['ResponseCode'] == DEACTIVATE) {
                 $data['merchant_request_id'] = $result['MerchantRequestID'];
-                $data['checkout_request_id'] =  $result['CheckoutRequestID'];
-                $data['payment_id'] = $result['CheckoutRequestID'];
-                $data['success'] = true;
-            }elseif (isset($result['errorMessage'])) {
+                $data['checkout_request_id'] = $result['CheckoutRequestID'];
+                $data['payment_id']          = $result['CheckoutRequestID'];
+                $data['success']             = true;
+            } elseif (isset($result['errorMessage'])) {
                 $data['message'] = __($result['errorMessage']);
             }
             return $data;
@@ -91,4 +107,5 @@ class MpesaService extends BasePaymentService
         }
         return $data;
     }
+
 }

@@ -46,10 +46,13 @@ class TenantController extends Controller
             $data['pageTitle'] = __('Tenants');
             $data['properties'] = $this->propertyService->getAll();
             if (getOption('app_card_data_show', 1) == 1) {
-                $data['tenants'] = $this->tenantService->getActiveAll();
+            $data['tenants'] = $this->tenantService->getActiveAll($request); // pass $request
             }
             if ($request->ajax()) {
-                return $this->tenantService->getAllData();
+            return response()->json([
+                    'cards'      => view('owner.tenants.partials.cards', $data)->render(),
+                    'pagination' => (string) $data['tenants']->appends($request->query())->links(),
+                ]);
             }
             return view('owner.tenants.index', $data);
         }
@@ -93,12 +96,26 @@ class TenantController extends Controller
         $data['subNavAllTenantActiveClass'] = 'active';
         $data['tenant'] = $this->tenantService->getDetailsById($id);
         $data['countries'] = $this->locationService->getCountry()->getData()->data;
-        $data['previousStates'] = $this->locationService->getStateByCountryId($data['tenant']->previous_country_id)->getData()->data->states;
-        $data['previousSities'] = $this->locationService->getCitiesByStateId($data['tenant']->previous_state_id)->getData()->data->cities;
-        $data['permanentStates'] = $this->locationService->getStateByCountryId($data['tenant']->permanent_country_id)->getData()->data->states;
-        $data['permanentSities'] = $this->locationService->getCitiesByStateId($data['tenant']->permanent_state_id)->getData()->data->cities;
+
+        // $data['previousStates'] = $data['tenant']->previous_country_id
+        //     ? $this->locationService->getStateByCountryId($data['tenant']->previous_country_id)->getData()->data->states
+        //     : [];
+
+        // $data['previousSities'] = $data['tenant']->previous_state_id
+        //     ? $this->locationService->getCitiesByStateId($data['tenant']->previous_state_id)->getData()->data->cities
+        //     : [];
+
+        // $data['permanentStates'] = $data['tenant']->permanent_country_id
+        //     ? $this->locationService->getStateByCountryId($data['tenant']->permanent_country_id)->getData()->data->states
+        //     : [];
+
+        // $data['permanentSities'] = $data['tenant']->permanent_state_id
+        //     ? $this->locationService->getCitiesByStateId($data['tenant']->permanent_state_id)->getData()->data->cities
+        //     : [];
+
         $data['properties'] = $this->propertyService->getAll();
         $data['units'] = $this->propertyService->getPropertyWithUnitsById($data['tenant']->property_id)->getData()->data->units ?? [];
+
         return view('owner.tenants.edit', $data);
     }
 

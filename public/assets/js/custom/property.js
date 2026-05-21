@@ -1,3 +1,23 @@
+// Global preloader cleanup
+$(document).ajaxComplete(function() {
+    setTimeout(function() {
+        if (typeof $.LoadingOverlay !== 'undefined') {
+            try { $.LoadingOverlay("hide"); } catch(e) {}
+        }
+        $('.preloader, .loader, .loading-overlay, #preloader, .spinner-overlay').hide();
+        $('.pace, .pace-progress, .pace-inactive').hide();
+        $('body').removeClass('loading');
+    }, 50);
+});
+
+// Safety net: hide preloader every 2 seconds if still visible
+setInterval(function() {
+    var preloader = document.querySelector('.preloader, .loader, .loading-overlay, #preloader');
+    if (preloader && preloader.style.display !== 'none') {
+        preloader.style.display = 'none';
+    }
+}, 2000);
+
 // State selector
 var thisStateSelector;
 var property_id = $("#property_id").val();
@@ -13,11 +33,21 @@ function stepChange(response) {
     var type = "error";
     $(".error-message").remove();
     $(".is-invalid").removeClass("is-invalid");
+    
+    hidePreloader();
+    
     if (response["status"] == true) {
         output = output + response["message"];
         type = "success";
         toastr.success(response.data.message);
         $("#addHtmlForm").html(response.data.view);
+        
+        // Sync persistent property_id input
+        property_id = $(".property_id").val() || property_id;
+        if (property_id) {
+            $("#property_id").val(property_id);
+        }
+        
         if (response.data.step == 3) {
             initUnitImagePreviewer();
         }
@@ -25,61 +55,39 @@ function stepChange(response) {
         if (response.data.step == 4) {
             propertyUnitIds = response.data.propertyUnitIds;
         }
-        if (response.data.property.property_detail) {
-            country_id = response.data.property.property_detail.country_id;
-            state_id = response.data.property.property_detail.state_id;
-            city_id = response.data.property.property_detail.city_id;
-            if (country_id) {
-                getStateByCountryId(country_id);
-            }
-            if (state_id) {
-                getCitiesByState(state_id);
-            }
-        }
+        
         datePicker();
         if (response.data.step == 5) {
-            thumbmnilImage();
-            dropzone();
+            setTimeout(function() {
+                thumbmnilImage();
+                dropzone();
+            }, 300);
         }
         alertAjaxMessage(type, output);
     } else {
         commonHandler(response);
     }
+    
+    setTimeout(hidePreloader, 500);
+}
+
+// Helper function to hide preloader
+function hidePreloader() {
+    if (typeof $.LoadingOverlay !== 'undefined') {
+        try { $.LoadingOverlay("hide"); } catch(e) {}
+    }
+    $('.preloader, .loader, .loading-overlay, #preloader, .spinner-overlay').hide();
+    $('.pace, .pace-progress, .pace-inactive').hide();
+    $('body').removeClass('loading');
 }
 
 // Go to Step
 function stepActiveClass(step) {
-    if (step == 1) {
-        $("#accountInformationStep").addClass("active");
-        $("#locationStep").removeClass("active");
-        $("#unitStep").removeClass("active");
-        $("#rentChargesStep").removeClass("active");
-        $("#imageStep").removeClass("active");
-    } else if (step == 2) {
-        $("#accountInformationStep").addClass("active");
-        $("#locationStep").addClass("active");
-        $("#unitStep").removeClass("active");
-        $("#rentChargesStep").removeClass("active");
-        $("#imageStep").removeClass("active");
-    } else if (step == 3) {
-        $("#accountInformationStep").addClass("active");
-        $("#locationStep").addClass("active");
-        $("#unitStep").addClass("active");
-        $("#rentChargesStep").removeClass("active");
-        $("#imageStep").removeClass("active");
-    } else if (step == 4) {
-        $("#accountInformationStep").addClass("active");
-        $("#locationStep").addClass("active");
-        $("#unitStep").addClass("active");
-        $("#rentChargesStep").addClass("active");
-        $("#imageStep").removeClass("active");
-    } else if (step == 5) {
-        $("#accountInformationStep").addClass("active");
-        $("#locationStep").addClass("active");
-        $("#unitStep").addClass("active");
-        $("#rentChargesStep").addClass("active");
-        $("#imageStep").addClass("active");
-    }
+    $("#accountInformationStep").toggleClass("active", step >= 1);
+    $("#locationStep").toggleClass("active", step >= 2);
+    $("#unitStep").toggleClass("active", step >= 3);
+    $("#rentChargesStep").toggleClass("active", step >= 4);
+    $("#imageStep").toggleClass("active", step >= 5);
 }
 
 function datePicker() {
@@ -90,42 +98,114 @@ function datePicker() {
 }
 
 function thumbmnilImage() {
-    document
-        .querySelector("#app-logo-profile-img-file-input")
-        .addEventListener("change", function () {
-            var o = document.querySelector(".app-logo-user-profile-image"),
-                e = document.querySelector(".app-logo-profile-img-file-input")
-                    .files[0],
-                i = new FileReader();
-            i.addEventListener(
-                "load",
-                function () {
-                    o.src = i.result;
+    var fileInput = document.querySelector("#app-logo-profile-img-file-input");
+    var previewImg = document.querySelector(".app-logo-user-profile-image");
+    
+    if (!fileInput || !previewImg) return;
+    
+    var newInput = fileInput.cloneNode(true);
+    fileInput.parentNode.replaceChild(newInput, fileInput);
+    
+    newInput.addEventListener("change", function () {
+        var file = this.files[0];
+        if (!file) return;
+        
+        var reader = new FileReader();
+        reader.onload = function(e) {
+            previewImg.src = e.target.result;
+        };
+        reader.readAsDataURL(file);
+    });
+}
+
+// Client-side resize function for thumbnail
+function resizeAndUpload(input, file) {
+    var maxWidth = 800;
+    var maxHeight = 600;
+    
+    var img = new Image();
+    var reader = new FileReader();
+    
+    reader.onload = function(e) {
+        img.src = e.target.result;
+    };
+    
+    img.onload = function() {
+        var canvas = document.createElement('canvas');
+        var ctx = canvas.getContext('2d');
+        
+        var width = img.width;
+        var height = img.height;
+        
+        if (width > maxWidth) {
+            height *= maxWidth / width;
+            width = maxWidth;
+        }
+        if (height > maxHeight) {
+            width *= maxHeight / height;
+            height = maxHeight;
+        }
+        
+        canvas.width = width;
+        canvas.height = height;
+        ctx.drawImage(img, 0, 0, width, height);
+        
+        canvas.toBlob(function(blob) {
+            var resizedFile = new File([blob], file.name, {
+                type: 'image/jpeg',
+                lastModified: Date.now()
+            });
+            
+            var formData = new FormData();
+            formData.append('file', resizedFile);
+            formData.append('_token', $('meta[name="csrf-token"]').attr('content'));
+            
+            $.ajax({
+                url: input.dataset.route,
+                method: 'POST',
+                data: formData,
+                processData: false,
+                contentType: false,
+                success: function(response) {
+                    toastr.success('Thumbnail updated');
                 },
-                !1
-            ),
-                e && i.readAsDataURL(e);
-        });
+                error: function(error) {
+                    toastr.error('Upload failed');
+                }
+            });
+        }, 'image/jpeg', 0.85);
+    };
+    
+    reader.readAsDataURL(file);
 }
 
 function dropzone() {
-    var dropzonePreviewNode = document.querySelector("#dropzone-preview-list");
-    dropzonePreviewNode.id = "";
-    var previewTemplate = dropzonePreviewNode.parentNode.innerHTML;
-    dropzonePreviewNode.parentNode.removeChild(dropzonePreviewNode);
+    var dropzoneEl = document.querySelector(".dropzone");
+    if (!dropzoneEl || dropzoneEl.classList.contains('dz-clickable')) return;
+    
     var route = $("#imageStoreRoute").val() + "/" + $(".property_id").val();
+    
     var dropzone = new Dropzone(".dropzone", {
         method: "post",
         url: route,
         headers: {
             "X-CSRF-TOKEN": $('meta[name="csrf-token"]').attr("content"),
         },
-        previewTemplate: previewTemplate,
+        resizeWidth: 1200,
+        resizeHeight: 900,
+        resizeQuality: 0.8,
+        resizeMethod: 'contain',
+        thumbnailWidth: 200,
+        thumbnailHeight: 150,
+        thumbnailMethod: 'crop',
+        maxFilesize: 5,
+        acceptedFiles: 'image/jpeg,image/png,image/jpg',
+        previewTemplate: '<div class="dz-preview dz-file-preview"><div class="dz-image"><img data-dz-thumbnail /></div><div class="dz-remove" data-dz-remove>Remove</div></div>',
         previewsContainer: "#dropzone-preview",
-        success: function (response) {
+        success: function(response) {
             toastr.success("Uploaded Successfully");
         },
-        error: function (error) {
+        error: function(error) {
             if (error.status) {
                 toastr.error(error.responseJSON.message);
             }
@@ -133,7 +213,115 @@ function dropzone() {
     });
 }
 
-// Get location
+// ────────────────────────────────────────────────────────
+// BACK BUTTON HANDLERS - Use persistent #property_id input
+// ────────────────────────────────────────────────────────
+$(document).on("click", ".locationBack", function () {
+    var current_property_id = $("#property_id").val() || property_id;
+    console.log('locationBack - property_id:', current_property_id);
+    getPropertyInformation(current_property_id);
+    stepActiveClass(1);
+});
+
+$(document).on("click", ".unitBack", function () {
+    var current_property_id = $("#property_id").val() || property_id;
+    console.log('unitBack - property_id:', current_property_id);
+    getLocation(current_property_id);
+    stepActiveClass(2);
+});
+
+$(document).on("click", ".rentChargeBack", function () {
+    var current_property_id = $("#property_id").val() || property_id;
+    console.log('rentChargeBack - property_id:', current_property_id);
+    getUnitByPropertyId(current_property_id);
+    stepActiveClass(3);
+});
+
+$(document).on("click", ".imageBack", function () {
+    var current_property_id = $("#property_id").val() || property_id;
+    console.log('imageBack - property_id:', current_property_id);
+    getRentCharge(current_property_id);
+    stepActiveClass(4);
+});
+
+// ────────────────────────────────────────────────────────
+// GET PROPERTY INFORMATION (Step 1)
+// ────────────────────────────────────────────────────────
+function getPropertyInformation(property_id) {
+    var getPropertyInformationRoute = $("#getPropertyInformationRoute").val();
+    commonAjax(
+        "GET",
+        getPropertyInformationRoute,
+        getPropertyInformationRes,
+        getPropertyInformationRes,
+        { property_id: property_id }
+    );
+}
+
+function getPropertyInformationRes(response) {
+    $("#addHtmlForm").html(response.data);
+    datePicker();
+}
+
+// ────────────────────────────────────────────────────────
+// GET LOCATION (Step 2)
+// ────────────────────────────────────────────────────────
+function getLocation(property_id) {
+    console.log('getLocation called, property_id:', property_id);
+    if (!property_id || property_id === 'null' || property_id === '') {
+        property_id = $("#property_id").val();
+        console.log('Fallback property_id from persistent input:', property_id);
+    }
+    if (!property_id) {
+        console.error('PROPERTY ID IS MISSING!');
+        return;
+    }
+    var getLocationRoute = $("#getLocationRoute").val();
+    commonAjax("GET", getLocationRoute, getLocationRes, getLocationRes, {
+        property_id: property_id,
+    });
+}
+
+function getLocationRes(response) {
+    $("#addHtmlForm").html(response.data.view);
+    property_id = $("#property_id").val();
+    datePicker();
+}
+
+// ────────────────────────────────────────────────────────
+// GET UNITS (Step 3)
+// ────────────────────────────────────────────────────────
+function getUnitByPropertyId(property_id) {
+    var getUnitRoute = $("#getUnitRoute").val();
+    commonAjax("GET", getUnitRoute, getUnitRes, getUnitRes, {
+        property_id: property_id,
+    });
+}
+
+function getUnitRes(response) {
+    $("#addHtmlForm").html(response.data.view);
+    datePicker();
+    initUnitImagePreviewer();
+}
+
+// ────────────────────────────────────────────────────────
+// GET RENT CHARGES (Step 4)
+// ────────────────────────────────────────────────────────
+function getRentCharge(property_id) {
+    var getRentChargeRoute = $("#getRentChargeRoute").val();
+    commonAjax("GET", getRentChargeRoute, getRentChargeRes, getRentChargeRes, {
+        property_id: property_id,
+    });
+}
+
+function getRentChargeRes(response) {
+    $("#addHtmlForm").html(response.data.view);
+    datePicker();
+}
+
+// ────────────────────────────────────────────────────────
+// STATE & CITY (kept for any future dropdown use)
+// ────────────────────────────────────────────────────────
 $(document).on("change", ".country_id", function () {
     thisStateSelector = $(this);
     getStateByCountryId($(thisStateSelector).val());
@@ -186,6 +374,28 @@ function getCitiesByState(state_id) {
     );
 }
 
+function getCitiesByStateRes(response) {
+    var cities = response.data.cities;
+    var optionsHtml = cities
+        .map(function (opt) {
+            return (
+                "<option " +
+                (city_id == opt.id ? "selected" : "") +
+                ' value="' +
+                opt.id +
+                '">' +
+                opt.name +
+                "</option>"
+            );
+        })
+        .join("");
+    var html = '<option value="">--Select City--</option>' + optionsHtml;
+    $("#cityHtmlOption").html(html);
+}
+
+// ────────────────────────────────────────────────────────
+// UNIT EDIT & ADD
+// ────────────────────────────────────────────────────────
 $(document).on("click", ".unit-edit", function () {
     let detailsUrl = $(this).data("detailsurl");
     commonAjax("GET", detailsUrl, getDataEditRes, getDataEditRes);
@@ -207,41 +417,34 @@ function getDataEditRes(response) {
     selector.find(".error-message").remove();
     selector.modal("show");
 
-    var imageUrl =
-        response.data.unit.folder_name + "/" + response.data.unit.file_name;
-    var domain = window.location.origin; // Get the current domain of the application
-    var unitImage = domain + "/storage/" + imageUrl; // Construct the full asset URL
+    var imageUrl = response.data.unit.folder_name + "/" + response.data.unit.file_name;
+    var domain = window.location.origin;
+    var unitImage = domain + "/storage/" + imageUrl;
 
-    if (
-        response.data.unit.file_name !== null &&
-        response.data.unit.file_name !== undefined
-    ) {
+    if (response.data.unit.file_name !== null && response.data.unit.file_name !== undefined) {
         document.getElementById("unit-image").setAttribute("src", unitImage);
     } else {
-        document
-            .getElementById("unit-image")
-            .setAttribute("src", domain + "/assets/images/no-image.jpg");
+        document.getElementById("unit-image").setAttribute("src", domain + "/assets/images/no-image.jpg");
     }
+    
     selector.find("input[name=property_id]").val(response.data.property.id);
     selector.find("input[name=unit_id]").val(response.data.unit.id);
     selector.find("input[name=unit_name]").val(response.data.unit.unit_name);
     selector.find("input[name=bedroom]").val(response.data.unit.bedroom);
     selector.find("input[name=bath]").val(response.data.unit.bath);
     selector.find("input[name=kitchen]").val(response.data.unit.kitchen);
-    selector
-        .find("input[name=square_feet]")
-        .val(response.data.unit.square_feet);
+    selector.find("input[name=square_feet]").val(response.data.unit.square_feet);
     selector.find("input[name=amenities]").val(response.data.unit.amenities);
     selector.find("input[name=condition]").val(response.data.unit.condition);
     selector.find("input[name=parking]").val(response.data.unit.parking);
-    selector
-        .find("input[name=general_rent]")
-        .val(response.data.unit.general_rent);
+    selector.find("input[name=general_rent]").val(response.data.unit.general_rent);
+    
     if (response.data.unit.security_deposit_type === 0) {
         $('#security_deposit_type option[value="0"]').prop("selected", true);
     } else if (response.data.unit.security_deposit_type === 1) {
         $('#security_deposit_type option[value="1"]').prop("selected", true);
     }
+    
     if (response.data.unit.late_fee_type === 0) {
         $('#late_fee_type option[value="0"]').prop("selected", true);
     } else if (response.data.unit.late_fee_type === 1) {
@@ -249,163 +452,33 @@ function getDataEditRes(response) {
     }
 
     if (response.data.unit.rent_type === 1) {
-        // Add the 'active' class to the button
         $("#monthly-unit-block-tab").addClass("active");
-        selector
-            .find("input[name=monthly_due_day]")
-            .val(response.data.unit.monthly_due_day);
-        selector
-            .find("input[name=rent_type]")
-            .val(response.data.unit.rent_type);
+        selector.find("input[name=monthly_due_day]").val(response.data.unit.monthly_due_day);
+        selector.find("input[name=rent_type]").val(response.data.unit.rent_type);
         $("#monthly-unit-block-tab-pane").addClass("show active");
     } else if (response.data.unit.rent_type === 2) {
         $("#yearly-unit-block-tab").addClass("active");
-        selector
-            .find("input[name=yearly_due_day]")
-            .val(response.data.unit.yearly_due_day);
-        selector
-            .find("input[name=rent_type]")
-            .val(response.data.unit.rent_type);
+        selector.find("input[name=yearly_due_day]").val(response.data.unit.yearly_due_day);
+        selector.find("input[name=rent_type]").val(response.data.unit.rent_type);
         $("#yearly-unit-block-tab-pane").addClass("show active");
     } else if (response.data.unit.rent_type === 3) {
         $("#custom-unit-block-tab").addClass("active");
-        selector
-            .find("input[name=lease_start_date]")
-            .val(response.data.unit.lease_start_date);
-        selector
-            .find("input[name=lease_end_date]")
-            .val(response.data.unit.lease_end_date);
-        selector
-            .find("input[name=lease_payment_due_date]")
-            .val(response.data.unit.lease_payment_due_date);
-        selector
-            .find("input[name=rent_type]")
-            .val(response.data.unit.rent_type);
+        selector.find("input[name=lease_start_date]").val(response.data.unit.lease_start_date);
+        selector.find("input[name=lease_end_date]").val(response.data.unit.lease_end_date);
+        selector.find("input[name=lease_payment_due_date]").val(response.data.unit.lease_payment_due_date);
+        selector.find("input[name=rent_type]").val(response.data.unit.rent_type);
         $("#custom-unit-block-tab-pane").addClass("show active");
     }
-    selector
-        .find("input[name=security_deposit]")
-        .val(response.data.unit.security_deposit);
+    
+    selector.find("input[name=security_deposit]").val(response.data.unit.security_deposit);
     selector.find("input[name=late_fee]").val(response.data.unit.late_fee);
-    selector
-        .find("input[name=incident_receipt]")
-        .val(response.data.unit.incident_receipt);
-
-    selector
-        .find("input[name=description]")
-        .val(response.data.unit.description);
+    selector.find("input[name=incident_receipt]").val(response.data.unit.incident_receipt);
+    selector.find("input[name=description]").val(response.data.unit.description);
 }
 
-function getCitiesByStateRes(response) {
-    var cities = response.data.cities;
-    var optionsHtml = cities
-        .map(function (opt) {
-            return (
-                "<option " +
-                (city_id == opt.id ? "selected" : "") +
-                ' value="' +
-                opt.id +
-                '">' +
-                opt.name +
-                "</option>"
-            );
-        })
-        .join("");
-    var html = '<option value="">--Select City--</option>' + optionsHtml;
-    $("#cityHtmlOption").html(html);
-}
-
-// Back step
-$(document).on("click", ".locationBack", function () {
-    var property_id = $(".property_id").val();
-    getPropertyInformation(property_id);
-    stepActiveClass(1);
-});
-
-$(document).on("click", ".unitBack", function () {
-    var property_id = $(".property_id").val();
-    getLocation(property_id);
-    stepActiveClass(2);
-});
-
-$(document).on("click", ".rentChargeBack", function () {
-    var property_id = $(".property_id").val();
-    getUnitByPropertyId(property_id);
-    stepActiveClass(3);
-});
-
-$(document).on("click", ".imageBack", function () {
-    var property_id = $(".property_id").val();
-    getRentCharge(property_id);
-    stepActiveClass(4);
-});
-
-// Back step function
-function getPropertyInformation(property_id) {
-    var getPropertyInformationRoute = $("#getPropertyInformationRoute").val();
-    commonAjax(
-        "GET",
-        getPropertyInformationRoute,
-        getPropertyInformationRes,
-        getPropertyInformationRes,
-        { property_id: property_id }
-    );
-}
-
-function getPropertyInformationRes(response) {
-    $("#addHtmlForm").html(response.data);
-    datePicker();
-}
-
-function getLocation(property_id) {
-    var getLocationRoute = $("#getLocationRoute").val();
-    commonAjax("GET", getLocationRoute, getLocationRes, getLocationRes, {
-        property_id: property_id,
-    });
-}
-
-function getLocationRes(response) {
-    $("#addHtmlForm").html(response.data.view);
-    datePicker();
-    if (response.data.property.property_detail) {
-        country_id = response.data.property.property_detail.country_id;
-        state_id = response.data.property.property_detail.state_id;
-        city_id = response.data.property.property_detail.city_id;
-        if (country_id) {
-            getStateByCountryId(country_id);
-        }
-        if (state_id) {
-            getCitiesByState(state_id);
-        }
-    }
-}
-
-function getUnitByPropertyId(property_id) {
-    var getUnitRoute = $("#getUnitRoute").val();
-    commonAjax("GET", getUnitRoute, getUnitRes, getUnitRes, {
-        property_id: property_id,
-    });
-}
-
-function getUnitRes(response) {
-    $("#addHtmlForm").html(response.data.view);
-    datePicker();
-    initUnitImagePreviewer();
-}
-
-function getRentCharge(property_id) {
-    var getRentChargeRoute = $("#getRentChargeRoute").val();
-    commonAjax("GET", getRentChargeRoute, getUnitRes, getUnitRes, {
-        property_id: property_id,
-    });
-}
-
-function getRentChargeRes(response) {
-    $("#addHtmlForm").html(response.data.view);
-    datePicker();
-    dropzone();
-}
-
+// ────────────────────────────────────────────────────────
+// OTHER EVENT HANDLERS
+// ────────────────────────────────────────────────────────
 $(document).on("change", "#sameUnitRent", function () {
     if ($(this).prop("checked")) {
         var select_unit_id = $("#select_unit_id").val();
@@ -414,23 +487,15 @@ $(document).on("change", "#sameUnitRent", function () {
             toastr.error("Select unit name");
         } else {
             var general_rent = $("#general_rent" + select_unit_id).val();
-            var security_deposit = $(
-                "#security_deposit" + select_unit_id
-            ).val();
+            var security_deposit = $("#security_deposit" + select_unit_id).val();
             var late_fee = $("#late_fee" + select_unit_id).val();
-            var incident_receipt = $(
-                "#incident_receipt" + select_unit_id
-            ).val();
+            var incident_receipt = $("#incident_receipt" + select_unit_id).val();
             if (general_rent != "") {
                 for (let i = 0; i < propertyUnitIds.length; i++) {
                     $("#general_rent" + propertyUnitIds[i]).val(general_rent);
-                    $("#security_deposit" + propertyUnitIds[i]).val(
-                        security_deposit
-                    );
+                    $("#security_deposit" + propertyUnitIds[i]).val(security_deposit);
                     $("#late_fee" + propertyUnitIds[i]).val(late_fee);
-                    $("#incident_receipt" + propertyUnitIds[i]).val(
-                        incident_receipt
-                    );
+                    $("#incident_receipt" + propertyUnitIds[i]).val(incident_receipt);
                 }
             } else {
                 $(this).prop("checked", false);
@@ -463,20 +528,13 @@ $(document).on("click", ".add-select_rent_type", function () {
     $("#add_rent_type").val(select_rent_type);
 });
 
-// Thumbnail image upload
 $(document).on("change", ".thumbnailImage", function () {
     var thumbnailImageRoute = $(this).data("route");
     var fd = new FormData();
     var files = $(".thumbnailImage")[0].files;
     if (files.length > 0) {
         fd.append("file", files[0]);
-        commonAjax(
-            "POST",
-            thumbnailImageRoute,
-            getThumbnailImageRes,
-            getThumbnailImageRes,
-            fd
-        );
+        commonAjax("POST", thumbnailImageRoute, getThumbnailImageRes, getThumbnailImageRes, fd);
     } else {
         alert("Please select a file.");
     }
@@ -494,7 +552,6 @@ $(document).on("click", ".remove-field", function () {
     $(this).parent(".multi-field").remove();
 });
 
-// Document remove
 $(document).on("click", ".removeImage", function () {
     thisStateSelector = $(this);
     var route = $(thisStateSelector).data("route");
@@ -550,7 +607,6 @@ $(document).on("click", ".add-field", function () {
                     <input type="number" name="multiple[kitchen][]" class="form-control" placeholder="0">
                 </div>
             </div>
-
             <button type="button" class="remove-field red-color">Remove</button>
         </div>`
     );
@@ -563,7 +619,6 @@ function initUnitImagePreviewer() {
         if (input.dataset.previewBound === "true") return;
         input.dataset.previewBound = "true";
 
-        // Create or find preview container
         let previewContainer = input.closest('.row')?.nextElementSibling;
         if (!previewContainer || !previewContainer.classList.contains('image-preview-container')) {
             previewContainer = document.createElement('div');
@@ -571,7 +626,6 @@ function initUnitImagePreviewer() {
             input.closest('.row')?.after(previewContainer);
         }
 
-        // Full-width styling
         previewContainer.style.display = 'flex';
         previewContainer.style.flexWrap = 'nowrap';
         previewContainer.style.overflowX = 'auto';
@@ -585,7 +639,6 @@ function initUnitImagePreviewer() {
         input.addEventListener('change', function () {
             previewContainer.innerHTML = '';
 
-            // Convert FileList to array so we can modify it later
             let filesArray = Array.from(this.files);
 
             filesArray.forEach((file, index) => {
@@ -606,7 +659,6 @@ function initUnitImagePreviewer() {
                     img.style.boxShadow = '0 2px 6px rgba(0,0,0,0.15)';
                     img.style.flexShrink = '0';
 
-                    // Remove button
                     const removeBtn = document.createElement('button');
                     removeBtn.innerHTML = '<i class="ri-delete-bin-5-line"></i>';
                     removeBtn.style.fontSize = '18px';
@@ -628,7 +680,6 @@ function initUnitImagePreviewer() {
                     removeBtn.addEventListener('click', () => {
                         wrapper.remove();
                         filesArray.splice(index, 1);
-                        // Update input files dynamically
                         const dataTransfer = new DataTransfer();
                         filesArray.forEach(f => dataTransfer.items.add(f));
                         input.files = dataTransfer.files;
@@ -645,12 +696,10 @@ function initUnitImagePreviewer() {
 }
 
 // delete unit image
-
 document.addEventListener('click', function (e) {
     if (e.target.closest('.remove-existing-image')) {
         let button = e.target.closest('.remove-existing-image');
         let imageId = button.dataset.imageId;
-
         let csrf = document.querySelector('meta[name="csrf-token"]').getAttribute("content");
 
         fetch(`/owner/unit-image/${imageId}`, {
@@ -663,7 +712,6 @@ document.addEventListener('click', function (e) {
         .then(response => response.json())
         .then(data => {
             if (data.success || data.status === 'success') {
-                // Remove image box from DOM
                 button.closest('.existing-unit-image-box').remove();
             } else {
                 console.error("Error:", data);
@@ -674,3 +722,18 @@ document.addEventListener('click', function (e) {
     }
 });
 
+// Kill any AJAX request that takes more than 30 seconds
+$(document).ajaxSend(function(event, xhr, settings) {
+    var timeout = 30000;
+    var timer = setTimeout(function() {
+        xhr.abort();
+        console.error('AJAX request timed out:', settings.url);
+        if (typeof $.LoadingOverlay !== 'undefined') {
+            try { $.LoadingOverlay("hide"); } catch(e) {}
+        }
+    }, timeout);
+    
+    xhr.always(function() {
+        clearTimeout(timer);
+    });
+});

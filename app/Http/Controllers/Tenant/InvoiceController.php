@@ -93,15 +93,40 @@ class InvoiceController extends Controller
         return view('tenant.invoices.print', $data);
     }
 
+   
     public function pay($id)
     {
-        $data['pageTitle'] = __('Invoices Pay');
+        $data['pageTitle']              = __('Invoices Pay');
         $data['navInvoiceMMActiveClass'] = 'mm-active';
-        $data['navInvoiceActiveClass'] = 'active';
-        $data['invoice'] = $this->invoiceService->getByIdCheckTenantAuthId($id);
-        $data['gateways'] = $this->gatewayService->getActiveAll(auth()->user()->owner_user_id);
-        $data['banks'] = $this->gatewayService->getActiveBanks();
-        $data['mpesaAccounts'] = $this->gatewayService->getActiveMpesaAccounts();
+        $data['navInvoiceActiveClass']   = 'active';
+        $data['invoice']                = $this->invoiceService->getByIdCheckTenantAuthId($id);
+        $data['gateways']               = $this->gatewayService->getActiveAll(auth()->user()->owner_user_id);
+        $data['banks']                  = $this->gatewayService->getActiveBanks();
+        $data['mpesaAccounts']          = $this->gatewayService->getActiveMpesaAccounts();
+    
+        // ── Transaction model check ──────────────────────────────────────────────
+        // Determines whether the owner is on transaction pricing.
+        // If true, the blade hides gateway selection and shows M-Pesa-only UI.
+        $subscription = \Illuminate\Support\Facades\DB::table('owner_packages')
+            ->where('user_id', auth()->user()->owner_user_id)
+            ->where('status', 1)
+            ->latest()
+            ->first();
+    
+        $pricingModel                   = $subscription?->pricing_model ?? 'free';
+        $data['isTransactionModel']     = $pricingModel === 'transaction';
+    
+        // Resolve the centresidence rent gateway ID for the JS currency auto-fetch.
+        // Only needed when isTransactionModel is true, but safe to pass always.
+        $rentAccountId                  = getOption('centresidence_rent_mpesa_account_id');
+        $rentMpesaAccount               = $rentAccountId
+            ? \App\Models\MpesaAccount::find($rentAccountId)
+            : null;
+        $rentGateway                    = $rentMpesaAccount
+            ? \App\Models\Gateway::find($rentMpesaAccount->gateway_id)
+            : null;
+        $data['ownerMpesaGatewayId']    = $rentGateway?->id;
+    
         return view('tenant.invoices.pay', $data);
     }
 

@@ -29,7 +29,7 @@ class ProductOrder extends Model
         'subtotal',
         'total',
         'transaction_amount',
-        'payment_status', // Adjust as necessary
+        'payment_status',
         'bank_id',
         'bank_name',
         'bank_account_number',
@@ -47,17 +47,38 @@ class ProductOrder extends Model
         });
     }
 
-    public function scopePending($query)
+    // product_orders.order_status
+    public function scopeOrderPending($query)
+    {
+        return $query->where('order_status', ORDER_STATUS_PENDING);
+    }
+
+    public function scopeOrderCompleted($query)
+    {
+        return $query->where('order_status', ORDER_STATUS_COMPLETED);
+    }
+
+    public function scopeOrderCancelled($query)
+    {
+        return $query->where('order_status', ORDER_STATUS_CANCELLED);
+    }
+    public function scopeRefundPending($query)
+    {
+        return $query->where('payment_status', PRODUCT_ORDER_STATUS_REFUND_PENDING);
+    }
+
+    // product_orders.payment_status
+    public function scopePaymentPending($query)
     {
         return $query->where('payment_status', PRODUCT_ORDER_STATUS_PENDING);
     }
 
-    public function scopePaid($query)
+    public function scopePaymentPaid($query)
     {
         return $query->where('payment_status', PRODUCT_ORDER_STATUS_PAID);
     }
 
-    public function scopeCancelled($query)
+    public function scopePaymentCancelled($query)
     {
         return $query->where('payment_status', PRODUCT_ORDER_STATUS_CANCELLED);
     }
@@ -72,8 +93,8 @@ class ProductOrder extends Model
         return $this->hasOne(Gateway::class, 'id', 'gateway_id');
     }
 
-    public function orderItems(): HasMany
+    public function orderItems()
     {
-        return $this->hasMany(ProductOrderItem::class);
+        return $this->hasMany(ProductOrderItem::class, 'product_order_id');
     }
 }

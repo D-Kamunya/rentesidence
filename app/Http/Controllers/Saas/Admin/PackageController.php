@@ -7,6 +7,7 @@ use App\Http\Requests\PackageRequest;
 use App\Services\OwnerService;
 use App\Services\PackageService;
 use App\Traits\ResponseTrait;
+use App\Models\Package;
 use Illuminate\Http\Request;
 
 class PackageController extends Controller
@@ -25,6 +26,7 @@ class PackageController extends Controller
             return $this->packageService->getAllData($request);
         } else {
             $data['pageTitle'] = __('All Packages');
+            $data['packages'] = Package::all();
             return view('admin.packages.index', $data);
         }
     }

@@ -12,7 +12,7 @@ return [
     | these language lines according to your application's requirements.
     |
     */
-    'no_data_available' => 'No data available in table',
+    'no_data_available' => 'No data available',
     'status_changed' => 'Status successfully changed',
     'updated' => ':title successfully updated',
     'created' => ':title successfully created',

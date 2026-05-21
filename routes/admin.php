@@ -14,6 +14,12 @@ use App\Http\Controllers\Admin\MarketingMaterialController;
 use App\Http\Controllers\Admin\ActionTemplateController;
 use App\Http\Controllers\Admin\AdminLeadSuggestionController;
 use App\Http\Controllers\Admin\AdminMarketplaceController;
+use App\Http\Controllers\Admin\ProductCategoryController;
+use App\Http\Controllers\Owner\OwnerWalletController;
+use App\Http\Controllers\Owner\SmsCreditsController;
+use App\Http\Controllers\Owner\SmsCreditsPaymentController;
+use App\Http\Controllers\Admin\SmsCreditsAdminController;
+use App\Http\Controllers\Affiliates\AffiliateWithdrawalController;
 use App\Http\Controllers\Admin\SettingController;
 use App\Http\Controllers\VersionUpdateController;
 use Illuminate\Support\Facades\Route;
@@ -81,8 +87,23 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'middleware' => ['auth', 'a
     // Activate/deactivate owners
     Route::post('/owner/activate/{id}', [OwnerController::class, 'activate'])->name('owner.activate');
     Route::post('/owner/deactivate/{id}', [OwnerController::class, 'deactivate'])->name('owner.deactivate');
+    // Wallet actions
+    Route::get('/wallet/commissions',          [OwnerWalletController::class, 'adminDashboard'])->name('wallet.commissions');
+    Route::get('/wallet/owner/{wallet}',       [OwnerWalletController::class, 'adminOwnerWallet'])->name('wallet.owner');
+    Route::post('/wallet/withdrawal/{withdrawal}/approve', [OwnerWalletController::class, 'approveWithdrawal'])->name('wallet.withdrawal.approve');
+    Route::post('/wallet/withdrawal/{withdrawal}/reject',  [OwnerWalletController::class, 'rejectWithdrawal'])->name('wallet.withdrawal.reject');
+    // Affiliate Withdrawals
+    Route::get('/affiliate/withdrawals',                          [AffiliateWithdrawalController::class, 'adminIndex'])->name('affiliate.withdrawals');
+    Route::post('/affiliate/withdrawal/{withdrawal}/approve',     [AffiliateWithdrawalController::class, 'approve'])->name('affiliate.withdrawal.approve');
+    Route::post('/affiliate/withdrawal/{withdrawal}/reject',      [AffiliateWithdrawalController::class, 'reject'])->name('affiliate.withdrawal.reject');
+    Route::get('/affiliate/{affiliate}/earnings', [AffiliateWithdrawalController::class, 'affiliateEarnings'])->name('affiliate.earnings');
 
-    
+    Route::prefix('sms-credits')->name('sms.credits.')->group(function () {
+        Route::get('/',        [SmsCreditsAdminController::class, 'index'])->name('index');
+        Route::put('/settings',[SmsCreditsAdminController::class, 'updateSettings'])->name('settings');
+        Route::post('/topup',  [SmsCreditsAdminController::class, 'manualTopup'])->name('topup');
+    });
+
     Route::group(['prefix' => 'owner', 'as' => 'owner.'], function () {
         Route::get('/', [OwnerController::class, 'index'])->name('index');
          // register owner
@@ -122,6 +143,10 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'middleware' => ['auth', 'a
         Route::get('tenancy-setting', [SettingController::class, 'tenancySetting'])->name('tenancy.setting');
         Route::get('frontend-setting', [SettingController::class, 'frontendSetting'])->name('frontend.setting');
         Route::get('listing-setting', [SettingController::class, 'listingSetting'])->name('listing.setting');
+        Route::get('marketplaceaccounts-setting', [SettingController::class, 'marketplaceAccounts'])->name('marketplaceaccounts.setting');
+        Route::post('marketplaceaccounts-setting', [SettingController::class, 'saveMarketplaceAccounts'])->name('marketplaceaccounts.setting.save');
+        Route::get('rentaccounts-setting', [SettingController::class, 'rentAccounts'])->name('rentaccounts.setting');
+        Route::post('rentaccounts-setting', [SettingController::class, 'saveRentAccounts'])->name('rentaccounts.setting.save');
         Route::get('agreement-setting', [SettingController::class, 'agreementSetting'])->name('agreement.setting');
         Route::get('reminder-setting', [SettingController::class, 'reminderSetting'])->name('reminder.setting');
         Route::get('subscription-reminder-setting', [SettingController::class, 'subscriptionReminderSetting'])->name('subscription.reminder.setting');
@@ -157,6 +182,8 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'middleware' => ['auth', 'a
         Route::post('uninstall/{code}', [AddonUpdateController::class, 'addonSaasUninstall'])->name('uninstall')->withoutMiddleware(['addon.update']);
         Route::get('delete/{code}', [AddonUpdateController::class, 'addonSaasFileDelete'])->name('delete')->withoutMiddleware(['addon.update']);
     });
+
+    Route::resource('product-categories', ProductCategoryController::class)->except(['show', 'create', 'edit']);
 
     Route::get('/cleanup', function () {
         Artisan::call('config:clear');

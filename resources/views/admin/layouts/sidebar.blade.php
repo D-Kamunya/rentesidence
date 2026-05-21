@@ -16,9 +16,9 @@
                         </a>
                     </li>
                     <li>
-                        <a href="{{ route('admin.subscriptions.orders') }}">
-                            <i class="ri-list-check-2"></i>
-                            <span>{{ __('All Orders') }}</span>
+                        <a class="{{ @$navOwnerAddMMShowClass }}" href="{{ route('admin.owner.index') }}">
+                            <i class="ri-user-line"></i>
+                            <span>{{ __('Owners') }}</span>
                         </a>
                     </li>
                     <li>
@@ -28,9 +28,15 @@
                         </a>
                     </li>
                     <li>
-                        <a class="{{ @$navOwnerAddMMShowClass }}" href="{{ route('admin.owner.index') }}">
-                            <i class="ri-user-line"></i>
-                            <span>{{ __('Owners') }}</span>
+                        <a href="{{ route('admin.subscriptions.orders') }}">
+                            <i class="ri-list-check-2"></i>
+                            <span>{{ __('All Orders') }}</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="{{ route('admin.sms.credits.index') }}">
+                            <i class="ri-message-2-line"></i>
+                            <span>{{ __('SMS Credits') }}</span>
                         </a>
                     </li>
                     <li>
@@ -99,7 +105,19 @@
                 <li>
                     <a class="{{ @$navAffiliatesAddMMShowClass }}" href="{{ route('admin.marketplace.index') }}">
                         <i class="fa fa-shopping-basket" aria-hidden="true"></i>
-                        <span>{{ __('Marketplace') }}</span>
+                        <span>{{ __('Lead Marketplace') }}</span>
+                    </a>
+                </li>
+                <li>
+                    <a class="{{ @$navCommissionsAddMMShowClass }}" href="{{ route('admin.wallet.commissions') }}">
+                        <i class="fa fa-shopping-basket" aria-hidden="true"></i>
+                        <span>{{ __('Vault') }}</span>
+                    </a>
+                </li>
+                <li>
+                    <a class="{{ @$navCommissionsAddMMShowClass }}" href="{{ route('admin.product-categories.index') }}">
+                        <i class="fa fa-shopping-basket" aria-hidden="true"></i>
+                        <span>{{ __('Product Categories') }}</span>
                     </a>
                 </li>
                 <li>
@@ -124,6 +142,12 @@
                             <a class="{{ @$navAffiliatesAddMMShowClass }}" href="{{ route('admin.affiliates.performance') }}">
                                 <i class="fa fa-trophy" aria-hidden="true"></i>
                                 <span>{{ __('Performance') }}</span>
+                            </a>
+                        </li>
+                        <li>
+                            <a class="{{ @$navAffiliatesWithdrawAddMMShowClass }}" href="{{ route('admin.affiliate.withdrawals') }}">
+                            <i class="fa fa-users" aria-hidden="true"></i>
+                                <span>{{ __('Accounts & Withdrawals') }}</span>
                             </a>
                         </li>
                     </ul>

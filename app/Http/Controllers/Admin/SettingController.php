@@ -217,6 +217,60 @@ class SettingController extends Controller
         return view('admin.setting.cron-setting')->with($data);
     }
 
+    public function marketplaceAccounts()
+    {
+        $data['pageTitle'] = __("Marketplace Accounts Setting");
+        $data['subMarketplaceAccountsSettingActiveClass'] = 'active';
+        return view('admin.setting.marketplaceaccounts-setting')->with($data);
+    }
+
+    public function saveMarketplaceAccounts(Request $request)
+    {
+        $request->validate([
+            'centresidence_mpesa_account_id' => 'required|exists:mpesa_accounts,id',
+        ]);
+    
+        \App\Models\Setting::updateOrCreate(
+            ['option_key' => 'centresidence_mpesa_account_id'],
+            ['option_value' => $request->centresidence_mpesa_account_id]
+        );
+    
+        // Refresh the settings config so getOption() returns the
+        // new value immediately within the same request cycle
+        $settings = \App\Models\Setting::pluck('option_value', 'option_key')->toArray();
+        config(['settings' => $settings]);
+    
+        return redirect()
+            ->route('admin.setting.marketplaceaccounts.setting')
+            ->with('success', __('Marketplace payment account saved successfully.'));
+    }
+
+    public function rentAccounts()
+    {
+        $data['pageTitle'] = __('Rent Transaction Account Setting');
+        $data['subRentAccountSettingActiveClass'] = 'active';
+        return view('admin.setting.rentaccounts-setting')->with($data);
+    }
+
+    public function saveRentAccounts(Request $request)
+    {
+        $request->validate([
+            'centresidence_rent_mpesa_account_id' => 'required|exists:mpesa_accounts,id',
+        ]);
+
+        \App\Models\Setting::updateOrCreate(
+            ['option_key' => 'centresidence_rent_mpesa_account_id'],
+            ['option_value' => $request->centresidence_rent_mpesa_account_id]
+        );
+
+        $settings = \App\Models\Setting::pluck('option_value', 'option_key')->toArray();
+        config(['settings' => $settings]);
+
+        return redirect()
+            ->route('admin.setting.rentaccounts.setting')
+            ->with('success', __('Rent payment account saved successfully.'));
+    }
+
     public function generalSettingEnvUpdate(Request $request)
     {
         $inputs = Arr::except($request->all(), ['_token']);

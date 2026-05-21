@@ -32,8 +32,21 @@ class InvoiceTypeService
             $invoiceType->status = $request->status ?? ACTIVE;
             $invoiceType->save();
             DB::commit();
+            
+            // Fetch all invoice types for the current user
+            $invoiceTypes = InvoiceType::where('owner_user_id', auth()->id())
+                ->where('status', ACTIVE)
+                ->orderBy('name')
+                ->get();
+            
             $message = $request->id ? __(UPDATED_SUCCESSFULLY) : __(CREATED_SUCCESSFULLY);
-            return $this->success([], $message);
+            
+            // Return the data needed for the frontend
+            return $this->success([
+                'invoiceTypes' => $invoiceTypes,
+                'newInvoiceType' => $invoiceType
+            ], $message);
+            
         } catch (Exception $e) {
             DB::rollBack();
             $message = getErrorMessage($e, $e->getMessage());

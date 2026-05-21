@@ -105,107 +105,109 @@ class PropertyService
     }
 
     public function getEmptyUnitsGroupedByProperty($paginate = true)
-{
-    $data = PropertyUnit::query()
-        ->join('properties', 'property_units.property_id', '=', 'properties.id')
+    {
+        $data = PropertyUnit::query()
+            ->join('properties', 'property_units.property_id', '=', 'properties.id')
+     
+            ->leftJoin('tenants', function ($join) {
+                $join->on('property_units.id', '=', 'tenants.unit_id')
+                     ->where('tenants.status', DB::raw(TENANT_STATUS_ACTIVE));
+            })
+            ->leftJoin('users as tenants_users', function ($q) {
+                $q->on('tenants.user_id', '=', 'tenants_users.id')
+                  ->whereNull('tenants_users.deleted_at');
+            })
+            ->leftJoin('file_managers', function ($join) {
+                $join->on('properties.thumbnail_image_id', '=', 'file_managers.id')
+                     ->where('file_managers.origin_type', '=', 'App\\Models\\Property');
+            })
+            ->leftJoin('users as owners', 'properties.owner_user_id', '=', 'owners.id')
+            ->leftJoin('property_details', 'properties.id', '=', 'property_details.property_id')
+     
+            ->whereNull('tenants.id')
+            ->whereNotNull('properties.id')
+     
+            ->select(
+                'properties.id as property_id',
+                'properties.name as property_name',
+                'owners.first_name as owner_first_name',
+                'owners.last_name as owner_last_name',
+                'file_managers.file_name',
+                'file_managers.folder_name',
+                DB::raw('COUNT(property_units.id) as empty_units_count'),
+                // ↓ NEW: rent range columns — no extra query needed in the controller
+                DB::raw('MIN(property_units.general_rent) as min_rent'),
+                DB::raw('MAX(property_units.general_rent) as max_rent'),
+                'property_details.country_id as country',
+                'property_details.state_id as state',
+                'property_details.city_id as city',
+                'property_details.map_link',
+                DB::raw("CONCAT('/storage/', file_managers.folder_name, '/', file_managers.file_name) as thumbnail_url")
+            )
+     
+            ->groupBy(
+                'properties.id',
+                'properties.name',
+                'owners.first_name',
+                'owners.last_name',
+                'file_managers.file_name',
+                'file_managers.folder_name',
+                'property_details.country_id',
+                'property_details.state_id',
+                'property_details.city_id',
+                'property_details.map_link'
+            )
+            ->orderBy('properties.id', 'asc');
+     
+        return $paginate ? $data->paginate(10) : $data->get();
+    }
 
-        ->leftJoin('tenants', function ($join) {
-            $join->on('property_units.id', '=', 'tenants.unit_id')
-                ->where('tenants.status', DB::raw(TENANT_STATUS_ACTIVE));
-        })
-        ->leftJoin('users as tenants_users', function ($q) {
-            $q->on('tenants.user_id', '=', 'tenants_users.id')->whereNull('tenants_users.deleted_at');
-        })
+    public function getEmptyUnitsByProperty($propertyId)
+    {
+        return PropertyUnit::query()
+            ->where('property_units.property_id', $propertyId)
+            ->join('properties', 'property_units.property_id', '=', 'properties.id')
 
-        ->leftJoin('file_managers', function ($join) {
-            $join->on('properties.thumbnail_image_id', '=', 'file_managers.id')
-                 ->where('file_managers.origin_type', '=', 'App\\Models\\Property');
-        })
+            ->leftJoin('users as owners', 'properties.owner_user_id', '=', 'owners.id')
 
-        ->leftJoin('users as owners', 'properties.owner_user_id', '=', 'owners.id')
-        ->leftJoin('property_details', 'properties.id', '=', 'property_details.property_id')
+            ->leftJoin('tenants', function ($join) {
+                $join->on('property_units.id', '=', 'tenants.unit_id')
+                    ->where('tenants.status', DB::raw(TENANT_STATUS_ACTIVE));
+            })
 
-        ->whereNull('tenants.id')
-        ->whereNotNull('properties.id')
+            ->leftJoin('users as tenants_users', function ($q) {
+                $q->on('tenants.user_id', '=', 'tenants_users.id')
+                    ->whereNull('tenants_users.deleted_at');
+            })
 
-        ->select(
-            'properties.id as property_id',
-            'properties.name as property_name',
-            'owners.first_name as owner_first_name',
-            'owners.last_name as owner_last_name',
-            'file_managers.file_name',
-            'file_managers.folder_name',
-            DB::raw('COUNT(property_units.id) as empty_units_count'),
-            'property_details.country_id as country',
-            'property_details.state_id as state',
-            'property_details.city_id as city',
-            'property_details.map_link',
-            DB::raw("CONCAT('/storage/', file_managers.folder_name, '/', file_managers.file_name) as thumbnail_url")
-        )
+            ->leftJoin('file_managers as unit_images', function ($join) {
+                $join->on('property_units.id', '=', 'unit_images.origin_id')
+                    ->where('unit_images.origin_type', '=', DB::raw("'App\\\\Models\\\\PropertyUnit'"));
+            })
 
-        ->groupBy(
-            'properties.id',
-            'properties.name',
-            'owners.first_name',
-            'owners.last_name',
-            'file_managers.file_name',
-            'file_managers.folder_name',
-            'property_details.country_id',
-            'property_details.state_id',
-            'property_details.city_id',
-            'property_details.map_link'
-        )
-        ->orderBy('properties.id', 'asc');
-
-    return $paginate ? $data->paginate(10) : $data->get();
-}
-
-public function getEmptyUnitsByProperty($propertyId)
-{
-    return PropertyUnit::query()
-        ->where('property_units.property_id', $propertyId)
-        ->join('properties', 'property_units.property_id', '=', 'properties.id')
-
-        ->leftJoin('users as owners', 'properties.owner_user_id', '=', 'owners.id')
-
-        ->leftJoin('tenants', function ($join) {
-            $join->on('property_units.id', '=', 'tenants.unit_id')
-                ->where('tenants.status', DB::raw(TENANT_STATUS_ACTIVE));
-        })
-
-        ->leftJoin('users as tenants_users', function ($q) {
-            $q->on('tenants.user_id', '=', 'tenants_users.id')
-                ->whereNull('tenants_users.deleted_at');
-        })
-
-        ->leftJoin('file_managers as unit_images', function ($join) {
-            $join->on('property_units.id', '=', 'unit_images.origin_id')
-                ->where('unit_images.origin_type', '=', DB::raw("'App\\\\Models\\\\PropertyUnit'"));
-        })
-
-        ->leftJoin('file_managers as property_thumbnails', function ($join) {
-            $join->on('properties.thumbnail_image_id', '=', 'property_thumbnails.id')
-                ->where('property_thumbnails.origin_type', '=', DB::raw("'App\\\\Models\\\\Property'"));
-        })
-        ->leftJoin('property_details', 'properties.id', '=', 'property_details.property_id')
-        ->whereNull('tenants.id') // Only unoccupied units
-        ->select(
-            'property_units.*',
-            'properties.id as property_id',
-            'properties.name as property_name',
-            'owners.first_name as owner_first_name',
-            'property_details.state_id as state',
-            'property_details.city_id as city',
-            'owners.last_name as owner_last_name',
-            'unit_images.file_name as unit_image_file',
-            'unit_images.folder_name as unit_image_folder',
-            'property_thumbnails.file_name as thumbnail_file',
-            'property_thumbnails.folder_name as thumbnail_folder',
-            DB::raw("CONCAT('/storage/', property_thumbnails.folder_name, '/', property_thumbnails.file_name) as thumbnail_url")
-        )
-        ->orderBy('property_units.id', 'asc')
-        ->get();
-}
+            ->leftJoin('file_managers as property_thumbnails', function ($join) {
+                $join->on('properties.thumbnail_image_id', '=', 'property_thumbnails.id')
+                    ->where('property_thumbnails.origin_type', '=', DB::raw("'App\\\\Models\\\\Property'"));
+            })
+            ->leftJoin('property_details', 'properties.id', '=', 'property_details.property_id')
+            ->whereNull('tenants.id') // Only unoccupied units
+            ->select(
+                'property_units.*',
+                'properties.id as property_id',
+                'properties.name as property_name',
+                'owners.first_name as owner_first_name',
+                'property_details.state_id as state',
+                'property_details.city_id as city',
+                'owners.last_name as owner_last_name',
+                'unit_images.file_name as unit_image_file',
+                'unit_images.folder_name as unit_image_folder',
+                'property_thumbnails.file_name as thumbnail_file',
+                'property_thumbnails.folder_name as thumbnail_folder',
+                DB::raw("CONCAT('/storage/', property_thumbnails.folder_name, '/', property_thumbnails.file_name) as thumbnail_url")
+            )
+            ->orderBy('property_units.id', 'asc')
+            ->get();
+    }
 
     public function getAllCount()
     {
@@ -340,10 +342,19 @@ public function getEmptyUnitsByProperty($propertyId)
                 ->select('properties.name', 'properties.id', 'properties.thumbnail_image_id', 'property_details.address')
                 ->where('properties.owner_user_id', auth()->id())
                 ->findOrFail($id);
+
             $propertyUnits = PropertyUnit::query()
                 ->select('id', 'unit_name as name', 'general_rent', 'security_deposit', 'late_fee', 'security_deposit_type', 'late_fee_type', 'incident_receipt', 'rent_type', 'monthly_due_day', 'yearly_due_day')
                 ->where('property_id', $id)
-                ->get();
+                ->get()
+                ->map(function ($unit) {
+                    // Mark unit as occupied if it has an active tenant attached.
+                    // Mirrors the same logic used in getEmptyUnitsByProperty (whereNull tenants.id).
+                    $unit->is_occupied = \App\Models\Tenant::where('unit_id', $unit->id)
+                        ->where('status', TENANT_STATUS_ACTIVE)
+                        ->exists();
+                    return $unit;
+                });
 
             $data = $property;
             $data->units = $propertyUnits;
@@ -429,184 +440,189 @@ public function getEmptyUnitsByProperty($propertyId)
     }
 
     public function unitEdit($request)
-{
-    DB::beginTransaction();
+    {
+        DB::beginTransaction();
 
-    try {
-        $property = Property::where('owner_user_id', auth()->id())
-            ->findOrFail($request->property_id);
+        try {
+            $property = Property::where('owner_user_id', auth()->id())
+                ->findOrFail($request->property_id);
 
-        // Validate unit data presence
-        if (empty($request->unit_name)) {
-            throw new \Exception(__('Please provide unit data before proceeding.'));
-        }
-
-        $property_unit = isset($request->unit_id)
-            ? PropertyUnit::find((int) $request->unit_id)
-            : new PropertyUnit();
-
-        if (!$property_unit && isset($request->unit_id)) {
-            throw new \Exception(__('Selected Unit not found'));
-        }
-
-        if (!$request->unit_id && getOwnerLimit(RULES_UNIT) < 1) {
-            throw new \Exception(__('Your Unit Limit is Finished. Choose or Renew Package Plan'));
-        }
-
-        // Fill fields
-        $property_unit->property_id = $property->id;
-        $property_unit->unit_name = $request->unit_name;
-        $property_unit->bedroom = $request->bedroom;
-        $property_unit->bath = $request->bath;
-        $property_unit->kitchen = $request->kitchen;
-        $property_unit->square_feet = $request->square_feet;
-        $property_unit->amenities = $request->amenities;
-        $property_unit->condition = $request->condition;
-        $property_unit->parking = $request->parking;
-        $property_unit->description = $request->description;
-        $property_unit->general_rent = $request->general_rent ?? 0;
-        $property_unit->rent_type = $request->rent_type ?? null;
-        $property_unit->monthly_due_day = $request->rent_type == PROPERTY_UNIT_RENT_TYPE_MONTHLY ? $request->monthly_due_day : null;
-        $property_unit->yearly_due_day = $request->rent_type == PROPERTY_UNIT_RENT_TYPE_YEARLY ? $request->yearly_due_day : null;
-        $property_unit->lease_start_date = $request->rent_type == PROPERTY_UNIT_RENT_TYPE_CUSTOM ? date('Y-m-d', strtotime($request->lease_start_date)) : null;
-        $property_unit->lease_end_date = $request->rent_type == PROPERTY_UNIT_RENT_TYPE_CUSTOM ? date('Y-m-d', strtotime($request->lease_end_date)) : null;
-        $property_unit->lease_payment_due_date = $request->rent_type == PROPERTY_UNIT_RENT_TYPE_CUSTOM ? date('Y-m-d', strtotime($request->lease_payment_due_date)) : null;
-
-        $property_unit->save();
-
-        // Recurring rent and tenant update
-        $this->updateRecurringRentAmounts($property_unit->id, $property_unit->general_rent);
-        $this->tenantService->updateUnitTenant($property_unit);
-
-        // Handle single image upload
-        if (!empty($request->unit_image)) {
-            $existingFile = FileManager::where('origin_type', 'App\Models\PropertyUnit')
-                ->where('origin_id', $property_unit->id)
-                ->first();
-
-            if ($existingFile) {
-                $existingFile->removeFile();
-                $upload = $existingFile->updateUpload($existingFile->id, 'PropertyUnit', $request->unit_image, $property_unit->id);
-            } else {
-                $newFile = new FileManager();
-                $upload = $newFile->upload('PropertyUnit', $request->unit_image, $property_unit->id);
+            // Validate unit data presence
+            if (empty($request->unit_name)) {
+                throw new \Exception(__('Please provide unit data before proceeding.'));
             }
 
-            if (!$upload['status']) {
-                throw new \Exception($upload['message']);
-            }
-        }
+            $property_unit = isset($request->unit_id)
+                ? PropertyUnit::find((int) $request->unit_id)
+                : new PropertyUnit();
 
-        // Increment property unit count if new
-        if (!isset($request->unit_id)) {
-            $property->number_of_unit++;
-            $property->save();
-        }
-
-        DB::commit();
-
-        $message = isset($request->unit_id) ? __(UPDATED_SUCCESSFULLY) : __(CREATED_SUCCESSFULLY);
-        return $this->success([], $message);
-
-    } catch (\Exception $e) {
-        DB::rollBack();
-        return $this->error([], getErrorMessage($e));
-    }
-}
-
-
-public function unitStore($request)
-{
-    DB::beginTransaction();
-
-    try {
-        $property = Property::where('owner_user_id', auth()->id())
-            ->findOrFail($request->property_id);
-
-        $property->unit_type = $request->unit_type;
-        $property->save();
-
-        $notDeletedIds = [];
-
-        // Determine units array
-        $unitsData = $request->unit_type == PROPERTY_UNIT_TYPE_SINGLE
-            ? $request->single
-            : $request->multiple;
-
-        if (empty($unitsData['unit_name']) || count($unitsData['unit_name']) < 1) {
-            throw new \Exception(__('Please provide at least one unit before proceeding.'));
-        }
-
-        for ($i = 0; $i < count($unitsData['unit_name']); $i++) {
-            $unitId = $unitsData['id'][$i] ?? null;
-            $property_unit = $unitId ? PropertyUnit::find($unitId) : new PropertyUnit();
-
-            if (!$property_unit && $unitId) {
+            if (!$property_unit && isset($request->unit_id)) {
                 throw new \Exception(__('Selected Unit not found'));
             }
 
-            if (!$unitId && getOwnerLimit(RULES_UNIT) < 1) {
+            if (!$request->unit_id && getOwnerLimit(RULES_UNIT) < 1) {
                 throw new \Exception(__('Your Unit Limit is Finished. Choose or Renew Package Plan'));
             }
 
-            // Fill unit fields
+            // Fill fields
             $property_unit->property_id = $property->id;
-            $property_unit->unit_name = $unitsData['unit_name'][$i];
-            $property_unit->bedroom = $unitsData['bedroom'][$i] ?? 0;
-            $property_unit->bath = $unitsData['bath'][$i] ?? 0;
-            $property_unit->kitchen = $unitsData['kitchen'][$i] ?? 0;
-            $property_unit->square_feet = $unitsData['square_feet'][$i] ?? null;
-            $property_unit->amenities = $unitsData['amenities'][$i] ?? null;
-            $property_unit->condition = $unitsData['condition'][$i] ?? null;
-            $property_unit->parking = $unitsData['parking'][$i] ?? null;
-            $property_unit->description = $unitsData['description'][$i] ?? null;
+            $property_unit->unit_name = $request->unit_name;
+            $property_unit->bedroom = $request->bedroom;
+            $property_unit->bath = $request->bath;
+            $property_unit->kitchen = $request->kitchen;
+            $property_unit->square_feet = $request->square_feet;
+            $property_unit->amenities = $request->amenities;
+            $property_unit->condition = $request->condition;
+            $property_unit->parking = $request->parking;
+            $property_unit->description = $request->description;
+            $property_unit->general_rent = $request->general_rent ?? 0;
+            $property_unit->security_deposit_type = $request->security_deposit_type ?? 0;
+            $property_unit->security_deposit = $request->security_deposit ?? 0;
+            $property_unit->late_fee_type = $request->late_fee_type ?? 0;
+            $property_unit->late_fee = $request->late_fee ?? 0;
+            $property_unit->incident_receipt = $request->incident_receipt ?? null;
+            $property_unit->rent_type = $request->rent_type ?? null;
+            $property_unit->monthly_due_day = $request->rent_type == PROPERTY_UNIT_RENT_TYPE_MONTHLY ? $request->monthly_due_day : null;
+            $property_unit->yearly_due_day = $request->rent_type == PROPERTY_UNIT_RENT_TYPE_YEARLY ? $request->yearly_due_day : null;
+            $property_unit->lease_start_date = $request->rent_type == PROPERTY_UNIT_RENT_TYPE_CUSTOM ? date('Y-m-d', strtotime($request->lease_start_date)) : null;
+            $property_unit->lease_end_date = $request->rent_type == PROPERTY_UNIT_RENT_TYPE_CUSTOM ? date('Y-m-d', strtotime($request->lease_end_date)) : null;
+            $property_unit->lease_payment_due_date = $request->rent_type == PROPERTY_UNIT_RENT_TYPE_CUSTOM ? date('Y-m-d', strtotime($request->lease_payment_due_date)) : null;
+
             $property_unit->save();
 
-            $notDeletedIds[] = $property_unit->id;
+            // Recurring rent and tenant update
+            $this->updateRecurringRentAmounts($property_unit->id, $property_unit->general_rent);
+            $this->tenantService->updateUnitTenant($property_unit);
 
-            // Handle multiple images per unit
-            if (isset($unitsData['images'][$i]) && is_array($unitsData['images'][$i])) {
-                foreach ($unitsData['images'][$i] as $image) {
-                    if (!$image) continue;
+            // Handle single image upload
+            if (!empty($request->unit_image)) {
+                $existingFile = FileManager::where('origin_type', 'App\Models\PropertyUnit')
+                    ->where('origin_id', $property_unit->id)
+                    ->first();
 
-                    $filename = uniqid() . '-' . time() . '.' . $image->getClientOriginalExtension();
-                    $folder = "PropertyUnit/{$property_unit->id}";
-                    $image->storeAs("public/$folder", $filename);
+                if ($existingFile) {
+                    $existingFile->removeFile();
+                    $upload = $existingFile->updateUpload($existingFile->id, 'PropertyUnit', $request->unit_image, $property_unit->id);
+                } else {
+                    $newFile = new FileManager();
+                    $upload = $newFile->upload('PropertyUnit', $request->unit_image, $property_unit->id);
+                }
 
-                    PropertyUnitImage::create([
-                        'unit_id' => $property_unit->id,
-                        'folder_name' => $folder,
-                        'file_name' => $filename,
-                    ]);
+                if (!$upload['status']) {
+                    throw new \Exception($upload['message']);
                 }
             }
+
+            // Increment property unit count if new
+            if (!isset($request->unit_id)) {
+                $property->number_of_unit++;
+                $property->save();
+            }
+
+            DB::commit();
+
+            $message = isset($request->unit_id) ? __(UPDATED_SUCCESSFULLY) : __(CREATED_SUCCESSFULLY);
+            return $this->success([], $message);
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return $this->error([], getErrorMessage($e));
         }
-
-        // Soft delete units removed from form, force delete their images
-        $unitsToDelete = PropertyUnit::whereNotIn('id', $notDeletedIds)
-            ->where('property_id', $property->id)
-            ->get();
-
-        foreach ($unitsToDelete as $unit) {
-            $unit->forceDelete(); // triggers PropertyUnitImage deleting
-        }
-
-        DB::commit();
-
-        $response['property'] = $property;
-        $response['propertyUnits'] = PropertyUnit::where('property_id', $property->id)->get();
-        $response['propertyUnitIds'] = PropertyUnit::where('property_id', $property->id)->pluck('id')->toArray();
-        $response['message'] = __(UPDATED_SUCCESSFULLY);
-        $response['step'] = RENT_CHARGE_ACTIVE_CLASS;
-        $response['view'] = view('owner.property.partial.render-rent-charge', $response)->render();
-
-        return $this->success($response);
-
-    } catch (\Exception $e) {
-        DB::rollBack();
-        return $this->error([], getErrorMessage($e));
     }
-}
+
+
+    public function unitStore($request)
+    {
+        DB::beginTransaction();
+
+        try {
+            $property = Property::where('owner_user_id', auth()->id())
+                ->findOrFail($request->property_id);
+
+            $property->unit_type = $request->unit_type;
+            $property->save();
+
+            $notDeletedIds = [];
+
+            // Determine units array
+            $unitsData = $request->unit_type == PROPERTY_UNIT_TYPE_SINGLE
+                ? $request->single
+                : $request->multiple;
+
+            if (empty($unitsData['unit_name']) || count($unitsData['unit_name']) < 1) {
+                throw new \Exception(__('Please provide at least one unit before proceeding.'));
+            }
+
+            for ($i = 0; $i < count($unitsData['unit_name']); $i++) {
+                $unitId = $unitsData['id'][$i] ?? null;
+                $property_unit = $unitId ? PropertyUnit::find($unitId) : new PropertyUnit();
+
+                if (!$property_unit && $unitId) {
+                    throw new \Exception(__('Selected Unit not found'));
+                }
+
+                if (!$unitId && getOwnerLimit(RULES_UNIT) < 1) {
+                    throw new \Exception(__('Your Unit Limit is Finished. Choose or Renew Package Plan'));
+                }
+
+                // Fill unit fields
+                $property_unit->property_id = $property->id;
+                $property_unit->unit_name = $unitsData['unit_name'][$i];
+                $property_unit->bedroom = $unitsData['bedroom'][$i] ?? 0;
+                $property_unit->bath = $unitsData['bath'][$i] ?? 0;
+                $property_unit->kitchen = $unitsData['kitchen'][$i] ?? 0;
+                $property_unit->square_feet = $unitsData['square_feet'][$i] ?? null;
+                $property_unit->amenities = $unitsData['amenities'][$i] ?? null;
+                $property_unit->condition = $unitsData['condition'][$i] ?? null;
+                $property_unit->parking = $unitsData['parking'][$i] ?? null;
+                $property_unit->description = $unitsData['description'][$i] ?? null;
+                $property_unit->save();
+
+                $notDeletedIds[] = $property_unit->id;
+
+                // Handle multiple images per unit
+                if (isset($unitsData['images'][$i]) && is_array($unitsData['images'][$i])) {
+                    foreach ($unitsData['images'][$i] as $image) {
+                        if (!$image) continue;
+
+                        $filename = uniqid() . '-' . time() . '.' . $image->getClientOriginalExtension();
+                        $folder = "PropertyUnit/{$property_unit->id}";
+                        $image->storeAs("public/$folder", $filename);
+
+                        PropertyUnitImage::create([
+                            'unit_id' => $property_unit->id,
+                            'folder_name' => $folder,
+                            'file_name' => $filename,
+                        ]);
+                    }
+                }
+            }
+
+            // Soft delete units removed from form, force delete their images
+            $unitsToDelete = PropertyUnit::whereNotIn('id', $notDeletedIds)
+                ->where('property_id', $property->id)
+                ->get();
+
+            foreach ($unitsToDelete as $unit) {
+                $unit->forceDelete(); // triggers PropertyUnitImage deleting
+            }
+
+            DB::commit();
+
+            $response['property'] = $property;
+            $response['propertyUnits'] = PropertyUnit::where('property_id', $property->id)->get();
+            $response['propertyUnitIds'] = PropertyUnit::where('property_id', $property->id)->pluck('id')->toArray();
+            $response['message'] = __(UPDATED_SUCCESSFULLY);
+            $response['step'] = RENT_CHARGE_ACTIVE_CLASS;
+            $response['view'] = view('owner.property.partial.render-rent-charge', $response)->render();
+
+            return $this->success($response);
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return $this->error([], getErrorMessage($e));
+        }
+    }
 
 
     public function rentChargeStore($request)
@@ -754,11 +770,24 @@ public function unitStore($request)
     public function getLocation($request)
     {
         try {
-            $response['property'] = Property::where('owner_user_id', auth()->id())->findOrFail($request->property_id);
-            $country_file = public_path('file/countries.csv');
-            $response['countries'] = csvToArray($country_file);
-            $response['view'] = view('owner.property.partial.render-location', $response)->render();
+            $propertyId = $request->property_id;
+            
+            if (!$propertyId) {
+                throw new \Exception('Property ID is required');
+            }            
+            // Eager load the propertyDetail relationship
+            $property = Property::where('owner_user_id', auth()->id())
+                ->with(['propertyDetail' => function($query) {
+                    $query->select('property_id', 'country_id', 'state_id', 'city_id', 
+                                'zip_code', 'address', 'map_link');
+                }])
+                ->select('id', 'name', 'property_type', 'owner_user_id')
+                ->findOrFail($propertyId);
+            
+            $response['property'] = $property;
+            $response['view'] = view('owner.property.partial.render-location', $response)->render();            
             return $this->success($response);
+            
         } catch (\Exception $e) {
             return $this->error([], getErrorMessage($e));
         }

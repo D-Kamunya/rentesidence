@@ -38,39 +38,33 @@
                 </li>
 
                 <li>
-                    <a href="javascript:void(0)">
+                    <a href="{{ route('affiliate.materials.index') }}">
+                        <i class="fa fa-shopping-bag" aria-hidden="true"></i>
+                        <span>{{ __('Marketing Materials') }}</span>
+                    </a>
+                </li>
+
+                <li>
+                    <a href="{{ route('affiliate.referrals.index') }}">
                         <i class="ri-group-line"></i>
                         <span>{{ __('My Referrals') }}</span>
                     </a>
                 </li>
 
                 <li>
-                    <a href="javascript:void(0)">
+                    <a href="{{ route('affiliate.commissions.index') }}">
                         <i class="ri-money-dollar-circle-line"></i>
                         <span>{{ __('Earnings') }}</span>
                     </a>
                 </li>
 
                 <li>
-                    <a href="javascript:void(0)">
-                        <i class="ri-bank-card-line"></i>
-                        <span>{{ __('Payment History') }}</span>
-                    </a>
-                </li>
-
-                <li>
-                    <a href="javascript:void(0)">
-                        <i class="ri-notification-3-line"></i>
-                        <span>{{ __('Notification Center') }}</span>
-                    </a>
-                </li>
-
-                <li>
-                    <a href="javascript:void(0)">
+                    <a href="{{ route('affiliate.leaderboard') }}">
                         <i class="ri-trophy-line"></i>
                         <span>{{ __('Leaderboard') }}</span>
                     </a>
                 </li>
+
                 <li>
                     <a href="javascript:void(0)">
                         <i class="fa fa-book"></i>

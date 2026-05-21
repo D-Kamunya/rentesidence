@@ -64,8 +64,10 @@ Route::group(['prefix' => 'tenant', 'as' => 'tenant.', 'middleware' => ['auth', 
         Route::get('/', [ProductController::class, 'showProductsForTenant'])->name('index');
         Route::get('details/{id}', [ProductController::class, 'show'])->name('details');
         Route::get('pay', [ProductController::class, 'pay'])->name('pay');
+        Route::get('orders/{id}/receipt', [ProductController::class, 'receipt'])->name('order.receipt');
     });
-
+    
+    Route::post('orders/{id}/cancel', [ProductOrderController::class, 'cancel'])->name('product_order.cancel');
 });
 
 Route::get('/pay/invoice/{token}', [InvoiceController::class, 'instantRentPayShow'])

@@ -253,6 +253,7 @@ class AffiliateLeadsController extends Controller
             setOwnerGateway($user->id);
             setOwnerInvoiceType($user->id);
             setOwnerDefaultMaintenanceIssue($user->id);
+            setOwnerDefaultTicketTopics($user->id);
 
             // Update lead status
             $lead->update([
