@@ -87,6 +87,31 @@
                         </a>
                     </div>
                     @endif
+                    {{-- Pending Withdrawal Status --}}
+                    @if(isset($pendingWithdrawalsCount) && $pendingWithdrawalsCount > 0)
+                    <div class="notice-bar notice-bar--withdrawal mb-4">
+                        <div class="notice-bar__left">
+                            <div class="notice-bar__icon notice-bar__icon--amber">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+                                    <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="1.5"/>
+                                    <polyline points="12 6 12 12 16 14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                                </svg>
+                            </div>
+                            <div>
+                                <div class="notice-bar__text">
+                                    You have <strong>{{ $pendingWithdrawalsCount }} pending withdrawal(s)</strong> being processed.
+                                </div>
+                                <div class="notice-bar__sub">We'll notify you once approved</div>
+                            </div>
+                        </div>
+                        <a href="{{ route('affiliate.commissions.index') }}" class="notice-bar__action notice-bar__action--amber">
+                            <svg width="10" height="10" viewBox="0 0 16 16" fill="none">
+                                <path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                            </svg>
+                            View Status
+                        </a>
+                    </div>
+                    @endif
                     {{-- Summary Cards --}}
                     <div class="row g-3 mb-4">
 
@@ -228,10 +253,10 @@
                                             </td>
                                             <td class="dash-td" style="font-size:13px;">Ksh {{ number_format($commission['amount'], 2) }}</td>
                                             <td class="dash-td" style="font-size:13px;color:#6b7280;">
-                                                {{ $commission['type'] == NEW_CLIENT ? getOption('FIRST_TIME_COMMISSION_RATE') : getOption('RECURRING_COMMISSION_RATE') }}%
+                                                {{ $commission['rate'] }}%
                                             </td>
                                             <td class="dash-td" style="font-weight:500;font-size:13px;color:#0F6E56;">
-                                                Ksh {{ number_format($commission['type'] == NEW_CLIENT ? $commission['amount'] * (getOption('FIRST_TIME_COMMISSION_RATE') / 100) : $commission['amount'] * (getOption('RECURRING_COMMISSION_RATE') / 100), 2) }}
+                                                Ksh {{ number_format($commission['commission_amount'], 2) }}
                                             </td>
                                         </tr>
                                     @empty
@@ -299,6 +324,24 @@
         transition: background .15s;
     }
     .certified-badge:hover { background: #92400e; color: #fde68a; }
+
+    /* ── Pending Withdrawals ──────────────────────────────────────── */
+    .notice-bar--withdrawal {
+    background: #FFFBEB;
+    border-color: #FCD34D;
+    }
+    .notice-bar__icon--amber {
+        background: #FEF3C7;
+        color: #D97706;
+    }
+    .notice-bar__action--amber {
+        background: #FEF3C7;
+        border-color: #FCD34D;
+        color: #D97706;
+    }
+    .notice-bar__action--amber:hover {
+        background: #FDE68A;
+    }
 
     /* ── Stat cards ──────────────────────────────────────── */
     .stat-card {

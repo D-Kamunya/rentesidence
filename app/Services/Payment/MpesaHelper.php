@@ -35,17 +35,15 @@ trait MpesaHelper
         error_log($request->all());
     }
 
-     // Generate an AccessToken using the Consumer Key and Consumer Secret
     public function generateAccessToken()
     {
-        $consumer_key = config('mpesa.mpesa_consumer_key');
-        $consumer_secret =config('mpesa.mpesa_consumer_secret');
+        $consumer_key    = config('mpesa.mpesa_consumer_key');
+        $consumer_secret = config('mpesa.mpesa_consumer_secret');
         
         $url = $this->url . '/oauth/v1/generate?grant_type=client_credentials';
-
-        $response = Http::withBasicAuth($consumer_key, $consumer_secret)
-            ->get($url);
-
+    
+        $response = Http::withBasicAuth($consumer_key, $consumer_secret)->get($url);
+    
         $result = json_decode($response);
         return data_get($result, 'access_token');
     }

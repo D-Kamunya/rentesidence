@@ -14,12 +14,12 @@ class User extends Authenticatable
 {
     use HasApiTokens, HasFactory, Notifiable, SoftDeletes;
 
-    /**
-     * The attributes that are mass assignable.
-     *
-     * @var array<int, string>
-     */
     protected $guarded = [];
+
+    public function owner()
+    {
+        return $this->hasOne(Owner::class, 'user_id');
+    }
 
     public function tenant(): HasOne
     {
@@ -36,21 +36,12 @@ class User extends Authenticatable
     {
         return $this->hasOne(Affiliate::class, 'user_id', 'id');
     }
-    /**
-     * The attributes that should be hidden for serialization.
-     *
-     * @var array<int, string>
-     */
+ 
     protected $hidden = [
         'password',
         'remember_token',
     ];
 
-    /**
-     * The attributes that should be cast.
-     *
-     * @var array<string, string>
-     */
     protected $casts = [
         'email_verified_at' => 'datetime',
     ];
@@ -71,5 +62,10 @@ class User extends Authenticatable
     public function fileAttach()
     {
         return $this->morphOne(FileManager::class, 'origin');
+    }
+
+    public function ownerWallet()
+    {
+        return $this->hasOne(\App\Models\OwnerWallet::class, 'user_id');
     }
 }

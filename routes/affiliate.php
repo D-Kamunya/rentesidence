@@ -8,6 +8,10 @@ use App\Http\Controllers\Affiliates\LeadSuggestionController;
 use App\Http\Controllers\Affiliates\AffiliatesMarketplaceController;
 use App\Http\Controllers\Affiliates\LeadController;
 use App\Http\Controllers\Affiliates\AffiliateMarketingMaterialController;
+use App\Http\Controllers\Affiliates\CommissionsController;
+use App\Http\Controllers\Affiliates\AffiliateWithdrawalController;
+use App\Http\Controllers\Affiliates\ReferralsController;
+use App\Http\Controllers\Affiliates\LeaderboardController;
 use Illuminate\Support\Facades\Route;
 
 
@@ -38,9 +42,9 @@ Route::group([
             Route::get('marketing-tool', [MarketingToolController::class, 'index'])->name('marketing-tools');
 
             // Withdrawals
-            Route::post('withdraw', function (Request $request) {
-                // Handle the withdrawal logic here
-                return back()->with('success', 'Withdrawal request submitted!');})->name('withdraw');
+            Route::get('/commissions',        [CommissionsController::class, 'index'])->name('commissions.index');
+            Route::get('/commissions/detail', [CommissionsController::class, 'detail'])->name('commissions.detail');
+            Route::post('/withdraw',          [AffiliateWithdrawalController::class, 'withdraw'])->name('withdraw');
             // Certificate
             Route::get('affiliate/academy/certificate', [AcademyController::class, 'certificate'])->name('academy.certificate');
             // Affiliates Leads CRUD functions
@@ -74,5 +78,9 @@ Route::group([
             Route::post('/marketplace/{lead}/claim', [AffiliatesMarketplaceController::class, 'claim'])->name('marketplace.claim');
             // Affiliate Marketing materials
             Route::get('/materials', [AffiliateMarketingMaterialController::class, 'index'])->name('materials.index');
+            // Refferals
+            Route::get('/referrals', [ReferralsController::class, 'index'])->name('referrals.index');
+            Route::get('/referrals/{owner}', [ReferralsController::class, 'show'])->name('referrals.show');
+            Route::get('/leaderboard', [LeaderboardController::class, 'index'])->name('leaderboard');
             });
     });

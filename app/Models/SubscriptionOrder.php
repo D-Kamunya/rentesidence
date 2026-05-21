@@ -38,6 +38,7 @@ class SubscriptionOrder extends Model
         'deposit_slip_id',
         'quantity',
         'package_type',
+        'pricing_model',
         'mpesa_transaction_code'
     ];
 

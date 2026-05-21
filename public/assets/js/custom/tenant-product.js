@@ -149,7 +149,9 @@ document.addEventListener("DOMContentLoaded", () => {
             // Optionally, store cart items in local storage for persistence
             localStorage.setItem("cartItems", JSON.stringify(cartItems));
 
-            toastr.success("Item Added to Cart!");
+            if (!window._buyingNow) {
+                toastr.success("Item Added to Cart!");
+            }
         });
     });
 

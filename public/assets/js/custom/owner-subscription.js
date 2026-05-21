@@ -123,21 +123,23 @@ $(document).on("click", ".paymentGateway", function (e) {
         $("#mpesa_account_id").attr("required", false);
         $("#mpesaAccountAppend").addClass("d-none");
     } else if (selectGateway == "mpesa") {
-        $("#mpesa_account_id").val("");
+        // No account selection needed — platform account is auto-resolved server-side.
+        // Just hide bank UI and show the Pay Now button directly.
+        $("#bank_slip").attr("required", false);
+        $("#bank_id").attr("required", false);
+        $("#bankAppend").addClass("d-none");
+        $("#mpesaAccountAppend").addClass("d-none");  // hide dropdown — not needed
+        $("#mpesa_account_id").attr("required", false);
+        $("#payBtn").removeClass("d-none");
+        $("#mpesaPayBtn").addClass("d-none");
+        $("#gatewayCurrencyAmount").text("");
+        $("#mpesaGatewayCurrencyAmount").text("");
+        // Mirror hidden mpesa fields so the form submits correctly
         $("#mpesa_selectGateway").val(selectGateway);
         $("#mpesa_selectCurrency").val("");
         $("#mpesa_plan_id").val($(this).data("plan_id"));
         $("#mpesa_duration_type").val($(this).data("duration_type"));
         $("#mpesa_quantity").val($(this).data("quantity"));
-
-        $("#mpesaAccountAppend").removeClass("d-none");
-        // $("#mpesaPayBtn").removeClass("d-none");
-        // $("#gatewayCurrencyAmount").text("Via STK");
-        // $("#mpesaGatewayCurrencyAmount").text("");
-        $("#mpesa_account_id").attr("required", true);
-        $("#bank_slip").attr("required", false);
-        $("#bank_id").attr("required", false);
-        $("#bankAppend").addClass("d-none");
     } else {
         $("#bank_slip").attr("required", false);
         $("#payBtn").removeClass("d-none");
@@ -157,45 +159,100 @@ function getCurrencyRes(response) {
     );
     var html = "";
     var planAmount = parseFloat($("#planAmount").val()).toFixed(2);
-    Object.entries(response.data).forEach((currency) => {
+    var entries = Object.entries(response.data);
+
+    entries.forEach((currency) => {
         let currencyAmount = currency[1].conversion_rate * Number(planAmount);
         html += `<tr>
                     <td>
                         <div class="custom-radiobox gatewayCurrencyAmount">
-                            <input type="radio" name="gateway_currency_amount" id="${
-                                currency[1].id
-                            }" class="" value="${gatewayCurrencyPrice(
-            Number(currencyAmount).toFixed(2),
-            currency[1].symbol
-        )}">
-                            <label for="${currency[1].id}">${
-            currency[1].currency
-        }</label>
+                            <input type="radio" name="gateway_currency_amount" id="${currency[1].id}" value="${gatewayCurrencyPrice(
+                                Number(currencyAmount).toFixed(2),
+                                currency[1].symbol
+                            )}">
+                            <label for="${currency[1].id}">${currency[1].currency}</label>
                         </div>
                     </td>
                     <td><h6 class="tenant-invoice-tbl-right-text text-end">${gatewayCurrencyPrice(
                         Number(planAmount).toFixed(2),
                         defaultCurrency
-                    )} * ${
-            currency[1].conversion_rate
-        } = ${gatewayCurrencyPrice(
-            Number(currencyAmount).toFixed(2),
-            currency[1].symbol
-        )}</h6></td>
+                    )} * ${currency[1].conversion_rate} = ${gatewayCurrencyPrice(
+                        Number(currencyAmount).toFixed(2),
+                        currency[1].symbol
+                    )}</h6></td>
                 </tr>`;
     });
+
     $("#currencyAppend").html(html);
+
+    // Auto-select: if only one currency, or always select the first one
+    if (entries.length > 0) {
+        var firstCurrency = entries[0][1];
+        var firstRadio = $("#currencyAppend input[type=radio]:first");
+        firstRadio.prop("checked", true);
+
+        // Mirror what the manual .gatewayCurrencyAmount click does
+        var currencyAmount = firstCurrency.conversion_rate * Number(planAmount);
+        var displayAmount = "(" + gatewayCurrencyPrice(
+            Number(currencyAmount).toFixed(2),
+            firstCurrency.symbol
+        ) + ")";
+
+        $("#gatewayCurrencyAmount").text(displayAmount);
+        $("#selectCurrency").val(firstCurrency.currency);
+        $("#mpesa_selectCurrency").val(firstCurrency.currency);
+    }
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+// FREE & TRANSACTION PLAN — bypass checkout, show confirmation instead
+// Replace / augment your existing $(document).on("click", "#subscribeBtn") block
+// ─────────────────────────────────────────────────────────────────────────────
+
 $(document).on("click", "#subscribeBtn", function (e) {
-    $("#selectGateway").val("");
-    $("#selectCurrency").val("");
-    $("#plan_id").val(document.getElementsByName("id").value);
-    $("#payBtn").removeClass("d-none");
-    $("#mpesaPayBtn").addClass("d-none");
-    $("#gatewayCurrencyAmount").text("");
-    $("#bank_id").val("");
-    $("#mpesa_account_id").val("");
+    var $form        = $(this).closest("form");
+    var planId       = $form.find("input[name=id]").val();
+    var planName     = $form.closest(".cpm-card, .cpm-simple-card")
+                           .find(".cpm-card-name, .cpm-simple-name")
+                           .first().text().trim()
+                           // strip any badge text that got included
+                           .replace(/\s*(Recommended|Active)\s*/gi, '').trim();
+
+    // Read pricing_model from a data attribute on the submit button
+    // (we'll add data-pricing-model to the buttons in plan-list.blade.php below)
+    var pricingModel = $(this).data("pricing-model") || "";
+
+    if (pricingModel === "free" || pricingModel === "transaction") {
+        e.preventDefault();
+
+        // Pass data to the confirmation partial via globals (it self-executes on render)
+        window._cfmPlanId       = planId;
+        window._cfmPlanName     = planName;
+        window._cfmPricingModel = pricingModel;
+
+        // Fetch and render the confirmation screen inside the same modal
+        $.ajax({
+            url: $("#confirmFreeRoute").val(),
+            method: "GET",
+            data: { package_id: planId },
+            success: function (html) {
+                $("#choosePlanModal").find("#planListBlock").html(html);
+            },
+            error: function () {
+                toastr.error("Could not load confirmation. Please try again.");
+            }
+        });
+    } else {
+        // Paid plan — existing behaviour: open gateway modal
+        $("#selectGateway").val("");
+        $("#selectCurrency").val("");
+        $("#plan_id").val(planId);
+        $("#payBtn").removeClass("d-none");
+        $("#mpesaPayBtn").addClass("d-none");
+        $("#gatewayCurrencyAmount").text("");
+        $("#bank_id").val("");
+        $("#mpesa_account_id").val("");
+    }
 });
 
 $(document).on("click", ".gatewayCurrencyAmount", function () {
@@ -260,61 +317,42 @@ $("#payBtn").on("click", function () {
                 "pay-subscription-form"
             );
             if (gateway == "mpesa") {
-                var mpesaAccount = $("#mpesa_account_id").val();
-                if (mpesaAccount == "") {
-                    toastr.error("Select Mpesa Account");
-                    $("#payBtn").attr("type", "button");
-                } else {
-                    showMpesaPreloader();
-                    var formData = new FormData(subscription_form);
-                    fetch(subscription_form.action, {
-                        method: "POST",
-                        body: formData,
-                    })
-                        .then((response) => response.json())
-                        .then((data) => {
-                            if (data["success"]) {
-                                var redirectTimeout = setTimeout(() => {
-                                    window.location.href = data["redirect_url"];
-                                }, 120000);
-                                var pusher = new Pusher(
-                                    window.Laravel.pusher_key,
-                                    {
-                                        cluster: window.Laravel.pusher_cluster,
-                                    }
-                                );
-                                var channel = pusher.subscribe(
-                                    "transaction." + data["transaction_id"]
-                                );
-
-                                channel.bind(
-                                    "MpesaTransactionDeclined",
-                                    function (dataa) {
-                                        clearTimeout(redirectTimeout);
-                                        window.location.href =
-                                            data["redirect_url"] +
-                                            "&callback=true&stk_success=false";
-                                    }
-                                );
-                                channel.bind(
-                                    "MpesaTransactionProcessed",
-                                    function (dataa) {
-                                        clearTimeout(redirectTimeout);
-                                        window.location.href =
-                                            data["redirect_url"] +
-                                            "&callback=true&stk_success=true";
-                                    }
-                                );
-                            } else {
-                                hideMpesaPreloader();
-                                toastr.error(data["error"]);
-                            }
-                        })
-                        .catch((error) => {
+                showMpesaPreloader();
+                var formData = new FormData(subscription_form);
+                fetch(subscription_form.action, {
+                    method: "POST",
+                    body: formData,
+                    headers: {
+                        "Accept": "application/json",
+                    },
+                })
+                    .then((response) => response.json())
+                    .then((data) => {
+                        if (data["success"]) {
+                            var redirectTimeout = setTimeout(() => {
+                                window.location.href = data["redirect_url"];
+                            }, 120000);
+                            var pusher = new Pusher(window.Laravel.pusher_key, {
+                                cluster: window.Laravel.pusher_cluster,
+                            });
+                            var channel = pusher.subscribe("transaction." + data["transaction_id"]);
+                            channel.bind("MpesaTransactionDeclined", function () {
+                                clearTimeout(redirectTimeout);
+                                window.location.href = data["redirect_url"] + "&callback=true&stk_success=false";
+                            });
+                            channel.bind("MpesaTransactionProcessed", function () {
+                                clearTimeout(redirectTimeout);
+                                window.location.href = data["redirect_url"] + "&callback=true&stk_success=true";
+                            });
+                        } else {
                             hideMpesaPreloader();
-                            toastr.error(error);
-                        });
-                }
+                            toastr.error(data["error"]);
+                        }
+                    })
+                    .catch((error) => {
+                        hideMpesaPreloader();
+                        toastr.error(error);
+                    });
             } else {
                 $("#payBtn").attr("type", "submit");
                 if (subscription_form.checkValidity()) {

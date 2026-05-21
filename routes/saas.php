@@ -41,7 +41,7 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'middleware' => ['auth', 'a
 
     Route::group(['prefix' => 'packages', 'as' => 'packages.'], function () {
         Route::get('/', [PackageController::class, 'index'])->name('index');
-        Route::get('get-info', [PackageController::class, 'getInfo'])->name('get.info'); // ajax
+        Route::get('get-info', [PackageController::class, 'getInfo'])->name('get.info');
         Route::post('store', [PackageController::class, 'store'])->name('store');
         Route::get('destroy/{id}', [PackageController::class, 'destroy'])->name('destroy');
         Route::get('owner', [PackageController::class, 'ownerPackage'])->name('owner');
@@ -50,7 +50,7 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'middleware' => ['auth', 'a
 
     Route::group(['prefix' => 'message', 'as' => 'message.'], function () {
         Route::get('/', [ContactMessageController::class, 'index'])->name('index');
-        Route::get('get-info', [ContactMessageController::class, 'getInfo'])->name('get.info'); // ajax
+        Route::get('get-info', [ContactMessageController::class, 'getInfo'])->name('get.info'); 
         Route::post('reply', [ContactMessageController::class, 'reply'])->name('reply');
         Route::delete('/message/{id}', [ContactMessageController::class, 'destroy'])->name('destroy');
 
@@ -58,9 +58,9 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'middleware' => ['auth', 'a
 
     Route::group(['prefix' => 'subscriptions', 'as' => 'subscriptions.'], function () {
         Route::get('orders', [SubscriptionController::class, 'orders'])->name('orders');
-        Route::get('orders/get-info', [SubscriptionController::class, 'orderGetInfo'])->name('orders.get.info'); // ajax
+        Route::get('orders/get-info', [SubscriptionController::class, 'orderGetInfo'])->name('orders.get.info'); 
         Route::post('orders/payment-status-change', [SubscriptionController::class, 'orderPaymentStatusChange'])->name('order.payment.status.change');
-        Route::get('orders-payment-status', [SubscriptionController::class, 'ordersStatus'])->name('orders.payment.status'); // ajax
+        Route::get('orders-payment-status', [SubscriptionController::class, 'ordersStatus'])->name('orders.payment.status');
     });
 
     Route::group(['prefix' => 'setting', 'as' => 'setting.'], function () {
@@ -117,7 +117,7 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'middleware' => ['auth', 'a
     });
 });
 
-// owner
+
 Route::group(['prefix' => 'owner', 'as' => 'owner.', 'middleware' => ['auth', 'owner']], function () {
     Route::group(['prefix' => 'subscription', 'as' => 'subscription.'], function () {
         Route::get('/', [SaasSubscriptionController::class, 'index'])->name('index');
@@ -125,5 +125,7 @@ Route::group(['prefix' => 'owner', 'as' => 'owner.', 'middleware' => ['auth', 'o
         Route::get('get-plan', [SaasSubscriptionController::class, 'getPlan'])->name('get_plan');
         Route::get('get-currency-by-gateway', [SaasSubscriptionController::class, 'getCurrencyByGateway'])->name('get.currency');
         Route::post('cancel', [SaasSubscriptionController::class, 'cancel'])->name('cancel');
+        Route::get('/subscription/confirm-free', [SaasSubscriptionController::class, 'confirmFreeView']) ->name('confirm.free.view');
+        Route::post('/subscription/activate-free', [SaasSubscriptionController::class, 'activateFree'])->name('activate.free')->middleware(['throttle:10,1']);
     });
 });

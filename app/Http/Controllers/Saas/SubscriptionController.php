@@ -9,6 +9,7 @@ use App\Models\SubscriptionOrder;
 use App\Models\PaymentCheck;
 use App\Models\Gateway;
 use App\Models\User;
+use App\Models\Package;
 use App\Services\GatewayService;
 use App\Services\SubscriptionService;
 use App\Traits\ResponseTrait;
@@ -129,5 +130,62 @@ class SubscriptionController extends Controller
     {
         $this->subscriptionService->cancel();
         return back()->with('success', __('Canceled Successful!'));
+    }
+
+    public function confirmFreeView(Request $request)
+    {
+        $request->validate([
+            'package_id' => ['required', 'integer', 'exists:packages,id'],
+        ]);
+ 
+        $package = Package::findOrFail($request->package_id);
+ 
+        // Hard guard — refuse if someone calls this for a paid plan
+        if (!in_array($package->pricing_model ?? '', ['free', 'transaction'])) {
+            abort(403, 'Confirmation view only available for free and transaction plans.');
+        }
+ 
+        return view('saas.owner.subscriptions.partials.confirm-free')->render();
+    }
+ 
+    /**
+     * Directly activate a free or transaction plan — no payment involved.
+     *
+     * Security layers:
+     *   1. CSRF (POST form with @csrf in the blade partial)
+     *   2. `confirmed` checkbox must be accepted (value=1, user must tick it)
+     *   3. pricing_model hard guard — abort(403) for any paid plan ID
+     *   4. Auth middleware (already on owner route group)
+     *   5. Rate limited via throttle:10,1 on the route definition
+     */
+    public function activateFree(Request $request)
+    {
+        $request->validate([
+            'package_id' => ['required', 'integer', 'exists:packages,id'],
+            'confirmed'  => ['required', 'accepted'],
+        ]);
+ 
+        $package = Package::findOrFail($request->package_id);
+ 
+        // Hard guard — only free/transaction plans allowed through this endpoint
+        if (!in_array($package->pricing_model ?? '', ['free', 'transaction'])) {
+            abort(403, 'This endpoint is only available for free and transaction plans.');
+        }
+ 
+        if ($package->status !== ACTIVE) {
+            return back()->with('error', __('This plan is no longer available.'));
+        }
+ 
+        // 50-year duration → effectively never expires; active until cancelled.
+        // setUserPackage does Carbon::now()->addDays($duration) internally.
+        $duration = 365 * 50;
+ 
+        setUserPackage(auth()->id(), $package, $duration, 1, null);
+ 
+        $message = $package->pricing_model === 'transaction'
+            ? __('Transaction plan activated! Rent payments will be collected via the Centresidence M-Pesa account and held in your Centresidence Wallet.')
+            : __('Free plan activated successfully!');
+ 
+        return redirect()->route('owner.subscription.index')->with('success', $message);
     }
 }

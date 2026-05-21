@@ -50,6 +50,7 @@ class Tenant extends Model
     {
         return $this->hasOne(PropertyUnit::class, 'id', 'unit_id');
     }
+    
 
     /**
      * Get the details that owns the Tenant

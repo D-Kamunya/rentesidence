@@ -2,21 +2,23 @@
 
 namespace App\Http\Controllers\Tenant;
 
-
 use App\Http\Controllers\Controller;
-use App\Services\ProductOrderService;
+use App\Services\TenantProductOrderService;
 use App\Traits\ResponseTrait;
-use Exception;
 use Illuminate\Http\Request;
+use App\Models\ProductOrder;
+use App\Models\Owner;
+use App\Jobs\SendOrderStatusNotificationJob;
 
 class ProductOrderController extends Controller
 {
     use ResponseTrait;
+
     public $productOrderService;
 
     public function __construct()
     {
-        $this->productOrderService = new ProductOrderService();
+        $this->productOrderService = new TenantProductOrderService();
     }
 
     public function index(Request $request)
@@ -24,10 +26,9 @@ class ProductOrderController extends Controller
         if ($request->ajax()) {
             return $this->productOrderService->getAllProductOrdersData($request);
         }
-        else {
-            $responseData  = $this->productOrderService->getAllProductOrders();
-            return view('tenant.products.order.index')->with($responseData);
-        }
+    
+        $responseData = $this->productOrderService->getAllProductOrders($request);
+        return view('tenant.products.order.index')->with($responseData);
     }
 
     public function paidProductOrdersIndex(Request $request)
@@ -51,74 +52,59 @@ class ProductOrderController extends Controller
         }
     }
 
-    // public function overDueInvoiceIndex(Request $request)
-    // {
-    //     if ($request->ajax()) {
-    //         return $this->invoiceService->getOverDueInvoicesData($request);
-    //     }
-    // }
-
-    // public function details($id)
-    // {
-    //     $data['invoice'] = $this->invoiceService->getById($id);
-    //     $data['items'] = $this->invoiceService->getItemsByInvoiceId($id);
-    //     $data['owner'] = $this->invoiceService->ownerInfo(auth()->id());
-    //     $data['tenant'] = $this->tenantService->getDetailsById($data['invoice']->tenant_id);
-    //     $data['order'] = $this->invoiceService->getOrderById($data['invoice']->order_id);
-
-    //     if ($data['owner'] && empty($data['owner']->print_name)) {
-    //         $data['owner']->print_name = getOption('app_name');
-    //     } 
-    //     if ($data['owner'] && empty($data['owner']->print_address)) {
-    //         $data['owner']->print_address= getOption('app_location');
-    //     } 
-    //     if ($data['owner'] && empty($data['owner']->print_contact)) {
-    //         $data['owner']->print_contact = getOption('app_contact_number');
-    //     } 
-    //     return $this->success($data);
-    // }
-
-    // public function print($id)
-    // {
-    //     $data['invoice'] = $this->invoiceService->getById($id);
-    //     $data['items'] = $this->invoiceService->getItemsByInvoiceId($id);
-    //     $data['owner'] = $this->invoiceService->ownerInfo(auth()->id());
-    //     $data['tenant'] = $this->tenantService->getDetailsById($data['invoice']->tenant_id);
-    //     $data['order'] = $this->invoiceService->getOrderById($data['invoice']->order_id);
-    //     return view('tenant.invoices.print', $data);
-    // }
-
-    // public function store(InvoiceRequest $request)
-    // {
-    //     return $this->invoiceService->store($request);
-    // }
-
-    // public function paymentStatus(PaymentStatusRequest $request)
-    // {
-    //     return $this->invoiceService->paymentStatusChange($request);
-    // }
-
-    // public function destroy($id)
-    // {
-    //     return $this->invoiceService->destroy($id);
-    // }
-
-    // public function types()
-    // {
-    //     $invoiceTypes = $this->invoiceService->types();
-    //     return $this->success($invoiceTypes);
-    // }
-
-    // public function sendNotification(NotificationRequest $request)
-    // {
-    //     try {
-    //         if ($request->notification_type == NOTIFICATION_TYPE_SINGLE) {
-    //             return $this->invoiceService->sendSingleNotification($request);
-    //         } elseif ($request->notification_type == NOTIFICATION_TYPE_MULTIPLE) {
-    //             return $this->invoiceService->sendMultiNotification($request);
-    //         }
-    //     } catch (Exception $e) {
-    //         return $this->error([]);
-    //     }
-    // }
+    public function cancel(Request $request, $id)
+    {
+        $order = ProductOrder::where('user_id', auth()->id())
+            ->whereIn('payment_status', [ORDER_PAYMENT_STATUS_PENDING, ORDER_PAYMENT_STATUS_PAID])
+            ->where('order_status', '!=', ORDER_STATUS_COMPLETED)
+            ->where('order_status', '!=', ORDER_STATUS_CANCELLED)
+            ->findOrFail($id);
+    
+        if ($order->payment_status === ORDER_PAYMENT_STATUS_PAID) {
+            // Money already moved — flag for refund
+            $order->payment_status = PRODUCT_ORDER_STATUS_REFUND_PENDING;
+        } else {
+            // Unpaid — cancel cleanly
+            $order->payment_status = PRODUCT_ORDER_STATUS_CANCELLED;
+        }
+    
+        $order->save();
+    
+        // Notify owner that tenant has cancelled
+        $emailData = (object) [
+            'subject' => __('Order #') . $order->order_id . __(' has been cancelled by the tenant'),
+            'title'   => __('Order Cancellation'),
+            'message' => $order->payment_status === PRODUCT_ORDER_STATUS_REFUND_PENDING
+                ? __('Order #') . $order->order_id . __(' was cancelled after payment. A refund is pending your action.')
+                : __('Order #') . $order->order_id . __(' has been cancelled by the tenant.'),
+        ];
+        // Notify the owner (resolve owner user from order items)
+        $ownerId = $order->orderItems->first()?->product?->owner_user_id;
+        if ($ownerId) {
+            $ownerUser = \App\Models\Owner::find($ownerId)?->user;
+            if ($ownerUser) {
+                $notificationData = (object) [
+                    'title' => __('Order Cancelled by Tenant'),
+                    'body'  => $emailData->message,
+                    'url'   => route('owner.order.index'),
+                ];
+                // Re-use the job but send to owner instead of tenant
+                SendOrderStatusNotificationJob::dispatchToUser(
+                    $ownerUser, $order, $emailData, $notificationData
+                );
+            }
+        }
+    
+        if ($request->wantsJson()) {
+            return response()->json([
+                'success' => true,
+                'refund_pending' => $order->payment_status === PRODUCT_ORDER_STATUS_REFUND_PENDING,
+                'message' => $order->payment_status === PRODUCT_ORDER_STATUS_REFUND_PENDING
+                    ? __('Order cancelled. A refund request has been sent to the owner.')
+                    : __('Order cancelled successfully.'),
+            ]);
+        }
+    
+        return redirect()->back()->with('success', __('Order cancelled.'));
+    }
 }

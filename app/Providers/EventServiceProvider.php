@@ -6,6 +6,7 @@ use Illuminate\Auth\Events\Registered;
 use Illuminate\Auth\Listeners\SendEmailVerificationNotification;
 use Illuminate\Foundation\Support\Providers\EventServiceProvider as ServiceProvider;
 use Illuminate\Support\Facades\Event;
+use Illuminate\Broadcasting\BroadcastEvent;
 
 class EventServiceProvider extends ServiceProvider
 {
@@ -27,7 +28,14 @@ class EventServiceProvider extends ServiceProvider
      */
     public function boot()
     {
-        //
+        parent::boot();
+
+        // Silence broadcast event logging in production
+        if (app()->environment('production')) {
+            Event::listen(BroadcastEvent::class, function () {
+                // Do nothing → prevents "Broadcasting [...]" log entries
+            });
+        }
     }
 
     /**

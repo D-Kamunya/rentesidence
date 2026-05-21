@@ -66,7 +66,7 @@
                                 class="{{ @$subNavTenantHistoryActiveClass }}">{{ __('Tenant History') }}</a>
                         </li>
                         <li class="{{ @$subNavTenantHistoryMMActiveClass }}">
-                            <a href="{{ route('owner.tenants.applications') }}"
+                            <a href="{{ route('owner.tenant.applications.index') }}"
                                 class="{{ @$subNavTenantHistoryActiveClass }}">{{ __('Tenant Applications') }}</a>
                         </li>
                     </ul>
@@ -86,6 +86,13 @@
                                 class="">{{ __('Recurring Setting') }}</a>
                         </li>
                     </ul>
+                </li>
+
+                <li>
+                    <a href="{{ route('owner.sms.credits.index') }}">
+                        <i class="ri-message-2-line"></i>
+                        <span>{{ __('SMS Credits') }}</span>
+                    </a>
                 </li>
 
                 <li>
@@ -245,6 +252,12 @@
                                 href="{{ route('profile') }}">{{ __('My Profile') }}</a></li>
                         <li><a href="{{ route('change-password') }}">{{ __('Change Password') }}</a></li>
                     </ul>
+                </li>
+                <li>
+                    <a href="{{ route('owner.wallet.index') }}" >
+                        <i class="ri-wallet-line"></i>
+                        <span>{{ __('Wallet') }}</span>
+                    </a>
                 </li>
                 @if (isAddonInstalled('PROTYSAAS') > 1)
                     <li>

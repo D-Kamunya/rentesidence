@@ -16,37 +16,203 @@
                                 <span class="iconify font-24" data-icon="openmoji:waving-hand"></span>
                             </p>
                         </div>
-                        <a href="{{ route('owner.property.add') }}" class="theme-btn-primary">
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
-                                <path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/>
-                            </svg>
-                            {{ __('Add Property') }}
-                        </a>
+                        @php
+                            $subscriptionService = app(\App\Services\SubscriptionService::class);
+                            $unitLimit = $subscriptionService->getUnitLimit();
+                            $remainingUnits = $unitLimit['remaining'] ?? 0;
+                            $totalUnits = $unitLimit['total'] ?? 0;
+                            $hasReachedLimit = $remainingUnits <= 0 && $totalUnits > 0;
+                            $isNearLimit = $remainingUnits > 0 && $remainingUnits <= 3;
+                        @endphp
+
+                        @if($hasReachedLimit)
+                            {{-- Limit reached - Upgrade CTA --}}
+                            <a href="{{ route('owner.subscription.index', ['current_plan' => 'no']) }}" 
+                            class="theme-btn-primary upgrade-btn"
+                            title="{{ __('You\'ve used all :total units. Upgrade to add more.', ['total' => $totalUnits]) }}">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                                    <polyline points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
+                                </svg>
+                                {{ __('Upgrade to Add Property') }}
+                            </a>
+                        @elseif($isNearLimit)
+                            {{-- Near limit - Add with warning --}}
+                            <a href="{{ route('owner.property.add') }}" 
+                            class="theme-btn-primary near-limit-btn"
+                            title="{{ __('Only :remaining units remaining', ['remaining' => $remainingUnits]) }}">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+                                    <path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/>
+                                </svg>
+                                {{ __('Add Property') }}
+                                <span class="remaining-badge">{{ $remainingUnits }} left</span>
+                            </a>
+                        @else
+                            {{-- Normal - Plenty of units --}}
+                            <a href="{{ route('owner.property.add') }}" class="theme-btn-primary">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+                                    <path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/>
+                                </svg>
+                                {{ __('Add Property') }}
+                            </a>
+                        @endif
                     </div>
 
                     {{-- Pending Tickets Nudge --}}
-                    @if(isset($pendingTickets) && $pendingTickets > 0)
+                    @if (isset($pendingTickets) && $pendingTickets > 0)
                         <div class="notice-bar notice-bar--warning mb-4">
                             <div class="notice-bar__left">
                                 <div class="notice-bar__icon">
                                     <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
-                                        <path d="M8 1.5a6.5 6.5 0 100 13 6.5 6.5 0 000-13z" stroke="currentColor" stroke-width="1.4"/>
-                                        <path d="M8 7v4M8 5v.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                                        <path d="M8 1.5a6.5 6.5 0 100 13 6.5 6.5 0 000-13z" stroke="currentColor" stroke-width="1.4" />
+                                        <path d="M8 7v4M8 5v.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" />
                                     </svg>
                                 </div>
                                 <div>
                                     <div class="notice-bar__text">
-                                        You have <strong>{{ $pendingTickets }} pending {{ Str::plural('ticket', $pendingTickets) }}</strong> requiring attention
+                                        You have <strong>{{ $pendingTickets }} pending {{ Str::plural('ticket', $pendingTickets) }}</strong>
+                                        requiring attention
                                     </div>
                                     <div class="notice-bar__sub">Respond quickly to maintain tenant satisfaction</div>
                                 </div>
                             </div>
                             <a href="{{ route('owner.ticket.index') }}" class="notice-bar__action">
                                 <svg width="10" height="10" viewBox="0 0 16 16" fill="none">
-                                    <path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                                    <path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"
+                                        stroke-linejoin="round" />
                                 </svg>
                                 View Tickets
                             </a>
+                        </div>
+                    @endif
+
+                    {{-- Use Marketplace Nudge --}}
+                    @if($showMarketplacePrompt)
+                        <div class="notice-bar notice-bar--marketplace mb-4 alert alert-dismissible fade show">
+                            <div class="notice-bar__left">
+                                <div class="notice-bar__icon">
+                                    <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
+                                        <path d="M8 1.5a6.5 6.5 0 100 13 6.5 6.5 0 000-13z" stroke="currentColor" stroke-width="1.4"/>
+                                        <path d="M5.5 8h5M8 5.5v5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                                    </svg>
+                                </div>
+                                <div>
+                                    <div class="notice-bar__text">
+                                        <strong>Friendly tip:</strong> Listing your products in the marketplace can help you reach more tenants and boost your income flow.
+                                    </div>
+                                    <div class="notice-bar__sub">It’s quick to get started and completely optional.</div>
+                                </div>
+                            </div>
+                            <div class="notice-bar__actions">
+                                <a href="{{ route('owner.products.create') }}" class="notice-bar__action">
+                                    <svg width="10" height="10" viewBox="0 0 16 16" fill="none">
+                                        <path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                                    </svg>
+                                    List a Product
+                                </a>
+                                <button type="button" class="notice-bar__action notice-bar__dismiss" data-bs-dismiss="alert">
+                                    Maybe later
+                                </button>
+                            </div>
+                        </div>
+                    @endif
+
+                    {{-- Pending Product Orders --}}
+                    @if($pendingProductOrdersCount > 0)
+                        <div class="notice-bar notice-bar--orderpending mb-4">
+                            <div class="notice-bar__left">
+                                <div class="notice-bar__orderpendingicon">
+                                    <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
+                                        <path d="M8 1.5a6.5 6.5 0 100 13 6.5 6.5 0 000-13z" stroke="currentColor" stroke-width="1.4" />
+                                        <path d="M8 7v4M8 5v.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" />
+                                    </svg>
+                                </div>
+                                <div>
+                                    <div>
+                                        <div class="notice-bar__text">
+                                            You have <strong>{{ $pendingProductOrdersCount }} new pending {{ Str::plural('order', $pendingProductOrdersCount) }}</strong> awaiting dispatch
+                                        </div>
+                                        <div class="notice-bar__sub">Process these orders promptly to maintain tenant satisfaction</div>
+                                    </div>
+                                </div>
+                            </div>
+                            <a href="{{ route('owner.order.index') }}" class="notice-bar__action">
+                                <svg width="10" height="10" viewBox="0 0 16 16" fill="none">
+                                    <path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"
+                                        stroke-linejoin="round" />
+                                </svg>
+                                View Orders
+                            </a>
+                        </div>
+                    @endif
+
+                    {{-- Pending Tenant Appplications --}}
+                    @if($pendingApplicationsCount > 0)
+                        <div class="notice-bar notice-bar--orderpending mb-4">
+                            <div class="notice-bar__left">
+                                <div class="notice-bar__orderpendingicon">
+                                    <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
+                                        <path d="M8 1.5a6.5 6.5 0 100 13 6.5 6.5 0 000-13z" stroke="currentColor" stroke-width="1.4" />
+                                        <path d="M8 7v4M8 5v.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" />
+                                    </svg>
+                                </div>
+                                <div>
+                                    <div>
+                                        <div class="notice-bar__text">
+                                        You have <strong>{{ $pendingApplicationsCount }} pending tenant {{ Str::plural('application', $pendingApplicationsCount) }}</strong>.
+                                        </div>
+                                        <div class="notice-bar__sub">Review pending applications to welcome new tenants sooner.</div>
+                                    </div>
+                                </div>
+                            </div>
+                            <a href="{{ route('owner.tenant.applications.index') }}" class="notice-bar__action">
+                                <svg width="10" height="10" viewBox="0 0 16 16" fill="none">
+                                    <path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"
+                                        stroke-linejoin="round" />
+                                </svg>
+                                Review
+                            </a>
+                        </div>
+                    @endif
+
+                    {{-- SMS Credits Nudge --}}
+                    @if($smsCredits <= $smsLowThreshold || $smsFailedCount > 0)
+                        <div class="notice-bar notice-bar--warning mb-4">
+                            <div class="notice-bar__left">
+                                <div class="notice-bar__icon">
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+                                        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"
+                                            stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+                                    </svg>
+                                </div>
+                                <div>
+                                    @if($smsCredits === 0)
+                                        <div class="notice-bar__text">
+                                            <strong>{{ __('SMS paused') }}</strong> — {{ __('you have 0 credits remaining. SMS Tenant notifications are on hold.') }}
+                                        </div>
+                                    @else
+                                        <div class="notice-bar__text">
+                                            <strong>{{ __('SMS credits running low') }}</strong> — {{ number_format($smsCredits) }} {{ __('credits remaining.') }}
+                                        </div>
+                                    @endif
+                                    @if($smsFailedCount > 0)
+                                        <div class="notice-bar__sub">
+                                            {{ $smsFailedCount }} {{ __('message(s) unsent in the last 30 days.') }}
+                                            <a href="{{ route('owner.sms.credits.index') }}" class="theme-link" style="font-size:12px;">
+                                                {{ __('View & retry') }}
+                                            </a>
+                                        </div>
+                                    @endif
+                                </div>
+                            </div>
+                            <div class="notice-bar__actions">
+                                <a href="#" data-bs-toggle="modal" data-bs-target="#smsTopupModal"
+                                class="notice-bar__action notice-bar--warning">
+                                    {{ __('Top Up Credits') }}
+                                </a>
+                                <a href="{{ route('owner.sms.credits.index') }}" class="notice-bar__action notice-bar--warning">
+                                    {{ __('Manage SMS') }}
+                                </a>
+                            </div>
                         </div>
                     @endif
 
@@ -55,7 +221,8 @@
 
                         {{-- Total Properties --}}
                         <div class="col-6 col-md-4 col-lg-3">
-                            <div class="stat-card stat-card--illustrated">
+                            <div class="stat-card stat-card--illustrated"
+                            onclick="window.location='{{ route('owner.property.allProperty') }}'">
                                 <div class="stat-card__illustration stat-card__illustration--coral">
                                     <svg viewBox="0 0 120 72" fill="none" xmlns="http://www.w3.org/2000/svg">
                                         <rect x="6"  y="38" width="16" height="30" fill="#F5C4B3" rx="2"/>
@@ -79,7 +246,8 @@
 
                         {{-- Total Units --}}
                         <div class="col-6 col-md-4 col-lg-3">
-                            <div class="stat-card stat-card--illustrated">
+                            <div class="stat-card stat-card--illustrated"
+                                onclick="window.location='{{ route('owner.property.allUnit') }}'">
                                 <div class="stat-card__illustration stat-card__illustration--blue">
                                     <svg viewBox="0 0 120 72" fill="none" xmlns="http://www.w3.org/2000/svg">
                                         <rect x="10" y="18" width="100" height="50" fill="#E6F1FB" rx="4"/>
@@ -93,14 +261,15 @@
                                 </div>
                                 <div class="stat-card__content">
                                     <p class="stat-card__label">Total Units</p>
-                                    <p class="stat-card__value stat-card__value--blue">{{ $totalUnits }}</p>
+                                    <p class="stat-card__value stat-card__value--blue">{{ $totalUnitsdash }}</p>
                                 </div>
                             </div>
                         </div>
 
                         {{-- Total Tenants --}}
                         <div class="col-6 col-md-4 col-lg-3">
-                            <div class="stat-card stat-card--illustrated">
+                            <div class="stat-card stat-card--illustrated"
+                             onclick="window.location='{{ route('owner.tenant.index') }}'">
                                 <div class="stat-card__illustration stat-card__illustration--teal">
                                     <svg viewBox="0 0 120 72" fill="none" xmlns="http://www.w3.org/2000/svg">
                                         <circle cx="28" cy="28" r="11" fill="#1D9E75" opacity=".18"/>
@@ -117,29 +286,6 @@
                                 <div class="stat-card__content">
                                     <p class="stat-card__label">Total Tenants</p>
                                     <p class="stat-card__value stat-card__value--teal">{{ $totalTenants }}</p>
-                                </div>
-                            </div>
-                        </div>
-
-                        {{-- Total Maintainers --}}
-                        <div class="col-6 col-md-4 col-lg-3">
-                            <div class="stat-card stat-card--illustrated">
-                                <div class="stat-card__illustration stat-card__illustration--purple">
-                                    <svg viewBox="0 0 120 72" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                        <circle cx="48" cy="26" r="9"  fill="#534AB7" opacity=".2"/>
-                                        <circle cx="48" cy="23" r="6"  fill="#534AB7" opacity=".5"/>
-                                        <rect   x="42" y="36" width="12" height="20" fill="#534AB7" rx="3" opacity=".28"/>
-                                        <rect   x="38" y="42" width="20" height="4"  fill="#534AB7" rx="1" opacity=".4"/>
-                                        <circle cx="72" cy="32" r="7"  stroke="#534AB7" stroke-width="2.5" fill="none" opacity=".4"/>
-                                        <rect   x="70" y="37" width="4" height="18" fill="#534AB7" rx="1" opacity=".38" transform="rotate(12 72 46)"/>
-                                        <rect   x="32" y="36" width="3" height="14" fill="#534AB7" rx="1" opacity=".32" transform="rotate(-18 33 43)"/>
-                                        <rect   x="86" y="50" width="22" height="14" fill="#534AB7" rx="2" opacity=".12"/>
-                                        <rect   x="90" y="52" width="5" height="3"  fill="#534AB7" rx=".5" opacity=".22"/>
-                                    </svg>
-                                </div>
-                                <div class="stat-card__content">
-                                    <p class="stat-card__label">Maintainers</p>
-                                    <p class="stat-card__value stat-card__value--purple">{{ $totalMaintainers }}</p>
                                 </div>
                             </div>
                         </div>
@@ -161,7 +307,31 @@
                                 </div>
                                 <div class="stat-card__content">
                                     <p class="stat-card__label">Available Units</p>
-                                    <p class="stat-card__value stat-card__value--amber">{{ $totalUnits - $totalTenants }}</p>
+                                    <p class="stat-card__value stat-card__value--amber">{{ $totalUnitsdash - $totalTenants }}</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        {{-- Total Maintainers --}}
+                        <div class="col-6 col-md-4 col-lg-3">
+                            <div class="stat-card stat-card--illustrated"
+                             onclick="window.location='{{ route('owner.maintainer.index') }}'">
+                                <div class="stat-card__illustration stat-card__illustration--purple">
+                                    <svg viewBox="0 0 120 72" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                        <circle cx="48" cy="26" r="9"  fill="#534AB7" opacity=".2"/>
+                                        <circle cx="48" cy="23" r="6"  fill="#534AB7" opacity=".5"/>
+                                        <rect   x="42" y="36" width="12" height="20" fill="#534AB7" rx="3" opacity=".28"/>
+                                        <rect   x="38" y="42" width="20" height="4"  fill="#534AB7" rx="1" opacity=".4"/>
+                                        <circle cx="72" cy="32" r="7"  stroke="#534AB7" stroke-width="2.5" fill="none" opacity=".4"/>
+                                        <rect   x="70" y="37" width="4" height="18" fill="#534AB7" rx="1" opacity=".38" transform="rotate(12 72 46)"/>
+                                        <rect   x="32" y="36" width="3" height="14" fill="#534AB7" rx="1" opacity=".32" transform="rotate(-18 33 43)"/>
+                                        <rect   x="86" y="50" width="22" height="14" fill="#534AB7" rx="2" opacity=".12"/>
+                                        <rect   x="90" y="52" width="5" height="3"  fill="#534AB7" rx=".5" opacity=".22"/>
+                                    </svg>
+                                </div>
+                                <div class="stat-card__content">
+                                    <p class="stat-card__label">Maintainers</p>
+                                    <p class="stat-card__value stat-card__value--purple">{{ $totalMaintainers }}</p>
                                 </div>
                             </div>
                         </div>
@@ -193,9 +363,10 @@
                             </div>
                         </div>
 
-                        {{-- Open Tickets --}}
+                        {{-- Total Tickets --}}
                         <div class="col-6 col-md-4 col-lg-3">
-                            <div class="stat-card stat-card--illustrated">
+                            <div class="stat-card stat-card--illustrated"
+                             onclick="window.location='{{ route('owner.ticket.index') }}'">
                                 <div class="stat-card__illustration stat-card__illustration--coral">
                                     <svg viewBox="0 0 120 72" fill="none" xmlns="http://www.w3.org/2000/svg">
                                         <rect x="14" y="18" width="68" height="46" fill="#FAECE7" rx="4"/>
@@ -213,8 +384,83 @@
                                     </svg>
                                 </div>
                                 <div class="stat-card__content">
-                                    <p class="stat-card__label">Open Tickets</p>
+                                    <p class="stat-card__label">Total Tickets</p>
                                     <p class="stat-card__value stat-card__value--coral">{{ $tickets->count() }}</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        {{-- Listed Products --}}
+                        <div class="col-6 col-md-4 col-lg-3">
+                            <div class="stat-card stat-card--illustrated"
+                             onclick="window.location='{{ route('owner.products.index') }}'">
+                                <div class="stat-card__illustration stat-card__illustration--blue">
+                                    <svg viewBox="0 0 120 72" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                        <rect x="14" y="18" width="68" height="46" fill="#E7F0FA" rx="4"/>
+                                        <circle cx="14" cy="41" r="4" fill="#fff"/>
+                                        <circle cx="82" cy="41" r="4" fill="#fff"/>
+                                        <rect x="24" y="28" width="48" height="14" fill="#1D3C99" rx="2" opacity=".12"/>
+                                        <line x1="29" y1="33" x2="67" y2="33" stroke="#1D3C99" stroke-width="2" stroke-linecap="round" opacity=".3"/>
+                                        <line x1="29" y1="38" x2="52" y2="38" stroke="#1D3C99" stroke-width="2" stroke-linecap="round" opacity=".2"/>
+                                        <rect x="28" y="48" width="40" height="10" fill="#1D3C99" rx="2" opacity=".08"/>
+                                        <line x1="33" y1="52" x2="63" y2="52" stroke="#1D3C99" stroke-width="1.5" stroke-linecap="round" opacity=".18"/>
+                                        <rect x="70" y="16" width="24" height="10" fill="#1D3C99" rx="2" opacity=".55"/>
+                                        <text x="82" y="23" font-size="5.5" fill="#fff" text-anchor="middle" font-weight="bold" font-family="system-ui,sans-serif">LISTED</text>
+                                        <circle cx="100" cy="48" r="10" fill="#1D3C99" opacity=".08"/>
+                                        <path d="M96 48h8M100 44v8" stroke="#1D3C99" stroke-width="1.8" stroke-linecap="round" opacity=".45"/>
+                                    </svg>
+                                </div>
+                                <div class="stat-card__content">
+                                    @if($listedProductsCount > 0)
+                                        <p class="stat-card__label">Listed Products</p>
+                                        <p class="stat-card__value stat-card__value--blue">{{ $listedProductsCount }}</p>
+                                    @else
+                                        <p class="stat-card__label">No Products Yet</p>
+                                        <p class="stat-card__value stat-card__value--blue">0</p>
+                                        <a href="{{ route('owner.products.create') }}" class="stat-card__cta">
+                                            Add Your First Product
+                                        </a>
+                                    @endif
+                                </div>
+                            </div>
+                        </div>
+
+                        {{-- SMS Credits --}}
+                        <div class="col-6 col-md-4 col-lg-3">
+                            <div class="stat-card stat-card--illustrated">
+                                <div class="stat-card__illustration stat-card__illustration--{{ $smsCredits <= $smsLowThreshold ? 'coral' : 'teal' }}">
+                                    <svg viewBox="0 0 120 72" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                        <rect x="10" y="14" width="76" height="48" rx="6"
+                                            fill="{{ $smsCredits <= $smsLowThreshold ? '#FAECE7' : '#E1F5EE' }}"/>
+                                        <rect x="10" y="14" width="76" height="48" rx="6"
+                                            stroke="{{ $smsCredits <= $smsLowThreshold ? '#993C1D' : '#1D9E75' }}"
+                                            stroke-width="2" fill="none" opacity=".3"/>
+                                        <line x1="24" y1="30" x2="72" y2="30"
+                                            stroke="{{ $smsCredits <= $smsLowThreshold ? '#993C1D' : '#1D9E75' }}"
+                                            stroke-width="2.5" stroke-linecap="round" opacity=".5"/>
+                                        <line x1="24" y1="38" x2="60" y2="38"
+                                            stroke="{{ $smsCredits <= $smsLowThreshold ? '#993C1D' : '#1D9E75' }}"
+                                            stroke-width="2.5" stroke-linecap="round" opacity=".35"/>
+                                        <line x1="24" y1="46" x2="50" y2="46"
+                                            stroke="{{ $smsCredits <= $smsLowThreshold ? '#993C1D' : '#1D9E75' }}"
+                                            stroke-width="2.5" stroke-linecap="round" opacity=".2"/>
+                                        <polygon points="86,52 96,40 106,52"
+                                                fill="{{ $smsCredits <= $smsLowThreshold ? '#993C1D' : '#1D9E75' }}"
+                                                opacity=".6"/>
+                                    </svg>
+                                </div>
+                                <div class="stat-card__content">
+                                    <p class="stat-card__label">{{ __('SMS Credits') }}</p>
+                                    <p class="stat-card__value stat-card__value--{{ $smsCredits <= $smsLowThreshold ? 'coral' : 'teal' }}">
+                                        {{ number_format($smsCredits) }}
+                                    </p>
+                                    <a href="#" data-bs-toggle="modal" data-bs-target="#smsTopupModal"
+                                    class="stat-card__cta"
+                                    style="background:{{ $smsCredits <= $smsLowThreshold ? '#FAECE7' : '#E1F5EE' }};
+                                            border-color:{{ $smsCredits <= $smsLowThreshold ? '#F5C4B3' : '#9FE1CB' }};
+                                            color:{{ $smsCredits <= $smsLowThreshold ? '#993C1D' : '#0F6E56' }};">
+                                        {{ $smsCredits <= $smsLowThreshold ? __('Top Up Now') : __('Buy More') }}
+                                    </a>
                                 </div>
                             </div>
                         </div>
@@ -341,6 +587,315 @@
     </div>
 </div>
 
+{{-- ══ SMS Top-Up Modal ═══════════════════════════════════════════════ --}}
+<div class="modal fade" id="smsTopupModal" tabindex="-1" aria-labelledby="smsTopupModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" style="max-width:460px;">
+        <div class="modal-content" style="border-radius:16px;border:none;overflow:hidden;">
+
+            {{-- Header --}}
+            <div style="background:linear-gradient(135deg,#185FA5,#1D9E75);padding:1.25rem 1.5rem;display:flex;align-items:center;justify-content:space-between;">
+                <div style="display:flex;align-items:center;gap:10px;">
+                    <img src="{{ asset('assets/images/gateway-icon/mpesa.jpg') }}"
+                         alt="M-Pesa" style="width:36px;height:36px;border-radius:8px;object-fit:cover;">
+                    <div>
+                        <div style="font-size:15px;font-weight:600;color:#fff;">{{ __('Buy SMS Credits') }}</div>
+                        <div style="font-size:11px;color:rgba(255,255,255,.75);">
+                            {{ __('KSh') }} {{ number_format($smsPricePerCredit, 2) }} {{ __('per credit') }}
+                        </div>
+                    </div>
+                </div>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+
+            {{-- Body --}}
+            <div style="padding:1.5rem;">
+
+                {{-- Current balance --}}
+                <div style="background:#f9fafb;border:0.5px solid #e5e7eb;border-radius:10px;padding:10px 14px;margin-bottom:1.25rem;display:flex;align-items:center;justify-content:space-between;">
+                    <span style="font-size:13px;color:#6b7280;">{{ __('Current balance') }}</span>
+                    <span style="font-size:15px;font-weight:700;color:{{ $smsCredits <= $smsLowThreshold ? '#993C1D' : '#1D9E75' }};">
+                        {{ number_format($smsCredits) }} {{ __('credits') }}
+                    </span>
+                </div>
+
+                {{-- Quick-pick packs --}}
+                <p style="font-size:12px;font-weight:500;color:#374151;margin-bottom:8px;">{{ __('Select a pack') }}</p>
+                <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:1rem;">
+                    @foreach([50, 100, 250, 500, 1000] as $pack)
+                        <button type="button" class="sms-pack-btn" data-qty="{{ $pack }}">
+                            <span style="font-size:16px;font-weight:700;color:#111827;display:block;">{{ $pack }}</span>
+                            <span style="font-size:10px;color:#9ca3af;display:block;">credits</span>
+                            <span style="font-size:11px;font-weight:600;color:#185FA5;display:block;margin-top:2px;">
+                                KSh {{ number_format($pack * $smsPricePerCredit, 2) }}
+                            </span>
+                        </button>
+                    @endforeach
+                </div>
+
+                {{-- Custom qty --}}
+                <div style="display:flex;align-items:center;gap:8px;margin-bottom:1.25rem;">
+                    <input type="number" id="modalCustomQty" min="10"
+                           placeholder="{{ __('Custom qty (min 10)') }}"
+                           style="flex:1;padding:9px 12px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:13px;outline:none;">
+                    <span style="font-size:13px;font-weight:600;color:#185FA5;white-space:nowrap;">
+                        KSh <span id="modalCustomTotal">0.00</span>
+                    </span>
+                </div>
+
+                {{-- Phone number --}}
+                <div style="margin-bottom:1.25rem;">
+                    <label style="display:block;font-size:12px;font-weight:500;color:#374151;margin-bottom:5px;">
+                        {{ __('M-Pesa Phone Number') }}
+                        <span style="color:#9ca3af;font-weight:400;"> — {{ __('edit if different from account') }}</span>
+                    </label>
+                    <div style="display:flex;align-items:center;border:1.5px solid #e5e7eb;border-radius:8px;overflow:hidden;">
+                        <span style="padding:0 10px;font-size:13px;color:#6b7280;background:#f9fafb;border-right:1.5px solid #e5e7eb;height:40px;display:flex;align-items:center;">🇰🇪</span>
+                        <input type="tel" id="modalPhone"
+                               value="{{ auth()->user()->contact_number ?? '' }}"
+                               style="flex:1;padding:9px 12px;border:none;outline:none;font-size:13px;">
+                    </div>
+                </div>
+
+                {{-- Info note --}}
+                <div style="background:#FFFBEB;border:0.5px solid #FDE68A;border-radius:8px;padding:9px 12px;font-size:12px;color:#92400E;display:flex;gap:8px;margin-bottom:1.25rem;">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" style="flex-shrink:0;margin-top:1px;">
+                        <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="1.8"/>
+                        <line x1="12" y1="8" x2="12" y2="12" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+                        <line x1="12" y1="16" x2="12.01" y2="16" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                    </svg>
+                    <span>{{ __('Ensure your Safaricom line is active and your phone is unlocked. The STK push will arrive within seconds.') }}</span>
+                </div>
+
+                {{-- Close button (mobile-friendly) --}}
+                <button type="button" class="btn w-100 mb-3" data-bs-dismiss="modal"
+                        style="background:#f3f4f6;color:#6b7280;font-size:13px;font-weight:500;border-radius:10px;padding:10px;border:none;">
+                    {{ __('Cancel') }}
+                </button>
+
+                {{-- Pay button --}}
+                <button type="button" id="modalBuyBtn" disabled
+                        style="display:flex;align-items:center;justify-content:center;gap:10px;width:100%;padding:12px;background:#185FA5;color:#fff;font-size:14px;font-weight:600;border:none;border-radius:10px;cursor:pointer;opacity:.5;transition:all .15s;">
+                    <img src="{{ asset('assets/images/gateway-icon/mpesa.jpg') }}"
+                         alt="" style="width:20px;height:20px;border-radius:4px;object-fit:cover;">
+                    {{ __('Pay') }}
+                    <span id="modalBuyAmount"></span>
+                    {{ __('via M-Pesa') }}
+                </button>
+
+            </div>
+
+            {{-- M-Pesa waiting overlay (inside modal) --}}
+            <div id="modalMpesaWait" style="display:none;position:absolute;inset:0;background:rgba(255,255,255,.96);border-radius:16px;flex-direction:column;align-items:center;justify-content:center;gap:16px;text-align:center;padding:2rem;">
+                <img src="{{ asset('assets/images/gateway-icon/mpesa.jpg') }}"
+                     alt="M-PESA" style="width:70px;height:70px;border-radius:12px;object-fit:cover;">
+                <div>
+                    <p style="font-size:14px;font-weight:600;color:#111827;margin:0 0 6px;">{{ __('Check your phone') }}</p>
+                    <p style="font-size:13px;color:#6b7280;margin:0;">{{ __('Enter your M-Pesa PIN to complete payment.') }}</p>
+                    <p style="font-size:13px;color:#6b7280;margin:6px 0 0;">
+                        {{ __('Time remaining:') }} <strong id="modalTimer" style="color:#185FA5;">2:00</strong>
+                    </p>
+                </div>
+                <img src="{{ asset('assets/images/loading.svg') }}" alt="Loading" style="width:32px;">
+            </div>
+
+        </div>
+    </div>
+</div>
+
+{{-- Preloader (page-level, same as products checkout — used after Pusher redirect) --}}
+<div id="mpesa-preloader" style="display:none;">
+    <div id="mpesa-preloaderInner">
+        <img src="{{ asset('assets/images/gateway-icon/mpesa.jpg') }}" alt="M-PESA">
+        <div>
+            <p>{{ __('Please follow the instructions and do not refresh or leave this page.') }}</p>
+            <p>{{ __('This may take up to') }} <span id="mpesa-timer">2:00</span> {{ __('minute(s).') }}</p>
+            <p>{{ __('You will receive a prompt on your mobile number to enter your PIN to authorize payment.') }}</p>
+            <p>{{ __('Please ensure your phone is on and unlocked. Thank you.') }}</p>
+        </div>
+        <img src="{{ asset('assets/images/loading.svg') }}" alt="Loading">
+    </div>
+</div>
+
+@push('style')
+<style>
+/* ── SMS pack buttons (in modal) ─────────────────────────── */
+.sms-pack-btn {
+    display:flex; flex-direction:column; align-items:center;
+    padding:9px 14px; border:1.5px solid #e5e7eb; border-radius:10px;
+    background:#fff; cursor:pointer; transition:all .15s; gap:1px;
+}
+.sms-pack-btn:hover, .sms-pack-btn.active {
+    border-color:#185FA5; background:#E6F1FB;
+}
+/* ── Page-level preloader ─────────────────────────────────── */
+#mpesa-preloader {
+    position:fixed; inset:0; background:rgba(0,0,0,.55);
+    z-index:9999; display:flex; align-items:center; justify-content:center;
+}
+#mpesa-preloaderInner {
+    background:#fff; border-radius:16px; padding:2rem;
+    max-width:420px; width:90%; display:flex; flex-direction:column;
+    align-items:center; gap:16px; text-align:center;
+    box-shadow:0 20px 40px rgba(0,0,0,.2);
+}
+#mpesa-preloaderInner img:first-child { width:80px; height:80px; object-fit:contain; border-radius:12px; }
+#mpesa-preloaderInner p { font-size:13px; color:#374151; margin:0; line-height:1.6; }
+#mpesa-timer { font-weight:600; color:#185FA5; }
+#mpesa-preloaderInner img:last-child { width:36px; }
+</style>
+@endpush
+
+@push('script')
+<script>
+(function () {
+    'use strict';
+
+    const pricePerSms = {{ $smsPricePerCredit }};
+    let selectedQty   = 0;
+
+    const customQtyEl   = document.getElementById('modalCustomQty');
+    const customTotalEl = document.getElementById('modalCustomTotal');
+    const buyBtn        = document.getElementById('modalBuyBtn');
+    const buyAmountEl   = document.getElementById('modalBuyAmount');
+    const phoneEl       = document.getElementById('modalPhone');
+
+    function updateBuyBtn() {
+        const valid = selectedQty >= 10 && phoneEl.value.trim().length >= 9;
+        buyBtn.disabled = !valid;
+        buyBtn.style.opacity = valid ? '1' : '.5';
+        buyBtn.style.cursor  = valid ? 'pointer' : 'not-allowed';
+        const total = (selectedQty * pricePerSms).toFixed(2);
+        buyAmountEl.textContent = selectedQty >= 10 ? 'KSh ' + total : '';
+    }
+
+    // Quick-pick
+    document.querySelectorAll('.sms-pack-btn').forEach(btn => {
+        btn.addEventListener('click', function () {
+            document.querySelectorAll('.sms-pack-btn').forEach(b => b.classList.remove('active'));
+            this.classList.add('active');
+            selectedQty = parseInt(this.dataset.qty);
+            customQtyEl.value = selectedQty;
+            customTotalEl.textContent = (selectedQty * pricePerSms).toFixed(2);
+            updateBuyBtn();
+        });
+    });
+
+    // Custom qty
+    customQtyEl.addEventListener('input', function () {
+        selectedQty = parseInt(this.value) || 0;
+        customTotalEl.textContent = (selectedQty * pricePerSms).toFixed(2);
+        document.querySelectorAll('.sms-pack-btn').forEach(b => b.classList.remove('active'));
+        updateBuyBtn();
+    });
+
+    // Phone change
+    phoneEl.addEventListener('input', updateBuyBtn);
+
+    // ── Modal waiting overlay timer ───────────────────────────
+    let modalTimer;
+    const modalWait  = document.getElementById('modalMpesaWait');
+    const modalTimerEl = document.getElementById('modalTimer');
+
+    function showModalWait() {
+        let countdown = 120;
+        modalWait.style.display = 'flex';
+        modalTimer = setInterval(() => {
+            const m = Math.floor(countdown / 60);
+            const s = countdown % 60;
+            modalTimerEl.textContent = `${m}:${s < 10 ? '0' + s : s}`;
+            if (countdown-- <= 0) clearInterval(modalTimer);
+        }, 1000);
+    }
+
+    function hideModalWait() {
+        clearInterval(modalTimer);
+        modalWait.style.display = 'none';
+    }
+
+    // ── Page-level preloader ──────────────────────────────────
+    let pageTimer;
+    function showPagePreloader() {
+        let countdown = 120;
+        const el = document.getElementById('mpesa-timer');
+        document.getElementById('mpesa-preloader').style.display = 'flex';
+        pageTimer = setInterval(() => {
+            const m = Math.floor(countdown / 60);
+            const s = countdown % 60;
+            el.textContent = `${m}:${s < 10 ? '0' + s : s}`;
+            if (countdown-- <= 0) clearInterval(pageTimer);
+        }, 1000);
+    }
+
+    // ── Pay button ────────────────────────────────────────────
+    buyBtn.addEventListener('click', function () {
+        if (selectedQty < 10 || phoneEl.value.trim().length < 9) return;
+
+        const total = (selectedQty * pricePerSms).toFixed(2);
+        showModalWait();
+
+        const formData = new FormData();
+        formData.append('_token',    '{{ csrf_token() }}');
+        formData.append('quantity',   selectedQty);
+        formData.append('cartTotal',  total);
+        formData.append('phone',      phoneEl.value.trim());
+
+        fetch('{{ route("owner.sms.credits.checkout") }}', { method: 'POST', body: formData })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    const pusher  = new Pusher(window.Laravel.pusher_key, { cluster: window.Laravel.pusher_cluster });
+                    const channel = pusher.subscribe('transaction.' + data.transaction_id);
+
+                    const redirectTimeout = setTimeout(() => {
+                        hideModalWait();
+                        showPagePreloader();
+                        window.location.href = data.redirect_url;
+                    }, 120000);
+
+                    channel.bind('MpesaTransactionProcessed', function () {
+                        clearTimeout(redirectTimeout);
+                        hideModalWait();
+                        showPagePreloader();
+                        window.location.href = data.redirect_url + '&callback=true&stk_success=true';
+                    });
+
+                    channel.bind('MpesaTransactionDeclined', function () {
+                        clearTimeout(redirectTimeout);
+                        hideModalWait();
+                        if (typeof toastr !== 'undefined') {
+                            toastr.error('{{ __("Payment was declined. Please try again.") }}');
+                        }
+                    });
+
+                } else {
+                    hideModalWait();
+                    if (typeof toastr !== 'undefined') {
+                        toastr.error(data.error || '{{ __("Payment failed. Please try again.") }}');
+                    }
+                }
+            })
+            .catch(() => {
+                hideModalWait();
+                if (typeof toastr !== 'undefined') {
+                    toastr.error('{{ __("Something went wrong. Please try again.") }}');
+                }
+            });
+    });
+
+    // Reset modal state when closed
+    document.getElementById('smsTopupModal').addEventListener('hidden.bs.modal', function () {
+        hideModalWait();
+        document.querySelectorAll('.sms-pack-btn').forEach(b => b.classList.remove('active'));
+        customQtyEl.value = '';
+        customTotalEl.textContent = '0.00';
+        selectedQty = 0;
+        updateBuyBtn();
+    });
+
+})();
+</script>
+@endpush
+
 <style>
     /* ── Page header ──────────────────────────────────────── */
     .dash-header {
@@ -372,6 +927,54 @@
         color: #fff;
         transform: translateY(-1px);
         box-shadow: 0 4px 12px rgba(24,95,165,.25);
+    }
+
+    /* Upgrade button */
+    .upgrade-btn {
+        background: linear-gradient(135deg, #F59E0B 0%, #D97706 100%) !important;
+        border: 0.5px solid #D97706 !important;
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .upgrade-btn:hover {
+        background: linear-gradient(135deg, #D97706 0%, #B45309 100%) !important;
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3);
+    }
+    
+    .upgrade-btn::before {
+        content: '';
+        position: absolute;
+        top: -2px;
+        right: -2px;
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: #FEF3C7;
+        animation: upgradePulse 1.5s infinite;
+    }
+    
+    @keyframes upgradePulse {
+        0%, 100% { opacity: 0.6; transform: scale(1); }
+        50% { opacity: 1; transform: scale(1.3); }
+    }
+    
+    /* Near limit button */
+    .near-limit-btn {
+        position: relative;
+    }
+    
+    .remaining-badge {
+        display: inline-flex;
+        align-items: center;
+        font-size: 10px;
+        font-weight: 600;
+        padding: 1px 6px;
+        border-radius: 99px;
+        background: rgba(255,255,255,0.25);
+        margin-left: 6px;
+        letter-spacing: 0.02em;
     }
 
     /* ── Illustrated stat cards ───────────────────────────── */
@@ -438,6 +1041,23 @@
         border-bottom: 0.5px solid #e5e7eb;
         background: #fafafa;
     }
+    .stat-card__cta {
+    display: inline-block;
+    margin-top: .5rem;
+    padding: .35rem .75rem;
+    font-size: 10px;
+    font-weight: 500;
+    border-radius: 6px;
+    background: #E7F0FA;   /* matches illustration background */
+    border: 1px solid #B3D1F5;
+    color: #1D3C99;
+    transition: background .2s ease, color .2s ease;
+    }
+    .stat-card__cta:hover {
+        background: #B3D1F5;
+        color: #132B71;
+        text-decoration: none;
+    }
 
     /* ── Table ────────────────────────────────────────────── */
     .dash-th {
@@ -485,6 +1105,10 @@
         padding: 10px 16px;
     }
     .notice-bar--warning { background: #FDF4F1; border-color: #F5C4B3; }
+    .notice-bar--orderpending .notice-bar-orderpending__icon {
+        background: #E8EEF6;       /* soft blue-gray icon background */
+        color: #2F5D9A;            /* calm blue icon color */
+    }
     .notice-bar__left { display: flex; align-items: center; gap: 12px; }
     .notice-bar__icon {
         width: 30px; height: 30px; border-radius: 8px;
@@ -506,6 +1130,43 @@
     .notice-bar--warning .notice-bar__action { background: #FAECE7; border-color: #F5C4B3; color: #993C1D; }
     .notice-bar__action:hover { background: #9FE1CB; }
     .notice-bar--warning .notice-bar__action:hover { background: #F5C4B3; }
+
+    /* ── Marketplace Notice Bar ───────────────────────── */
+        .notice-bar--marketplace { 
+            background: #F0F9FF; 
+            border-color: #B3D9F5; 
+        }
+        .notice-bar--marketplace .notice-bar__icon { 
+            background: #E6F2FB; 
+            color: #0F4C81; 
+        }
+        .notice-bar--marketplace .notice-bar__text { 
+            color: #0F4C81; 
+        }
+        .notice-bar--marketplace .notice-bar__sub { 
+            color: #0F4C81; 
+        }
+        .notice-bar--marketplace .notice-bar__action { 
+            background: #E6F2FB; 
+            border: 0.5px solid #B3D9F5; 
+            color: #0F4C81; 
+        }
+        .notice-bar--marketplace .notice-bar__action:hover { 
+            background: #B3D9F5; 
+        }
+        .notice-bar__dismiss { 
+            background: transparent; 
+            border: none; 
+            color: #0F4C81; 
+            font-size: 11px; 
+            font-weight: 500; 
+            cursor: pointer; 
+        }
+        .notice-bar__actions { 
+            display: flex; 
+            gap: 8px; 
+        }
+
 
     /* ── Ticket items ─────────────────────────────────────── */
     .ticket-item {

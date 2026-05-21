@@ -11,4 +11,14 @@ class Order extends Model
     use HasFactory, SoftDeletes;
 
     protected $fillable = ['payment_id', 'transaction_id', 'user_id', 'invoice_id', 'amount', 'tax_amount', 'tax_percentage', 'system_currency', 'gateway_id', 'gateway_currency', 'conversion_rate', 'subtotal', 'total', 'transaction_amount', 'payment_status', 'bank_id', 'bank_name', 'bank_account_number', 'deposit_by', 'deposit_slip_id','mpesa_transaction_code'];
+    
+    public function invoice()
+    {
+        return $this->hasOne(Invoice::class, 'order_id'); 
+    }
+
+    public function gateway()
+    {
+        return $this->belongsTo(Gateway::class, 'gateway_id');
+    }
 }

@@ -28,9 +28,9 @@ class HouseHuntApplication extends Model
         'status',
     ];
 
-     public function unit()
+    public function propertyUnit()
     {
-        return $this->belongsTo(PropertyUnit::class, 'property_unit_id');
+        return $this->belongsTo(PropertyUnit::class);
     }
 
     public function user()

@@ -2,6 +2,7 @@
 @if (isAddonInstalled('PROTYSAAS') > 1)
     <div class="modal fade big-modal" id="choosePlanModal" tabindex="-1" aria-hidden="true">
         <input type="hidden" id="chooseAPanRoute" value="{{ route('owner.subscription.get_plan') }}">
+        <input type="hidden" id="confirmFreeRoute" value="{{ route('owner.subscription.confirm.free.view') }}">
         <input type="hidden" id="getCurrencyByGatewayRoute" value="{{ route('owner.subscription.get.currency') }}">
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content">

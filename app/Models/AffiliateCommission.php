@@ -12,14 +12,21 @@ class AffiliateCommission extends Model
     use HasFactory;
 
     protected $fillable = [
-        'affiliate_id','owner_id','subscription_id','subscription_payment_id',
-        'subscription_amount','type','period_month','period_year'
+        'affiliate_id', 'owner_id',
+        'subscription_id', 'subscription_payment_id', 'subscription_amount',
+        'type', 'source', 'order_id',
+        'commission_amount', 'commission_rate',
+        'period_month', 'period_year',
     ];
 
+    // public function owner()
+    // {
+    //     return $this->belongsTo(User::class, 'owner_id');
+    // }
 
     public function owner()
     {
-        return $this->belongsTo(User::class, 'owner_id');
+        return $this->belongsTo(Owner::class, 'owner_id');  // 👈 Changed from User to Owner
     }
 
     public function subscription()

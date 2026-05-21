@@ -79,7 +79,7 @@ Route::get('/get-filters', [HouseHuntController::class, 'getFiltersByType'])->na
 Route::get('/get-cities', [HouseHuntController::class, 'getCitiesByState'])->name('get.cities');
 Route::get('/house-hunt', [HouseHuntController::class, 'index'])->name('house.hunt');
 Route::get('/house-hunt/view/{propertyId}', [HouseHuntController::class, 'viewProperty'])->name('house-hunt.view');
-Route::get('/owner/tenants/applications', function () {return view('owner.tenants.applications');})->name('owner.tenants.applications');
+// Route::get('/owner/tenants/applications', function () {return view('owner.tenants.applications');})->name('owner.tenants.applications');
 Route::get('version-update', [VersionUpdateController::class, 'versionUpdate'])->name('version-update');
 Route::post('process-update', [VersionUpdateController::class, 'processUpdate'])->name('process-update');
 Route::get('version-check', [VersionUpdateController::class, 'versionCheck'])->name('versionCheck');

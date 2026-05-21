@@ -115,6 +115,14 @@ function getDataEditRes(response) {
     selector.find("select[name=is_default]").val(response.data.is_default);
     selector.find("input[name=monthly_price]").val(response.data.monthly_price);
     selector.find("input[name=yearly_price]").val(response.data.yearly_price);
+    selector.find("select[name=pricing_model]").val(response.data.pricing_model ?? '');
+
+    // Marketplace & SMS fields
+    selector.find("input[name=commission_markup]").val(response.data.commission_markup ?? '');
+    selector.find("input[name=commission_discount]").val(response.data.commission_discount ?? '');
+    selector.find("input[name=max_marketplace_listings]").val(response.data.max_marketplace_listings ?? '');
+    selector.find("input[name=monthly_sms_credits]").val(response.data.monthly_sms_credits ?? '');
+
     selector.modal("show");
 }
 

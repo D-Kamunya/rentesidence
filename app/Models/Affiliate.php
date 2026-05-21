@@ -35,4 +35,9 @@ class Affiliate extends Model
     {
         return $this->hasMany(Lead::class, 'affiliate_id');
     }
+    
+    public function withdrawals()
+    {
+        return $this->hasMany(AffiliateWithdrawal::class, 'affiliate_id');
+    }
 }

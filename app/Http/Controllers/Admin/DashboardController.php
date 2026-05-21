@@ -9,6 +9,8 @@ use App\Models\Property;
 use App\Models\PropertyUnit;
 use App\Models\SubscriptionOrder;
 use App\Models\Tenant;
+use App\Models\WithdrawalRequest;
+use App\Models\AffiliateWithdrawal;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -23,6 +25,9 @@ class DashboardController extends Controller
         $data['totalUnit'] = PropertyUnit::count();
         $data['totalTenant'] = Tenant::count();
         $data['packages'] = Package::limit(10)->get();
+        $data['hasPendingWithdrawals'] = WithdrawalRequest::where('status', 'pending')->exists();
+        $data['affiliatePendingCount'] = AffiliateWithdrawal::where('status', AFFILIATE_WITHDRAWAL_PENDING)->count();
+        $data['affiliatePendingAmount'] = AffiliateWithdrawal::where('status', AFFILIATE_WITHDRAWAL_PENDING)->sum('amount');
 
         $data['orders'] =  SubscriptionOrder::query()
             ->leftJoin('packages', 'subscription_orders.package_id', '=', 'packages.id')

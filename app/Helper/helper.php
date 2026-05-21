@@ -23,12 +23,14 @@ use App\Models\Setting;
 use App\Models\TaxSetting;
 use App\Models\Tenant;
 use App\Models\User;
+use App\Services\Sms\PackageSmsCreditsService;
 use App\Models\EmailTemplate;
 use App\Services\Payment\Payment;
 use App\Services\SmsMail\MailService;
 use Illuminate\Support\Facades\App;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Artisan;
 use App\Jobs\SendPaymentsSuccessEmailJob;
@@ -43,6 +45,19 @@ function getOption($option_key, $default = '')
         return $system_settings[$option_key];
     } else {
         return $default;
+    }
+}
+
+if (!function_exists('setOption')) {
+    function setOption(string $key, $value): void
+    {
+        \App\Models\Setting::updateOrCreate(
+            ['option_key' => $key],
+            ['option_value' => $value]
+        );
+ 
+        // Keep config in sync for the remainder of this request
+        config(['settings.' . $key => $value]);
     }
 }
 
@@ -186,57 +201,43 @@ function copyFolder($source, $destination) {
 if (!function_exists('getCityById')) {
     function getCityById($city_id)
     {
-        $cities_file = public_path('file/cities.csv');
-        $cityArr = csvToArray($cities_file);
-        foreach ($cityArr as $city) {
-            if ($city['id'] == $city_id) {
-                $result = array(
-                    'id' => $city['id'],
-                    'name' => $city['name'],
-                    'state_id' => $city['state_id'],
-                );
-                return $result;
-            }
-        }
-        return '';
+        // Return the city name directly since we're using text inputs now
+        // The $city_id from your location form is just the city name string
+        if (empty($city_id)) return '';
+        
+        return [
+            'id' => $city_id,
+            'name' => $city_id,
+            'state_id' => '',
+        ];
     }
 }
 
 if (!function_exists('getStateById')) {
     function getStateById($state_id)
     {
-        $states_file = public_path('file/states.csv');
-        $stateArr = csvToArray($states_file);
-        foreach ($stateArr as $state) {
-            if ($state['id'] == $state_id) {
-                $result = array(
-                    'id' => $state['id'],
-                    'name' => $state['name'],
-                    'country_id' => $state['country_id'],
-                );
-                return $result;
-            }
-        }
-        return '';
+        // Return the state name directly since we're using text inputs now
+        if (empty($state_id)) return '';
+        
+        return [
+            'id' => $state_id,
+            'name' => $state_id,
+            'country_id' => '',
+        ];
     }
 }
 
 if (!function_exists('getCountryById')) {
     function getCountryById($country_id)
     {
-        $states_file = public_path('file/countries.csv');
-        $countryArr = csvToArray($states_file);
-        foreach ($countryArr as $country) {
-            if ($country['id'] == $country_id) {
-                $result = array(
-                    'id' => $country['id'],
-                    'name' => $country['country_name'],
-                    'sortname' => $country['sortname'],
-                );
-                return $result;
-            }
-        }
-        return '';
+        // Return the country name directly since we're using text inputs now
+        if (empty($country_id)) return '';
+        
+        return [
+            'id' => $country_id,
+            'name' => $country_id,
+            'sortname' => '',
+        ];
     }
 }
 
@@ -251,18 +252,16 @@ if (!function_exists('csvToArray')) {
         $handle = fopen($filename, 'r');
 
         if ($handle !== false) {
-            $header = fgetcsv($handle, 1000, $delimiter); // Read header row
+            $header = fgetcsv($handle, 1000, $delimiter, '"', '\\');
 
-            while (($row = fgetcsv($handle, 1000, $delimiter)) !== false) {
+            while (($row = fgetcsv($handle, 1000, $delimiter, '"', '\\')) !== false) {
                 if (count($row) === count($header)) {
                     $rowData = array_combine($header, $row);
 
-                    // Apply filtering if needed (e.g., only return cities for a given state_id)
                     if ($filterKey !== null && isset($rowData[$filterKey]) && $rowData[$filterKey] == $filterValue) {
                         $data[] = $rowData;
                     }
 
-                    // Stop loading after a reasonable number of records (prevents overload)
                     if (count($data) >= 5000) {
                         break;
                     }
@@ -640,30 +639,43 @@ if (!function_exists('setUserPackage')) {
     function setUserPackage($userId, $package, $duration, $quantity = 1, $orderId = NULL)
     {
         OwnerPackage::where(['user_id' => $userId])->whereIn('status', [ACTIVE])->update(['status' => DEACTIVATE]);
+
         OwnerPackage::create([
-            'user_id' => $userId,
-            'package_id' => $package->id,
-            'package_type' => $package->type ?? PACKAGE_TYPE_UNIT,
-            'quantity' => $package->max_unit,
-            'name' => $package->name,
-            'max_maintainer' => $package->max_maintainer,
-            'max_property' => $package->max_property,
-            'max_unit' => $package->max_unit,
-            'max_tenant' => $package->max_tenant,
-            'max_invoice' => $package->max_invoice,
-            'max_auto_invoice' => $package->max_auto_invoice,
-            'ticket_support' => $package->ticket_support,
-            'notice_support' => $package->notice_support,
-            'monthly_price' => $package->monthly_price,
-            'yearly_price' => $package->yearly_price,
+            'user_id'           => $userId,
+            'package_id'        => $package->id,
+            'package_type'      => $package->type ?? PACKAGE_TYPE_UNIT,
+            'pricing_model'     => $package->pricing_model,
+            'quantity'          => $package->max_unit,
+            'name'              => $package->name,
+            'max_maintainer'    => $package->max_maintainer,
+            'max_property'      => $package->max_property,
+            'max_unit'          => $package->max_unit,
+            'max_tenant'        => $package->max_tenant,
+            'max_invoice'       => $package->max_invoice,
+            'max_auto_invoice'  => $package->max_auto_invoice,
+            'ticket_support'    => $package->ticket_support,
+            'notice_support'    => $package->notice_support,
+            'monthly_price'     => $package->monthly_price,
+            'yearly_price'      => $package->yearly_price,
             'per_monthly_price' => $package->per_monthly_price,
-            'per_yearly_price' => $package->per_yearly_price,
-            'order_id' => $orderId,
-            'is_trail' => $package->is_trail,
-            'start_date' => now(),
-            'end_date' => Carbon::now()->addDays($duration),
-            'status' => ACTIVE,
+            'per_yearly_price'  => $package->per_yearly_price,
+            'order_id'          => $orderId,
+            'is_trail'          => $package->is_trail,
+            'start_date'        => now(),
+            'end_date'          => Carbon::now()->addDays($duration),
+            'status'            => ACTIVE,
         ]);
+
+        // ── Grant monthly SMS credits for this package ────────────────
+        // Wrapped in try/catch so a credit failure never breaks activation
+        try {
+            PackageSmsCreditsService::grantOnActivation($userId, $package->id);
+        } catch (\Exception $e) {
+            Log::error(
+                "setUserPackage: SMS credit grant failed for user_id={$userId}, package_id={$package->id} — " . $e->getMessage()
+            );
+        }
+        // ─────────────────────────────────────────────────────────────
     }
 }
 
@@ -721,7 +733,7 @@ if (!function_exists('setOwnerDefaultTicketTopics')) {
             $ticketTopic->name = $topicName;
             $ticketTopic->owner_user_id = $userId;
             $ticketTopic->status = ACTIVE;
-            $ticketTopic->is_default = true; // ✅ key line
+            $ticketTopic->is_default = true;
             $ticketTopic->save();
         }
     }
@@ -762,8 +774,8 @@ if (!function_exists('handleSubscriptionPaymentConfirmation')) {
                     DB::commit();
 
                     $invoiceUrl = route('owner.subscription.index');
-                    $title = __("You have a new invoice");
-                    $body = __("Subscription payment verify successfully");
+                    $title = __("Subscription success");
+                    $body = __("Subscription payment complete");
                     $adminUser = User::where('role', USER_ROLE_ADMIN)->first();
                     addNotification($title, $body, $invoiceUrl, null,$order->user_id,$adminUser->id);
 
@@ -829,159 +841,316 @@ if (!function_exists('handleProductPaymentConfirmation')) {
         try {
             $gateway = Gateway::find($order->gateway_id);
             DB::beginTransaction();
+
             if ($order->gateway_id == $gateway->id && $gateway->slug == MERCADOPAGO) {
                 $order->payment_id = $payment_id;
                 $order->save();
             }
 
             $payment_id = $order->payment_id;
-            $ownerNumber = $order->gateway->owner->contact_number;
 
-            $gatewayBasePayment = new Payment($gateway->slug, ['currency' => $order->gateway_currency, 'type' => 'ProductOrder']);
+            $ownerNumber = $order->gateway->owner->contact_number ?? null;
+
+            $gatewayBasePayment = new Payment($gateway->slug, [
+                'currency' => $order->gateway_currency,
+                'type'     => 'ProductOrder',
+            ]);
+
             $payment_data = $gatewayBasePayment->paymentConfirmation($payment_id, $payerId);
-            if ($payment_data['success']) {
-                if ($payment_data['data']['payment_status'] == 'success') {
+
+            if ($payment_data['success'] && $payment_data['data']['payment_status'] === 'success') {
+
+                // ── Guard: only update + process if not already paid ─────────
+                if ($order->payment_status !== ORDER_PAYMENT_STATUS_PAID) {
                     $order->payment_status = ORDER_PAYMENT_STATUS_PAID;
                     $order->transaction_id = str_replace('-', '', uuid_create());
                     $order->save();
-
-
-                    DB::commit();
-
-                    $invoiceUrl = route('tenant.order.index');
-                    $title = __("You have a new invoice");
-                    $body = __("Products payment verify successfully");
-                    $ownerUserID = $gateway->owner_user_id;
-                    addNotification($title, $body, $invoiceUrl, null,  $order->user_id,$ownerUserID);
-
-                    if (getOption('send_email_status', 0) == ACTIVE) {
-                        $emails = [$order->user->email];
-                        $subject = __('Product Payment Successful!');
-                        $title = __('Congratulations!');
-                        $message = __('You have successfully made the product order payment');
-                        $tenantUserId = $order->user_id;
-                        $method = $gateway->slug;
-                        $status = 'Paid';
-                        $amount = $order->amount;
-                        $paymentType = "ProductOrder";
-
-                        SendPaymentsSuccessEmailJob::dispatch(
-                            $emails, $subject, $message, $title, $method, 
-                            $status, $amount,$paymentType, $order
-                        );
-                    }
-
-                    $message = __('New product order '.$order->order_id.' from Centresidence. Kindly Dispatch');
-                    SendSmsJob::dispatch([$ownerNumber], $message, $tenantUserId);
-
-                    if ($gateway_slug == 'mpesa') {
-                        return redirect()->route('tenant.product.index')->with('success', __('Mpesa Payment Successful!'));
-                    }
-
-                    return redirect()->route('tenant.product.index')->with('success', __('Payment Successful!'));
                 }
+
+                // ── Guard: only process commission if not already recorded ───
+                $alreadyProcessed = \App\Models\WalletTransaction::where('product_order_id', $order->id)->exists();
+
+                if (!$alreadyProcessed) {
+                    try {
+                        $order->load('orderItems.product');
+                        $commissionService = new \App\Services\CommissionService();
+                        $commissionService->processOrderCommission($order);
+                    } catch (\Exception $commissionException) {
+                        \Illuminate\Support\Facades\Log::error('Commission processing failed in handleProductPaymentConfirmation', [
+                            'order_id' => $order->id,
+                            'error'    => $commissionException->getMessage(),
+                            'trace'    => $commissionException->getTraceAsString(),
+                        ]);
+                    }
+                }
+
+                DB::commit();
+
+                // ── Notifications ────────────────────────────────────────────
+                $invoiceUrl  = route('tenant.order.index');
+                $title       = __('Payment Successful');
+                $body        = __('Products payment verified successfully');
+                $ownerUserID = $gateway->owner_user_id;
+                addNotification($title, $body, $invoiceUrl, null, $order->user_id, $ownerUserID);
+
+                if (getOption('send_email_status', 0) == ACTIVE) {
+                    $emails       = [$order->user->email];
+                    $subject      = __('Product Payment Successful!');
+                    $title        = __('Congratulations!');
+                    $message      = __('You have successfully made the product order payment');
+                    $tenantUserId = $order->user_id;
+                    $method       = $gateway->slug;
+                    $status       = 'Paid';
+                    $amount       = $order->amount;
+                    $paymentType  = 'ProductOrder';
+
+                    SendPaymentsSuccessEmailJob::dispatch(
+                        $emails, $subject, $message, $title, $method,
+                        $status, $amount, $paymentType, $order
+                    );
+                }
+
+                // Only send SMS if owner number is available
+                if ($ownerNumber) {
+                    $message = __('New order ' . $order->order_id . ' from Centresidence. Kindly Dispatch');
+                    SendSmsJob::dispatch([$ownerNumber], $message, $order->user_id);
+                }
+
+                if ($gateway_slug === 'mpesa') {
+                    return redirect()->route('tenant.product.order.receipt', $order->id)
+                        ->with('success', __('Mpesa Payment Successful!'));
+                }
+
+                return redirect()->route('tenant.product.order.receipt', $order->id)
+                    ->with('success', __('Payment Successful!'));
+
             } else {
-                if ($gateway_slug == 'mpesa') {
-                    // if ($paymentCheck!==null){
-                    //     $paymentCheck->increment('check_count');
-                    //     $paymentCheck->last_check_at=now();
-                    //     $paymentCheck->save();
-                    //     DB::commit();
-                    // }
-                    if (($payment_data['data']['error']  ?? null)=== MPESA_REQUEST_CANCELLED) {
-                        $order->payment_status = PRODUCT_ORDER_STATUS_CANCELLED;
-                        $order->transaction_id = str_replace('-', '', uuid_create());
-                        $order->save();
 
-                        DB::commit();
+                // ── Payment not successful ───────────────────────────────────
+                if ($gateway_slug === 'mpesa') {
+                    $errorMessage = $payment_data['data']['error'] ?? null;
+
+                    if ($errorMessage === MPESA_REQUEST_CANCELLED) {
+                        if ($order->payment_status === ORDER_PAYMENT_STATUS_PENDING) {
+                            $order->payment_status = PRODUCT_ORDER_STATUS_CANCELLED;
+                            $order->transaction_id = str_replace('-', '', uuid_create());
+                            $order->save();
+                            DB::commit();
+                        } else {
+                            DB::rollBack();
+                        }
+                    } else {
+                        DB::rollBack();
                     }
-                    return redirect()->route('tenant.product.index')->with('error', __($payment_data['data']['error']));
+
+                    return redirect()->route('tenant.product.index')
+                        ->with('error', __($errorMessage ?? 'Payment Failed!'));
                 }
-                // if ($paymentCheck!==null){
-                //     $paymentCheck->increment('check_count');
-                //     $paymentCheck->last_check_at=now();
-                //     $paymentCheck->save();
-                //     DB::commit();
-                // }
-                return redirect()->route('tenant.product.index')->with('error', __('Payment Failed!'));
+
+                DB::rollBack();
+                return redirect()->route('tenant.product.index')
+                    ->with('error', __('Payment Failed!'));
             }
+
         } catch (\Exception $e) {
             DB::rollBack();
-            return redirect()->route('tenant.product.index')->with('error', __('Payment Failed!'));
+            \Illuminate\Support\Facades\Log::error('handleProductPaymentConfirmation failed', [
+                'order_id' => $order->id ?? null,
+                'error'    => $e->getMessage(),
+                'trace'    => $e->getTraceAsString(),
+            ]);
+            return redirect()->route('tenant.product.index')
+                ->with('error', __('Payment Failed!'));
         }
     }
 }
 
 
 if (!function_exists('handlePaymentConfirmation')) {
-    function handlePaymentConfirmation($order, $token=null, $payerId = null, $gateway_slug, $paymentCheck = null)
-    {
+    function handlePaymentConfirmation(
+        $order,
+        $payment_token,
+        $payerId,
+        $gateway_slug,
+        $paymentCheck = null,
+        bool $isRentTransaction = false
+    ) {
+        $redirect = auth()->check()
+            ? route('tenant.invoice.index')
+            : route('instant.invoice.pay', ['token' => $payment_token]);
+
         try {
-            $gateway = Gateway::find($order->gateway_id);
+            $gateway          = Gateway::find($order->gateway_id);
+            $formattedGateway = ucfirst(strtolower($gateway_slug));
+
             DB::beginTransaction();
+
+            // ── MercadoPago guard ────────────────────────────────────────────
             if ($order->gateway_id == $gateway->id && $gateway->slug == MERCADOPAGO) {
+                $payment_id        = $order->payment_id;
                 $order->payment_id = $payment_id;
                 $order->save();
             }
 
             $payment_id = $order->payment_id;
 
-            $gatewayBasePayment = new Payment($gateway->slug, ['currency' => $order->gateway_currency, 'type' => 'RentPayment']);
+            $gatewayBasePayment = new Payment(
+                $gateway->slug,
+                ['currency' => $order->gateway_currency, 'type' => 'RentPayment']
+            );
+
             $payment_data = $gatewayBasePayment->paymentConfirmation($payment_id, $payerId);
-            $redirect=auth()->check() ? route('tenant.invoice.index') : route('instant.invoice.pay', ['token' => $token]);
-            if ($payment_data['success']) {
-                if ($payment_data['data']['payment_status'] == 'success') {
+
+            if ($payment_data['success'] && ($payment_data['data']['payment_status'] ?? null) === 'success') {
+
+                // ── Guard: only mark paid if not already paid ────────────────
+                // Prevents double-processing when both Pusher callback and
+                // timeout redirect reach this function for the same order.
+                if ($order->payment_status !== INVOICE_STATUS_PAID) {
                     $order->payment_status = INVOICE_STATUS_PAID;
+                    $order->transaction_id = str_replace('-', '', uuid_create());
                     $order->save();
-                    $invoice->status = INVOICE_STATUS_PAID;
+                }
+
+                // ── Mark invoice paid ────────────────────────────────────────
+                // Use order->invoice_id (reliable) NOT Invoice::where('order_id')
+                // because invoices.order_id may not be set yet at this point.
+                $invoice = $order->invoice ?? \App\Models\Invoice::find($order->invoice_id);
+
+                if ($invoice) {
+                    $invoice->status   = INVOICE_STATUS_PAID;
                     $invoice->order_id = $order->id;
                     $invoice->save();
-                    DB::commit();
+                } else {
+                    \Illuminate\Support\Facades\Log::warning('handlePaymentConfirmation: invoice not found', [
+                        'order_id'   => $order->id,
+                        'invoice_id' => $order->invoice_id,
+                    ]);
+                }
 
+                // ── Rent commission ──────────────────────────────────────────
+                // Uses WalletTransaction.invoice_order_id as the idempotency key.
+                // Safe to call from multiple code paths — will not double-credit.
+                if ($isRentTransaction) {
+                    $alreadyProcessed = \App\Models\WalletTransaction::where('invoice_order_id', $order->id)->exists();
+
+                    if (!$alreadyProcessed) {
+                        try {
+                            $commissionService = new \App\Services\CommissionService();
+                            $commissionService->processRentCommission($order);
+                        } catch (\Exception $commissionException) {
+                            // Commission failure must NOT roll back the payment.
+                            // The tenant's rent is paid — commission is secondary.
+                            // Log for manual review.
+                            \Illuminate\Support\Facades\Log::error(
+                                'Rent commission failed in handlePaymentConfirmation',
+                                [
+                                    'order_id' => $order->id,
+                                    'error'    => $commissionException->getMessage(),
+                                    'trace'    => $commissionException->getTraceAsString(),
+                                ]
+                            );
+                        }
+                    }
+                }
+
+                DB::commit();
+
+                // ── Invoice paid notification ────────────────────────────────
+                if ($invoice) {
                     $emailData = (object) [
-                        'subject'   => __("Rent payment verify successfully"),
-                        'title'     =>  __("INVOICE PAID SUCCESSFULLY"),
-                        'message'   => $invoice->invoice_no . ' ' . __('paid successfully'),
+                        'subject' => __("Rent payment complete"),
+                        'title'   => __("INVOICE PAID SUCCESSFULLY"),
+                        'message' => $invoice->invoice_no . ' ' . __('paid successfully'),
                     ];
                     $notificationData = (object) [
-                        'title'   => __('Rent Payment successful!'),
-                        'body'     =>  $invoice->invoice_no . ' ' . __('paid successfully'),
-                        'url'     => route('tenant.invoice.index')
+                        'title' => __('Rent Payment successful!'),
+                        'body'  => $invoice->invoice_no . ' ' . __('paid successfully'),
+                        'url'   => route('tenant.invoice.index'),
                     ];
-                    SendInvoiceNotificationAndEmailJob::dispatch($invoice,$emailData,$notificationData);
+                    SendInvoiceNotificationAndEmailJob::dispatch($invoice, $emailData, $notificationData);
+                }
 
-                    if ($gateway_slug == 'mpesa') {
-                        return redirect($redirect)->with('success', __('Mpesa Payment Successful!'));
+                // ── Owner SMS notification ───────────────────────────────────
+                try {
+                    $ownerNumber = $order->gateway->owner->contact_number ?? null;
+                    if ($ownerNumber) {
+                        $message = __('New rent payment for Invoice #')
+                                 . ($invoice->invoice_no ?? $order->invoice_id)
+                                 . __(' from Centresidence.');
+                        SendSmsJob::dispatch([$ownerNumber], $message, $order->user_id);
+                    }
+                } catch (\Exception $notifyException) {
+                    \Illuminate\Support\Facades\Log::warning(
+                        'Notification failed after rent payment confirmation',
+                        ['order_id' => $order->id, 'error' => $notifyException->getMessage()]
+                    );
+                }
+
+                // ── Payment success email ────────────────────────────────────
+                if (getOption('send_email_status', 0) == ACTIVE) {
+                    try {
+                        SendPaymentsSuccessEmailJob::dispatch(
+                            [$order->user->email],
+                            __('Rent Payment Successful!'),
+                            __('You have successfully made your rent payment.'),
+                            __('Congratulations!'),
+                            $gateway->slug,
+                            'Paid',
+                            $order->amount,
+                            'RentPayment',
+                            $order
+                        );
+                    } catch (\Exception $emailException) {
+                        \Illuminate\Support\Facades\Log::warning(
+                            'Email failed after rent payment confirmation',
+                            ['order_id' => $order->id, 'error' => $emailException->getMessage()]
+                        );
+                    }
+                }
+
+                return redirect($redirect)
+                    ->with('success', __($formattedGateway . ' Payment Successful. Rent Paid!'));
+
+            } else {
+
+                // ── Payment not successful ───────────────────────────────────
+                if ($gateway_slug === 'mpesa') {
+                    $errorMessage = $payment_data['data']['error'] ?? null;
+
+                    if ($errorMessage === MPESA_REQUEST_CANCELLED) {
+                        // Only cancel if still pending — never overwrite a paid status
+                        if ($order->payment_status === INVOICE_STATUS_PENDING) {
+                            $order->payment_status = ORDER_PAYMENT_STATUS_CANCELLED;
+                            $order->transaction_id = str_replace('-', '', uuid_create());
+                            $order->save();
+                            DB::commit();
+                        } else {
+                            DB::rollBack();
+                        }
+                    } else {
+                        DB::rollBack();
                     }
 
-                    return redirect($redirect)->with('success', __('Payment Successful!'));
+                    return redirect($redirect)
+                        ->with('error', __($errorMessage ?? 'Payment Failed! Rent Not Paid'));
                 }
-            } else {
-                if ($gateway_slug == 'mpesa') {
-                    // if ($paymentCheck!==null){
-                    //     $paymentCheck->increment('check_count');
-                    //     $paymentCheck->last_check_at=now();
-                    //     $paymentCheck->save();
-                    //     DB::commit();
-                    // }
-                    return redirect($redirect)->with('error', __($payment_data['data']['error']));
-                }
-                // if ($paymentCheck!==null){
-                //     $paymentCheck->increment('check_count');
-                //     $paymentCheck->last_check_at=now();
-                //     $paymentCheck->save();
-                //     DB::commit();
-                // }
 
+                DB::rollBack();
                 return redirect($redirect)->with('error', __('Payment Failed!'));
             }
+
         } catch (\Exception $e) {
             DB::rollBack();
+            \Illuminate\Support\Facades\Log::error('handlePaymentConfirmation failed', [
+                'order_id' => $order->id ?? null,
+                'error'    => $e->getMessage(),
+                'trace'    => $e->getTraceAsString(),
+            ]);
             return redirect($redirect)->with('error', __('Payment Failed!'));
         }
     }
 }
-
 
 
 if (!function_exists('corePages')) {

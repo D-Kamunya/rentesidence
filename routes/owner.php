@@ -25,6 +25,11 @@ use App\Http\Controllers\Owner\TicketController;
 use App\Http\Controllers\Owner\TicketTopicController;
 use App\Http\Controllers\Tenancy\DomainController;
 use App\Http\Controllers\ProductController;
+use App\Http\Controllers\Admin\ProductCategoryController;
+use App\Http\Controllers\Owner\OwnerWalletController;
+use App\Http\Controllers\Owner\SmsCreditsController;
+use App\Http\Controllers\Owner\SmsCreditsPaymentController;
+use App\Http\Controllers\Owner\TenantApplicationController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/account/suspended', fn() => view('owner.suspended'))->name('owner.suspended');
@@ -34,6 +39,17 @@ Route::group(['prefix' => 'owner', 'as' => 'owner.', 'middleware' => ['auth', 'o
     Route::get('notification', [DashboardController::class, 'notification'])->name('notification');
     Route::get('send-login-dets', [TenantController::class, 'sendLoginDets'])->name('send.tenant.logins');
     Route::delete('unit-image/{id}', [PropertyController::class, 'deleteUnitImage'])->name('unit.image.delete');
+    Route::get('/wallet',          [OwnerWalletController::class, 'index'])->name('wallet.index');
+    Route::post('/wallet/withdraw',[OwnerWalletController::class, 'withdraw'])->name('wallet.withdraw');
+    Route::get('wallet/rent-transaction/{transaction}', [OwnerWalletController::class, 'rentTransaction']) ->name('wallet.rent.transaction');   
+    
+    Route::prefix('sms-credits')->name('sms.credits.')->group(function () {
+        Route::get('/',          [SmsCreditsController::class, 'index'])->name('index');
+        Route::post('/retry',    [SmsCreditsController::class, 'retryOne'])->name('retry.one');
+        Route::post('/retry-all',[SmsCreditsController::class, 'retryAll'])->name('retry.all');
+        Route::post('/checkout', [SmsCreditsPaymentController::class, 'checkout'])->name('checkout');
+        Route::match(['GET', 'POST'], '/verify', [SmsCreditsPaymentController::class, 'verify'])->name('verify');
+    });
 
     Route::group(['prefix' => 'property', 'as' => 'property.'], function () {
         Route::get('all-property', [PropertyController::class, 'allProperty'])->name('allProperty');
@@ -76,12 +92,25 @@ Route::group(['prefix' => 'owner', 'as' => 'owner.', 'middleware' => ['auth', 'o
         Route::post('delete', [TenantController::class, 'delete'])->name('delete');
     });
 
+    Route::controller(TenantApplicationController::class) ->prefix('tenant-applications')->name('tenant.applications.')
+    ->group(function () {
+        Route::get('/',        'index')   ->name('index');
+        Route::post('/assign', 'assign')  ->name('assign');
+        Route::delete('/{id}', 'destroy') ->name('destroy');
+    });
+
     Route::group(['prefix' => 'order', 'as' => 'order.'], function () {
         Route::get('/', [ProductOrderController::class, 'index'])->name('index');
         // Route::get('print/{id}', [InvoiceController::class, 'details'])->name('print');
         // Route::get('pay/{id}', [InvoiceController::class, 'pay'])->name('pay');
         // Route::get('get-currency-by-gateway', [InvoiceController::class, 'getCurrencyByGateway'])->name('get.currency');
     });
+
+    Route::post('product-orders/{id}/complete', [ProductOrderController::class, 'markComplete'])->name('productOrder.markComplete');
+    Route::post('product-orders/{id}/cancel', [ProductOrderController::class, 'cancel'])->name('productOrder.cancel');
+    Route::post('product-orders/{id}/cancel',         [ProductOrderController::class, 'cancel'])->name('productOrder.cancel');
+    Route::post('product-orders/{id}/confirm-refund', [ProductOrderController::class, 'confirmRefund'])->name('productOrder.confirmRefund');
+    Route::get('product-categories', [ProductCategoryController::class, 'forOwner'])->name('owner.product.categories');
 
     Route::group(['prefix' => 'information', 'as' => 'information.'], function () {
         Route::get('/', [InformationController::class, 'index'])->name('index');

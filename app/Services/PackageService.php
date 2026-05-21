@@ -109,6 +109,7 @@ class PackageService
             $package->name = $request->name;
             $package->slug = $slug;
 
+            $package->pricing_model = $request->pricing_model;
             $package->type = $request->pricing_type;
             $package->per_monthly_price = $request->per_monthly_price;
             $package->per_yearly_price = $request->per_yearly_price;
@@ -121,6 +122,10 @@ class PackageService
             $package->max_auto_invoice = $request->auto_invoice_limit_type == 1 ? $request->max_auto_invoice : -1;
             $package->notice_support = $request->notice_support;
             $package->ticket_support = $request->ticket_support;
+            $package->commission_markup = $request->commission_markup;
+            $package->commission_discount = $request->commission_discount;
+            $package->max_marketplace_listings = $request->max_marketplace_listings;
+            $package->monthly_sms_credits = $request->monthly_sms_credits;
             $package->status = $request->status;
             $package->is_trail = $request->is_trail;
             $package->is_default = $request->is_default;
@@ -231,47 +236,51 @@ class PackageService
     {
         DB::beginTransaction();
         try {
-            $package = Package::findOrFail($request->package_id);
+            $package   = Package::findOrFail($request->package_id);
             $ownerUser = User::where('role', USER_ROLE_OWNER)->findOrFail($request->user_id);
             $adminUser = User::where('role', USER_ROLE_ADMIN)->first();
 
-            $gateway = Gateway::where(['owner_user_id' => $adminUser->id, 'slug' => 'cash'])->firstOrFail();
+            $gateway  = Gateway::where(['owner_user_id' => $adminUser->id, 'slug' => 'cash'])->firstOrFail();
             $currency = Currency::where('current_currency', 'on')->first()->currency_code;
 
-            $price = 0;
+            $price    = 0;
             $duration = 0;
             if ($request->duration_type == PACKAGE_DURATION_TYPE_MONTHLY) {
-                $price = $package->monthly_price;
+                $price    = $package->monthly_price;
                 $duration = 30;
             } else {
-                $price = $package->yearly_price;
+                $price    = $package->yearly_price;
                 $duration = 365;
             }
 
             $order = SubscriptionOrder::create([
-                'user_id' => $ownerUser->id,
-                'package_id' => $package->id,
-                'quantity' => $request->quantity ?? 1,
-                'package_type' => $request->package_type ?? PACKAGE_TYPE_UNIT,
-                'payment_status' => ORDER_PAYMENT_STATUS_PAID,
-                'transaction_id' => str_replace("-", "", uuid_create(UUID_TYPE_RANDOM)),
-                'amount' => $price,
-                'system_currency' => $currency,
-                'gateway_id' => $gateway->id,
-                'duration_type' => $request->duration_type,
-                'gateway_currency' => $currency,
-                'conversion_rate' => 1,
-                'subtotal' => $price,
-                'total' => $price,
-                'transaction_amount' => $price
+                'user_id'            => $ownerUser->id,
+                'package_id'         => $package->id,
+                'quantity'           => $request->quantity ?? 1,
+                'pricing_model'      => $package->pricing_model,
+                'package_type'       => $request->package_type ?? PACKAGE_TYPE_UNIT,
+                'payment_status'     => ORDER_PAYMENT_STATUS_PAID,
+                'transaction_id'     => str_replace('-', '', uuid_create(UUID_TYPE_RANDOM)),
+                'amount'             => $price,
+                'system_currency'    => $currency,
+                'gateway_id'         => $gateway->id,
+                'duration_type'      => $request->duration_type,
+                'gateway_currency'   => $currency,
+                'conversion_rate'    => 1,
+                'subtotal'           => $price,
+                'total'              => $price,
+                'transaction_amount' => $price,
             ]);
 
             setUserPackage($order->user_id, $package, $duration, $order->quantity, $order->id);
+
             DB::commit();
+
             $invoiceUrl = route('owner.subscription.index');
-            $title = __("Subscription Activated Successfully");
-            $body = __("Your subscription package has been successfully activated by the administrator.");
+            $title      = __('Subscription Activated Successfully');
+            $body       = __('Your subscription package has been successfully activated by the administrator.');
             addNotification($title, $body, $invoiceUrl, null, $ownerUser->id, $adminUser->id);
+
             return $this->success([], __(ASSIGNED_SUCCESSFULLY));
         } catch (Exception $e) {
             DB::rollBack();

@@ -34,5 +34,3 @@ class MpesaTransactionProcessed implements ShouldBroadcast
         return $this->success ? 'MpesaTransactionProcessed' : 'MpesaTransactionDeclined';
     }
 }
-
-?>

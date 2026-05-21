@@ -36,6 +36,18 @@
                         </a>
                     </li>
                     <li>
+                        <a href="{{ route('admin.setting.marketplaceaccounts.setting') }}"
+                            class="account-settings-menu-item {{ @$subMarketplaceAccountsSettingActiveClass }}">
+                            <span class="iconify" data-icon="mdi:account-cog-outline"></span>{{ __('Marketplace, Subs & SMS Accounts') }}
+                        </a>
+                    </li>
+                    <li>
+                        <a href="{{ route('admin.setting.rentaccounts.setting') }}"
+                            class="account-settings-menu-item {{ @$subRentAccountSettingActiveClass }}">
+                            <span class="iconify" data-icon="mdi:account-cog-outline"></span>{{ __('Rent Accounts') }}
+                        </a>
+                    </li>
+                    <li>
                         <a href="{{ route('admin.setting.frontend.setting') }}"
                             class="account-settings-menu-item {{ @$subFrontendSettingActiveClass }}">
                             <span class="iconify"

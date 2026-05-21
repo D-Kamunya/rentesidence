@@ -12,16 +12,16 @@
                         <span>{{ __('Dashboard') }}</span>
                     </a>
                 </li>
+                <li class="{{ @$navInvoiceMMActiveClass }}">
+                    <a href="{{ route('tenant.invoice.index') }}" class="{{ @$navInvoiceActiveClass }}">
+                        <i class="ri-bill-line"></i>
+                        <span>{{ __('Invoices') }}</span>
+                    </a>
+                </li>
                 <li class="{{ @$navMarketPlaceMMActiveClass }}">
                     <a href="{{ route('tenant.product.index') }}" class="{{ @$navMarketPlaceActiveClass }}">
                         <i class="ri-store-2-fill "></i>
                         <span>{{ __('Market Place') }}</span>
-                    </a>
-                </li>
-                <li class="{{ @$navInvoiceMMActiveClass }}">
-                    <a href="{{ route('tenant.invoice.index') }}" class="{{ @$navInvoiceActiveClass }}">
-                        <i class="ri-bill-line"></i>
-                        <span>{{ __('Invoice') }}</span>
                     </a>
                 </li>
                 <li class="{{ @$navProductOrdersMMActiveClass }}">
