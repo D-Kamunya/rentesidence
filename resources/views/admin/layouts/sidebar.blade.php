@@ -153,6 +153,32 @@
                     </ul>
                 </li>
                 <li>
+                    <a href="javascript: void(0);" class="has-arrow">
+                        <i class="fa fa-book" aria-hidden="true"></i>
+                        <span>{{ __('Knowledge Base') }}</span>
+                    </a>
+                    <ul class="sub-menu" aria-expanded="false">
+                        <li>
+                            <a class="{{ @$navKBArticlesMMShowClass }}" href="{{ route('admin.kb.articles') }}">
+                                <i class="fa fa-file" aria-hidden="true"></i>
+                                <span>{{ __('All Articles') }}</span>
+                            </a>
+                        </li>
+                        <li>
+                            <a class="{{ @$navKBArticlesMMShowClass }}" href="{{ route('admin.kb.articles.create') }}">
+                                <i class="fa fa-plus-circle" aria-hidden="true"></i>
+                                <span>{{ __('New Article') }}</span>
+                            </a>
+                        </li>
+                        <li>
+                            <a class="{{ @$navKBCategoriesMMShowClass }}" href="{{ route('admin.kb.categories') }}">
+                                <i class="fa fa-folder" aria-hidden="true"></i>
+                                <span>{{ __('Categories') }}</span>
+                            </a>
+                        </li>
+                    </ul>
+                </li>
+                <li>
                     <a href="{{ route('admin.setting.general-setting') }}">
                         <i class="ri-settings-3-line"></i>
                         <span>{{ __('Settings') }}</span>

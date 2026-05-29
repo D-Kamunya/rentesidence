@@ -11,6 +11,7 @@ use App\Http\Controllers\Affiliates\AffiliateMarketingMaterialController;
 use App\Http\Controllers\Affiliates\CommissionsController;
 use App\Http\Controllers\Affiliates\AffiliateWithdrawalController;
 use App\Http\Controllers\Affiliates\ReferralsController;
+use App\Http\Controllers\Affiliates\AffiliateKnowledgeBaseController;
 use App\Http\Controllers\Affiliates\LeaderboardController;
 use Illuminate\Support\Facades\Route;
 
@@ -82,5 +83,14 @@ Route::group([
             Route::get('/referrals', [ReferralsController::class, 'index'])->name('referrals.index');
             Route::get('/referrals/{owner}', [ReferralsController::class, 'show'])->name('referrals.show');
             Route::get('/leaderboard', [LeaderboardController::class, 'index'])->name('leaderboard');
+
+            // knowledge base
+            Route::prefix('knowledge-base')->name('kb.')->group(function () {
+                Route::get('/', [AffiliateKnowledgeBaseController::class, 'index'])->name('index');
+                Route::get('/search', [AffiliateKnowledgeBaseController::class, 'search'])->name('search');
+                Route::get('/category/{category:slug}', [AffiliateKnowledgeBaseController::class, 'category'])->name('category');
+                Route::get('/article/{article:slug}', [AffiliateKnowledgeBaseController::class, 'article'])->name('article');
+                Route::get('/document/{article}/download', [AffiliateKnowledgeBaseController::class, 'downloadDocument'])->name('document.download');
             });
+        });
     });

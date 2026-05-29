@@ -15,6 +15,7 @@ use App\Http\Controllers\Admin\ActionTemplateController;
 use App\Http\Controllers\Admin\AdminLeadSuggestionController;
 use App\Http\Controllers\Admin\AdminMarketplaceController;
 use App\Http\Controllers\Admin\ProductCategoryController;
+use App\Http\Controllers\Admin\AdminKnowledgeBaseController;
 use App\Http\Controllers\Owner\OwnerWalletController;
 use App\Http\Controllers\Owner\SmsCreditsController;
 use App\Http\Controllers\Owner\SmsCreditsPaymentController;
@@ -97,6 +98,23 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'middleware' => ['auth', 'a
     Route::post('/affiliate/withdrawal/{withdrawal}/approve',     [AffiliateWithdrawalController::class, 'approve'])->name('affiliate.withdrawal.approve');
     Route::post('/affiliate/withdrawal/{withdrawal}/reject',      [AffiliateWithdrawalController::class, 'reject'])->name('affiliate.withdrawal.reject');
     Route::get('/affiliate/{affiliate}/earnings', [AffiliateWithdrawalController::class, 'affiliateEarnings'])->name('affiliate.earnings');
+
+    Route::prefix('knowledge-base')->name('kb.')->group(function () {
+        // Categories
+        Route::get('/categories', [AdminKnowledgeBaseController::class, 'categories'])->name('categories');
+        Route::post('/categories', [AdminKnowledgeBaseController::class, 'storeCategory'])->name('categories.store');
+        Route::put('/categories/{category}', [AdminKnowledgeBaseController::class, 'updateCategory'])->name('categories.update');
+        Route::delete('/categories/{category}', [AdminKnowledgeBaseController::class, 'destroyCategory'])->name('categories.destroy');
+        
+        // Articles
+        Route::get('/articles', [AdminKnowledgeBaseController::class, 'articles'])->name('articles');
+        Route::get('/articles/create', [AdminKnowledgeBaseController::class, 'createArticle'])->name('articles.create');
+        Route::post('/articles', [AdminKnowledgeBaseController::class, 'storeArticle'])->name('articles.store');
+        Route::get('/articles/{article}/edit', [AdminKnowledgeBaseController::class, 'editArticle'])->name('articles.edit');
+        Route::put('/articles/{article}', [AdminKnowledgeBaseController::class, 'updateArticle'])->name('articles.update');
+        Route::delete('/articles/{article}', [AdminKnowledgeBaseController::class, 'destroyArticle'])->name('articles.destroy');
+    });
+
 
     Route::prefix('sms-credits')->name('sms.credits.')->group(function () {
         Route::get('/',        [SmsCreditsAdminController::class, 'index'])->name('index');

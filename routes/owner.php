@@ -30,6 +30,7 @@ use App\Http\Controllers\Owner\OwnerWalletController;
 use App\Http\Controllers\Owner\SmsCreditsController;
 use App\Http\Controllers\Owner\SmsCreditsPaymentController;
 use App\Http\Controllers\Owner\TenantApplicationController;
+use App\Http\Controllers\Owner\OwnerKnowledgeBaseController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/account/suspended', fn() => view('owner.suspended'))->name('owner.suspended');
@@ -204,6 +205,15 @@ Route::group(['prefix' => 'owner', 'as' => 'owner.', 'middleware' => ['auth', 'o
         Route::get('occupancy', [ReportController::class, 'occupancy'])->name('occupancy');
         Route::get('maintenance', [ReportController::class, 'maintenance'])->name('maintenance');
         Route::get('tenant', [ReportController::class, 'tenant'])->name('tenant');
+    });
+
+    // Knowledge Base
+    Route::prefix('knowledge-base')->name('kb.')->group(function () {
+        Route::get('/', [OwnerKnowledgeBaseController::class, 'index'])->name('index');
+        Route::get('/search', [OwnerKnowledgeBaseController::class, 'search'])->name('search');
+        Route::get('/category/{category:slug}', [OwnerKnowledgeBaseController::class, 'category'])->name('category');
+        Route::get('/article/{article:slug}', [OwnerKnowledgeBaseController::class, 'article'])->name('article');
+        Route::get('/document/{article}/download', [OwnerKnowledgeBaseController::class, 'downloadDocument'])->name('document.download');
     });
 
     // Start:: Setting
