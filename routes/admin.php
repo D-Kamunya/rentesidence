@@ -22,6 +22,7 @@ use App\Http\Controllers\Owner\SmsCreditsPaymentController;
 use App\Http\Controllers\Admin\SmsCreditsAdminController;
 use App\Http\Controllers\Affiliates\AffiliateWithdrawalController;
 use App\Http\Controllers\Admin\SettingController;
+use App\Http\Controllers\Admin\BlogController as AdminBlogController;
 use App\Http\Controllers\VersionUpdateController;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Artisan;
@@ -115,6 +116,35 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'middleware' => ['auth', 'a
         Route::delete('/articles/{article}', [AdminKnowledgeBaseController::class, 'destroyArticle'])->name('articles.destroy');
     });
 
+    // Blog management routes
+    Route::prefix('blog')->name('blog.')->group(function () {
+        Route::get('/dashboard', [AdminBlogController::class, 'dashboard'])->name('dashboard');
+        
+        // Categories
+        Route::get('/categories', [AdminBlogController::class, 'categories'])->name('categories');
+        Route::post('/categories', [AdminBlogController::class, 'storeCategory'])->name('categories.store');
+        Route::put('/categories/{category}', [AdminBlogController::class, 'updateCategory'])->name('categories.update');
+        Route::delete('/categories/{category}', [AdminBlogController::class, 'destroyCategory'])->name('categories.destroy');
+        
+        // Posts
+        Route::get('/posts', [AdminBlogController::class, 'posts'])->name('posts');
+        Route::get('/posts/create', [AdminBlogController::class, 'createPost'])->name('posts.create');
+        Route::post('/posts', [AdminBlogController::class, 'storePost'])->name('posts.store');
+        Route::get('/posts/{post}/edit', [AdminBlogController::class, 'editPost'])->name('posts.edit');
+        Route::put('/posts/{post}', [AdminBlogController::class, 'updatePost'])->name('posts.update');
+        Route::delete('/posts/{post}', [AdminBlogController::class, 'destroyPost'])->name('posts.destroy');
+        
+        // Comments
+        Route::get('/comments', [AdminBlogController::class, 'comments'])->name('comments');
+        Route::post('/comments/{comment}/approve', [AdminBlogController::class, 'approveComment'])->name('comments.approve');
+        Route::post('/comments/{comment}/spam', [AdminBlogController::class, 'markCommentAsSpam'])->name('comments.spam');
+        Route::delete('/comments/{comment}', [AdminBlogController::class, 'destroyComment'])->name('comments.destroy');
+
+        // Subscribers
+        Route::get('/subscribers', [AdminBlogController::class, 'subscribers'])->name('subscribers');
+        Route::delete('/subscribers/{subscriber}', [AdminBlogController::class, 'destroySubscriber'])->name('subscribers.destroy');
+    });
+    
 
     Route::prefix('sms-credits')->name('sms.credits.')->group(function () {
         Route::get('/',        [SmsCreditsAdminController::class, 'index'])->name('index');

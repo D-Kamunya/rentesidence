@@ -12,6 +12,7 @@ use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\UserEmailVerifyController;
 use App\Http\Controllers\VersionUpdateController;
 use App\Models\Language;
+use App\Http\Controllers\BlogController;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\App;
 /*
@@ -74,6 +75,19 @@ Route::group(['prefix' => 'payment'], function () {
     Route::match(array('GET', 'POST'), 'products/verify', [ProductPaymentController::class, 'verify'])->name('payment.products.verify');
     Route::get('products/verify-redirect/{type?}', [PaymentController::class, 'verifyRedirect'])->name('payment.products.verify.redirect');
 });
+
+// Public Blog Routes
+Route::prefix('blog')->name('blog.')->group(function () {
+    Route::get('/', [BlogController::class, 'index'])->name('index');
+    Route::get('/{slug}', [BlogController::class, 'show'])->name('show');
+    Route::post('/{post}/comment', [BlogController::class, 'comment'])->name('comment');
+    Route::post('/{post}/like', [BlogController::class, 'like'])->name('like');
+    Route::post('/{post}/share', [BlogController::class, 'share'])->name('share');
+    Route::post('/subscribe', [BlogController::class, 'subscribe'])->name('subscribe');
+    Route::get('/unsubscribe', [BlogController::class, 'unsubscribe'])->name('unsubscribe');
+});
+
+Route::get('/blog/unsubscribe', [BlogController::class, 'unsubscribe'])->name('blog.unsubscribe');
 
 Route::get('/get-filters', [HouseHuntController::class, 'getFiltersByType'])->name('get.filters');
 Route::get('/get-cities', [HouseHuntController::class, 'getCitiesByState'])->name('get.cities');

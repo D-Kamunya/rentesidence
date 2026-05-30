@@ -179,6 +179,26 @@
                     </ul>
                 </li>
                 <li>
+                    <a href="javascript: void(0);" class="has-arrow">
+                        <i class="fa fa-rss-square" aria-hidden="true"></i>
+                        <span>{{ __('Blog') }}</span>
+                    </a>
+                    <ul class="sub-menu" aria-expanded="false">
+                        <li>
+                            <a class="{{ @$navBlogAddMMShowClass  }}" href="{{ route('admin.blog.dashboard') }}">
+                                <i class="fa fa-file" aria-hidden="true"></i>
+                                <span>{{ __('Blog Dashboard') }}</span>
+                            </a>
+                        </li>
+                        <li>
+                            <a class="{{ @$navBlogSubscribersMMShowClass }}" href="{{ route('admin.blog.subscribers') }}">
+                                <i class="fa fa-users" aria-hidden="true"></i>
+                                <span>{{ __('Subscribers') }}</span>
+                            </a>
+                        </li>
+                    </ul>
+                </li>
+                <li>
                     <a href="{{ route('admin.setting.general-setting') }}">
                         <i class="ri-settings-3-line"></i>
                         <span>{{ __('Settings') }}</span>
