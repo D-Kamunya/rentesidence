@@ -66,15 +66,19 @@
                             @endif
                         @endif -->
                         <li class="nav-item">
-                                <a class="nav-link"
-                                    href="{{ route('frontend') }}#contact-us"><span>{{ __('Contact Us') }}</span></a>
-                            </li>
+                            <a class="nav-link"
+                                href="{{ route('frontend') }}#contact-us"><span>{{ __('Contact Us') }}</span></a>
+                        </li>
                         @if (getOption('home_how_it_word_section_status', 1) == ACTIVE)
                             <li class="nav-item">
                                 <a class="nav-link"
                                 href="{{ route('frontend') }}#howitworks"><span>{{ __('How It Works') }}</span></a>
                             </li>
                         @endif
+                        <li class="nav-item">
+                            <a class="nav-link"
+                                href="{{ route('blog.index') }}"><span>{{ __('Blog') }}</span></a>
+                        </li>
                     </ul>
                     <div class="navbar-nav mb-2 mb-lg-0 col-lg-4 col-xl-4 navbar-nav-right">
                         <div class="nav-dash login-menu-item">

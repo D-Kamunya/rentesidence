@@ -259,6 +259,12 @@
                         <span>{{ __('Wallet') }}</span>
                     </a>
                 </li>
+                <li>
+                    <a href="{{ route('owner.kb.index') }}">
+                        <i class="fa fa-book"></i>
+                        <span>{{ __('Knowledge Base') }}</span>
+                    </a>
+                </li>
                 @if (isAddonInstalled('PROTYSAAS') > 1)
                     <li>
                         <a href="{{ route('owner.subscription.index') }}">

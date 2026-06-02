@@ -66,7 +66,7 @@
                 </li>
 
                 <li>
-                    <a href="javascript:void(0)">
+                    <a href="{{ route('affiliate.kb.index') }}">
                         <i class="fa fa-book"></i>
                         <span>{{ __('Knowledge Base') }}</span>
                     </a>
