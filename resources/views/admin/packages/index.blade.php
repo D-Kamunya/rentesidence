@@ -76,6 +76,16 @@
                                 </div>
                                 <div class="col-md-6 mb-25">
                                     <label
+                                        class="label-text-title color-heading font-medium mb-2">{{ __('Pricing Model') }}<span
+                                            class="text-danger">*</span></label>
+                                    <select name="pricing_model" class="form-control">
+                                        <option value="free">{{ __('Free') }}</option>
+                                        <option value="subscription">{{ __('Subscription') }}</option>
+                                        <option value="transaction">{{ __('Transaction') }}</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-6 mb-25">
+                                    <label
                                         class="label-text-title color-heading font-medium mb-2">{{ __('Pricing Type') }}<span
                                             class="text-danger">*</span></label>
                                     <select name="pricing_type" class="form-control pricing_type" readonly>
@@ -178,6 +188,47 @@
                                         <option value="0">{{ __('No') }}</option>
                                         <option value="1">{{ __('Yes') }}</option>
                                     </select>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="modal-inner-form-box border-bottom mb-25">
+                            <div class="row">
+                                <div class="col-md-6 mb-25">
+                                    <label class="label-text-title color-heading font-medium mb-2">
+                                        {{ __('Marketplace Mark-up') }}
+                                    </label>
+                                    <div class="input-group">
+                                        <input type="number" min="0" step="any" name="commission_markup"
+                                            class="form-control" placeholder="Tier commission increment">
+                                    </div>
+                                </div>
+                                <div class="col-md-6 mb-25">
+                                    <label class="label-text-title color-heading font-medium mb-2">
+                                        {{ __('Marketplace Discount') }}
+                                    </label>
+                                    <div class="input-group">
+                                        <input type="number" min="0" step="any" name="commission_discount"
+                                            class="form-control" placeholder="Tier commission discount">
+                                    </div>
+                                </div>
+                                <div class="col-md-6 mb-25">
+                                    <label class="label-text-title color-heading font-medium mb-2">
+                                        {{ __('Max Marketplace Listings') }}
+                                    </label>
+                                    <div class="input-group">
+                                        <input type="number" min="0" step="any" name="max_marketplace_listings"
+                                            class="form-control" placeholder="Tier Maximum Product Listings">
+                                    </div>
+                                </div>
+
+                                <div class="col-md-6 mb-25">
+                                    <label class="label-text-title color-heading font-medium mb-2">
+                                        {{ __('SMS Credits') }}
+                                    </label>
+                                    <div class="input-group">
+                                        <input type="number" min="0" step="any" name="monthly_sms_credits"
+                                            class="form-control" placeholder="Package sms credits">
+                                    </div>
                                 </div>
                             </div>
                         </div>
