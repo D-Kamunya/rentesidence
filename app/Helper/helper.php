@@ -676,6 +676,36 @@ if (!function_exists('setUserPackage')) {
             );
         }
         // ─────────────────────────────────────────────────────────────
+
+        // ── Centresidence: keep module billing in step with the pricing mode ──
+        // Activating a package can change the owner's pricing model, so re-tag
+        // their modules' billing_model to match (mode is authoritative). Guarded
+        // and try/catch so it can never break activation on any install.
+        try {
+            app(\App\Centresidence\Services\PaymentModeService::class)->syncModulesToOwnerMode((int) $userId);
+        } catch (\Throwable $e) {
+            Log::error("setUserPackage: module billing sync failed for user_id={$userId} — " . $e->getMessage());
+        }
+        // ─────────────────────────────────────────────────────────────
+
+        // ── MERGE (B2 stage 4): settle bundled module-infra on activation ──
+        // Central chokepoint for EVERY paid-order confirmation path (M-Pesa callback,
+        // gateway confirmation, …). When the paying order bundled the owner's infra
+        // (infra_amount > 0), settle those invoices in the same success. Idempotent
+        // (markPaid no-ops if nothing is outstanding) and guarded so a settlement
+        // hiccup never breaks the plan activation the owner already paid for.
+        if ($orderId) {
+            try {
+                $paidOrder = \App\Models\SubscriptionOrder::find($orderId);
+                if ($paidOrder && (float) ($paidOrder->infra_amount ?? 0) > 0) {
+                    app(\App\Centresidence\Services\InfraBillPaymentService::class)
+                        ->markPaid((int) $userId, $paidOrder->payment_id ?? null);
+                }
+            } catch (\Throwable $e) {
+                Log::error("setUserPackage: infra settlement failed for user_id={$userId}, order={$orderId} — " . $e->getMessage());
+            }
+        }
+        // ─────────────────────────────────────────────────────────────
     }
 }
 
@@ -1051,6 +1081,31 @@ if (!function_exists('handlePaymentConfirmation')) {
                                 ]
                             );
                         }
+                    }
+                }
+
+                // ── Centresidence facility repayment / settlement ────────────
+                // Layered on top of the owner-wallet credit above: deducts active
+                // facility repayments + overdue commission from this rent in strict
+                // priority order. Idempotent per order; a no-op for properties with
+                // no Centresidence obligations; never rolls back the rent payment.
+                if (
+                    $isRentTransaction && $invoice && config('centresidence.enabled', true)
+                    && app(\App\Centresidence\Services\PaymentModeService::class)
+                        ->isTransactionMode((int) $invoice->owner_user_id)
+                ) {
+                    try {
+                        app(\App\Centresidence\Services\RentSettlementService::class)->handleRentPayment(
+                            (int) $invoice->property_id,
+                            (int) $invoice->owner_user_id,
+                            \App\Centresidence\Support\Money::fromDecimal((string) $order->transaction_amount),
+                            ['rent_transaction_id' => (int) $order->id]
+                        );
+                    } catch (\Throwable $settlementException) {
+                        \Illuminate\Support\Facades\Log::error(
+                            'Centresidence rent settlement failed in handlePaymentConfirmation',
+                            ['order_id' => $order->id, 'error' => $settlementException->getMessage()]
+                        );
                     }
                 }
 

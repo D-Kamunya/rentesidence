@@ -8,6 +8,7 @@ const USER_ROLE_TENANT = 2;
 const USER_ROLE_MAINTAINER = 3;
 const USER_ROLE_ADMIN = 4;
 const USER_ROLE_AFFILIATE = 5;
+const USER_ROLE_FINANCE_PARTNER = 6; // Centresidence finance partner (marketplace lender)
 
 // Gateway
 const GATEWAY_MODE_LIVE = 1;

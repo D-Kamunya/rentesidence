@@ -216,6 +216,11 @@ return [
         App\Providers\EventServiceProvider::class,
         App\Providers\RouteServiceProvider::class,
         App\Providers\TenancyServiceProvider::class,
+
+        /*
+         * Centresidence — Infrastructure & Finance OS (decoupled module).
+         */
+        App\Centresidence\CentresidenceServiceProvider::class,
         Yajra\DataTables\DataTablesServiceProvider::class,
 
     ],

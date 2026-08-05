@@ -5,6 +5,7 @@ use App\Http\Controllers\Tenant\DocumentController;
 use App\Http\Controllers\Tenant\InformationController;
 use App\Http\Controllers\Tenant\InvoiceController;
 use App\Http\Controllers\Tenant\ProductOrderController;
+use App\Http\Controllers\Tenant\UtilityTokenController;
 use App\Http\Controllers\Tenant\MaintenanceRequestController;
 use App\Http\Controllers\Tenant\TicketController;
 use App\Http\Controllers\ProductController;
@@ -68,6 +69,11 @@ Route::group(['prefix' => 'tenant', 'as' => 'tenant.', 'middleware' => ['auth', 
     });
     
     Route::post('orders/{id}/cancel', [ProductOrderController::class, 'cancel'])->name('product_order.cancel');
+
+    Route::group(['prefix' => 'utilities', 'as' => 'utilities.'], function () {
+        Route::get('/', [UtilityTokenController::class, 'index'])->name('index');
+        Route::post('purchase', [UtilityTokenController::class, 'purchase'])->name('purchase');
+    });
 });
 
 Route::get('/pay/invoice/{token}', [InvoiceController::class, 'instantRentPayShow'])

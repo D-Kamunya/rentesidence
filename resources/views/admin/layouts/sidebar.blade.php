@@ -65,6 +65,24 @@
                     </li>
                 @endif
                 <li>
+                    <a href="javascript: void(0);" class="has-arrow">
+                        <i class="ri-building-4-line"></i>
+                        <span>{{ __('Centresidence') }}</span>
+                    </a>
+                    <ul class="sub-menu" aria-expanded="false">
+                        <li><a href="{{ route('admin.centresidence.index') }}">{{ __('Overview') }}</a></li>
+                        <li><a href="{{ route('admin.centresidence.partners') }}">{{ __('Finance Partners') }}</a></li>
+                        <li><a href="{{ route('admin.centresidence.applications') }}">{{ __('Applications') }}</a></li>
+                        <li><a href="{{ route('admin.centresidence.facilities') }}">{{ __('Facilities') }}</a></li>
+                        <li><a href="{{ route('admin.centresidence.defaults') }}">{{ __('Defaults') }}</a></li>
+                        <li><a href="{{ route('admin.centresidence.revenue') }}">{{ __('Commission & Revenue') }}</a></li>
+                        <li><a href="{{ route('admin.centresidence.modules') }}">{{ __('Modules & Costs') }}</a></li>
+                        <li><a href="{{ route('admin.centresidence.self-financed') }}">{{ __('Self-financed') }}</a></li>
+                        <li><a href="{{ route('admin.centresidence.devices') }}">{{ __('Devices') }}</a></li>
+                        <li><a href="{{ route('admin.centresidence.infrastructure') }}">{{ __('Infrastructure') }}</a></li>
+                    </ul>
+                </li>
+                <li>
                     <a class="{{ @$navAcademyModulesShowClass }}" href="{{ route('admin.academy.index') }}">
                     <i class="fa fa-graduation-cap"></i>
                     <span>{{ __('Academy') }}</span>

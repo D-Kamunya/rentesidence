@@ -30,6 +30,7 @@ class SubscriptionOrder extends Model
         'subtotal',
         'total',
         'transaction_amount',
+        'infra_amount',
         'payment_status',
         'bank_id',
         'bank_name',

@@ -74,12 +74,26 @@
                                 </svg>
                                 {{ __('Group reminder') }}
                             </button>
-                            <button type="button" class="ow-btn ow-btn--primary" id="add" title="{{ __('New Invoice') }}">
-                                <svg width="13" height="13" viewBox="0 0 24 24" fill="none">
-                                    <path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-                                </svg>
-                                {{ __('New invoice') }}
-                            </button>
+                            @if(!empty($infraReadonly))
+                                {{-- Infra bill overdue → invoicing is paused. Point the owner
+                                     to settle it rather than letting them fill a form that the
+                                     readonly gate will reject on submit. --}}
+                                <a href="{{ route('owner.subscription.index') }}" class="ow-btn ow-btn--primary"
+                                   style="opacity:.7;" title="{{ __('Settle your infrastructure bill to create invoices') }}">
+                                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none">
+                                        <rect x="4" y="10" width="16" height="11" rx="2" stroke="currentColor" stroke-width="1.8"/>
+                                        <path d="M8 10V7a4 4 0 0 1 8 0v3" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+                                    </svg>
+                                    {{ __('Settle to invoice') }}
+                                </a>
+                            @else
+                                <button type="button" class="ow-btn ow-btn--primary" id="add" title="{{ __('New Invoice') }}">
+                                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none">
+                                        <path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                                    </svg>
+                                    {{ __('New invoice') }}
+                                </button>
+                            @endif
                         </div>
                     </div>
 

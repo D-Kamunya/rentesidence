@@ -34,7 +34,7 @@ use App\Http\Controllers\Owner\OwnerKnowledgeBaseController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/account/suspended', fn() => view('owner.suspended'))->name('owner.suspended');
-Route::group(['prefix' => 'owner', 'as' => 'owner.', 'middleware' => ['auth', 'owner', 'owner.active']], function () {
+Route::group(['prefix' => 'owner', 'as' => 'owner.', 'middleware' => ['auth', 'owner', 'owner.active', 'infra.standing']], function () {
     Route::get('/', [DashboardController::class, 'dashboard'])->name('dashboard');
     Route::get('top-search', [DashboardController::class, 'topSearch'])->name('top.search');
     Route::get('notification', [DashboardController::class, 'notification'])->name('notification');
@@ -51,6 +51,26 @@ Route::group(['prefix' => 'owner', 'as' => 'owner.', 'middleware' => ['auth', 'o
         Route::post('/checkout', [SmsCreditsPaymentController::class, 'checkout'])->name('checkout');
         Route::match(['GET', 'POST'], '/verify', [SmsCreditsPaymentController::class, 'verify'])->name('verify');
     });
+
+    // Centresidence — infrastructure financing (distinct from the product shop).
+    Route::prefix('financing')->name('financing.')->group(function () {
+        Route::get('/', [\App\Http\Controllers\Owner\FinancingController::class, 'index'])->name('index');
+        Route::get('module/{moduleId}', [\App\Http\Controllers\Owner\FinancingController::class, 'module'])->name('module');
+        Route::get('apply/{partnerModuleId}', [\App\Http\Controllers\Owner\FinancingController::class, 'apply'])->name('apply');
+        Route::post('switch-mode', [\App\Http\Controllers\Owner\FinancingController::class, 'switchMode'])->name('switch-mode');
+        Route::post('apply', [\App\Http\Controllers\Owner\FinancingController::class, 'store'])->name('store');
+        Route::get('mine', [\App\Http\Controllers\Owner\FinancingController::class, 'mine'])->name('mine');
+        Route::get('deductions', [\App\Http\Controllers\Owner\FinancingController::class, 'deductions'])->name('deductions');
+        Route::post('facilities/{facilityId}/accelerate', [\App\Http\Controllers\Owner\FinancingController::class, 'accelerate'])->name('accelerate');
+        Route::post('facilities/{facilityId}/settle-early', [\App\Http\Controllers\Owner\FinancingController::class, 'settleEarly'])->name('settle-early');
+        // Self-financing (owner funds the module themselves — no partner).
+        Route::get('self-finance/{catalogueItemId}', [\App\Http\Controllers\Owner\FinancingController::class, 'selfFinance'])->name('self-finance');
+        Route::post('self-finance', [\App\Http\Controllers\Owner\FinancingController::class, 'selfFinanceStore'])->name('self-finance.store');
+    });
+
+    // Pay the outstanding module-infrastructure bill (the way OUT of the readonly gate;
+    // intentionally NOT in the gated action list).
+    Route::post('infrastructure-bill/pay', [\App\Http\Controllers\Owner\InfraBillController::class, 'pay'])->name('infra-bill.pay');
 
     Route::group(['prefix' => 'property', 'as' => 'property.'], function () {
         Route::get('all-property', [PropertyController::class, 'allProperty'])->name('allProperty');

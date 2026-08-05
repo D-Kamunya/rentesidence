@@ -57,6 +57,22 @@ Route::group(['middleware' => ['auth:api']], function () {
 Route::post('payment/confirm', [MpesaController::class, 'MpesaPaymentConfirm'])->name('mpesa.payment.confirm');
 Route::post('v1/b2c/result',   [MpesaController::class, 'B2CResult'])->name('mpesa.b2c.result');
 
+// Centresidence owner down-payment (partial financing) STK callback.
+Route::post('centresidence/down-payment/{facility}/callback', \App\Http\Controllers\Centresidence\DownPaymentCallbackController::class)
+    ->name('centresidence.down-payment.callback');
+
+// Centresidence partner remittance (M-Pesa B2B) result callback — confirms/fails a payout batch.
+Route::post('centresidence/remittance/{batch}/callback', \App\Http\Controllers\Centresidence\PartnerRemittanceCallbackController::class)
+    ->name('centresidence.remittance.callback');
+
+// Centresidence owner module-infrastructure bill (M-Pesa STK) callback — marks the bill paid.
+Route::post('centresidence/infra-bill/{owner}/callback', \App\Http\Controllers\Centresidence\InfraBillCallbackController::class)
+    ->name('centresidence.infra-bill.callback');
+
+// Centresidence tenant utility-token purchase (M-Pesa STK) callback — credits wallet units.
+Route::post('centresidence/token/{propertyModule}/{tenant}/callback', \App\Http\Controllers\Centresidence\TokenPurchaseCallbackController::class)
+    ->name('centresidence.token.callback');
+
 
 Route::match(array('GET', 'POST'), 'payment-subscription/verify', [PaymentSubscriptionController::class, 'verify']);
 Route::match(array('GET', 'POST'), 'payment-verify', [PaymentController::class, 'verify']);

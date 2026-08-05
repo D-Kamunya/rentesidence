@@ -2,9 +2,11 @@
 
 namespace App\Console\Commands;
 
+use App\Centresidence\Services\OwnerBillingStandingService;
 use App\Models\Invoice;
 use App\Models\InvoiceItem;
 use App\Models\InvoiceRecurringSetting;
+use App\Models\Property;
 use App\Models\Tenant;
 use Exception;
 use Illuminate\Console\Command;
@@ -41,7 +43,30 @@ class GenerateInvoice extends Command
             ->with('items')
             ->where('status', ACTIVE)
             ->get();
+
+        $standing     = app(OwnerBillingStandingService::class);
+        $overdueCache = []; // owner_user_id => bool (computed once per owner per run)
+
         foreach ($invoiceRecurringSettings as $invoiceRecurring) {
+            // Enforcement: pause auto-invoicing for owners whose module-infra bill is
+            // overdue — auto-invoicing is money-making too, so it mustn't keep earning
+            // for an owner who's withholding infra (mirrors the readonly HTTP gate).
+            // Fail-open: any evaluation error leaves invoicing untouched.
+            $ownerUserId = Property::where('id', $invoiceRecurring->property_id)->value('owner_user_id');
+            if ($ownerUserId) {
+                if (! array_key_exists($ownerUserId, $overdueCache)) {
+                    try {
+                        $overdueCache[$ownerUserId] = $standing->infraStanding((int) $ownerUserId)['state'] === 'overdue';
+                    } catch (\Throwable $e) {
+                        $overdueCache[$ownerUserId] = false;
+                    }
+                }
+                if ($overdueCache[$ownerUserId]) {
+                    echo "Skipped (owner infrastructure bill overdue) \n";
+                    continue;
+                }
+            }
+
             $tenant = Tenant::where('unit_id', $invoiceRecurring->property_unit_id)->where('status', TENANT_STATUS_ACTIVE)->first();
             if (!is_null($tenant)) {
                 if ($invoiceRecurring->recurring_type == INVOICE_RECURRING_TYPE_MONTHLY) {

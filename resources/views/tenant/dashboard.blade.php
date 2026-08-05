@@ -101,6 +101,27 @@
                     </div>
                     {{-- End Summary Cards --}}
 
+                    {{-- Utilities top-up hint (Centresidence — only when a metered module exists on the unit) --}}
+                    @if (!empty($hasUtilities))
+                        <a href="{{ route('tenant.utilities.index') }}" class="util-hint">
+                            <span class="util-hint__icon">
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                                    <path d="M12 3s6 5.5 6 10a6 6 0 11-12 0c0-4.5 6-10 6-10z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/>
+                                </svg>
+                            </span>
+                            <span class="util-hint__text">
+                                <span class="util-hint__title">{{ __('Buy prepaid utility tokens') }}</span>
+                                <span class="util-hint__sub">{{ __('Top up water, power or gas for your unit — credited to your wallet instantly.') }}</span>
+                            </span>
+                            <span class="util-hint__cta">
+                                {{ __('Top up') }}
+                                <svg width="13" height="13" viewBox="0 0 24 24" fill="none">
+                                    <path d="M5 12h14M13 6l6 6-6 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                </svg>
+                            </span>
+                        </a>
+                    @endif
+
                     {{-- Invoices + Notice Board --}}
                     <div class="row g-3">
 
@@ -561,6 +582,46 @@
     .glance-card--blue  .glance-card__deco { color: #185FA5; }
     .glance-card--green .glance-card__deco { color: #1D9E75; }
     .glance-card--amber .glance-card__deco { color: #854F0B; }
+
+    /* ── Utilities top-up hint ───────────────────────────────── */
+    .util-hint {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        padding: 14px 18px;
+        margin-bottom: 1rem;
+        border-radius: 12px;
+        background: #FDF6EC;
+        border: 0.5px solid #F5D9A8;
+        text-decoration: none;
+        transition: transform .15s, box-shadow .15s;
+    }
+    .util-hint:hover { transform: translateY(-1px); box-shadow: 0 6px 18px rgba(133,79,11,.12); }
+    .util-hint__icon {
+        flex-shrink: 0;
+        width: 42px; height: 42px;
+        border-radius: 11px;
+        background: #FAEEDA;
+        color: #854F0B;
+        display: flex; align-items: center; justify-content: center;
+    }
+    .util-hint__text { flex: 1; min-width: 0; }
+    .util-hint__title { display: block; font-size: 14px; font-weight: 600; color: #6B3E08; }
+    .util-hint__sub   { display: block; font-size: 12px; color: #7A4A10; opacity: .8; margin-top: 2px; }
+    .util-hint__cta {
+        flex-shrink: 0;
+        display: inline-flex; align-items: center; gap: 6px;
+        background: #854F0B; color: #fff;
+        font-size: 12px; font-weight: 600;
+        padding: 8px 16px; border-radius: 8px;
+        white-space: nowrap;
+        transition: background .13s;
+    }
+    .util-hint:hover .util-hint__cta { background: #6f4109; }
+    @media (max-width: 540px) {
+        .util-hint { flex-wrap: wrap; }
+        .util-hint__cta { width: 100%; justify-content: center; }
+    }
 
     /* ── Shared dash card ────────────────────────────────────── */
     .dash-card {

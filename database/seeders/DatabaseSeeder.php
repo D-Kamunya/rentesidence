@@ -22,6 +22,12 @@ class DatabaseSeeder extends Seeder
             // InvoiceTypeSeeder::class,
             // GatewaySeeder::class,
             // SettingSeeder::class,
+
+            // Centresidence production content — module catalog + partner KB.
+            // Idempotent and demo-data-free, so `php artisan db:seed` ships the
+            // configured environment to live without manual setup.
+            CentresidenceCatalogSeeder::class,
+            KnowledgeBaseSeeder::class,
         ]);
     }
 }

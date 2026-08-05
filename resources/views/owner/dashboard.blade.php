@@ -7,6 +7,20 @@
             <div class="page-content-wrapper bg-white p-30 radius-20">
                 <div class="container">
 
+                    {{-- Centresidence financing nudge --}}
+                    <a href="{{ route('owner.financing.index') }}" style="text-decoration:none;display:block;">
+                        <div style="display:flex;align-items:center;gap:14px;background:linear-gradient(90deg,#E6F1FB,#E1F5EE);border:1px solid #B5D4F4;border-radius:14px;padding:16px 20px;margin-bottom:22px;">
+                            <div style="width:42px;height:42px;border-radius:12px;background:#185FA5;display:flex;align-items:center;justify-content:center;flex:none;">
+                                <i class="ri-funds-line" style="color:#fff;font-size:22px;"></i>
+                            </div>
+                            <div style="flex:1;">
+                                <div style="font-weight:700;color:#111827;">{{ __('Boost your property cashflow with smart modules') }}</div>
+                                <div style="font-size:13px;color:#374151;">{{ __('Add water/gas meters, smart locks and more — finance them through a partner, or self-finance and own them outright.') }}</div>
+                            </div>
+                            <span style="display:inline-flex;align-items:center;gap:6px;background:#185FA5;color:#fff;font-size:12px;font-weight:500;padding:8px 16px;border-radius:7px;white-space:nowrap;transition:all .13s;">{{ __('Explore modules') }}</span>
+                        </div>
+                    </a>
+
                     {{-- Page Header --}}
                     <div class="dash-header mb-4">
                         <div>

@@ -191,6 +191,14 @@ class InvoiceService
     public function getAllInvoices()
     {
         $response['pageTitle']              = __('All Invoices');
+        // Infra-readonly (cadence-aware): when true, invoicing is blocked until the
+        // owner settles their module-infra bill — the New-Invoice button reflects it.
+        try {
+            $response['infraReadonly'] = app(\App\Centresidence\Services\OwnerBillingStandingService::class)
+                ->isReadonly((int) auth()->id());
+        } catch (\Throwable $e) {
+            $response['infraReadonly'] = false;
+        }
         $response['invoices']               = Invoice::where('owner_user_id', auth()->id())->with(['property', 'propertyUnit', 'invoiceItems'])->latest()->get();
         $response['properties']             = Property::where('owner_user_id', auth()->id())->get();
         $response['invoiceTypes']           = InvoiceType::where('owner_user_id', auth()->id())->get();

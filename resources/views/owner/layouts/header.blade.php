@@ -21,7 +21,19 @@
             $subscriptionState = $subscriptionService->getSubscriptionState();
             $state = $subscriptionState['state'] ?? null;
             $daysLeft = $subscriptionState['days_left'] ?? null;
-            
+            $infraDue = $subscriptionState['infra']['amount_due'] ?? 0;
+
+            // CTA target: infra states → subscription page (pay infra); expired/expiring
+            // → direct-renew the previous plan (pre-filled checkout) when we have one,
+            // else the choose-plan modal; none → choose-plan.
+            $renew = $subscriptionState['renew'] ?? null;
+            $directRenewUrl = $renew ? route('owner.subscription.index', ['id' => $renew['package_id'], 'duration_type' => $renew['duration_type'], 'quantity' => $renew['quantity']]) : null;
+            $bannerActionUrl = match (true) {
+                in_array($state, ['infra_due', 'restricted']) => route('owner.subscription.index'),
+                in_array($state, ['expired', 'expiring']) && $directRenewUrl => $directRenewUrl,
+                default => route('owner.subscription.index', ['current_plan' => 'no']),
+            };
+
             $showSubscriptionAlert = isAddonInstalled('PROTYSAAS') && $state && $state !== 'active';
         @endphp
 
@@ -42,6 +54,11 @@
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <circle cx="12" cy="12" r="10"/>
                         <polyline points="12 6 12 12 16 14" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                @elseif($state === 'infra_due' || $state === 'restricted')
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M4 3h16v18l-3-2-2 2-3-2-3 2-2-2-3 2z"/>
+                        <path d="M8 8h8M8 12h5"/>
                     </svg>
                 @endif
             </div>
@@ -72,6 +89,11 @@
                                         <circle cx="12" cy="12" r="10"/>
                                         <polyline points="12 6 12 12 16 14"/>
                                     </svg>
+                                @elseif($state === 'infra_due' || $state === 'restricted')
+                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <path d="M4 3h16v18l-3-2-2 2-3-2-3 2-2-2-3 2z"/>
+                                        <path d="M8 8h8M8 12h5"/>
+                                    </svg>
                                 @endif
                             </div>
                         </div>
@@ -90,14 +112,22 @@
                                         <span class="subscription-banner__days">{{ $daysLeft }}</span>
                                         <span class="subscription-banner__days-label">{{ Str::plural('day', $daysLeft) }} remaining</span>
                                     </div>
+                                @elseif($state === 'infra_due')
+                                    <span class="subscription-banner__title">{{ __('Infrastructure Bill Due') }}</span>
+                                    <span class="subscription-banner__subtitle">{{ __('Pay :amount to keep full access to your modules.', ['amount' => 'KES ' . number_format($infraDue, 2)]) }}</span>
+                                @elseif($state === 'restricted')
+                                    <span class="subscription-banner__title">{{ __('Access Restricted — Infrastructure Overdue') }}</span>
+                                    <span class="subscription-banner__subtitle">{{ __('Pay :amount to restore full access.', ['amount' => 'KES ' . number_format($infraDue, 2)]) }}</span>
                                 @endif
                             </div>
 
-                            <a href="{{ route('owner.subscription.index', ['current_plan' => 'no']) }}" class="subscription-banner__action">
+                            <a href="{{ $bannerActionUrl }}" class="subscription-banner__action">
                                 @if($state === 'none')
                                     {{ __('Choose Plan') }}
                                 @elseif($state === 'expired')
                                     {{ __('Renew Now') }}
+                                @elseif($state === 'infra_due' || $state === 'restricted')
+                                    {{ __('Pay Now') }}
                                 @else
                                     {{ __('View Plans') }}
                                 @endif
@@ -105,6 +135,9 @@
                                     <path d="M5 12h14M13 6l6 6-6 6"/>
                                 </svg>
                             </a>
+                            @if(in_array($state, ['expired', 'expiring']))
+                                <a href="{{ route('owner.subscription.index', ['current_plan' => 'no']) }}" class="subscription-banner__alt">{{ __('choose another plan') }}</a>
+                            @endif
                         </div>
                     </div>
 
@@ -229,13 +262,17 @@
 <style>
     /* ── Subscription Banner ──────────────────────────────────── */
     .subscription-banner {
+        --accent: #185FA5;   /* state-driven; overridden per modifier below */
+        --tint:   #E6F1FB;
         width: 50%;
         max-width: 620px;
         margin: 0 auto;
+        background: #ffffff;
+        border: 0.5px solid #e5e7eb;
         border-radius: 12px;
         overflow: hidden;
-        box-shadow: 0 4px 24px rgba(0, 0, 0, 0.12), 0 1px 4px rgba(0, 0, 0, 0.08);
-        animation: bannerSlideIn 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        box-shadow: 0 6px 22px rgba(24, 95, 165, 0.10), 0 1px 3px rgba(16, 24, 40, 0.06);
+        animation: bannerSlideIn 0.45s cubic-bezier(0.16, 1, 0.3, 1) forwards;
         position: relative;
     }
 
@@ -248,9 +285,9 @@
     }
 
     .subscription-banner__accent {
-        width: 4px;
+        width: 3px;
         align-self: stretch;
-        background: rgba(255, 255, 255, 0.3);
+        background: var(--accent);
         flex-shrink: 0;
     }
 
@@ -267,14 +304,14 @@
     }
 
     .subscription-banner__icon-wrapper {
-        width: 40px;
-        height: 40px;
-        border-radius: 10px;
+        width: 38px;
+        height: 38px;
+        border-radius: 9px;
         display: flex;
         align-items: center;
         justify-content: center;
-        background: rgba(255, 255, 255, 0.15);
-        backdrop-filter: blur(8px);
+        background: var(--tint);
+        color: var(--accent);
     }
 
     .subscription-banner__content {
@@ -298,12 +335,13 @@
         font-weight: 600;
         letter-spacing: -0.01em;
         line-height: 1.3;
+        color: #111827;
     }
 
     .subscription-banner__subtitle {
         font-size: 11px;
         font-weight: 400;
-        opacity: 0.85;
+        color: #6b7280;
         line-height: 1.4;
     }
 
@@ -314,20 +352,20 @@
     }
 
     .subscription-banner__days {
-        font-size: 20px;
+        font-size: 18px;
         font-weight: 700;
         letter-spacing: -0.02em;
         line-height: 1;
-        padding: 2px 10px;
+        padding: 3px 10px;
         border-radius: 8px;
-        background: rgba(255, 255, 255, 0.2);
-        backdrop-filter: blur(4px);
+        background: var(--tint);
+        color: var(--accent);
     }
 
     .subscription-banner__days-label {
         font-size: 11px;
         font-weight: 500;
-        opacity: 0.85;
+        color: #6b7280;
     }
 
     .subscription-banner__action {
@@ -335,30 +373,40 @@
         align-items: center;
         gap: 6px;
         padding: 8px 16px;
-        border-radius: 8px;
+        border-radius: 7px;
         font-size: 12px;
         font-weight: 600;
         text-decoration: none;
-        color: inherit;
-        background: rgba(255, 255, 255, 0.2);
-        backdrop-filter: blur(8px);
-        border: 1px solid rgba(255, 255, 255, 0.3);
-        transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+        color: #ffffff;
+        background: var(--accent);
+        border: 0.5px solid var(--accent);
+        transition: filter 0.15s, transform 0.15s, box-shadow 0.15s;
         white-space: nowrap;
         flex-shrink: 0;
     }
 
     .subscription-banner__action:hover {
-        background: rgba(255, 255, 255, 0.3);
-        border-color: rgba(255, 255, 255, 0.5);
+        filter: brightness(0.94);
         transform: translateY(-1px);
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-        color: inherit;
+        box-shadow: 0 4px 12px rgba(24, 95, 165, 0.18);
+        color: #ffffff;
     }
 
     .subscription-banner__action:active {
         transform: translateY(0);
     }
+
+    .subscription-banner__alt {
+        font-size: 11px;
+        font-weight: 500;
+        color: #6b7280;
+        text-decoration: underline;
+        text-underline-offset: 2px;
+        white-space: nowrap;
+        align-self: center;
+        flex-shrink: 0;
+    }
+    .subscription-banner__alt:hover { color: var(--accent); }
 
     .subscription-banner__close {
         position: absolute;
@@ -368,26 +416,25 @@
         height: 24px;
         border-radius: 6px;
         border: none;
-        background: rgba(255, 255, 255, 0.1);
-        color: inherit;
+        background: transparent;
+        color: #9ca3af;
         cursor: pointer;
         display: flex;
         align-items: center;
         justify-content: center;
         padding: 0;
-        opacity: 0.7;
-        transition: all 0.2s ease;
+        transition: background 0.15s, color 0.15s;
         flex-shrink: 0;
     }
 
     .subscription-banner__close:hover {
-        opacity: 1;
-        background: rgba(255, 255, 255, 0.2);
+        color: #6b7280;
+        background: #f3f4f6;
     }
 
     .subscription-banner__progress {
         height: 3px;
-        background: rgba(255, 255, 255, 0.15);
+        background: #f3f4f6;
         width: 100%;
     }
 
@@ -395,48 +442,23 @@
         height: 100%;
         transition: width 0.6s cubic-bezier(0.16, 1, 0.3, 1);
         border-radius: 0 2px 2px 0;
+        background: var(--accent);
     }
 
-    .subscription-banner__progress-bar--normal {
-        background: rgba(255, 255, 255, 0.5);
-    }
+    .subscription-banner__progress-bar--normal   { background: var(--accent); opacity: 0.5; }
+    .subscription-banner__progress-bar--warning  { background: var(--accent); opacity: 0.8; }
+    .subscription-banner__progress-bar--critical { background: var(--accent); animation: progressPulse 1.5s infinite; }
 
-    .subscription-banner__progress-bar--warning {
-        background: linear-gradient(90deg, rgba(253, 224, 71, 0.8), rgba(251, 191, 36, 0.8));
-    }
+    /* ── State tokens (grey · pending/amber · overdue/red) ─────── */
+    .subscription-banner--none       { --accent: #6b7280; --tint: #f3f4f6; }
+    .subscription-banner--expiring   { --accent: #854F0B; --tint: #FAEEDA; }
+    .subscription-banner--infra_due  { --accent: #854F0B; --tint: #FAEEDA; }
+    .subscription-banner--expired    { --accent: #A32D2D; --tint: #FCEBEB; }
+    .subscription-banner--restricted { --accent: #A32D2D; --tint: #FCEBEB; }
 
-    .subscription-banner__progress-bar--critical {
-        background: linear-gradient(90deg, rgba(252, 165, 165, 0.8), rgba(239, 68, 68, 0.8));
-        animation: progressPulse 1.5s infinite;
-    }
-
-    /* ── State Colors ──────────────────────────────────────────── */
-    /* None state - Slate Blue (informational) */
-    .subscription-banner--none {
-        background: linear-gradient(135deg, #1e293b 0%, #334155 50%, #1e293b 100%);
-        color: #f1f5f9;
-    }
-    .subscription-banner--none .subscription-banner__icon-wrapper {
-        color: #94a3b8;
-    }
-
-    /* Expired state - Deep Red (urgent) */
-    .subscription-banner--expired {
-        background: linear-gradient(135deg, #7f1d1d 0%, #991b1b 50%, #7f1d1d 100%);
-        color: #fef2f2;
-    }
-    .subscription-banner--expired .subscription-banner__icon-wrapper {
-        color: #fca5a5;
-        animation: iconPulse 2s infinite;
-    }
-
-    /* Expiring state - Amber (attention) */
-    .subscription-banner--expiring {
-        background: linear-gradient(135deg, #78350f 0%, #92400e 50%, #78350f 100%);
-        color: #fffbeb;
-    }
-    .subscription-banner--expiring .subscription-banner__icon-wrapper {
-        color: #fde68a;
+    /* Urgent states keep a subtle icon pulse to draw the eye. */
+    .subscription-banner--expired .subscription-banner__icon-wrapper,
+    .subscription-banner--restricted .subscription-banner__icon-wrapper {
         animation: iconPulse 2s infinite;
     }
 
@@ -471,17 +493,11 @@
         box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
     }
 
-    .subscription-alert-toggle--none {
-        background: linear-gradient(135deg, #475569, #334155);
-    }
-
-    .subscription-alert-toggle--expired {
-        background: linear-gradient(135deg, #dc2626, #991b1b);
-    }
-
-    .subscription-alert-toggle--expiring {
-        background: linear-gradient(135deg, #d97706, #92400e);
-    }
+    .subscription-alert-toggle--none       { background: #6b7280; }
+    .subscription-alert-toggle--expiring   { background: #854F0B; }
+    .subscription-alert-toggle--infra_due  { background: #854F0B; }
+    .subscription-alert-toggle--expired    { background: #A32D2D; }
+    .subscription-alert-toggle--restricted { background: #A32D2D; }
 
     /* ── Animations ───────────────────────────────────────────── */
     @keyframes bannerSlideIn {

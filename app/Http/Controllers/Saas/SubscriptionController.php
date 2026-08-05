@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers\Saas;
 
+use App\Centresidence\Exceptions\FacilityActiveModeLockException;
+use App\Centresidence\Services\PaymentModeService;
 use App\Http\Controllers\Controller;
 use App\Models\Bank;
 use App\Models\MpesaAccount;
@@ -81,6 +83,70 @@ class SubscriptionController extends Controller
         //     }
         // }
         $data['userPlan'] = $this->subscriptionService->getCurrentPlan();
+
+        // Centresidence: the live monthly cost of this owner's subscription-billed
+        // modules, plus what they actually pay for the plan — so the My
+        // Subscription page can show package + modules = total transparently.
+        // Guarded so the legacy page never breaks on non-Centresidence installs.
+        // Price of the owner's CURRENT plan, tied to the active package's OWN
+        // order — not the latest paid order globally, which lingers after a
+        // switch to a free/transaction plan (no new payment) and showed a stale
+        // amount. Free plans carry no order → 0.
+        $activePackage = \App\Models\OwnerPackage::where('user_id', $ownerId)
+            ->where('status', ACTIVE)->latest('id')->first();
+        $data['packageAmount'] = ($activePackage && $activePackage->order_id)
+            ? (float) (\App\Models\SubscriptionOrder::where('id', $activePackage->order_id)->value('amount') ?? 0)
+            : 0.0;
+        $data['moduleCosts'] = ['lines' => [], 'total' => '0.00', 'has_modules' => false];
+        $data['moduleInvoiceStatus'] = null;
+        $data['infraOutstanding'] = 0.0; // unpaid infra the owner can settle now
+        $data['infraOutstandingCount'] = 0; // how many issued bills that spans
+        $data['infraBundlesWithPlan'] = false; // monthly owners pay infra via renewal, not standalone
+
+        // Transaction-mode owners pay NO monthly subscription — Centresidence
+        // takes a per-rent-transaction fee instead, and their module infra is
+        // recovered from rent (not billed alongside a plan). The billing card
+        // branches on this so the numbers read honestly for each pricing model.
+        $isTransactionMode = app(PaymentModeService::class)->isTransactionMode($ownerId);
+        $data['isTransactionMode'] = $isTransactionMode;
+        $data['rentCommissionRate'] = \App\Services\CommissionService::RENT_COMMISSION_RATE;
+
+        if (\Illuminate\Support\Facades\Schema::hasTable('property_modules')) {
+            // Subscription owners see subscription-billed modules; transaction
+            // owners see their transaction-billed infra (recovered from rent).
+            $billingModel = $isTransactionMode
+                ? \App\Centresidence\Models\PropertyModule::BILLING_TRANSACTION
+                : \App\Centresidence\Models\PropertyModule::BILLING_SUBSCRIPTION;
+            $data['moduleCosts'] = app(\App\Centresidence\Services\OwnerModuleCostService::class)->currentMonthly($ownerId, $billingModel);
+
+            if ($isTransactionMode) {
+                // Worst status across this owner's current-month rent-recovered infra invoices.
+                $statuses = \App\Centresidence\Models\OwnerInfrastructureInvoice::where('owner_id', $ownerId)
+                    ->whereDate('billing_month', now()->startOfMonth()->toDateString())->pluck('status');
+            } else {
+                // Worst status across this owner's current-month subscription module invoices.
+                $statuses = \App\Centresidence\Models\CentresidenceCommissionInvoice::where('owner_id', $ownerId)
+                    ->whereDate('billing_month', now()->startOfMonth()->toDateString())->pluck('status');
+            }
+            $data['moduleInvoiceStatus'] = $statuses->contains('overdue') ? 'overdue'
+                : ($statuses->contains('partially_paid') ? 'partially_paid'
+                : ($statuses->contains('pending') ? 'pending'
+                : ($statuses->isNotEmpty() ? 'paid' : null)));
+
+            // Actual unpaid infra the owner can settle now (subscription owners only;
+            // transaction owners recover infra from rent — nothing to pay here).
+            if (! $isTransactionMode) {
+                $out = app(\App\Centresidence\Services\InfraBillPaymentService::class)->outstanding($ownerId);
+                $data['infraOutstanding'] = $out['total'];
+                $data['infraOutstandingCount'] = $out['invoices']->count();
+                // Monthly-plan owners settle infra WITH the plan renewal (bundled), so
+                // the standalone infra Pay button is redundant — one pay path for them.
+                // Yearly / plan-less owners pay infra standalone (keep the button).
+                $renew = $this->subscriptionService->getSubscriptionState($ownerId)['renew'] ?? null;
+                $data['infraBundlesWithPlan'] = ($renew['duration_type'] ?? 0) == PACKAGE_DURATION_TYPE_MONTHLY;
+            }
+        }
+
         if (!is_null($request->id)) {
             $data['gateways'] = $this->order($request);
         }
@@ -101,6 +167,13 @@ class SubscriptionController extends Controller
             if (is_null($user)) {
                 throw new Exception(__(SOMETHING_WENT_WRONG));
             }
+            // Paid plans are non-transaction; block starting checkout while a
+            // financing facility is active (the owner must stay on transaction).
+            $targetPlan = Package::find($request->id);
+            if ($msg = $this->facilityLockMessage($targetPlan->pricing_model ?? null)) {
+                return $this->error([], $msg);
+            }
+
             $gateWayService = new GatewayService;
             $data['gateways'] = $gateWayService->getActiveAll($user->id);
             $data['plan'] = $this->subscriptionService->getById($request->id);
@@ -114,6 +187,11 @@ class SubscriptionController extends Controller
             } else {
                 $data['endDate'] = Carbon::now()->addYear();
             }
+            // Outstanding module-infra bundled into this checkout (shown as a line so
+            // the Total Due matches the actual KES charge; server-side placeOrder is
+            // the source of truth and only bundles it on a KES transaction).
+            $data['infraOutstanding'] = (float) app(\App\Centresidence\Services\InfraBillPaymentService::class)
+                ->outstanding((int) auth()->id())['total'];
             return view('saas.owner.subscriptions.partials.gateway-list', $data)->render();
         } catch (Exception $e) {
             return $this->error([], $e->getMessage());
@@ -128,8 +206,29 @@ class SubscriptionController extends Controller
 
     public function cancel()
     {
+        // Cancelling drops the owner off the transaction plan, which would break
+        // at-source facility repayment. Block while a facility is active.
+        if ($msg = $this->facilityLockMessage('free')) {
+            return back()->with('error', $msg);
+        }
+
         $this->subscriptionService->cancel();
         return back()->with('success', __('Canceled Successful!'));
+    }
+
+    /**
+     * Centresidence guard: financing requires transaction mode and an owner may
+     * not leave it while a facility is active (handbook §9). Returns a friendly
+     * message if blocked, or null if the switch to $targetMode is allowed.
+     */
+    private function facilityLockMessage(?string $targetMode): ?string
+    {
+        try {
+            app(PaymentModeService::class)->assertCanSwitchTo((int) auth()->id(), $targetMode ?? 'free');
+            return null;
+        } catch (FacilityActiveModeLockException $e) {
+            return __('You have an active infrastructure financing facility, so you must stay on the transaction plan until it is fully repaid. Settle the facility first to change or cancel your plan.');
+        }
     }
 
     public function confirmFreeView(Request $request)
@@ -175,7 +274,12 @@ class SubscriptionController extends Controller
         if ($package->status !== ACTIVE) {
             return back()->with('error', __('This plan is no longer available.'));
         }
- 
+
+        // Block leaving transaction mode while a financing facility is active.
+        if ($msg = $this->facilityLockMessage($package->pricing_model)) {
+            return back()->with('error', $msg);
+        }
+
         // 50-year duration → effectively never expires; active until cancelled.
         // setUserPackage does Carbon::now()->addDays($duration) internally.
         $duration = 365 * 50;

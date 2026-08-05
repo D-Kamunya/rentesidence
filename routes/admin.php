@@ -30,6 +30,31 @@ use Illuminate\Support\Facades\Artisan;
 Route::group(['prefix' => 'admin', 'as' => 'admin.', 'middleware' => ['auth', 'admin']], function () {
     Route::get('/', [DashboardController::class, 'dashboard'])->name('dashboard');
     Route::get('notification', [DashboardController::class, 'notification'])->name('notification');
+
+    // Centresidence — Infrastructure & Finance OS (read-only admin visibility).
+    Route::group(['prefix' => 'centresidence', 'as' => 'centresidence.'], function () {
+        Route::get('/', [\App\Http\Controllers\Admin\CentresidenceController::class, 'index'])->name('index');
+        Route::get('partners', [\App\Http\Controllers\Admin\CentresidenceController::class, 'partners'])->name('partners');
+        Route::get('applications', [\App\Http\Controllers\Admin\CentresidenceController::class, 'applications'])->name('applications');
+        Route::get('facilities', [\App\Http\Controllers\Admin\CentresidenceController::class, 'facilities'])->name('facilities');
+        Route::get('defaults', [\App\Http\Controllers\Admin\CentresidenceController::class, 'defaults'])->name('defaults');
+        Route::get('revenue', [\App\Http\Controllers\Admin\CentresidenceController::class, 'revenue'])->name('revenue');
+        Route::get('modules', [\App\Http\Controllers\Admin\CentresidenceController::class, 'modules'])->name('modules');
+        Route::get('modules/{id}/edit', [\App\Http\Controllers\Admin\CentresidenceController::class, 'moduleEdit'])->name('modules.edit');
+        Route::put('modules/{id}', [\App\Http\Controllers\Admin\CentresidenceController::class, 'moduleUpdate'])->name('modules.update');
+        Route::post('modules/{module}/cost-components', [\App\Http\Controllers\Admin\CentresidenceController::class, 'costComponentStore'])->name('modules.cost-components.store');
+        Route::put('cost-components/{id}', [\App\Http\Controllers\Admin\CentresidenceController::class, 'costComponentUpdate'])->name('cost-components.update');
+        Route::delete('cost-components/{id}', [\App\Http\Controllers\Admin\CentresidenceController::class, 'costComponentDestroy'])->name('cost-components.destroy');
+        Route::get('self-financed', [\App\Http\Controllers\Admin\CentresidenceController::class, 'selfFinanced'])->name('self-financed');
+        Route::get('deploy', [\App\Http\Controllers\Admin\CentresidenceController::class, 'deployForm'])->name('deploy');
+        Route::post('deploy', [\App\Http\Controllers\Admin\CentresidenceController::class, 'deployStore'])->name('deploy.store');
+        Route::get('devices', [\App\Http\Controllers\Admin\CentresidenceController::class, 'devices'])->name('devices');
+        Route::put('devices/{id}', [\App\Http\Controllers\Admin\CentresidenceController::class, 'deviceUpdate'])->name('devices.update');
+        Route::post('gateways', [\App\Http\Controllers\Admin\CentresidenceController::class, 'gatewayStore'])->name('gateways.store');
+        Route::put('gateways/{id}', [\App\Http\Controllers\Admin\CentresidenceController::class, 'gatewayUpdate'])->name('gateways.update');
+        Route::post('partners', [\App\Http\Controllers\Admin\CentresidenceController::class, 'partnerStore'])->name('partners.store');
+        Route::get('infrastructure', [\App\Http\Controllers\Admin\CentresidenceController::class, 'infrastructure'])->name('infrastructure');
+    });
     // Academy landing (modules index)
     Route::get('academy', [AcademyAdminController::class, 'index'])->name('academy.index');
     // Modules CRUD

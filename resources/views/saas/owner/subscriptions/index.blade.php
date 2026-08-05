@@ -682,14 +682,168 @@
 
                             {{-- Footer --}}
                             <div class="sub-card-footer">
-                                <span style="font-size:12px; color:var(--gray-500);">Need more? Upgrade to unlock higher limits.</span>
-                                <button type="button" class="sub-btn sub-btn--primary" id="chooseAPlan">
-                                    <svg width="13" height="13" viewBox="0 0 13 13" fill="none">
-                                        <path d="M6.5 2V11M2 6.5H11" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
-                                    </svg>
-                                    Upgrade Plan
-                                </button>
+                                <span style="font-size:12px; color:var(--gray-500);">{{ __('Renew your plan, or switch to another.') }}</span>
+                                <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+                                    {{-- Renew: reuse the current plan → straight to the (bundled) checkout,
+                                         skipping plan selection. Only for paid subscription plans, and only
+                                         enabled once the plan is close to / past expiry (greyed while there's
+                                         still plenty of time — nothing to renew yet). --}}
+                                    @if (($userPlan->pricing_model ?? '') === 'subscription')
+                                        @php
+                                            $renewExpiry   = \Carbon\Carbon::parse($userPlan->end_date)->startOfDay();
+                                            $renewDaysLeft = now()->startOfDay()->diffInDays($renewExpiry, false);
+                                            $canRenew      = $renewDaysLeft <= (int) getOption('plan_expiry_notice_days', 3);
+                                        @endphp
+                                        @if ($canRenew)
+                                            <a href="{{ route('owner.subscription.index', ['id' => $userPlan->package_id, 'duration_type' => $userPlan->duration_type ?? 1, 'quantity' => $userPlan->quantity ?? 1]) }}"
+                                               class="sub-btn sub-btn--primary" style="text-decoration:none;">
+                                                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                                    <polyline points="23 4 23 10 17 10"/>
+                                                    <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/>
+                                                </svg>
+                                                {{ __('Renew') }}
+                                            </a>
+                                        @else
+                                            <button type="button" class="sub-btn sub-btn--primary" disabled
+                                                    style="opacity:.45; cursor:not-allowed;"
+                                                    title="{{ __('Available when your plan is close to expiring.') }}">
+                                                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                                    <polyline points="23 4 23 10 17 10"/>
+                                                    <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/>
+                                                </svg>
+                                                {{ __('Renew') }}
+                                            </button>
+                                        @endif
+                                    @endif
+                                    <button type="button" class="sub-btn sub-btn--ghost" id="chooseAPlan">
+                                        <svg width="13" height="13" viewBox="0 0 13 13" fill="none">
+                                            <path d="M6.5 2V11M2 6.5H11" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+                                        </svg>
+                                        {{ __('Choose another plan') }}
+                                    </button>
+                                </div>
                             </div>
+                        </div>
+
+                        {{-- ── Billing breakdown — branches on the owner's pricing model ── --}}
+                        @php
+                            $isTx = $isTransactionMode ?? false;
+                            $st = $moduleInvoiceStatus ?? null;
+                            $stMap = [
+                                'overdue' => ['Overdue', '#fef2f2', '#b91c1c'],
+                                'partially_paid' => ['Partially recovered', '#fffbeb', '#b45309'],
+                                'pending' => [$isTx ? 'Recovers from rent' : 'Due this month', '#eff6ff', '#1d4ed8'],
+                                'paid' => [$isTx ? 'Recovered' : 'Paid', '#f0fdf4', '#15803d'],
+                            ];
+                            $rate = rtrim(rtrim(number_format($rentCommissionRate ?? 1, 2), '0'), '.');
+                        @endphp
+                        <div class="sub-card" style="margin-top:20px;padding:20px;">
+                            <div style="display:flex;justify-content:space-between;align-items:center;">
+                                <h3 style="font-size:15px;font-weight:600;color:#111827;margin:0;">{{ $isTx ? __('Billing') : __('Monthly billing') }}</h3>
+                                @if ($st && isset($stMap[$st]))
+                                    <span style="font-size:11px;font-weight:600;padding:3px 10px;border-radius:99px;background:{{ $stMap[$st][1] }};color:{{ $stMap[$st][2] }};">{{ __($stMap[$st][0]) }}</span>
+                                @else
+                                    <span style="font-size:11px;color:#6b7280;">{{ now()->format('F Y') }}</span>
+                                @endif
+                            </div>
+
+                            @if ($isTx)
+                                {{-- Transaction pricing: no monthly subscription; fee per rent payment; infra recovered from rent. --}}
+                                <p style="font-size:12px;color:#6b7280;margin:6px 0 14px;">{{ __('You\'re on transaction pricing — Centresidence takes a small fee from each rent payment, with no fixed monthly subscription.') }}</p>
+
+                                <div style="display:flex;justify-content:space-between;font-size:13.5px;color:#374151;padding:8px 0;border-bottom:0.5px solid #f3f4f6;">
+                                    <span>{{ __('Transaction fee') }} <span style="color:#9ca3af;">· {{ __('per rent payment') }}</span></span>
+                                    <b style="color:#111827;">{{ $rate }}%</b>
+                                </div>
+
+                                @if ($moduleCosts['has_modules'])
+                                    <div style="padding:10px 0;border-bottom:0.5px solid #f3f4f6;">
+                                        <div style="font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:#9ca3af;margin-bottom:8px;">{{ __('Infrastructure costs · recovered from rent') }}</div>
+                                        @foreach ($moduleCosts['lines'] as $line)
+                                            <div style="display:flex;justify-content:space-between;font-size:12.5px;color:#6b7280;padding:4px 0;">
+                                                <span>{{ $line['module_name'] }} · {{ ucwords(str_replace('_', ' ', $line['component_name'])) }} <span style="color:#cbd5e1;">(× {{ $line['device_count'] }})</span></span>
+                                                <span>KES {{ number_format((float) $line['subtotal'], 2) }}</span>
+                                            </div>
+                                        @endforeach
+                                        <div style="display:flex;justify-content:space-between;font-size:13px;color:#374151;padding-top:8px;font-weight:500;">
+                                            <span>{{ __('Recovered from rent / month') }}</span>
+                                            <b style="color:#111827;">KES {{ number_format((float) $moduleCosts['total'], 2) }}</b>
+                                        </div>
+                                    </div>
+                                    <p style="font-size:11px;color:#9ca3af;margin:8px 0 0;">{{ __('These infrastructure costs are deducted from your rent within your deduction cap — not billed as a monthly fee.') }} <a href="{{ route('owner.financing.deductions') }}" style="color:#1d4ed8;font-weight:500;">{{ __('See Rent & deductions') }}</a></p>
+                                @else
+                                    <p style="font-size:11px;color:#9ca3af;margin:10px 0 0;">{{ __('No smart modules deployed yet. When you add them, their infrastructure cost is recovered from rent — shown here and on Rent & deductions.') }}</p>
+                                @endif
+                            @else
+                                {{-- Subscription pricing: plan + subscription-billed module costs = monthly total. --}}
+                                <p style="font-size:12px;color:#6b7280;margin:6px 0 14px;">{{ __('What makes up your monthly total — your plan plus any smart modules deployed on your properties.') }}</p>
+
+                                <div style="display:flex;justify-content:space-between;font-size:13.5px;color:#374151;padding:8px 0;border-bottom:0.5px solid #f3f4f6;">
+                                    <span>{{ __('Subscription plan') }} <span style="color:#9ca3af;">· {{ $userPlan->name }}</span></span>
+                                    <b style="color:#111827;">KES {{ number_format($packageAmount, 2) }}</b>
+                                </div>
+
+                                @if ($moduleCosts['has_modules'])
+                                    <div style="padding:10px 0;border-bottom:0.5px solid #f3f4f6;">
+                                        <div style="font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:#9ca3af;margin-bottom:8px;">{{ __('Smart module costs') }}</div>
+                                        @foreach ($moduleCosts['lines'] as $line)
+                                            <div style="display:flex;justify-content:space-between;font-size:12.5px;color:#6b7280;padding:4px 0;">
+                                                <span>{{ $line['module_name'] }} · {{ ucwords(str_replace('_', ' ', $line['component_name'])) }} <span style="color:#cbd5e1;">(× {{ $line['device_count'] }})</span></span>
+                                                <span>KES {{ number_format((float) $line['subtotal'], 2) }}</span>
+                                            </div>
+                                        @endforeach
+                                        <div style="display:flex;justify-content:space-between;font-size:13px;color:#374151;padding-top:8px;font-weight:500;">
+                                            <span>{{ __('Modules subtotal') }}</span>
+                                            <b style="color:#111827;">KES {{ number_format((float) $moduleCosts['total'], 2) }}</b>
+                                        </div>
+                                    </div>
+                                @endif
+
+                                <div style="display:flex;justify-content:space-between;align-items:baseline;font-weight:700;color:#111827;padding:14px 0 4px;">
+                                    <span style="font-size:15px;">{{ __('Estimated monthly total') }}</span>
+                                    <span style="font-size:19px;">KES {{ number_format($packageAmount + (float) $moduleCosts['total'], 2) }}</span>
+                                </div>
+                                @if ($moduleCosts['has_modules'])
+                                    <p style="font-size:11px;color:#9ca3af;margin:6px 0 0;">{{ __('A projection of your current setup’s monthly cost — it updates with the number of active devices. It is not a charge; your issued bills are shown below.') }}</p>
+                                @else
+                                    <p style="font-size:11px;color:#9ca3af;margin:6px 0 0;">{{ __('Deploy smart modules (water, gas, locks) to earn more from your units — any subscription-billed module costs will appear here.') }}</p>
+                                @endif
+
+                                {{-- Outstanding module-infrastructure bill — payable now via M-Pesa. --}}
+                                @if (($infraOutstanding ?? 0) > 0)
+                                    @php $ovd = ($moduleInvoiceStatus ?? null) === 'overdue'; $cnt = (int) ($infraOutstandingCount ?? 0); @endphp
+                                    <div style="margin-top:16px;padding:14px;border:0.5px solid {{ $ovd ? '#F5C4B3' : '#FAD9A0' }};background:{{ $ovd ? '#FCEBEB' : '#FEF9EE' }};border-radius:10px;">
+                                        <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap;">
+                                            <div style="min-width:0;">
+                                                <div style="font-size:13px;font-weight:600;color:{{ $ovd ? '#A32D2D' : '#854F0B' }};">
+                                                    {{ $ovd ? __('Infrastructure bill overdue') : __('Infrastructure bill due') }}
+                                                </div>
+                                                <p style="font-size:11.5px;color:#6b7280;margin:4px 0 0;max-width:50ch;">
+                                                    @if($cnt > 0){{ __('Outstanding from') }} {{ $cnt }} {{ $cnt === 1 ? __('issued bill') : __('issued bills') }} — @endif{{ __('payable now. This is your deployed smart-module infrastructure, billed separately from your plan; it can differ from the estimate above, which reflects your current devices.') }}
+                                                    {{ $ovd ? __('Settle to restore full access.') : __('Settle to keep full access.') }}
+                                                </p>
+                                            </div>
+                                            <div style="font-size:16px;font-weight:700;color:{{ $ovd ? '#A32D2D' : '#854F0B' }};white-space:nowrap;">KES {{ number_format((float) $infraOutstanding, 2) }}</div>
+                                        </div>
+                                        @if (empty($infraBundlesWithPlan))
+                                            {{-- Yearly / plan-less owners pay infra standalone. --}}
+                                            <form method="POST" action="{{ route('owner.infra-bill.pay') }}" style="margin-top:12px;">
+                                                @csrf
+                                                <button type="submit" style="display:inline-flex;align-items:center;gap:6px;padding:9px 18px;border:none;border-radius:7px;background:{{ $ovd ? '#A32D2D' : '#854F0B' }};color:#fff;font-size:13px;font-weight:600;cursor:pointer;">
+                                                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg>
+                                                    {{ __('Pay via M-Pesa') }}
+                                                </button>
+                                            </form>
+                                        @else
+                                            {{-- Monthly owners: this is bundled into the plan renewal — one payment. --}}
+                                            <p style="font-size:11.5px;color:#6b7280;margin:12px 0 0;display:inline-flex;align-items:center;gap:6px;">
+                                                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="{{ $ovd ? '#A32D2D' : '#854F0B' }}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>
+                                                {{ __('Included automatically when you renew your plan — no separate payment needed.') }}
+                                            </p>
+                                        @endif
+                                    </div>
+                                @endif
+                            @endif
                         </div>
 
                         {{-- ── Cancel Zone ── --}}

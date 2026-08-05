@@ -30,6 +30,15 @@
                         <span>{{ __('Product Orders') }}</span>
                     </a>
                 </li>
+                @if (\Illuminate\Support\Facades\Schema::hasTable('property_modules') &&
+                        app(\App\Centresidence\Services\TokenPurchaseCollectionService::class)->hasUtilities(auth()->id()))
+                    <li class="{{ @$navUtilitiesMMActiveClass }}">
+                        <a href="{{ route('tenant.utilities.index') }}" class="{{ @$navUtilitiesActiveClass }}">
+                            <i class="ri-flashlight-line"></i>
+                            <span>{{ __('Utilities') }}</span>
+                        </a>
+                    </li>
+                @endif
                 @if (ownerCurrentPackage(auth()->user()->owner_user_id)?->ticket_support == ACTIVE || isAddonInstalled('PROTYSAAS') < 1)
                     <li class="{{ @$navTicketMMActiveClass }}">
                         <a href="{{ route('tenant.ticket.index') }}" class="{{ @$navTicketActiveClass }}">

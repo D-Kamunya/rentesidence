@@ -644,17 +644,33 @@
                             <span class="gw-summary-value">{{ $endDate }}</span>
                         </div>
 
+                        @php
+                            $planPrice = $durationType == PACKAGE_DURATION_TYPE_MONTHLY ? $plan->monthly_price : $plan->yearly_price;
+                            $infraDue  = (float) ($infraOutstanding ?? 0);
+                        @endphp
+
+                        {{-- Module infrastructure — bundled into this payment when due (KES). --}}
+                        @if ($infraDue > 0)
+                            <div class="gw-summary-row">
+                                <span class="gw-summary-label">
+                                    <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+                                        <rect x="1.5" y="2.5" width="9" height="7" rx="1.2" stroke="currentColor" stroke-width="1.2"/>
+                                        <path d="M1.5 5h9" stroke="currentColor" stroke-width="1.2"/>
+                                    </svg>
+                                    {{ __('Module infrastructure') }}
+                                </span>
+                                <span class="gw-summary-value gw-summary-value--highlight">{{ currencyPrice($infraDue) }}</span>
+                            </div>
+                        @endif
+
                         {{-- Total --}}
                         <div class="gw-summary-total">
                             <span class="gw-summary-total-label">{{ __('Total Due') }}</span>
-                            <span class="gw-summary-total-value">
-                                @if ($durationType == PACKAGE_DURATION_TYPE_MONTHLY)
-                                    {{ currencyPrice($plan->monthly_price) }}
-                                @else
-                                    {{ currencyPrice($plan->yearly_price) }}
-                                @endif
-                            </span>
+                            <span class="gw-summary-total-value">{{ currencyPrice($planPrice + $infraDue) }}</span>
                         </div>
+                        @if ($infraDue > 0)
+                            <p style="font-size:10.5px;color:#9ca3af;margin:8px 4px 0;text-align:right;">{{ __('Includes your outstanding module-infrastructure bill.') }}</p>
+                        @endif
                     </div>
                 </div>
 

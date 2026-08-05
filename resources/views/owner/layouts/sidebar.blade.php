@@ -27,6 +27,13 @@
                 </li>
 
                 <li>
+                    <a href="{{ route('owner.financing.index') }}">
+                        <i class="ri-funds-line"></i>
+                        <span>{{ __('Financing') }}</span>
+                    </a>
+                </li>
+
+                <li>
                     <a href="javascript: void(0);" class="has-arrow">
                         <i class="ri-building-line"></i>
                         <span>{{ __('Properties') }}</span>
