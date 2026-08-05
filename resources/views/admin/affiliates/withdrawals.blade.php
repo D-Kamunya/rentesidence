@@ -180,13 +180,18 @@
                                         <td><span class="aw-amount-badge">KSh {{ number_format($wd->amount, 2) }}</span></td>
                                         <td class="aw-muted">{{ $wd->phone ?? '—' }}</td>
                                         <td>
-                                            @if($wd->settlement_method === 'manual')
-                                                <span class="aw-method-badge aw-method-badge--manual">{{ __('Manual') }}</span>
+                                            @if($wd->status == AFFILIATE_WITHDRAWAL_APPROVED)
+                                                @if($wd->settlement_method === 'manual')
+                                                    <span class="aw-method-badge aw-method-badge--manual">{{ __('Manual') }}</span>
+                                                @else
+                                                    <span class="aw-method-badge aw-method-badge--b2c">
+                                                        <img src="{{ asset('assets/images/gateway-icon/mpesa.jpg') }}" alt="" style="width:14px;height:14px;border-radius:3px;object-fit:cover;">
+                                                        {{ __('M-Pesa B2C') }}
+                                                    </span>
+                                                @endif
                                             @else
-                                                <span class="aw-method-badge aw-method-badge--b2c">
-                                                    <img src="{{ asset('assets/images/gateway-icon/mpesa.jpg') }}" alt="" style="width:14px;height:14px;border-radius:3px;object-fit:cover;">
-                                                    {{ __('M-Pesa B2C') }}
-                                                </span>
+                                                {{-- Settlement method only exists once a withdrawal is actually paid out. --}}
+                                                <span class="aw-muted">—</span>
                                             @endif
                                         </td>
                                         <td class="aw-date">{{ $wd->created_at->diffForHumans() }}</td>

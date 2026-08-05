@@ -41,6 +41,17 @@
 
 <link rel="stylesheet" href="{{ asset('assets/css/responsive.css') }}">
 
+{{-- Universal mobile fix: every page's content sits in a white box
+     (.page-content-wrapper.p-30). Its 30px side padding eats too much width on
+     phones and crushes inner content into tall narrow columns. Trim it on small
+     screens. Loaded after responsive.css so it wins. Applies app-wide (admin,
+     owner, affiliate, tenant, maintainer, finance-partner). --}}
+<style>
+    @media (max-width: 640px) {
+        .page-content-wrapper.p-30 { padding: 14px !important; }
+    }
+</style>
+
 <!-- FAVICONS -->
 <link rel="icon" href="{{ getSettingImage('app_fav_icon') }}" type="image/png" sizes="16x16">
 <link rel="shortcut icon" href="{{ getSettingImage('app_fav_icon') }}" type="image/x-icon">

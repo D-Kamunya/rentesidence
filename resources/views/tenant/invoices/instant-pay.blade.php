@@ -1,9 +1,12 @@
 @php
     use Illuminate\Support\Str;
+    // Must match the INVOICE_STATUS_* constants: 0 pending, 1 paid, 2 OVERDUE
+    // (not "Cancelled" — labelling an overdue invoice as cancelled discourages
+    // the tenant who came here to pay it).
     $statusMap = [
         0 => ['label' => 'Pending', 'class' => 'warning'],
         1 => ['label' => 'Paid', 'class' => 'success'],
-        2 => ['label' => 'Cancelled', 'class' => 'danger'],
+        2 => ['label' => 'Overdue', 'class' => 'danger'],
     ];
 
     $status = $statusMap[$invoice->status] ?? ['label' => 'Unknown', 'class' => 'secondary'];

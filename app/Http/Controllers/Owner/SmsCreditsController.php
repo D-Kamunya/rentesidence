@@ -49,6 +49,13 @@ class SmsCreditsController extends Controller
             ->where('error', 'Insufficient SMS credits')
             ->firstOrFail();
 
+        // Don't let a retry fire while credits are still depleted — it would just
+        // fail again and re-log. Require at least one credit (the UI hides the
+        // button too, but guard server-side regardless).
+        if (SmsCreditsService::balance(auth()->id()) < 1) {
+            return back()->with('error', __('Top up your SMS credits first — retrying now would just fail again.'));
+        }
+
         RetrySmsJob::dispatch($record->id, auth()->id());
 
         return back()->with('success', __('SMS queued for retry.'));
@@ -62,13 +69,25 @@ class SmsCreditsController extends Controller
             return back()->with('info', __('No failed messages to retry.'));
         }
 
-        foreach ($failed as $record) {
+        $balance = SmsCreditsService::balance(auth()->id());
+        if ($balance < 1) {
+            return back()->with('error', __('Top up your SMS credits first — retrying now would just fail again.'));
+        }
+
+        // Only queue as many as the current balance can actually send, so the
+        // overflow doesn't immediately re-fail. The rest wait for the next top-up.
+        $toRetry = $failed->take($balance);
+        foreach ($toRetry as $record) {
             RetrySmsJob::dispatch($record->id, auth()->id());
         }
 
-        return back()->with('success', __(
-            ':count messages queued for retry.',
-            ['count' => $failed->count()]
-        ));
+        $queued    = $toRetry->count();
+        $remaining = $failed->count() - $queued;
+
+        $message = $remaining > 0
+            ? __(':queued message(s) queued for retry. Top up to retry the remaining :remaining.', ['queued' => $queued, 'remaining' => $remaining])
+            : __(':count message(s) queued for retry.', ['count' => $queued]);
+
+        return back()->with('success', $message);
     }
 }

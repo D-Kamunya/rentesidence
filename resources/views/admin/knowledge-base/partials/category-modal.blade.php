@@ -56,6 +56,7 @@
                     <option value="both">Both (Owners & Affiliates)</option>
                     <option value="owners">Owners Only</option>
                     <option value="affiliates">Affiliates Only</option>
+                    <option value="finance_partners">Finance Partners Only</option>
                 </select>
             </div>
 

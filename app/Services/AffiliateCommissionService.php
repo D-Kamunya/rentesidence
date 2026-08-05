@@ -10,6 +10,8 @@ use App\Models\Owner;
 use App\Models\Order;
 use App\Models\ProductOrder;
 use App\Models\SubscriptionOrder;
+use App\Services\AffiliateOs\ProductRegistry;
+use App\Services\Commission\CommissionEventData;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -42,63 +44,66 @@ class AffiliateCommissionService
         if (!$ownerRecord) return null;
         $ownerId = $ownerRecord->id;
 
-        return DB::transaction(function () use (
-            $affiliateId, $ownerId, $subscriptionId, $subscriptionAmount,
-            $periodMonth, $periodYear, $order
+        // Client type (new vs recurring) + recurring-window checks stay here — they
+        // depend on the affiliate/owner's prior commissions; the rate math itself
+        // lives in the product strategy, and persistence goes through recordEvent.
+        $everExists = AffiliateCommission::where('affiliate_id', $affiliateId)
+            ->where('owner_id', $ownerId)
+            ->where('source', AFFILIATE_COMMISSION_SOURCE_SUBSCRIPTION)
+            ->exists();
+
+        $type = $everExists ? RECURRING_CLIENT : NEW_CLIENT;
+
+        $firstCommission = AffiliateCommission::where('affiliate_id', $affiliateId)
+            ->where('owner_id', $ownerId)
+            ->where('source', AFFILIATE_COMMISSION_SOURCE_SUBSCRIPTION)
+            ->orderBy('created_at', 'asc')
+            ->first();
+
+        $monthsElapsed = $firstCommission
+            ? Carbon::parse($firstCommission->created_at)->diffInMonths(now())
+            : 0;
+
+        if (
+            getOption('RECURRING_COMMISSION_RATE') === null ||
+            getOption('RECURRING_COMMISSION_MONTHS') === null ||
+            getOption('FIRST_TIME_COMMISSION_RATE') === null
         ) {
-            $everExists = AffiliateCommission::where('affiliate_id', $affiliateId)
-                ->where('owner_id', $ownerId)
-                ->where('source', AFFILIATE_COMMISSION_SOURCE_SUBSCRIPTION)
-                ->exists();
+            return null;
+        }
 
-            $type = $everExists ? RECURRING_CLIENT : NEW_CLIENT;
+        if ($monthsElapsed >= (int) getOption('RECURRING_COMMISSION_MONTHS')) {
+            return null;
+        }
 
-            $firstCommission = AffiliateCommission::where('affiliate_id', $affiliateId)
-                ->where('owner_id', $ownerId)
-                ->where('source', AFFILIATE_COMMISSION_SOURCE_SUBSCRIPTION)
-                ->orderBy('created_at', 'asc')
-                ->first();
+        $product  = ProductRegistry::default();
+        $strategy = ProductRegistry::commissionStrategy($product);
+        $computed = $strategy->compute(new CommissionEventData(
+            product:     $product,
+            source:      AFFILIATE_COMMISSION_SOURCE_SUBSCRIPTION,
+            grossAmount: $subscriptionAmount,
+            clientType:  $type,
+        ));
 
-            $monthsElapsed = $firstCommission
-                ? Carbon::parse($firstCommission->created_at)->diffInMonths(now())
-                : 0;
+        $commission = $this->recordEvent([
+            'product'                 => $product,
+            'affiliate_id'            => $affiliateId,
+            'owner_id'                => $ownerId,
+            'source'                  => AFFILIATE_COMMISSION_SOURCE_SUBSCRIPTION,
+            'subscription_id'         => $subscriptionId,
+            'subscription_payment_id' => $order->id,
+            'external_ref'            => (string) $order->id,
+            'subscription_amount'     => $subscriptionAmount,
+            'type'                    => $type,
+            'commission_rate'         => $computed['rate'],
+            'commission_amount'       => $computed['commission_amount'],
+            'currency'                => $strategy->currency(),
+            'cadence'                 => $computed['cadence'],
+            'period_month'            => $periodMonth,
+            'period_year'             => $periodYear,
+        ]);
 
-            if (
-                getOption('RECURRING_COMMISSION_RATE') === null ||
-                getOption('RECURRING_COMMISSION_MONTHS') === null ||
-                getOption('FIRST_TIME_COMMISSION_RATE') === null
-            ) {
-                return null;
-            }
-
-            if ($monthsElapsed >= (int) getOption('RECURRING_COMMISSION_MONTHS')) {
-                return null;
-            }
-
-            $rate = $type === NEW_CLIENT
-                ? (float) getOption('FIRST_TIME_COMMISSION_RATE')
-                : (float) getOption('RECURRING_COMMISSION_RATE');
-
-            $commissionAmount = round($subscriptionAmount * ($rate / 100), 2);
-
-            $commission = AffiliateCommission::create([
-                'affiliate_id'            => $affiliateId,
-                'owner_id'                => $ownerId,
-                'subscription_id'         => $subscriptionId,
-                'subscription_payment_id' => $order->id,
-                'subscription_amount'     => $subscriptionAmount,
-                'type'                    => $type,
-                'source'                  => AFFILIATE_COMMISSION_SOURCE_SUBSCRIPTION,
-                'commission_rate'         => $rate,
-                'commission_amount'       => $commissionAmount,
-                'period_month'            => $periodMonth,
-                'period_year'             => $periodYear,
-            ]);
-
-            $this->recalculatePeriodSummary($affiliateId, $periodMonth, $periodYear);
-
-            return $commission->toArray();
-        });
+        return $commission->toArray();
     }
 
     // ──────────────────────────────────────────────────────────
@@ -151,28 +156,31 @@ class AffiliateCommissionService
 
         if ($monthsElapsed >= $months) return;
 
-        // 15% of the 1% centresidence commission = 0.15% of gross
-        $grossAmount      = (float) $order->transaction_amount;
-        $rate             = 0.15; // 15% of 1% = 0.15% effective
-        $commissionAmount = round($grossAmount * ($rate / 100), 2);
+        // Rate math lives in the product's strategy (rent = 15% of our 1%).
+        $product  = ProductRegistry::default();
+        $strategy = ProductRegistry::commissionStrategy($product);
+        $computed = $strategy->compute(new CommissionEventData(
+            product:     $product,
+            source:      AFFILIATE_COMMISSION_SOURCE_RENT,
+            grossAmount: (float) $order->transaction_amount,
+        ));
 
-        DB::transaction(function () use (
-            $affiliateId, $ownerRecord, $invoice, $order,
-            $commissionAmount, $rate, $periodMonth, $periodYear
-        ) {
-            AffiliateCommission::create([
-                'affiliate_id'     => $affiliateId,
-                'owner_id'         => $ownerRecord->id,
-                'source'           => AFFILIATE_COMMISSION_SOURCE_RENT,
-                'order_id'         => $order->id,
-                'commission_rate'  => $rate,
-                'commission_amount'=> $commissionAmount,
-                'period_month'     => $periodMonth,
-                'period_year'      => $periodYear,
-            ]);
+        if ($computed['commission_amount'] <= 0) return;
 
-            $this->recalculatePeriodSummary($affiliateId, $periodMonth, $periodYear);
-        });
+        $this->recordEvent([
+            'product'           => $product,
+            'affiliate_id'      => $affiliateId,
+            'owner_id'          => $ownerRecord->id,
+            'source'            => AFFILIATE_COMMISSION_SOURCE_RENT,
+            'order_id'          => $order->id,
+            'external_ref'      => (string) $order->id,
+            'commission_rate'   => $computed['rate'],
+            'commission_amount' => $computed['commission_amount'],
+            'currency'          => $strategy->currency(),
+            'cadence'           => $computed['cadence'],
+            'period_month'      => $periodMonth,
+            'period_year'       => $periodYear,
+        ]);
     }
 
     // ──────────────────────────────────────────────────────────
@@ -185,7 +193,22 @@ class AffiliateCommissionService
      * Valid for RECURRING_COMMISSION_MONTHS months from first commission.
      * Called from CommissionService::processOrderCommission() after owner wallet credit.
      */
-    public function handleMarketplaceCommission(ProductOrder $order): void
+    /**
+     * The affiliate's marketplace cut = a share of CENTRESIDENCE's commission on
+     * the sale (mirrors rent's "15% of our 1%"), so an affiliate can never earn
+     * more than we did. `$ratePercent` is `product_categories.affiliate_commission`,
+     * now read as a **% of our commission** — NOT a % of gross. Pure + testable.
+     */
+    public static function scopedMarketplaceCommission(float $ourCommissionAmount, float $ratePercent): float
+    {
+        if ($ourCommissionAmount <= 0 || $ratePercent <= 0) {
+            return 0.0;
+        }
+
+        return round($ourCommissionAmount * ($ratePercent / 100), 2);
+    }
+
+    public function handleMarketplaceCommission(ProductOrder $order, ?float $ourCommissionAmount = null): void
     {
         $firstProduct = $order->orderItems->first()?->product;
         if (!$firstProduct) return;
@@ -225,32 +248,113 @@ class AffiliateCommissionService
 
         if ($monthsElapsed >= $months) return;
 
-        // Rate from product category
+        // Rate from product category — now read as a % of OUR commission (not gross).
         $rate = (float) ($firstProduct->productCategory->affiliate_commission ?? 0);
         if ($rate <= 0) return;
 
-        $grossAmount      = (float) $order->transaction_amount;
-        $commissionAmount = round($grossAmount * ($rate / 100), 2);
+        // Base the cut on Centresidence's own commission on this sale (a true cut,
+        // like rent) so we can never pay an affiliate more than we earned. The
+        // caller (processOrderCommission) passes it; recompute defensively if not.
+        if ($ourCommissionAmount === null) {
+            $cs = new CommissionService;
+            $ourCommissionAmount = $cs->calculate(
+                (float) $order->transaction_amount,
+                $cs->effectiveRate($firstProduct, (int) $ownerRecord->user_id)
+            )['commission_amount'];
+        }
 
-        DB::transaction(function () use (
-            $affiliateId, $ownerRecord, $order,
-            $commissionAmount, $rate, $periodMonth, $periodYear
-        ) {
-            AffiliateCommission::create([
-                'affiliate_id'      => $affiliateId,
-                'owner_id'          => $ownerRecord->id,
-                'source'            => AFFILIATE_COMMISSION_SOURCE_MARKETPLACE,
-                'order_id'          => $order->id,
-                'commission_rate'   => $rate,
-                'commission_amount' => $commissionAmount,
-                'period_month'      => $periodMonth,
-                'period_year'       => $periodYear,
-            ]);
+        // The strategy applies the category rate to OUR commission (a true cut).
+        $product  = ProductRegistry::default();
+        $strategy = ProductRegistry::commissionStrategy($product);
+        $computed = $strategy->compute(new CommissionEventData(
+            product:       $product,
+            source:        AFFILIATE_COMMISSION_SOURCE_MARKETPLACE,
+            grossAmount:   (float) $order->transaction_amount,
+            ourCommission: (float) $ourCommissionAmount,
+            ratePercent:   $rate,
+        ));
 
-            $this->recalculatePeriodSummary($affiliateId, $periodMonth, $periodYear);
-        });
+        if ($computed['commission_amount'] <= 0) return;
+
+        $this->recordEvent([
+            'product'           => $product,
+            'affiliate_id'      => $affiliateId,
+            'owner_id'          => $ownerRecord->id,
+            'source'            => AFFILIATE_COMMISSION_SOURCE_MARKETPLACE,
+            'order_id'          => $order->id,
+            'external_ref'      => (string) $order->id,
+            'commission_rate'   => $computed['rate'],
+            'commission_amount' => $computed['commission_amount'],
+            'currency'          => $strategy->currency(),
+            'cadence'           => $computed['cadence'],
+            'period_month'      => $periodMonth,
+            'period_year'       => $periodYear,
+        ]);
     }
 
+
+    // ──────────────────────────────────────────────────────────
+    // LEDGER WRITE (the §3.2 spoke contract)
+    // ──────────────────────────────────────────────────────────
+
+    /**
+     * The single idempotent write path into the commission-event ledger. Given a
+     * fully-resolved commission (product, source, external_ref + the amount the
+     * product's strategy computed), persist it exactly once and refresh the period
+     * summary. Idempotency is keyed on (product, source, external_ref): a repeat of
+     * the same money event (e.g. a re-fired webhook) returns the existing row and
+     * never double-credits — the guarantee the old per-source ad-hoc checks missed
+     * for subscriptions entirely. See docs/affiliate-os-design.md §6.
+     *
+     * @param array $attrs product, affiliate_id, owner_id, source, external_ref,
+     *                      commission_rate, commission_amount, currency, cadence,
+     *                      period_month, period_year (+ optional subscription_id,
+     *                      subscription_payment_id, order_id, subscription_amount, type)
+     */
+    public function recordEvent(array $attrs): AffiliateCommission
+    {
+        $product = $attrs['product'] ?? ProductRegistry::default();
+        $source  = $attrs['source'];
+        $ref     = (string) $attrs['external_ref'];
+
+        return DB::transaction(function () use ($attrs, $product, $source, $ref) {
+            // One commission per money event. The lock serialises a concurrent
+            // same-ref insert; the unique index (ac_product_source_ref_unique) is
+            // the ultimate guard.
+            $existing = AffiliateCommission::where('product', $product)
+                ->where('source', $source)
+                ->where('external_ref', $ref)
+                ->lockForUpdate()
+                ->first();
+
+            if ($existing) {
+                return $existing; // already credited — idempotent no-op
+            }
+
+            $commission = AffiliateCommission::create([
+                'affiliate_id'            => $attrs['affiliate_id'],
+                'owner_id'                => $attrs['owner_id'] ?? null,
+                'product'                 => $product,
+                'source'                  => $source,
+                'external_ref'            => $ref,
+                'subscription_id'         => $attrs['subscription_id'] ?? null,
+                'subscription_payment_id' => $attrs['subscription_payment_id'] ?? null,
+                'subscription_amount'     => $attrs['subscription_amount'] ?? 0,
+                'order_id'                => $attrs['order_id'] ?? null,
+                'type'                    => $attrs['type'] ?? null,
+                'commission_rate'         => $attrs['commission_rate'],
+                'commission_amount'       => $attrs['commission_amount'],
+                'currency'                => $attrs['currency'] ?? 'KES',
+                'cadence'                 => $attrs['cadence'] ?? null,
+                'period_month'            => $attrs['period_month'],
+                'period_year'             => $attrs['period_year'],
+            ]);
+
+            $this->recalculatePeriodSummary($attrs['affiliate_id'], $attrs['period_month'], $attrs['period_year']);
+
+            return $commission;
+        });
+    }
 
     // ──────────────────────────────────────────────────────────
     // PERIOD SUMMARY
@@ -258,6 +362,15 @@ class AffiliateCommissionService
 
     public function recalculatePeriodSummary(int $affiliateId, int $month, int $year): AffiliateCommissionPayment
     {
+        // Serialize recalcs for this affiliate. Each caller runs this inside its
+        // commission's transaction; taking a row lock on the affiliate forces a
+        // concurrent recalc to WAIT for the prior one to commit — so by the time
+        // it re-sums the source-of-truth (affiliate_commissions) it sees the prior
+        // commission too. Without this, two commissions landing at once could each
+        // re-sum without the other and the later write would drop one (lost update).
+        // (No-op on sqlite in tests, which is fine — there is no concurrency there.)
+        Affiliate::whereKey($affiliateId)->lockForUpdate()->first();
+
         // ── Subscription ──────────────────────────────────────
         $newQuery = AffiliateCommission::where('affiliate_id', $affiliateId)
             ->where('source', AFFILIATE_COMMISSION_SOURCE_SUBSCRIPTION)
@@ -300,22 +413,29 @@ class AffiliateCommissionService
         // ── Total ─────────────────────────────────────────────
         $totalPayout = round($newPayout + $recurringPayout + $rentPayout + $marketplacePayout, 2);
 
-        return AffiliateCommissionPayment::create([
-            'affiliate_id'                   => $affiliateId,
-            'period_month'                   => $month,
-            'period_year'                    => $year,
-            'total_new_clients'              => $newCount,
-            'total_recurring_clients'        => $recurringClientsCount,
-            'new_commissions_amount'         => $newAmount,
-            'recurring_commissions_amount'   => $recurringAmount,
-            'new_commission_payout'          => $newPayout,
-            'recurring_commission_payout'    => $recurringPayout,
-            'rent_commissions_amount'        => $rentAmount,
-            'rent_commission_payout'         => $rentPayout,
-            'marketplace_commissions_amount' => $marketplaceAmount,
-            'marketplace_commission_payout'  => $marketplacePayout,
-            'total_commission_payout'        => $totalPayout,
-        ]);
+        // One row per (affiliate, period): update the existing summary in place or
+        // create it. The unique index (acp_affiliate_period_unique) guarantees the
+        // one-row invariant, so readers no longer need MAX(id)-per-period dedup.
+        return AffiliateCommissionPayment::updateOrCreate(
+            [
+                'affiliate_id' => $affiliateId,
+                'period_month' => $month,
+                'period_year'  => $year,
+            ],
+            [
+                'total_new_clients'              => $newCount,
+                'total_recurring_clients'        => $recurringClientsCount,
+                'new_commissions_amount'         => $newAmount,
+                'recurring_commissions_amount'   => $recurringAmount,
+                'new_commission_payout'          => $newPayout,
+                'recurring_commission_payout'    => $recurringPayout,
+                'rent_commissions_amount'        => $rentAmount,
+                'rent_commission_payout'         => $rentPayout,
+                'marketplace_commissions_amount' => $marketplaceAmount,
+                'marketplace_commission_payout'  => $marketplacePayout,
+                'total_commission_payout'        => $totalPayout,
+            ]
+        );
     }
 
     // ──────────────────────────────────────────────────────────
@@ -335,18 +455,15 @@ class AffiliateCommissionService
 
     public function getLifetimeEarningsMinusWithdrawals(int $affiliateId): float
     {
-        $sub = AffiliateCommissionPayment::selectRaw('MAX(id) as max_id')
-            ->where('affiliate_id', $affiliateId)
-            ->groupBy('period_year', 'period_month');
-
-        $totalEarnings = (float) AffiliateCommissionPayment::whereIn('id', $sub->pluck('max_id'))
-            ->sum('total_commission_payout');
-
-        $withdrawn = AffiliateWithdrawal::where('affiliate_id', $affiliateId)
-            ->whereIn('status', [AFFILIATE_WITHDRAWAL_APPROVED])
-            ->sum('amount');
-
-        return round($totalEarnings - (float) $withdrawn, 2);
+        // Available = lifetime gross − money already spoken for. "Spoken for" must
+        // include PENDING as well as APPROVED withdrawals: a pending request has
+        // reserved that money. Counting only APPROVED let an affiliate stack
+        // multiple pending requests that each pass the balance check but together
+        // over-draw the balance. (See also getReservedWithdrawals.)
+        return round(
+            $this->getLifeTimeGrossCommissions($affiliateId) - $this->getReservedWithdrawals($affiliateId),
+            2
+        );
     }
 
     public function getAvailableBalance(int $affiliateId): float
@@ -354,12 +471,24 @@ class AffiliateCommissionService
         return $this->getLifetimeEarningsMinusWithdrawals($affiliateId);
     }
 
+    /**
+     * Lifetime gross commissions actually earned. With one row per period enforced
+     * by the unique index (see recalculatePeriodSummary), this is a plain sum — no
+     * MAX(id)-per-period dedup needed. Correct-by-construction rather than by every
+     * reader remembering to dedupe (the old shape caused a double-count bug).
+     */
     public function getLifeTimeGrossCommissions(int $affiliateId): float
     {
-        return $this->getLifetimeEarningsMinusWithdrawals($affiliateId)
-            + (float) AffiliateWithdrawal::where('affiliate_id', $affiliateId)
-                ->whereIn('status', [AFFILIATE_WITHDRAWAL_APPROVED])
-                ->sum('amount');
+        return (float) AffiliateCommissionPayment::where('affiliate_id', $affiliateId)
+            ->sum('total_commission_payout');
+    }
+
+    /** Money already reserved against the balance: paid-out (APPROVED) + awaiting approval (PENDING). */
+    public function getReservedWithdrawals(int $affiliateId): float
+    {
+        return (float) AffiliateWithdrawal::where('affiliate_id', $affiliateId)
+            ->whereIn('status', [AFFILIATE_WITHDRAWAL_APPROVED, AFFILIATE_WITHDRAWAL_PENDING])
+            ->sum('amount');
     }
 
     // ──────────────────────────────────────────────────────────

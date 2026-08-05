@@ -21,6 +21,17 @@ class SendTrialRequestedMail extends BaseMailJob
 
         if (!$appEmail) return;
 
+        // Escape every dynamic value — this raw-HTML body goes to the ADMIN inbox and
+        // every field here (company data, affiliate name/email, extension reason) is
+        // affiliate-entered free text. MailService does no escaping.
+        $companyName    = e($company->company_name);
+        $contact        = e($lead->contact_person_name);
+        $companyEmail   = e($company->email);
+        $companyPhone   = e($company->phone);
+        $affiliateName  = e($this->affiliateName);
+        $affiliateEmail = e($this->affiliateEmail);
+        $extensionReason = e($this->extensionReason);
+
         if ($this->isExtension) {
             $subject = 'Trial Extension Requested - ' . $company->company_name . ' | ' . getOption('app_name');
             $body = "
@@ -29,19 +40,19 @@ class SendTrialRequestedMail extends BaseMailJob
                     <p>An affiliate has requested a trial extension for a lead.</p>
                     <div style='background:#FEF9EE;border:1px solid #FAC775;border-radius:8px;padding:16px;margin:20px 0;'>
                         <p style='margin:0 0 8px;font-weight:600;color:#854F0B;'>📋 Lead Details:</p>
-                        <p style='margin:4px 0;'><strong>Company:</strong> {$company->company_name}</p>
-                        <p style='margin:4px 0;'><strong>Contact:</strong> {$lead->contact_person_name}</p>
-                        <p style='margin:4px 0;'><strong>Email:</strong> {$company->email}</p>
-                        <p style='margin:4px 0;'><strong>Phone:</strong> {$company->phone}</p>
+                        <p style='margin:4px 0;'><strong>Company:</strong> {$companyName}</p>
+                        <p style='margin:4px 0;'><strong>Contact:</strong> {$contact}</p>
+                        <p style='margin:4px 0;'><strong>Email:</strong> {$companyEmail}</p>
+                        <p style='margin:4px 0;'><strong>Phone:</strong> {$companyPhone}</p>
                     </div>
                     <div style='background:#FEF9EE;border:1px solid #FAC775;border-radius:8px;padding:16px;margin:20px 0;'>
                         <p style='margin:0 0 8px;font-weight:600;color:#854F0B;'>👤 Affiliate Details:</p>
-                        <p style='margin:4px 0;'><strong>Name:</strong> {$this->affiliateName}</p>
-                        <p style='margin:4px 0;'><strong>Email:</strong> {$this->affiliateEmail}</p>
+                        <p style='margin:4px 0;'><strong>Name:</strong> {$affiliateName}</p>
+                        <p style='margin:4px 0;'><strong>Email:</strong> {$affiliateEmail}</p>
                     </div>
                     <div style='background:#FEF9EE;border:1px solid #FAC775;border-radius:8px;padding:16px;margin:20px 0;'>
                         <p style='margin:0 0 8px;font-weight:600;color:#854F0B;'>📝 Extension Reason:</p>
-                        <p style='margin:0;'>{$this->extensionReason}</p>
+                        <p style='margin:0;'>{$extensionReason}</p>
                     </div>
                     <div style='text-align:center;margin:30px 0;'>
                         <a href='" . route('admin.leads.show', $this->leadId) . "'
@@ -59,15 +70,15 @@ class SendTrialRequestedMail extends BaseMailJob
                     <p>An affiliate has requested trial approval for a lead.</p>
                     <div style='background:#EFF6FF;border:1px solid #93C5FD;border-radius:8px;padding:16px;margin:20px 0;'>
                         <p style='margin:0 0 8px;font-weight:600;color:#1D4ED8;'>📋 Lead Details:</p>
-                        <p style='margin:4px 0;'><strong>Company:</strong> {$company->company_name}</p>
-                        <p style='margin:4px 0;'><strong>Contact:</strong> {$lead->contact_person_name}</p>
-                        <p style='margin:4px 0;'><strong>Email:</strong> {$company->email}</p>
-                        <p style='margin:4px 0;'><strong>Phone:</strong> {$company->phone}</p>
+                        <p style='margin:4px 0;'><strong>Company:</strong> {$companyName}</p>
+                        <p style='margin:4px 0;'><strong>Contact:</strong> {$contact}</p>
+                        <p style='margin:4px 0;'><strong>Email:</strong> {$companyEmail}</p>
+                        <p style='margin:4px 0;'><strong>Phone:</strong> {$companyPhone}</p>
                     </div>
                     <div style='background:#EFF6FF;border:1px solid #93C5FD;border-radius:8px;padding:16px;margin:20px 0;'>
                         <p style='margin:0 0 8px;font-weight:600;color:#1D4ED8;'>👤 Affiliate Details:</p>
-                        <p style='margin:4px 0;'><strong>Name:</strong> {$this->affiliateName}</p>
-                        <p style='margin:4px 0;'><strong>Email:</strong> {$this->affiliateEmail}</p>
+                        <p style='margin:4px 0;'><strong>Name:</strong> {$affiliateName}</p>
+                        <p style='margin:4px 0;'><strong>Email:</strong> {$affiliateEmail}</p>
                     </div>
                     <div style='text-align:center;margin:30px 0;'>
                         <a href='" . route('admin.leads.show', $this->leadId) . "'

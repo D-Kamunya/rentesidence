@@ -19,13 +19,14 @@ class SendLeadSuggestionsMail extends BaseMailJob
             : '';
 
         $plural = $this->suggestionCount > 1 ? 's' : '';
+        $firstName = e($this->affiliateFirstName); // escaped — lands in a raw-HTML body
 
         $this->send(
             [$this->affiliateEmail],
             '🎯 ' . $this->suggestionCount . ' New Action' . $plural . ' for Your Leads',
             "
                 <div style='font-family:Arial,sans-serif;max-width:600px;margin:0 auto;'>
-                    <h2 style='color:#185FA5;'>Hi {$this->affiliateFirstName}! 👋</h2>
+                    <h2 style='color:#185FA5;'>Hi {$firstName}! 👋</h2>
 
                     <p>You have <strong>{$this->suggestionCount} new suggested action{$plural}</strong> waiting for your leads.</p>
 
@@ -48,7 +49,7 @@ class SendLeadSuggestionsMail extends BaseMailJob
                     </div>
 
                     <p style='color:#6b7280;font-size:13px;margin-top:30px;'>
-                        💡 <strong>Pro Tip:</strong> Responding to high-priority suggestions within 24 hours can increase your conversion rate by up to 40%!
+                        💡 <strong>Pro Tip:</strong> Leads go cold fast — responding to high-priority suggestions within 24 hours keeps you ahead.
                     </p>
                 </div>
             "

@@ -154,28 +154,42 @@ class AffiliateWithdrawalController extends Controller
             return response()->json(['success' => false, 'error' => __('Affiliate account not found.')]);
         }
 
-        $svc     = app(AffiliateCommissionService::class);
-        $balance = $svc->getAvailableBalance($affiliate->id);
-        $amount  = (float) $request->amount;
+        $svc    = app(AffiliateCommissionService::class);
+        $amount = round((float) $request->amount, 2);
+        $phone  = '+254' . $request->phone;
 
-        if ($amount > $balance) {
-            return response()->json([
-                'success' => false,
-                'error'   => __('Amount exceeds your available balance.'),
-            ]);
-        }
-
-        DB::beginTransaction();
         try {
-            $withdrawal = AffiliateWithdrawal::create([
-                'affiliate_id'      => $affiliate->id,
-                'amount'            => $amount,
-                'phone'             => '+254' . $request->phone,
-                'status'            => AFFILIATE_WITHDRAWAL_PENDING,
-                'settlement_method' => 'b2c',
-            ]);
+            // Balance check + create happen INSIDE the transaction, after locking the
+            // affiliate row, so two concurrent requests can't both pass the check and
+            // over-draw. Available balance already reserves pending withdrawals.
+            $outcome = DB::transaction(function () use ($affiliate, $amount, $phone, $svc) {
+                Affiliate::whereKey($affiliate->id)->lockForUpdate()->first();
 
-            DB::commit();
+                $hasPending = AffiliateWithdrawal::where('affiliate_id', $affiliate->id)
+                    ->where('status', AFFILIATE_WITHDRAWAL_PENDING)
+                    ->exists();
+                if ($hasPending) {
+                    return ['error' => __('You already have a pending withdrawal awaiting approval.')];
+                }
+
+                $available = $svc->getAvailableBalance($affiliate->id);
+                if ($amount < 1 || $amount > $available) {
+                    return ['error' => __('Amount exceeds your available balance.')];
+                }
+
+                return ['withdrawal' => AffiliateWithdrawal::create([
+                    'affiliate_id'      => $affiliate->id,
+                    'amount'            => $amount,
+                    'phone'             => $phone,
+                    'status'            => AFFILIATE_WITHDRAWAL_PENDING,
+                    'settlement_method' => 'b2c',
+                ])];
+            });
+
+            if (isset($outcome['error'])) {
+                return response()->json(['success' => false, 'error' => $outcome['error']]);
+            }
+            $withdrawal = $outcome['withdrawal'];
 
             // Notify admins
             $ownerName = auth()->user()->name;
@@ -201,7 +215,7 @@ class AffiliateWithdrawalController extends Controller
             ]);
 
         } catch (\Exception $e) {
-            DB::rollBack();
+            // DB::transaction() already rolled back on failure — no manual rollback here.
             Log::error('Affiliate withdrawal request failed: ' . $e->getMessage());
             return response()->json([
                 'success' => false,

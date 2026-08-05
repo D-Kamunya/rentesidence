@@ -252,25 +252,32 @@
                                                     <span class="cmx-mono">{{ $withdrawal->phone }}</span>
                                                 </td>
                                                 <td>
-                                                    @if($withdrawal->settlement_method === 'b2c')
-                                                        <span class="cmx-method-badge cmx-method-badge--mpesa">
-                                                            <img src="{{ asset('assets/images/gateway-icon/mpesa.jpg') }}" alt="M-Pesa" style="width:16px;height:16px;border-radius:4px;object-fit:cover;">
-                                                            M-Pesa B2C
-                                                        </span>
+                                                    @if($withdrawal->status == AFFILIATE_WITHDRAWAL_APPROVED)
+                                                        @if($withdrawal->settlement_method === 'b2c')
+                                                            <span class="cmx-method-badge cmx-method-badge--mpesa">
+                                                                <img src="{{ asset('assets/images/gateway-icon/mpesa.jpg') }}" alt="M-Pesa" style="width:16px;height:16px;border-radius:4px;object-fit:cover;">
+                                                                M-Pesa B2C
+                                                            </span>
+                                                        @else
+                                                            <span class="cmx-method-badge">{{ __('Manual') }}</span>
+                                                        @endif
                                                     @else
-                                                        <span class="cmx-method-badge">{{ __('Manual') }}</span>
+                                                        {{-- No settlement has happened yet for pending/rejected. --}}
+                                                        <span class="cmx-method-badge" style="opacity:.55">—</span>
                                                     @endif
                                                 </td>
                                                 <td>
                                                     <span class="cmx-status-badge cmx-status-badge--{{ $withdrawal->status }}">
-                                                        @if($withdrawal->status === AFFILIATE_WITHDRAWAL_PENDING)
+                                                        @if($withdrawal->status == AFFILIATE_WITHDRAWAL_PENDING)
                                                             <svg width="12" height="12" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2"/><path d="M12 6v6l4 2" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
-                                                        @elseif($withdrawal->status === AFFILIATE_WITHDRAWAL_APPROVED)
+                                                            {{ __('Pending') }}
+                                                        @elseif($withdrawal->status == AFFILIATE_WITHDRAWAL_APPROVED)
                                                             <svg width="12" height="12" viewBox="0 0 24 24" fill="none"><path d="M22 11.08V12a10 10 0 11-5.93-9.14" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><polyline points="22 4 12 14.01 9 11.01" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                                                        @elseif($withdrawal->status === AFFILIATE_WITHDRAWAL_REJECTED)
+                                                            {{ __('Approved') }}
+                                                        @elseif($withdrawal->status == AFFILIATE_WITHDRAWAL_REJECTED)
                                                             <svg width="12" height="12" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2"/><line x1="15" y1="9" x2="9" y2="15" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><line x1="9" y1="9" x2="15" y2="15" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+                                                            {{ __('Rejected') }}
                                                         @endif
-                                                        {{ ucfirst($withdrawal->status) }}
                                                     </span>
                                                 </td>
                                                 <td class="cmx-td-date">

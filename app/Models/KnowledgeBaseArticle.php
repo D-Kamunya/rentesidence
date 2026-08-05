@@ -39,6 +39,7 @@ class KnowledgeBaseArticle extends Model
         'sort_order' => 'integer',
         'views_owner' => 'integer',
         'views_affiliate' => 'integer',
+        'views_finance_partner' => 'integer',
         'published_at' => 'datetime',
         'document_size' => 'integer',
     ];
@@ -102,6 +103,7 @@ class KnowledgeBaseArticle extends Model
         return match($this->audience) {
             'owners' => 'Owners Only',
             'affiliates' => 'Affiliates Only',
+            'finance_partners' => 'Finance Partners Only',
             'both' => 'Everyone',
             default => 'Unknown',
         };
@@ -130,10 +132,10 @@ class KnowledgeBaseArticle extends Model
 
     public function incrementViews(string $viewerType): void
     {
-        if ($viewerType === 'owner') {
-            $this->increment('views_owner');
-        } else {
-            $this->increment('views_affiliate');
-        }
+        match ($viewerType) {
+            'owner' => $this->increment('views_owner'),
+            'finance_partner' => $this->increment('views_finance_partner'),
+            default => $this->increment('views_affiliate'),
+        };
     }
 }

@@ -163,6 +163,9 @@
                                     <span class="ow-badge ow-badge--danger" style="margin-left:6px;">{{ $failedMessages->count() }}</span>
                                 </span>
                             </div>
+                            {{-- Retry is only offered once credits exist — retrying while
+                                 depleted would just fail again. Hidden until top-up. --}}
+                            @if($balance >= 1)
                             <form action="{{ route('owner.sms.credits.retry.all') }}" method="POST" style="margin-left:auto;">
                                 @csrf
                                 <button type="submit" class="ow-btn ow-btn--danger">
@@ -173,9 +176,16 @@
                                     {{ __('Retry All') }}
                                 </button>
                             </form>
+                            @endif
                         </div>
 
-                        <p class="sms-price-note" style="padding:12px 20px 0;">{{ __('These messages were blocked because your credits ran out. Retry them individually or all at once.') }}</p>
+                        <p class="sms-price-note" style="padding:12px 20px 0;">
+                            @if($balance >= 1)
+                                {{ __('These messages were blocked because your credits ran out. Retry them individually or all at once.') }}
+                            @else
+                                {{ __('These messages were blocked because your credits ran out. Top up your SMS credits above and the Retry option will appear.') }}
+                            @endif
+                        </p>
 
                         <div class="table-responsive">
                             <table class="sms-table">
@@ -194,6 +204,7 @@
                                         <td>{{ $msg->mobile }}</td>
                                         <td class="sms-desc">{{ $msg->message }}</td>
                                         <td>
+                                            @if($balance >= 1)
                                             <form action="{{ route('owner.sms.credits.retry.one') }}" method="POST">
                                                 @csrf
                                                 <input type="hidden" name="sms_history_id" value="{{ $msg->id }}">
@@ -201,6 +212,9 @@
                                                     {{ __('Retry') }}
                                                 </button>
                                             </form>
+                                            @else
+                                                <span class="ow-badge ow-badge--danger">{{ __('Top up to retry') }}</span>
+                                            @endif
                                         </td>
                                     </tr>
                                     @endforeach

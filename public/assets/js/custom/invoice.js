@@ -286,18 +286,20 @@
             : '<span class="ipv-status-pending"><svg width="10" height="10" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="5.5" stroke="currentColor" stroke-width="1.6"/><path d="M8 5v3.5l2 1.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>Pending</span>';
         selector.find(".invoiceStatus").html(statusHtml);
 
-        // Tenant
-        selector.find(".tenantName").text(response.data.tenant.first_name + " " + response.data.tenant.last_name);
-        selector.find(".tenantEmail").text(response.data.tenant.email);
-        selector.find(".tenantPhone").text(response.data.tenant.contact_number || "");
-        selector.find(".propertyName").text(response.data.tenant.property_name);
-        selector.find(".unitName").text(response.data.tenant.unit_name);
+        // Tenant (null-safe — a removed/unresolved tenant must not break the modal)
+        var t = response.data.tenant || {};
+        selector.find(".tenantName").text(((t.first_name || "") + " " + (t.last_name || "")).trim() || "—");
+        selector.find(".tenantEmail").text(t.email || "—");
+        selector.find(".tenantPhone").text(t.contact_number || "");
+        selector.find(".propertyName").text(t.property_name || "—");
+        selector.find(".unitName").text(t.unit_name || "—");
 
         // Owner / Pay To
+        var o = response.data.owner || {};
         selector.find(".pay-invoice-address").html(
-            "<p class='ipv-name'>" + (response.data.owner.print_name || "") + "</p>" +
-            "<span class='ipv-line'>" + (response.data.owner.print_address || "") + "</span>" +
-            "<span class='ipv-line'>" + (response.data.owner.print_contact || "") + "</span>"
+            "<p class='ipv-name'>" + (o.print_name || "") + "</p>" +
+            "<span class='ipv-line'>" + (o.print_address || "") + "</span>" +
+            "<span class='ipv-line'>" + (o.print_contact || "") + "</span>"
         );
 
         // Invoice items

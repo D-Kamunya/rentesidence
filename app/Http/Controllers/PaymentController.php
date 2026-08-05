@@ -265,7 +265,10 @@ class PaymentController extends Controller
     {
         $invoice = Invoice::where('payment_token', $token)
             ->where('payment_token_expires_at', '>', now())
-            ->where('status', [INVOICE_STATUS_PENDING, INVOICE_STATUS_OVER_DUE])
+            // whereIn, not where: `where('status', [0,2])` silently binds only the
+            // first element (status = 0 / PENDING), so OVERDUE invoices — the ones
+            // most likely being paid late via this link — failed firstOrFail.
+            ->whereIn('status', [INVOICE_STATUS_PENDING, INVOICE_STATUS_OVER_DUE])
             ->firstOrFail();
 
         // ── Transaction model: resolve company gateway and return early ────────

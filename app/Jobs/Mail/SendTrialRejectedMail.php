@@ -18,24 +18,33 @@ class SendTrialRejectedMail extends BaseMailJob
         $company = $lead->company;
         $appName = getOption('app_name');
 
+        // Escape free-text fields — raw-HTML email body (company data affiliate-entered,
+        // rejection reason admin-entered); MailService does no escaping.
+        $companyName     = e($company->company_name);
+        $contact         = e($lead->contact_person_name);
+        $companyEmail    = e($company->email);
+        $companyPhone    = e($company->phone);
+        $firstName       = e($this->affiliateFirstName);
+        $rejectionReason = e($this->rejectionReason);
+
         $this->send(
             [$this->affiliateEmail],
             'Trial Request Rejected - ' . $company->company_name . ' | ' . $appName,
             "
                 <div style='font-family:Arial,sans-serif;max-width:600px;margin:0 auto;'>
                     <h2 style='color:#854F0B;'>❌ Trial Request Rejected</h2>
-                    <p>Hello <strong>{$this->affiliateFirstName}</strong>,</p>
-                    <p>Unfortunately the trial account request for <strong>{$company->company_name}</strong> has been rejected by the admin.</p>
+                    <p>Hello <strong>{$firstName}</strong>,</p>
+                    <p>Unfortunately the trial account request for <strong>{$companyName}</strong> has been rejected by the admin.</p>
                     <div style='background:#FEF9EE;border:1px solid #FAC775;border-radius:8px;padding:16px;margin:20px 0;'>
                         <p style='margin:0 0 8px;font-weight:600;color:#854F0B;'>📋 Lead Details:</p>
-                        <p style='margin:4px 0;'><strong>Company:</strong> {$company->company_name}</p>
-                        <p style='margin:4px 0;'><strong>Contact:</strong> {$lead->contact_person_name}</p>
-                        <p style='margin:4px 0;'><strong>Email:</strong> {$company->email}</p>
-                        <p style='margin:4px 0;'><strong>Phone:</strong> {$company->phone}</p>
+                        <p style='margin:4px 0;'><strong>Company:</strong> {$companyName}</p>
+                        <p style='margin:4px 0;'><strong>Contact:</strong> {$contact}</p>
+                        <p style='margin:4px 0;'><strong>Email:</strong> {$companyEmail}</p>
+                        <p style='margin:4px 0;'><strong>Phone:</strong> {$companyPhone}</p>
                     </div>
                     <div style='background:#FEF2F2;border:1px solid #FCA5A5;border-radius:8px;padding:16px;margin:20px 0;'>
                         <p style='margin:0 0 8px;font-weight:600;color:#DC2626;'>📝 Rejection Reason:</p>
-                        <p style='margin:0;color:#DC2626;'>{$this->rejectionReason}</p>
+                        <p style='margin:0;color:#DC2626;'>{$rejectionReason}</p>
                     </div>
                     <div style='background:#E1F5EE;border:1px solid #9FE1CB;border-radius:8px;padding:16px;margin:20px 0;'>
                         <p style='margin:0 0 8px;font-weight:600;color:#0F6E56;'>💡 What's Next?</p>

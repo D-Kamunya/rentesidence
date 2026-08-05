@@ -73,7 +73,9 @@ class InvoiceController extends Controller
         $data['invoice'] = $this->invoiceService->getById($id);
         $data['items'] = $this->invoiceService->getItemsByInvoiceId($id);
         $data['owner'] = $this->invoiceService->ownerInfo(auth()->id());
-        $data['tenant'] = $this->tenantService->getDetailsById($data['invoice']->tenant_id);
+        // Null-safe: a tenant that was removed / can't be resolved must not blow up
+        // the whole details view (that left the loader hanging on such invoices).
+        $data['tenant'] = $this->tenantDetailsSafe($data['invoice']->tenant_id);
         $data['order'] = $this->invoiceService->getOrderById($data['invoice']->order_id);
 
         if ($data['owner'] && empty($data['owner']->print_name)) {
@@ -93,9 +95,23 @@ class InvoiceController extends Controller
         $data['invoice'] = $this->invoiceService->getById($id);
         $data['items'] = $this->invoiceService->getItemsByInvoiceId($id);
         $data['owner'] = $this->invoiceService->ownerInfo(auth()->id());
-        $data['tenant'] = $this->tenantService->getDetailsById($data['invoice']->tenant_id);
+        $data['tenant'] = $this->tenantDetailsSafe($data['invoice']->tenant_id);
         $data['order'] = $this->invoiceService->getOrderById($data['invoice']->order_id);
         return view('tenant.invoices.print', $data);
+    }
+
+    /** Resolve a tenant's details without throwing when it can't be found. */
+    private function tenantDetailsSafe($tenantId)
+    {
+        if (! $tenantId) {
+            return null;
+        }
+
+        try {
+            return $this->tenantService->getDetailsById($tenantId);
+        } catch (\Throwable $e) {
+            return null;
+        }
     }
 
     public function store(InvoiceRequest $request)

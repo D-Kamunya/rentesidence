@@ -285,6 +285,7 @@
                                                     <option value="both" {{ old('audience', $article->audience ?? 'both') === 'both' ? 'selected' : '' }}>Both (Owners & Affiliates)</option>
                                                     <option value="owners" {{ old('audience', $article->audience ?? '') === 'owners' ? 'selected' : '' }}>Owners Only</option>
                                                     <option value="affiliates" {{ old('audience', $article->audience ?? '') === 'affiliates' ? 'selected' : '' }}>Affiliates Only</option>
+                                                    <option value="finance_partners" {{ old('audience', $article->audience ?? '') === 'finance_partners' ? 'selected' : '' }}>Finance Partners Only</option>
                                                 </select>
                                                 @error('audience')
                                                     <div style="font-size: 11px; color: #993C1D; margin-top: 4px;">{{ $message }}</div>

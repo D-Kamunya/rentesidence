@@ -4,6 +4,8 @@ namespace App\Http\Controllers\Affiliates;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
+use App\Services\LeadService;
+use App\Services\SuggestionService;
 use App\Services\SmsMail\MailService;
 use App\Models\Company;
 use App\Models\Lead;
@@ -127,9 +129,8 @@ class LeadController extends Controller
         return trim($normalized);
     }  
 
-    public function store(Request $request)
+    public function store(Request $request, LeadService $leads)
     {
-
         $request->validate([
             'company_name'          => 'required|string|max:255',
             'country'               => 'required|string|max:100',
@@ -142,79 +143,26 @@ class LeadController extends Controller
             'property_type'         => 'nullable',
         ]);
 
-        DB::beginTransaction();
-
         try {
-            $normalized = $this->normalizeCompanyName($request->company_name);
-
-            $company = Company::where(function($q) use ($normalized, $request) {
-                $q->where(function($q2) use ($normalized, $request) {
-                    $q2->where('normalized_name', $normalized)
-                    ->where('city', $request->city)
-                    ->where('country', $request->country);
-                })
-                ->orWhere('phone', $request->phone);
-            })->first();
-
-            if (!$company) {
-                $company = Company::create([
-                    'company_name'     => $request->company_name,
-                    'normalized_name'  => $normalized,
-                    'country'          => $request->country,
-                    'city'             => $request->city,
-                    'phone'            => $request->phone,
-                    'estimated_units'  => $request->estimated_units,
-                    'email'            => $request->email,
-                    'website'          => $request->website,
-                    'property_type'    => $request->property_type
-                ]);
-            }
-
-            $existingLead = Lead::where('company_id', $company->id)
-                ->whereIn('status', ['active', 'pending_conversion', 'trial'])
-                ->where('ownership_expires_at', '>', now())
-                ->first();
-
-            if ($existingLead) {
-                // Throwing an exception ensures rollback
-                throw new \Exception('This company already has an active lead.');
-            }
-
-            Lead::create([
-                'company_id'          => $company->id,
-                'affiliate_id'        => auth()->id(),
-                'contact_person_name' => $request->contact_person_name,
-                'contact_person_role' => $request->contact_person_role,
-                'temperature'         => $request->temperature ?? 'cold',
-                'status'              => 'active',
-            ]);
-
-            DB::commit();
-
-            return redirect()->route('affiliate.leads')
-                ->with('success', 'Lead submitted successfully.');
-
-        } catch (\Exception $e) {
-            DB::rollBack();
-
+            $leads->createLead($request->all(), (int) auth()->id());
+        } catch (\Throwable $e) {
             return back()->with('error', 'Something went wrong: ' . $e->getMessage());
         }
+
+        return redirect()->route('affiliate.leads')
+            ->with('success', 'Lead submitted successfully.');
     }
 
     public function edit(Lead $lead)
     {
-        if($lead->affiliate_id !== auth()->id()){
-            abort(403);
-        }
+        $this->authorizeOwnership($lead);
 
         return view('affiliate.leads.edit', compact('lead'));
     }
 
-    public function update(Request $request, Lead $lead)
+    public function update(Request $request, Lead $lead, LeadService $leads)
     {
-        if($lead->affiliate_id !== auth()->id()){
-            abort(403);
-        }
+        $this->authorizeOwnership($lead);
 
         $request->validate([
             'contact_person_name' => 'required|string|max:255',
@@ -225,34 +173,17 @@ class LeadController extends Controller
             'property_type' => 'nullable',
         ]);
 
-        $lead->update([
-            'contact_person_name' => $request->contact_person_name,
-            'contact_person_role' => $request->contact_person_role,
-            'email' => $request->email,
-            'website' => $request->website,
-            'property_type' => $request->property_type
-        ]);
+        $leads->updateLead(
+            $lead,
+            $request->only(['contact_person_name', 'contact_person_role', 'email', 'website', 'property_type']),
+            $request->only(['estimated_units', 'website', 'email', 'property_type'])
+        );
 
-        $data = $request->only([
-            'estimated_units',
-            'website',
-            'email',
-            'property_type',
-        ]);
-        
-        // Remove null/empty values so you don’t overwrite with blanks
-        $data = array_filter($data, fn($value) => !is_null($value) && $value !== '');
-        
-        // Update once if there’s anything to update
-        if (!empty($data)) {
-            $lead->company->update($data);
-        }
-        
         return redirect()->route('affiliate.leads')
             ->with('success','Lead updated successfully.');
     }
 
-    public function show($id)
+    public function show($id, SuggestionService $suggestionService)
     {
 
         $lead = Lead::with([
@@ -263,25 +194,29 @@ class LeadController extends Controller
                                         ->orderByRaw("FIELD(priority, 'high', 'medium', 'low')")
         ])->findOrFail($id);
 
-        // Pre-load all templates needed for this lead's suggestion categories
-        // keyed by category so the blade can look them up without querying
+        $this->authorizeOwnership($lead);
+
+        // Pre-load all templates needed for this lead's suggestion categories,
+        // keyed by category, then let the service pre-split them per suggestion
+        // into whatsapp/email/call groups + the engine-recommended channel — so
+        // the blade just renders (no per-suggestion collection filtering there).
         $suggestionCategories = $lead->suggestions->pluck('category')->unique();
         $templatesByCategory  = ActionTemplate::whereIn('category', $suggestionCategories)
             ->get()
             ->groupBy('category');
 
-        $suggestions = $lead->suggestions; // already loaded above
-        $completeness = $this->completenessScore($lead);
+        $suggestions     = $lead->suggestions; // already loaded above (used for header counts)
+        $suggestionData  = collect($suggestionService->channelsFor($suggestions, $templatesByCategory));
+        $canActOnLead    = (int) $lead->affiliate_id === (int) auth()->id();
+        $completeness    = $this->completenessScore($lead);
 
-        return view('affiliate.leads.show', compact('lead', 'suggestions', 'templatesByCategory', 'completeness'));
+        return view('affiliate.leads.show', compact('lead', 'suggestions', 'suggestionData', 'canActOnLead', 'completeness'));
     }
 
     public function renew(Lead $lead)
     {
-        if ($lead->affiliate_id !== auth()->id()) {
-            abort(403);
-        }
-    
+        $this->authorizeOwnership($lead);
+
         if (! $lead->renew()) {
             return back()->with('error', 'Lead cannot be renewed.');
         }
@@ -289,169 +224,79 @@ class LeadController extends Controller
         return back()->with('success', 'Lead renewed successfully.');
     }
 
-    public function addNote(request $request, Lead $lead)
+    public function addNote(request $request, Lead $lead, LeadService $leads)
     {
+        $this->authorizeOwnership($lead);
+
         $request->validate([
             'note' => 'required|string|max:2000'
         ]);
 
-        $newNote = "[".now()->format('Y-m-d H:i')."] ".$request->note;
-
-        $updatedNotes = $lead->notes
-            ? $lead->notes."\n\n".$newNote
-            : $newNote;
-
-        $lead->update([
-            'notes' => $updatedNotes,
-            'last_activity_at' => now()
-        ]);
-
-        LeadActivity::create([
-            'lead_id' => $lead->id,
-            'user_id' => auth()->id(),
-            'type' => 'note_added',
-            'description' => $request->note
-        ]);
+        $leads->addNote($lead, $request->note);
 
         return back()->with('success','Note added');
     }
 
-    public function updateTemperature(Request $request, Lead $lead)
+    public function updateTemperature(Request $request, Lead $lead, LeadService $leads)
     {
+        $this->authorizeOwnership($lead);
+
         $request->validate([
             'temperature' => 'required|in:cold,warm,hot'
         ]);
-    
-        $lead->update([
-            'temperature' => $request->temperature,
-            'last_activity_at' => now()
-        ]);
-    
-        LeadActivity::create([
-            'lead_id'       => $lead->id,
-            'user_id'       => auth()->id(),
-            'type' => 'temperature_update',
-            'description'   => 'Temperature set to ' . $request->temperature
-        ]);
-    
+
+        $leads->setTemperature($lead, $request->temperature);
+
         return back()->with('success', 'Temperature updated to ' . ucfirst($request->temperature) . '.');
     }
 
-    public function scheduleDemo(Request $request, Lead $lead)
+    public function scheduleDemo(Request $request, Lead $lead, LeadService $leads)
     {
+        $this->authorizeOwnership($lead);
+
         $request->validate([
-            'demo_date' => 'required|date'
+            'demo_date'         => 'required|date',
+            'demo_meeting_link' => 'nullable|url|max:2048',
         ]);
 
-        $lead->update([
-            'status' => 'demo_scheduled',
-            'demo_scheduled_at' => $request->demo_date,
-            'last_activity_at' => now(),
-        ]);
-
-        $lead->company->update([
-            'sales_status' => 'contacted',
-        ]);
-
-        LeadActivity::create([
-            'lead_id' => $lead->id,
-            'user_id' => auth()->id(),
-            'type' => 'demo_scheduled',
-            'description' => 'Demo scheduled for ' . $request->demo_date
-        ]);
-
-        SendDemoScheduledMail::dispatch(
-            $lead->id,
-            \Carbon\Carbon::parse($request->demo_date)->format('l, F j, Y \a\t g:i A')
-        );
+        $leads->scheduleDemo($lead, $request->demo_date, $request->demo_meeting_link);
 
         return back()->with('success', 'Demo scheduled and confirmation sent to ' . $lead->company->company_name . '.');
     }
 
-    public function demoCompleted(Lead $lead)
+    public function demoCompleted(Lead $lead, LeadService $leads)
     {
-        $lead->update([
-            'status' => 'demo_completed',
-            'last_activity_at' => now()
-        ]);
+        $this->authorizeOwnership($lead);
 
-        $lead->company->update([
-            'sales_status' => 'demo_done',
-        ]);
-
-        LeadActivity::create([
-            'lead_id' => $lead->id,
-            'user_id' => auth()->id(),
-            'type' => 'demo_completed',
-            'description' => 'Demo completed'
-        ]);
-
-        SendDemoCompletedMail::dispatch($lead->id);
+        $leads->markDemoCompleted($lead);
 
         return back()->with('success', 'Demo marked complete and follow-up email sent to ' . $lead->company->company_name . '.');
     }
 
-    public function requestTrial(Request $request, Lead $lead)
+    public function requestTrial(Request $request, Lead $lead, LeadService $leads)
     {
-        // Get the latest trial-related activity
-        $latestTrialActivity = $lead->activities()
-            ->whereIn('type', ['trial_requested', 'trial_extension', 'trial_expired', 'conversion_rejected'])
-            ->orderByDesc('created_at')
-            ->first();
+        $this->authorizeOwnership($lead);
 
-        $isTrialExtension = $latestTrialActivity && $latestTrialActivity->type === 'trial_expired';
+        $isExtension = $leads->isTrialExtension($lead);
 
-        // Validate reason only if this is an extension
-        if ($isTrialExtension) {
+        // Validate the reason only when this is an extension request.
+        if ($isExtension) {
             $request->validate([
                 'extension_reason' => 'required|string|max:500'
             ]);
         }
 
-        // Only allow conversion if lead is in the right status
-        if (!in_array($lead->status, ['demo_completed', 'pending_conversion'])) {
-            return back()->with('error', 'This lead is not ready for conversion request.');
-        }
+        $result = $leads->submitTrialRequest($lead, $isExtension, $request->extension_reason, auth()->user());
 
-        // Update lead status and last activity timestamp
-        $lead->update([
-            'status' => 'pending_conversion',
-            'last_activity_at' => now(),
-        ]);
-
-        // Decide activity type, description, and message
-        if ($isTrialExtension) {
-            $activityType = 'trial_extension';
-            $description  = 'Trial extension requested by affiliate. Reason: ' . $request->extension_reason;
-            $message      = 'Trial extension request submitted successfully! Admin will review your request.';
-        } else {
-            $activityType = 'trial_requested';
-            $description  = 'Trial approval requested by affiliate';
-            $message      = 'Trial request submitted successfully!';
-        }
-
-        // Record activity
-        LeadActivity::create([
-            'lead_id'     => $lead->id,
-            'user_id'     => auth()->id(),
-            'type'        => $activityType,
-            'description' => $description,
-        ]);
-
-        // Notify admin
-        $affiliate = auth()->user();
-        SendTrialRequestedMail::dispatch(
-            $lead->id,
-            $isTrialExtension,
-            $request->extension_reason ?? '',
-            $affiliate->first_name . ' ' . $affiliate->last_name,
-            $affiliate->email,
-        );
-        return back()->with('success', $message);
+        return $result['success']
+            ? back()->with('success', $result['message'])
+            : back()->with('error', $result['message']);
     }
 
-    public function reject(Request $request, Lead $lead)
+    public function reject(Request $request, Lead $lead, LeadService $leads)
     {
+        $this->authorizeOwnership($lead);
+
         $request->validate([
             'rejection_reason'      => 'required|in:too_expensive,using_other_system,not_interested,no_response,timing_not_right,other',
             'rejection_reason_text' => 'required_if:rejection_reason,other|nullable|string|max:500',
@@ -466,44 +311,16 @@ class LeadController extends Controller
             'other'              => $request->rejection_reason_text,
         ];
 
-        $description = ' Reason: ' . $reasonLabels[$request->rejection_reason];
-
-        $lead->update([
-            'status' => 'rejected',
-            'last_activity_at' => now(),
-        ]);
-
-        $lead->company->update([
-            'sales_status' => 'inactive',
-        ]);
-
-        LeadActivity::create([
-            'lead_id'     => $lead->id,
-            'user_id'     => auth()->id(),
-            'type'        => 'lead_rejected',
-            'description' => 'Rejected - ' . $description,
-        ]);
+        $leads->reject($lead, ' Reason: ' . $reasonLabels[$request->rejection_reason]);
 
         return back()->with('success', 'Lead Marked as Rejected');
     }
 
-    public function lost(Lead $lead)
+    public function lost(Lead $lead, LeadService $leads)
     {
-        $lead->update([
-            'status'=>'lost',
-            'last_activity_at'=>now()
-        ]);
+        $this->authorizeOwnership($lead);
 
-        $lead->company->update([
-            'sales_status' => 'inactive',
-        ]);
-
-        LeadActivity::create([
-            'lead_id'=>$lead->id,
-            'user_id'=>auth()->id(),
-            'type'=>'lead_lost',
-            'description'=>'Lead marked lost'
-        ]);
+        $leads->markLost($lead);
 
         return back()->with('success','Lead Marked as Lost');
     }
@@ -511,7 +328,20 @@ class LeadController extends Controller
     // ─────────────────────────────────────────────────────────────────────────
     // Private helpers
     // ─────────────────────────────────────────────────────────────────────────
- 
+
+    /**
+     * Guard every lead-scoped action: an affiliate may only view or mutate the
+     * leads they own. Prevents IDOR — passing another affiliate's lead id in the
+     * URL to read or tamper with a competitor's lead. (leads.affiliate_id stores
+     * the owning user's id — see store().)
+     */
+    private function authorizeOwnership(Lead $lead): void
+    {
+        if ((int) $lead->affiliate_id !== (int) auth()->id()) {
+            abort(403);
+        }
+    }
+
     /**
      * Compute the completeness score (0–100) for a single lead.
      * Mirrors the blade-side calculation so both stay in sync.

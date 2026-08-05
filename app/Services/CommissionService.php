@@ -110,9 +110,10 @@ class CommissionService
             'description'        => "Marketplace sale — Order #{$order->order_id}",
         ]);
 
-        // ── Affiliate commission (category rate) ───────────────────
+        // ── Affiliate commission (a share of OUR commission, like rent) ──
         try {
-            app(\App\Services\AffiliateCommissionService::class)->handleMarketplaceCommission($order);
+            app(\App\Services\AffiliateCommissionService::class)
+                ->handleMarketplaceCommission($order, $breakdown['commission_amount']);
         } catch (\Exception $e) {
             Log::error('Affiliate marketplace commission failed', [
                 'order_id' => $order->id,
@@ -149,7 +150,13 @@ class CommissionService
             throw new \Exception("Cannot process rent commission: owner user {$ownerUserId} not found for order #{$order->id}");
         }
 
-        // Flat 1% rent commission
+        // Flat 1% rent commission. This method is reached ONLY for transaction-
+        // mode owners: every call site gates on ownerIsTransactionModel($invoice)
+        // because only then does rent route to the Centresidence M-Pesa account
+        // where the fee is levied. The gate lives at checkout (the routing
+        // decision), NOT here — do not re-check the owner's current mode, which
+        // can change between checkout and the payment callback after the money
+        // has already landed in the company account.
         $grossAmount      = (float) $order->transaction_amount;
         $rate             = self::RENT_COMMISSION_RATE;
         $commissionAmount = round($grossAmount * ($rate / 100), 2);

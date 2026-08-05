@@ -15,24 +15,31 @@ class SendTrialExpiredMail extends BaseMailJob
 
         if (!$affiliate || !$company) return;
 
+        // Escape affiliate/company free-text fields — raw-HTML email body, affiliate-entered.
+        $companyName  = e($company->company_name);
+        $contact      = e($lead->contact_person_name);
+        $companyEmail = e($company->email);
+        $companyPhone = e($company->phone);
+        $firstName    = e($affiliate->first_name);
+
         $this->send(
             [$affiliate->email],
             'Trial Expired - ' . $company->company_name . ' | ' . getOption('app_name'),
             "
                 <div style='font-family:Arial,sans-serif;max-width:600px;margin:0 auto;'>
                     <h2 style='color:#854F0B;'>⏰ Trial Period Has Ended</h2>
-                    <p>Hello <strong>{$affiliate->first_name}</strong>,</p>
-                    <p>The trial period for <strong>{$company->company_name}</strong> has ended.</p>
+                    <p>Hello <strong>{$firstName}</strong>,</p>
+                    <p>The trial period for <strong>{$companyName}</strong> has ended.</p>
                     <div style='background:#FEF9EE;border:1px solid #FAC775;border-radius:8px;padding:16px;margin:20px 0;'>
                         <p style='margin:0 0 8px;font-weight:600;color:#854F0B;'>📋 Lead Details:</p>
-                        <p style='margin:4px 0;'><strong>Company:</strong> {$company->company_name}</p>
-                        <p style='margin:4px 0;'><strong>Contact:</strong> {$lead->contact_person_name}</p>
-                        <p style='margin:4px 0;'><strong>Email:</strong> {$company->email}</p>
-                        <p style='margin:4px 0;'><strong>Phone:</strong> {$company->phone}</p>
+                        <p style='margin:4px 0;'><strong>Company:</strong> {$companyName}</p>
+                        <p style='margin:4px 0;'><strong>Contact:</strong> {$contact}</p>
+                        <p style='margin:4px 0;'><strong>Email:</strong> {$companyEmail}</p>
+                        <p style='margin:4px 0;'><strong>Phone:</strong> {$companyPhone}</p>
                     </div>
                     <h3 style='color:#185FA5;margin-top:24px;'>What's Next?</h3>
                     <ol style='line-height:1.8;'>
-                        <li><strong>Reach out to {$company->company_name}</strong> to gather feedback on their trial experience</li>
+                        <li><strong>Reach out to {$companyName}</strong> to gather feedback on their trial experience</li>
                         <li><strong>Address any concerns</strong> they may have about the platform</li>
                         <li><strong>Highlight the value</strong> they gained during the trial</li>
                         <li><strong>Request a trial extension</strong> if they need more time to evaluate</li>
