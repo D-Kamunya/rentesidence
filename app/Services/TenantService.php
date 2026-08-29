@@ -10,6 +10,7 @@ use App\Models\TenantDetails;
 use App\Models\User;
 use App\Jobs\SendTenantCredentialsJob;
 use App\Services\SmsMail\MailService;
+use App\Services\Sms\SmsCreditsService;
 use Illuminate\Support\Str;
 use App\Traits\ResponseTrait;
 use Exception;
@@ -639,6 +640,19 @@ class TenantService
             return ['ok' => false, 'message' => __('This tenant has no email or phone number to send login details to.')];
         }
 
+        // Pre-flight the SMS balance so the owner learns NOW, on this page, that a text
+        // can't go out — instead of seeing "sent" and finding it blocked later on the SMS
+        // page (the deduction happens in a queued job). Email is never gated by SMS credits.
+        $hasEmail  = ! empty($user->email);
+        $hasPhone  = ! empty($user->contact_number);
+        $smsFunded = SmsCreditsService::hasCredits(auth()->id());
+
+        // SMS is the only way to reach this tenant and there are no credits: don't burn a
+        // password reset that can't be delivered — ask the owner to top up first.
+        if ($hasPhone && ! $hasEmail && ! $smsFunded) {
+            return ['ok' => false, 'message' => __(':name can only be reached by SMS, and your SMS credit balance is 0 — nothing was sent. Top up SMS credits, then resend.', ['name' => $user->first_name])];
+        }
+
         $plain = Str::random(10);
         $user->password = Hash::make($plain);
         $user->must_change_password = 1;
@@ -651,9 +665,16 @@ class TenantService
             session()->put('dev_pw_' . $tenant->id, $plain);
         }
 
+        // The email is on its way, but warn if the SMS half couldn't go (no credits), so the
+        // owner isn't misled into thinking the text was delivered.
+        $warning = ($hasPhone && ! $smsFunded)
+            ? __('Login details were emailed to :name, but your SMS credit balance is 0, so the text was not sent. Top up SMS credits to also deliver it by SMS.', ['name' => $user->first_name])
+            : null;
+
         return [
             'ok'       => true,
             'message'  => __('New login details are on their way to :name.', ['name' => $user->first_name]),
+            'warning'  => $warning,
             'password' => $plain, // surfaced to the owner ONLY in debug (see controller) for local testing
         ];
     }
@@ -671,7 +692,9 @@ class TenantService
             ->with('user')
             ->get();
 
-        $count = 0;
+        $balance     = SmsCreditsService::balance(auth()->id());
+        $count       = 0;
+        $smsAttempts = 0; // how many of these need a text (have a phone)
         foreach ($tenants as $tenant) {
             $user = $tenant->user;
             if (! $user || (empty($user->email) && empty($user->contact_number))) {
@@ -683,10 +706,22 @@ class TenantService
             $user->save();
 
             SendTenantCredentialsJob::dispatch($user->id, $plain, 'both');
+            if (! empty($user->contact_number)) {
+                $smsAttempts++;
+            }
             $count++;
         }
 
-        return ['ok' => true, 'count' => $count];
+        // If credits can't cover every text, warn the owner now: the shortfall is paused
+        // (retryable from the SMS page after a top-up); tenants with an email still get it.
+        $shortfall = max(0, $smsAttempts - $balance);
+        $warning = $shortfall > 0
+            ? __('Your SMS balance (:balance) can\'t cover all :attempts tenants who need a text — :short were paused for lack of credits. Top up, then retry the paused messages from the SMS Credits page. Tenants with an email still received it there.', [
+                'balance' => $balance, 'attempts' => $smsAttempts, 'short' => $shortfall,
+            ])
+            : null;
+
+        return ['ok' => true, 'count' => $count, 'warning' => $warning];
     }
 
     public function updateUnitTenant($unit)

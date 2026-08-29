@@ -30,6 +30,21 @@ class SmsCreditsService
     }
 
     /**
+     * Pre-flight check: does the owner have enough SMS credit to cover `$need` messages?
+     * Standalone installs (no owner) are unmetered → always true. Use this to warn the
+     * owner on the CURRENT page before an owner-initiated send, since the actual deduction
+     * happens later in a queued job and would otherwise fail silently.
+     */
+    public static function hasCredits(?int $ownerUserId, int $need = 1): bool
+    {
+        if ($ownerUserId === null) {
+            return true;
+        }
+
+        return self::balance($ownerUserId) >= max(1, $need);
+    }
+
+    /**
      * Deduct one credit atomically. Returns true on success, false if insufficient. Fires
      * low/zero-balance notifications against a consistent before/after, inside the lock.
      */

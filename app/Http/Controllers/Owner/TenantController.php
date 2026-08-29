@@ -63,14 +63,23 @@ class TenantController extends Controller
         $request->validate(['id' => 'required|integer']);
         $res = $this->tenantService->resendLogin($request->id);
 
-        $message = $res['message'];
         // DEV ONLY: reveal the generated password in the owner UI so the flow can be tested
         // locally before go-live. config('app.debug') is false in production, so this never leaks.
-        if ($res['ok'] && config('app.debug') && ! empty($res['password'])) {
-            $message .= ' — [DEV] ' . __('Password') . ': ' . $res['password'];
+        $devSuffix = ($res['ok'] && config('app.debug') && ! empty($res['password']))
+            ? ' — [DEV] ' . __('Password') . ': ' . $res['password']
+            : '';
+
+        if (! $res['ok']) {
+            return back()->with('error', $res['message']);
         }
 
-        return back()->with($res['ok'] ? 'success' : 'error', $message);
+        // A "sent, but SMS couldn't go" outcome takes the warning channel, so it reads as
+        // partially-done on the current page rather than a plain success.
+        if (! empty($res['warning'])) {
+            return back()->with('warning', $res['warning'] . $devSuffix);
+        }
+
+        return back()->with('success', $res['message'] . $devSuffix);
     }
 
     /** Send login details to every tenant who hasn't signed in yet (e.g. a bulk import that
@@ -83,11 +92,19 @@ class TenantController extends Controller
             return back()->with('info', __('No tenants are waiting for login details — everyone has already signed in.'));
         }
 
-        return back()->with('success', trans_choice(
+        $message = trans_choice(
             '{1}Login details queued for 1 tenant.|[2,*]Login details queued for :count tenants.',
             $res['count'],
             ['count' => $res['count']]
-        ));
+        );
+
+        // Surface the SMS-shortfall warning on this page instead of a clean success, so the
+        // owner knows some texts were paused for lack of credits.
+        if (! empty($res['warning'])) {
+            return back()->with('warning', $message . ' ' . $res['warning']);
+        }
+
+        return back()->with('success', $message);
     }
 
     public function create()
