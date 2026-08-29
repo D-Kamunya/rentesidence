@@ -64,8 +64,11 @@
     .td-content { min-width:0; }
     .td-hero { display:flex; align-items:center; gap:16px; background:linear-gradient(135deg,#185FA5,#0F4A84); border-radius:14px; padding:20px 22px; color:#fff; margin-bottom:20px; }
     .td-hero__img { width:64px; height:64px; border-radius:50%; object-fit:cover; border:2px solid rgba(255,255,255,.35); flex:none; }
-    .td-hero__name { font-size:19px; font-weight:700; margin:0; }
-    .td-hero__sub { font-size:13px; opacity:.9; margin:3px 0 0; }
+    /* Explicit white: the theme's global heading colour (--heading-color:#160e4d)
+       would otherwise override the white this h3 should inherit from .td-hero,
+       leaving a dull near-black name on the blue gradient. */
+    .td-hero__name { font-size:19px; font-weight:700; margin:0; color:#fff; text-shadow:0 1px 2px rgba(15,42,74,.25); }
+    .td-hero__sub { font-size:13px; opacity:.92; margin:3px 0 0; color:#fff; }
     .td-hero__spacer { margin-left:auto; }
     .td-hero__edit { display:inline-flex; align-items:center; gap:6px; background:rgba(255,255,255,.16); color:#fff; border:0.5px solid rgba(255,255,255,.28);
         font-size:12.5px; font-weight:600; padding:8px 14px; border-radius:8px; text-decoration:none; transition:background .13s; }
