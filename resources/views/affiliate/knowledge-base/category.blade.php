@@ -38,7 +38,7 @@
                             <div class="d-flex align-items-start justify-content-between">
                                 <div class="d-flex align-items-center gap-3">
                                     @if($category->icon)
-                                    <span style="font-size: 28px;">{!! $category->icon !!}</span>
+                                    @include('common.partials.kb-icon', ['icon' => $category->icon, 'size' => 28])
                                     @endif
                                     <div>
                                         @if($category->description)

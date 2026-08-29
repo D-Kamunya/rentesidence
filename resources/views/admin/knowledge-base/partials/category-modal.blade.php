@@ -33,7 +33,7 @@
 
             <div class="mb-3">
                 <label for="icon" style="font-size: 10px; font-weight: 500; text-transform: uppercase; letter-spacing: .07em; color: #9ca3af; display: block; margin-bottom: 6px;">Icon (optional)</label>
-                <input type="text" name="icon" id="icon" placeholder="e.g., heroicon:book-open"
+                <input type="text" name="icon" id="icon" placeholder="Remix Icon class, e.g. ri-book-open-line"
                        style="width: 100%; border: 0.5px solid #e5e7eb; border-radius: 7px; padding: 8px 12px; font-size: 13px; color: #374151; transition: all .15s;"
                        onfocus="this.style.borderColor='#185FA5'; this.style.boxShadow='0 0 0 3px rgba(24,95,165,.1)';"
                        onblur="this.style.borderColor='#e5e7eb'; this.style.boxShadow='none';">

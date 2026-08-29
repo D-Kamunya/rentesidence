@@ -277,7 +277,7 @@ function highlightSearchTerm($text, $search) {
                                 onmouseover="this.style.background='#f3f4f6';" 
                                 onmouseout="this.style.background='transparent';">
                                     @if($category->icon)
-                                    <span style="font-size: 16px;">{!! $category->icon !!}</span>
+                                    @include('common.partials.kb-icon', ['icon' => $category->icon, 'size' => 16])
                                     @endif
                                     <span>{{ $category->name }}</span>
                                     <svg width="12" height="12" viewBox="0 0 12 12" fill="none" style="margin-left: auto; color: #9ca3af;">
