@@ -41,12 +41,6 @@
                         </a>
                     </li>
                     <li>
-                        <a href="{{ route('admin.agreement.settings.index') }}">
-                            <i class="ri-file-text-line"></i>
-                            <span>{{ __('Agreement Settings') }}</span>
-                        </a>
-                    </li>
-                    <li>
                         <a href="{{ route('admin.screening.index') }}">
                             <i class="ri-shield-user-line"></i>
                             <span>{{ __('Tenant Screening') }}</span>

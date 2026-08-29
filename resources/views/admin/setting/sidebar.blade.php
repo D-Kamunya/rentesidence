@@ -29,6 +29,9 @@
         <a href="{{ route('admin.setting.affiliate.setting') }}" class="stg-nav__item {{ @$subAffiliateSettingActiveClass ? 'is-active' : '' }}">
             <span class="iconify" data-icon="fluent:payment-16-regular"></span><span>{{ __('Affiliate Commissions') }}</span>
         </a>
+        <a href="{{ route('admin.agreement.settings.index') }}" class="stg-nav__item {{ @$subAgreementSettingActiveClass ? 'is-active' : '' }}">
+            <span class="iconify" data-icon="mdi:file-sign"></span><span>{{ __('Agreement Settings') }}</span>
+        </a>
         <a href="{{ route('admin.setting.smtp.setting') }}" class="stg-nav__item {{ @$subSmtpSettingActiveClass ? 'is-active' : '' }}">
             <span class="iconify" data-icon="mdi:git-issue"></span><span>{{ __('SMTP Setting') }}</span>
         </a>

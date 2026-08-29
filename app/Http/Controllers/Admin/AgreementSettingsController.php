@@ -17,6 +17,7 @@ class AgreementSettingsController extends Controller
         $data['pageTitle']  = __('Agreement Settings');
         $data['freeQuota']  = (int) getOption('agreement_free_quota', 10);
         $data['price']      = (float) getOption('agreement_price', 50);
+        $data['subAgreementSettingActiveClass'] = 'active'; // highlights the item in the settings internal sidebar
 
         return view('admin.agreement.settings', $data);
     }
