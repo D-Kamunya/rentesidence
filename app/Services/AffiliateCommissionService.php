@@ -85,6 +85,10 @@ class AffiliateCommissionService
             clientType:  $type,
         ));
 
+        // Don't persist zero-value rows (consistent with rent/marketplace) — they add
+        // nothing to earnings and only show up as empty months in the breakdown.
+        if ($computed['commission_amount'] <= 0) return null;
+
         $commission = $this->recordEvent([
             'product'                 => $product,
             'affiliate_id'            => $affiliateId,

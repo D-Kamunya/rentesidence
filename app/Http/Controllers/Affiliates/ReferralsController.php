@@ -128,6 +128,10 @@ class ReferralsController extends Controller
                     'total' => $monthGroup->sum('total'),
                 ];
             })
+            // Drop pure-noise months where nothing net was earned (e.g. a 0.00 commission
+            // row) — they render as an empty all-dashes row. A month that nets to zero via
+            // a sale + its reversal still has non-zero source columns, so it's kept.
+            ->filter(fn ($m) => $m['total'] != 0 || $m['subscription'] != 0 || $m['rent'] != 0 || $m['marketplace'] != 0)
             ->values();
 
         // Recent commissions
@@ -177,6 +181,9 @@ class ReferralsController extends Controller
                 ],
                 'monthly_earnings' => $monthlyEarnings,
                 'recent_commissions' => $recentCommissions,
+                // Total ledger rows so the UI can flag that the 15-row recent list is truncated.
+                'recent_total' => AffiliateCommission::where('affiliate_id', $affiliateId)
+                    ->where('owner_id', $ownerId)->count(),
             ],
         ]);
     }

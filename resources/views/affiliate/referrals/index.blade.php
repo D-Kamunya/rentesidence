@@ -232,7 +232,7 @@
 
             {{-- Recent Commissions --}}
             <div class="ref-detail-section">
-                <h5 class="ref-detail-section__title">{{ __('Recent Commissions') }}</h5>
+                <h5 class="ref-detail-section__title">{{ __('Recent Commissions') }} <span id="refCommissionsNote" style="font-weight:400;color:var(--ref-gray-400);font-size:11px;"></span></h5>
                 <div class="table-responsive" style="max-height:200px;">
                     <table class="ref-detail-table">
                         <thead>
@@ -580,9 +580,9 @@
             data.monthly_earnings.forEach(function(r) {
                 monthlyBody.innerHTML += '<tr>' +
                     '<td style="font-weight:500;">' + esc(r.period) + '</td>' +
-                    '<td>' + (r.subscription > 0 ? 'KSh ' + fmt(r.subscription) : '—') + '</td>' +
-                    '<td>' + (r.rent > 0 ? 'KSh ' + fmt(r.rent) : '—') + '</td>' +
-                    '<td>' + (r.marketplace > 0 ? 'KSh ' + fmt(r.marketplace) : '—') + '</td>' +
+                    '<td>' + (r.subscription != 0 ? 'KSh ' + fmt(r.subscription) : '—') + '</td>' +
+                    '<td>' + (r.rent != 0 ? 'KSh ' + fmt(r.rent) : '—') + '</td>' +
+                    '<td>' + (r.marketplace != 0 ? 'KSh ' + fmt(r.marketplace) : '—') + '</td>' +
                     '<td style="font-weight:600;color:var(--ref-green-dark);">KSh ' + fmt(r.total) + '</td>' +
                 '</tr>';
             });
@@ -590,7 +590,16 @@
             monthlyBody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:20px;color:var(--ref-gray-400);">No earnings data</td></tr>';
         }
 
-        // Recent commissions
+        // Recent commissions — this is a recent-activity feed, NOT the full ledger, so
+        // note when it's truncated (otherwise summing these rows won't match the totals above).
+        var commNote = document.getElementById('refCommissionsNote');
+        if (commNote) {
+            var shown = (data.recent_commissions || []).length;
+            var totalRows = (typeof data.recent_total === 'number') ? data.recent_total : shown;
+            commNote.textContent = totalRows > shown
+                ? '(' + '{{ __('latest :n of :t — see Monthly Earnings for full totals') }}'.replace(':n', shown).replace(':t', totalRows) + ')'
+                : '';
+        }
         var commBody = document.getElementById('refCommissionsBody');
         commBody.innerHTML = '';
         if (data.recent_commissions && data.recent_commissions.length) {
