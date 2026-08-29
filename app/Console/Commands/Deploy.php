@@ -84,9 +84,22 @@ class Deploy extends Command
         }
 
         $this->newLine();
-        $this->line('<options=bold>Reminder — server cron (run once per host, not by this command):</>');
-        $this->line('   <fg=yellow>* * * * * cd ' . base_path() . ' && php artisan schedule:run >> /dev/null 2>&1</>');
-        $this->line('   The scheduler drives invoices, reminders, backups, the queue worker and all Centresidence billing/collection jobs.');
+        $this->line('<options=bold>Reminders — the two things this command CANNOT do for itself:</>');
+        $this->newLine();
+
+        // 1) Composer — must run at the shell BEFORE artisan (a missing dependency would
+        //    stop artisan booting, so this command could never self-run it). composer.lock
+        //    is gitignored here, so each host resolves its own versions — always safe to run.
+        $this->line(' <fg=cyan>1. Dependencies</> — after a pull that changed <fg=yellow>composer.json</>, run this FIRST (before app:deploy):');
+        $this->line('    <fg=yellow>composer install --no-dev --optimize-autoloader</>');
+        $this->newLine();
+
+        // 2) The cron — EVERYTHING scheduled rests on this single line existing on the host.
+        $this->line(' <fg=cyan>2. Server cron</> — set ONCE per host (everything scheduled depends on it):');
+        $this->line('    <fg=yellow>* * * * * cd ' . base_path() . ' && php artisan schedule:run >> /dev/null 2>&1</>');
+        $this->line('    Drives invoices, reminders, backups, the queue worker, screening recompute,');
+        $this->line('    and ALL Centresidence billing / collection / partner-remittance jobs. If it is');
+        $this->line('    missing, none of those run — verify it exists on the live server.');
         $this->newLine();
 
         if (! empty($failed)) {
