@@ -78,6 +78,22 @@
                         </div>
 
                         <div class="ow-toolbar__actions">
+                            <form action="{{ route('owner.tenant.bulk-resend-logins') }}" method="POST" class="d-inline"
+                                  data-cs-confirm="{{ __('Send login details (by email & SMS) to every tenant who hasn\'t signed in yet? Each gets a fresh password to set on first login. SMS uses your SMS credits.') }}"
+                                  data-cs-confirm-title="{{ __('Send login details') }}"
+                                  data-cs-confirm-ok="{{ __('Send logins') }}">
+                                @csrf
+                                <button type="submit" class="ow-btn ow-btn--ghost" title="{{ __('Send login details to tenants who haven\'t signed in') }}">
+                                    <i class="ri-mail-send-line" style="font-size:13px;"></i>
+                                    {{ __('Send logins') }}
+                                </button>
+                            </form>
+                            <a href="{{ route('owner.tenant.import.index') }}" class="ow-btn ow-btn--ghost">
+                                <svg width="13" height="13" viewBox="0 0 24 24" fill="none">
+                                    <path d="M12 3v12m0 0l-4-4m4 4l4-4M4 17v2a2 2 0 002 2h12a2 2 0 002-2v-2" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                </svg>
+                                {{ __('Import') }}
+                            </a>
                             <a href="{{ route('owner.tenant.create') }}" class="ow-btn ow-btn--purple">
                                 <svg width="13" height="13" viewBox="0 0 24 24" fill="none">
                                     <path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>

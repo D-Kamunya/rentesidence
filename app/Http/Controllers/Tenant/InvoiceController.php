@@ -11,6 +11,7 @@ use App\Models\PaymentCheck;
 use App\Models\Gateway;
 use App\Models\Invoice;
 use App\Traits\ResponseTrait;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Session;
 
@@ -80,6 +81,9 @@ class InvoiceController extends Controller
             
         // }
         $data['invoices'] = $this->invoiceService->getByTenantId(auth()->user()->tenant->id);
+        // Upcoming rent months (name + amount + state) for the "Pay Upcoming Rent" modal.
+        $data['upcomingRentMonths'] = app(\App\Services\InvoiceRecurringService::class)
+            ->upcomingRentMonths(auth()->user()->tenant);
         return view('tenant.invoices.index', $data);
     }
 
@@ -91,6 +95,28 @@ class InvoiceController extends Controller
         $data['tenant'] = $this->tenantService->getDetailsById($data['invoice']->tenant_id);
         $data['order'] = $this->invoiceService->getOrderById($data['invoice']->order_id);
         return view('tenant.invoices.print', $data);
+    }
+
+    /**
+     * Post-payment rent receipt (mirrors the marketplace order receipt). Distinct from the
+     * formal invoice document (details()/print) — this is the celebratory confirmation the
+     * tenant lands on after a successful rent payment, with buttons back to their invoices.
+     * Scoped to the authenticated tenant via getByIdCheckTenantAuthId (owner + tenant match),
+     * so a tenant can never open another tenant's receipt by id.
+     */
+    public function receipt($id)
+    {
+        $invoice = $this->invoiceService->getByIdCheckTenantAuthId($id);
+
+        $data['pageTitle'] = __('Payment Receipt');
+        $data['invoice']   = $invoice;
+        $data['items']     = $this->invoiceService->getItemsByInvoiceId($id);
+        $data['owner']     = $this->invoiceService->ownerInfo(auth()->user()->owner_user_id);
+        $data['order']     = $invoice->order_id
+            ? $this->invoiceService->getOrderById($invoice->order_id)
+            : null;
+
+        return view('tenant.invoices.receipt', $data);
     }
 
    
@@ -128,6 +154,48 @@ class InvoiceController extends Controller
         $data['ownerMpesaGatewayId']    = $rentGateway?->id;
     
         return view('tenant.invoices.pay', $data);
+    }
+
+    /**
+     * Advance / early rent: generate the current + up to 10 future months' rent invoices on
+     * demand (idempotent — never double-bills, and the cron won't re-generate them), then send
+     * the tenant back to their invoices where the new ones are payable via the normal flow.
+     */
+    public function generateUpcoming(Request $request)
+    {
+        $tenant = auth()->user()->tenant;
+        if (!$tenant || (int) $tenant->status !== TENANT_STATUS_ACTIVE) {
+            return back()->with('error', __('No active tenancy found.'));
+        }
+
+        $recurringService = app(\App\Services\InvoiceRecurringService::class);
+
+        // Only periods the tenant is actually shown as "available" (not already invoiced/paid,
+        // within the 10-month window, monthly-rent unit) can be generated — tamper-safe.
+        $available = collect($recurringService->upcomingRentMonths($tenant))
+            ->where('state', 'available')
+            ->keyBy('period');
+
+        if ($available->isEmpty()) {
+            return back()->with('error', __('There are no upcoming rent months available to prepare right now.'));
+        }
+
+        $selected = array_filter((array) $request->input('periods', []), fn ($p) => $available->has($p));
+        if (empty($selected)) {
+            return back()->with('error', __('Please pick at least one month to prepare.'));
+        }
+
+        $setting = $recurringService->ensureUnitRecurringSetting($tenant);
+        $setting->loadMissing('items');
+
+        $count = 0;
+        foreach ($selected as $periodStr) {
+            $recurringService->generateRentInvoiceForPeriod($tenant, $setting, Carbon::parse($periodStr)->startOfMonth());
+            $count++;
+        }
+
+        return redirect()->route('tenant.invoice.index')
+            ->with('success', __(':n rent invoice(s) prepared — pay them below.', ['n' => $count]));
     }
 
     public function getCurrencyByGateway(Request $request)

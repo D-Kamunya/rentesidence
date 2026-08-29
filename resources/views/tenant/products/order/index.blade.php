@@ -124,7 +124,8 @@
                                             $isCancelled   = $order->payment_status === PRODUCT_ORDER_STATUS_CANCELLED;
                                             $isOrderCancelled = $order->order_status === ORDER_STATUS_CANCELLED;
                                             $isCompleted   = $order->order_status   === ORDER_STATUS_COMPLETED;
-                                            $isRefund      = $order->payment_status   === PRODUCT_ORDER_STATUS_REFUND_PENDING; 
+                                            $isRefund      = $order->payment_status   === PRODUCT_ORDER_STATUS_REFUND_PENDING;
+                                            $isDispatched  = (int) $order->fulfilment_status === FULFILMENT_DISPATCHED;
                                             $statusClass   = $isCompleted ? 'completed' : ($isCancelled ? 'cancelled' : 'pending');
 
                                            
@@ -217,6 +218,11 @@
                                                         <svg width="9" height="9" viewBox="0 0 16 16" fill="none"><path d="M4 4l8 8M12 4l-8 8" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
                                                         {{ __('Cancelled') }}
                                                     </span>
+                                                @elseif ($isDispatched)
+                                                    <span class="inv-badge inv-badge--transit">
+                                                        <svg width="9" height="9" viewBox="0 0 16 16" fill="none"><path d="M1 4h9v7H1zM10 6h3l2 2v3h-5" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/><circle cx="4" cy="12.5" r="1.4" stroke="currentColor" stroke-width="1.2"/><circle cx="12" cy="12.5" r="1.4" stroke="currentColor" stroke-width="1.2"/></svg>
+                                                        {{ __('On the way') }}
+                                                    </span>
                                                 @else
                                                     <span class="inv-badge inv-badge--order-pending">
                                                         <svg width="9" height="9" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="5.5" stroke="currentColor" stroke-width="1.6"/><path d="M8 5v3.5l2 1.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
@@ -238,10 +244,11 @@
                                                         data-date="{{ $order->created_at->format('d M Y') }}"
                                                         data-payment-status="{{ $order->payment_status }}"
                                                         data-order-status="{{ $order->order_status }}"
+                                                        data-fulfilment-status="{{ $order->fulfilment_status }}"
                                                         data-image="{{ $imageUrl }}"
                                                         data-item-count="{{ $allItems->count() }}"
                                                         data-gateway="{{ $order->gateway?->title ?? '—' }}"
-                                                        data-cancel-url="{{ $order->payment_status == PRODUCT_ORDER_STATUS_PAID && $order->order_status != ORDER_STATUS_COMPLETED && $order->order_status != ORDER_STATUS_CANCELLED ? route('tenant.product_order.cancel', $order->id) : '' }}"
+                                                        data-cancel-url="{{ $order->payment_status == PRODUCT_ORDER_STATUS_PAID && $order->order_status != ORDER_STATUS_COMPLETED && $order->order_status != ORDER_STATUS_CANCELLED && ! $isDispatched ? route('tenant.product_order.cancel', $order->id) : '' }}"
                                                         data-receipt-url="{{ route('tenant.product.order.receipt', $order->id) }}"
                                                         title="{{ __('View Order') }}">
                                                         <svg width="13" height="13" viewBox="0 0 24 24" fill="none">
@@ -250,7 +257,7 @@
                                                         </svg>
                                                         {{ __('View') }}
                                                     </button>
-                                                    @if ($order->payment_status === PRODUCT_ORDER_STATUS_PAID && $order->order_status !== ORDER_STATUS_COMPLETED && $order->order_status != ORDER_STATUS_CANCELLED)
+                                                    @if ($order->payment_status === PRODUCT_ORDER_STATUS_PAID && $order->order_status !== ORDER_STATUS_COMPLETED && $order->order_status != ORDER_STATUS_CANCELLED && ! $isDispatched)
                                                         <button type="button"
                                                                 class="inv-btn inv-btn--cancel po-cancel-btn"
                                                                 data-order-id="{{ $order->id }}"
@@ -473,6 +480,7 @@
 
         .inv-badge--order-completed { background:#E1F5EE; color:#0F6E56; }
         .inv-badge--order-pending   { background:#EEF2FF; color:#3730A3; border:0.5px solid #C7D2FE; }
+        .inv-badge--transit         { background:#E6F1FB; color:#185FA5; border:0.5px solid #B8D4F0; }
         .inv-badge--order-cancelled { background:#FDECEC; color:#6b7280; border:0.5px solid #e5e7eb; }
 
         .inv-filter-tabs { display:flex; background:#f3f4f6; border-radius:8px; padding:3px; gap:2px; }
@@ -783,6 +791,7 @@
         const CANCELLED = '{{ PRODUCT_ORDER_STATUS_CANCELLED }}';
         const INREFUND = '{{ PRODUCT_ORDER_STATUS_REFUND_PENDING }}';
         const ORDER_COMPLETED = '{{ ORDER_STATUS_COMPLETED }}';
+        const FULFIL_DISPATCHED = '{{ FULFILMENT_DISPATCHED }}';
  
         let currentCancelUrl = '';
  
@@ -836,6 +845,9 @@
             } else if (String(data.orderStatus) === CANCELLED) {
                 orderBadge.className = 'po-modal__status-badge inv-badge inv-badge--cancelled';
                 orderBadge.innerHTML = checkIcon() + '{{ __("Cancelled") }}';
+            } else if (String(data.fulfilmentStatus) === FULFIL_DISPATCHED) {
+                orderBadge.className = 'po-modal__status-badge inv-badge inv-badge--transit';
+                orderBadge.innerHTML = truckIcon() + '{{ __("On the way") }}';
             } else {
                 orderBadge.className = 'po-modal__status-badge inv-badge inv-badge--order-pending';
                 orderBadge.innerHTML = clockIcon() + '{{ __("Processing") }}';
@@ -875,6 +887,7 @@
                 date          : btn.dataset.date,
                 paymentStatus : btn.dataset.paymentStatus,
                 orderStatus   : btn.dataset.orderStatus,
+                fulfilmentStatus : btn.dataset.fulfilmentStatus,
                 image         : btn.dataset.image || '',
                 itemCount     : btn.dataset.itemCount || 1,
                 gateway       : btn.dataset.gateway || '—',
@@ -896,6 +909,7 @@
         function checkIcon() { return '<svg width="9" height="9" viewBox="0 0 16 16" fill="none" style="margin-right:3px"><path d="M3 8l4 4 6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>'; }
         function crossIcon() { return '<svg width="9" height="9" viewBox="0 0 16 16" fill="none" style="margin-right:3px"><path d="M4 4l8 8M12 4l-8 8" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>'; }
         function clockIcon() { return '<svg width="9" height="9" viewBox="0 0 16 16" fill="none" style="margin-right:3px"><circle cx="8" cy="8" r="5.5" stroke="currentColor" stroke-width="1.6"/><path d="M8 5v3.5l2 1.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>'; }
+        function truckIcon() { return '<svg width="9" height="9" viewBox="0 0 16 16" fill="none" style="margin-right:3px"><path d="M1 4h9v7H1zM10 6h3l2 2v3h-5" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/><circle cx="4" cy="12.5" r="1.4" stroke="currentColor" stroke-width="1.2"/><circle cx="12" cy="12.5" r="1.4" stroke="currentColor" stroke-width="1.2"/></svg>'; }
     })();
     </script>
 @endpush

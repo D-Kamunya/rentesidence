@@ -67,13 +67,26 @@ class InfraBillPaymentService
             return ['success' => false, 'message' => 'We could not start the payment — please contact support.', 'reference' => null];
         }
 
-        return app(MpesaStkService::class)->push(
+        $result = app(MpesaStkService::class)->push(
             $phone,
             (float) $out['total'],
             $account,
             'Module infrastructure bill',
             route('centresidence.infra-bill.callback', ['owner' => $ownerUserId])
         );
+
+        // Bind this push to its callback so a crafted callback can't clear the owner's
+        // infra debt (and lift the readonly gate) without a real payment.
+        if (($result['success'] ?? false) && ! empty($result['reference'])) {
+            \App\Centresidence\Models\StkPending::record(
+                'infra_bill',
+                $result['reference'],
+                ['owner_user_id' => $ownerUserId],
+                (float) $out['total']
+            );
+        }
+
+        return $result;
     }
 
     /**

@@ -61,6 +61,7 @@ class RentSettlementService
         $facilities = FinanceFacility::query()
             ->where('property_id', $propertyId)
             ->where('status', FinanceFacility::STATUS_ACTIVE)
+            ->disbursed() // never repay a facility whose funds were never released
             ->get();
 
         if ($fallbackInvoices->isEmpty() && $infraInvoices->isEmpty() && $facilities->isEmpty()) {
@@ -95,7 +96,7 @@ class RentSettlementService
                 $this->applyFacilityRepayment($fp, $rentTxnId, $method);
             }
 
-            $this->decrementOwnerWallet($ownerId, $plan['total_deducted']);
+            $this->decrementOwnerWallet($ownerId, $plan['total_deducted'], $rentTxnId);
 
             RentCollected::dispatch($ownerId, $plan['rent']->toDecimal(), $plan['total_deducted']->toDecimal(), $rentTxnId);
 
@@ -314,7 +315,7 @@ class RentSettlementService
         return $remaining->isPositive() ? $remaining : Money::zero();
     }
 
-    private function decrementOwnerWallet(int $ownerId, Money $amount): void
+    private function decrementOwnerWallet(int $ownerId, Money $amount, ?int $rentTxnId = null): void
     {
         // Live integration: the owner's rent net was credited to their wallet by
         // the existing rent flow; reduce it by what Centresidence deducted.
@@ -322,8 +323,21 @@ class RentSettlementService
             return;
         }
 
-        DB::table('owner_wallets')
-            ->where('user_id', $ownerId)
-            ->decrement('balance', (float) $amount->toDecimal());
+        $wallet = \App\Models\OwnerWallet::forUser($ownerId);
+        $wallet->decrement('balance', (float) $amount->toDecimal());
+
+        // Fold the deduction into the SINGLE rent payment ledger line rather than a
+        // separate debit row (which would read as a withdrawal and double the entry
+        // for one payment event). The payment credit's net_amount drops by what was
+        // deducted, so net = gross − commission − deductions and the balance stays
+        // reconciled (balance = Σ net_amount). The modal itemises the deductions from
+        // the settlement transactions (gross − commission − net = total deducted).
+        if ($rentTxnId && Schema::hasTable('wallet_transactions')) {
+            \App\Models\WalletTransaction::where('owner_wallet_id', $wallet->id)
+                ->where('invoice_order_id', $rentTxnId)
+                ->where('type', 'credit')
+                ->where('transaction_source', 'rent')
+                ->decrement('net_amount', (float) $amount->toDecimal());
+        }
     }
 }

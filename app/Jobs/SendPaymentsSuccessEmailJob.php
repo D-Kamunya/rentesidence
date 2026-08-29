@@ -68,8 +68,20 @@ class SendPaymentsSuccessEmailJob implements ShouldQueue
         }  elseif ($this->paymentType == 'ProductOrder') {
                 $mailService->sendProductOrderSuccessMail(
                     $this->order->user_id, $this->emails, $this->subject,
-                    $this->message, $this->title, $this->method, 
+                    $this->message, $this->title, $this->method,
                     $this->status, $this->amount
+                );
+            } elseif ($this->paymentType == 'RentPayment') {
+                // Rent receipt email (mirrors the product order success email). Pull the
+                // invoice for the receipt fields; the M-Pesa code lives on the order.
+                $invoice = $this->order->invoice ?? \App\Models\Invoice::find($this->order->invoice_id);
+                $mailService->sendRentPaymentSuccessMail(
+                    $this->order->user_id, $this->emails, $this->subject,
+                    $this->message, $this->title, $this->method,
+                    $this->status, $this->amount,
+                    $invoice?->invoice_no,
+                    $invoice?->month,
+                    $this->order->mpesa_transaction_code
                 );
             }
     }

@@ -198,6 +198,17 @@
         border-bottom: 0.5px solid var(--gray-200);
     }
 
+    /* ---- Rent read-only note (points owners to All Units) ---- */
+    .ten-rent-note {
+        display: flex; align-items: flex-start; gap: 8px;
+        background: #E6F1FB; border: 0.5px solid #B5D4F4; border-radius: 8px;
+        padding: 10px 12px; margin-bottom: 18px;
+        font-size: 12.5px; color: #0C447C; line-height: 1.5;
+    }
+    .ten-rent-note i { font-size: 15px; flex-shrink: 0; margin-top: 1px; color: #185FA5; }
+    .ten-rent-note a { color: #185FA5; font-weight: 600; text-decoration: none; }
+    .ten-rent-note a:hover { text-decoration: underline; }
+
     /* ---- Avatar upload ---- */
     .ten-avatar-upload {
         display: flex;
@@ -722,9 +733,13 @@
                                         <div class="col-md-6">
                                             <div class="ten-field">
                                                 <label class="ten-label">{{ __('Password') }}</label>
-                                                <input type="password" name="password" class="ten-input form-control" placeholder="{{ __('Password') }}">
+                                                <div style="padding:11px 12px;border:0.5px solid #d7e3f2;background:#F5F9FD;border-radius:8px;font-size:12px;color:#0C447C;line-height:1.45;display:flex;gap:7px;align-items:flex-start;">
+                                                    <i class="ri-shield-keyhole-line" style="margin-top:1px;"></i>
+                                                    <span>{{ __('Managed by the tenant. To reset it, use "Resend Login" on their profile — a new password is generated and sent by email & SMS.') }}</span>
+                                                </div>
                                             </div>
                                         </div>
+                                        {{-- Password is never edited inline anymore: a blank submit leaves it untouched, and resets go through Resend Login. --}}
                                     </div>
                                 </div>
 
@@ -816,43 +831,10 @@
 
                     <!-- ====== FIELDSET 2: Screening & Home Details ====== -->
                     <fieldset>
-                        <!-- Tenant Screening (outside form, inside fieldset) -->
+                        <!-- Tenant Screening — cross-network objective lookup (Global Tenant ID) -->
                         <div class="ten-screening-section">
                             <div class="ten-section-title">{{ __('Tenant Screening') }}</div>
-                            @if(isset($tenant) && ($tenant->rent_payment_rating || $tenant->discipline_rating))
-                                <div class="ten-screening-row">
-                                    <span><strong>{{ __('Rent Payment Rating') }}:</strong></span>
-                                    <span>{{ $tenant->rent_payment_rating }}</span>
-                                    @if((int) $tenant->rent_payment_rating[0] >= 4)
-                                        <span class="ten-rating-badge good"><i class="ri-check-line"></i> Good</span>
-                                    @elseif((int) $tenant->rent_payment_rating[0] < 3)
-                                        <span class="ten-rating-badge warn"><i class="ri-alert-line"></i> Low</span>
-                                    @endif
-                                </div>
-                                <div class="ten-screening-row">
-                                    <span><strong>{{ __('Discipline Rating') }}:</strong></span>
-                                    <span>{{ $tenant->discipline_rating }}</span>
-                                    @if((int) $tenant->discipline_rating[0] >= 4)
-                                        <span class="ten-rating-badge good"><i class="ri-check-line"></i> Good</span>
-                                    @elseif((int) $tenant->discipline_rating[0] < 3)
-                                        <span class="ten-rating-badge warn"><i class="ri-alert-line"></i> Low</span>
-                                    @endif
-                                </div>
-                                @if((int) $tenant->rent_payment_rating[0] >= 4 || (int) $tenant->discipline_rating[0] >= 4)
-                                    <div class="ten-screening-alert positive">
-                                        <i class="ri-shield-check-line"></i>
-                                        <span><strong>Positive:</strong> This tenant is rated above average.</span>
-                                    </div>
-                                @endif
-                                @if((int) $tenant->rent_payment_rating[0] < 3 || (int) $tenant->discipline_rating[0] < 3)
-                                    <div class="ten-screening-alert caution">
-                                        <i class="ri-error-warning-line"></i>
-                                        <span><strong>Caution:</strong> This tenant is rated below average. Proceed with caution.</span>
-                                    </div>
-                                @endif
-                            @else
-                                <p class="ten-screening-none">There are no previous ratings available for this tenant. You may proceed with the unit allocation below.</p>
-                            @endif
+                            @include('owner.screening.partials.screen-modal', ['scmContext' => 'edit'])
                         </div>
 
                         <form class="ajax" action="{{ route('owner.tenant.store') }}" method="POST" data-handler="stepChange">
@@ -947,6 +929,12 @@
                                 <!-- Rent Information -->
                                 <div class="ten-inner-card">
                                     <div class="ten-inner-title">{{ __('Rent Information') }}</div>
+                                    <div class="ten-rent-note">
+                                        <i class="ri-information-line"></i>
+                                        <span>{{ __('Rent, deposit, late fee and due date are set per unit and are read-only here. To change a unit\'s rent, edit the unit on the') }}
+                                            <a href="{{ route('owner.property.allUnit') }}">{{ __('All Units') }}</a>
+                                            {{ __('page — updates apply everywhere automatically.') }}</span>
+                                    </div>
                                     <div class="row">
                                         <div class="col-md-6 col-lg-4 col-xl-3 col-xxl-2">
                                             <div class="ten-field">
@@ -988,7 +976,7 @@
                                                 <input type="number" step="any" class="ten-input form-control" id="incident_receipt" placeholder="{{ __('Incident Receipt') }}" value="{{ $tenant->incident_receipt }}" name="incident_receipt" readonly>
                                             </div>
                                         </div>
-                                        <div class="col-md-6 col-lg-4">
+                                        <div class="col-md-6 col-lg-4 col-xl-3 col-xxl-2">
                                             <div class="ten-field">
                                                 <label class="ten-label">{{ __('Payment Due On Date') }}</label>
                                                 <input type="number" class="ten-input form-control" autocomplete="off" id="payment_due_on_date" placeholder="{{ __('Due Date') }}" value="{{ $tenant->due_date }}" name="due_date" readonly>

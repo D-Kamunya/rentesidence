@@ -51,7 +51,7 @@ class RepaymentPacingTest extends CentresidenceDatabaseTestCase
             'outstanding_principal' => 50000, 'outstanding_interest' => 0, 'outstanding_penalty' => 0,
             'total_repayable' => 50000, 'deduction_percentage' => 20, 'monthly_target' => 5000,
             'repayment_months' => 12, 'accelerated_repayment' => $accelerated,
-            'status' => FinanceFacility::STATUS_ACTIVE,
+            'status' => FinanceFacility::STATUS_ACTIVE, 'disbursement_status' => FinanceFacility::DISBURSE_DONE,
         ]);
     }
 

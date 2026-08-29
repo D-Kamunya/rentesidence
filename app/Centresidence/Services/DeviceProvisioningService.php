@@ -223,12 +223,12 @@ class DeviceProvisioningService
 
         for ($i = $existing; $i < $quantity; $i++) {
             $device = $propertyModule->devices()->create([
-                'name'         => $module->name . ' Unit ' . ($i + 1),
-                'gateway_id'   => $gateway?->id,
-                'dev_eui'      => $this->placeholderEui('DEV'),
-                'status'       => Device::STATUS_PROVISIONING,
-                'is_simulated' => $autoActivate,
-                'metadata'     => ['unit_id' => $unitIds[$i] ?? null],
+                'name'             => $module->name . ' Unit ' . ($i + 1),
+                'gateway_id'       => $gateway?->id,
+                'dev_eui'          => $this->placeholderEui('DEV'),
+                'status'           => Device::STATUS_PROVISIONING,
+                'is_simulated'     => $autoActivate,
+                'property_unit_id' => $unitIds[$i] ?? null, // authoritative device→unit link (drives wallet attribution)
             ]);
 
             $this->chirpstack->registerDevice($device);

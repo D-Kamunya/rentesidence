@@ -37,15 +37,20 @@ class ReminderSubscription extends Command
     {
         try {
             if (getOption('subscription_remainder_status', 0) != SUBSCRIPTION_REMAINDER_STATUS_ACTIVE && getOption('SUBSCRIPTION_OVERDUE_REMAINDER_STATUS', 0) != SUBSCRIPTION_REMAINDER_STATUS_ACTIVE) {
-                throw new Exception('Subscription Remainder status inactive');
+                throw new Exception('Subscription Reminder status inactive');
             }
             $mailService = new MailService;
+            // Only owners on a SUBSCRIPTION package have something to renew. Free and
+            // transaction owners (transaction infra is charged from the rent flow, not a
+            // recurring subscription) must NOT get "your subscription is expiring / renew"
+            // reminders. Matches the canonical filter in SubscriptionService / OwnerBillingStandingService.
             $subscriptions = OwnerPackage::whereIn('id', function($q) {
                             $q->selectRaw('MAX(id)')
                             ->from('owner_packages')
                             ->whereIn('status', [ACTIVE])
                             ->groupBy('user_id');
                         })
+                        ->where('pricing_model', 'subscription')
                         ->get();
 
             $sendEveryday = getOption('subscription_remainder_everyday_status') == SUBSCRIPTION_REMAINDER_EVERYDAY_STATUS_ACTIVE;
@@ -72,25 +77,36 @@ class ReminderSubscription extends Command
                 }
             }
         } catch (Exception $e) {
-            Log::info('Auto Subscription remainder error: ' . $e->getMessage());
+            Log::info('Auto Subscription reminder error: ' . $e->getMessage());
         }
     }
 
     private function sendReminder($mailService, $subscription, $expired=false)
     {
+        $when     = Carbon::parse($subscription->end_date)->diffForHumans();
+        $renewUrl = route('owner.subscription.index', ['current_plan' => 'no']);
+
         $emailData = (object) [
-            'subject'   => $expired ? __('Subscription remainder') . ' ' . $subscription->name . ' ' . __('expired ') . ' ' . Carbon::parse($subscription->end_date)->diffForHumans() :  __('Subscription remainder') . ' ' . $subscription->name . ' ' . __('expiring in') . ' ' . Carbon::parse($subscription->end_date)->diffForHumans(),
-            'title'     => __('Subscription remainder!'),
-            'message'   => $expired ? __('Your subscription expired ' . Carbon::parse($subscription->end_date)->diffForHumans()): __('Your subscription is about to expire in ') . Carbon::parse($subscription->end_date)->diffForHumans(),
+            'subject'   => $expired
+                ? __('Your :name subscription has expired', ['name' => $subscription->name])
+                : __('Your :name subscription is expiring soon', ['name' => $subscription->name]),
+            'title'     => __('Subscription reminder'),
+            'message'   => $expired
+                ? __('Your subscription expired :when.', ['when' => $when])
+                : __('Your subscription expires :when.', ['when' => $when]),
         ];
         $notificationData = (object) [
-            'title'   => __('Subscription remainder!'),
-            'body'     => $expired ? __('Subscription remainder') . ' ' . $subscription->name . ' ' . __('expired ') . ' ' . Carbon::parse($subscription->end_date)->diffForHumans() :  __('Subscription remainder') . ' ' . $subscription->name . ' ' . __('expiring in') . ' ' . Carbon::parse($subscription->end_date)->diffForHumans(),
-            'url'     => route('owner.subscription.index')
+            'title'   => __('Subscription reminder'),
+            'body'    => $expired
+                ? __('Your :name subscription expired :when.', ['name' => $subscription->name, 'when' => $when])
+                : __('Your :name subscription expires :when.', ['name' => $subscription->name, 'when' => $when]),
+            'url'     => route('owner.subscription.index'),
         ];
         SendSubscriptionReminderJob::dispatch($subscription,$emailData,$notificationData);
-        $message = $expired ? __($subscription->name.' Subscription expired ' . Carbon::parse($subscription->end_date)->diffForHumans().'. Renew Subscription: ').route('owner.subscription.index', ['current_plan' => 'no']):
-        __($subscription->name.' Subscription expiring in' . ' ' . Carbon::parse($subscription->end_date)->diffForHumans().'. Renew Subscription: ').route('owner.subscription.index', ['current_plan' => 'no']) ;
+
+        $message = $expired
+            ? __('Your :name subscription expired :when. Renew: :url', ['name' => $subscription->name, 'when' => $when, 'url' => $renewUrl])
+            : __('Your :name subscription expires :when. Renew: :url', ['name' => $subscription->name, 'when' => $when, 'url' => $renewUrl]);
         SendSmsJob::dispatch([$subscription->owner->contact_number], $message, $subscription->user_id);
     }
 }

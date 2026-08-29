@@ -26,6 +26,17 @@ class DashboardController extends Controller
         $this->svc = $svc;
     }
 
+    /** Affiliate notifications page — marks all seen, then lists them. */
+    public function notification()
+    {
+        \App\Models\Notification::where('user_id', auth()->id())->update(['is_seen' => ACTIVE]);
+
+        return view('affiliate.notification', [
+            'pageTitle'     => __('Notifications'),
+            'notifications' => getNotification(auth()->id()),
+        ]);
+    }
+
     public function dashboard(Request $request)
     {
         $user = auth()->user();

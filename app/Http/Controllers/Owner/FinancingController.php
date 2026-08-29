@@ -137,23 +137,33 @@ class FinancingController extends Controller
             $orders = \App\Models\Order::with('invoice.propertyUnit.property')
                 ->whereIn('id', $byOrder->keys())->get()->keyBy('id');
 
-            $rows = $byOrder->map(function ($txns, $orderId) use ($orders) {
+            // The platform commission (transaction-mode 1%) is booked separately by
+            // CommissionService on the rent credit — pull it per order so the owner
+            // sees the FULL deduction picture and a correct net.
+            $platformFees = \App\Models\WalletTransaction::whereIn('invoice_order_id', $byOrder->keys())
+                ->where('type', 'credit')->where('transaction_source', 'rent')
+                ->get()->groupBy('invoice_order_id')
+                ->map(fn ($g) => (float) $g->sum('commission_amount'));
+
+            $rows = $byOrder->map(function ($txns, $orderId) use ($orders, $platformFees) {
                 $order = $orders->get($orderId);
+                $platformFee = (float) ($platformFees[$orderId] ?? 0);
                 $commission = (float) $txns->where('transaction_type', 'commission_recovery')->sum('amount');
                 $infra = (float) $txns->where('transaction_type', 'infrastructure_recovery')->sum('amount');
                 $facility = (float) $txns->whereIn('transaction_type', ['rent_deduction_principal', 'rent_deduction_interest', 'rent_deduction_penalty'])->sum('amount');
-                $deducted = (float) $txns->sum('amount');
+                $deducted = (float) $txns->sum('amount') + $platformFee;
                 $gross = (float) ($order->amount ?? 0);
 
                 return [
-                    'date'       => $txns->max('created_at'),
-                    'property'   => optional(optional(optional($order)->invoice)->propertyUnit)->property,
-                    'gross'      => $gross,
-                    'commission' => $commission,
-                    'infra'      => $infra,
-                    'facility'   => $facility,
-                    'deducted'   => $deducted,
-                    'net'        => $gross > 0 ? $gross - $deducted : null,
+                    'date'         => $txns->max('created_at'),
+                    'property'     => optional(optional(optional($order)->invoice)->propertyUnit)->property,
+                    'gross'        => $gross,
+                    'platform_fee' => $platformFee,
+                    'commission'   => $commission,
+                    'infra'        => $infra,
+                    'facility'     => $facility,
+                    'deducted'     => $deducted,
+                    'net'          => $gross > 0 ? $gross - $deducted : null,
                 ];
             })->sortByDesc('date')->values();
         }
@@ -286,9 +296,22 @@ class FinancingController extends Controller
         if ($this->migrated()) {
             $applications = FinanceApplication::with('partner', 'module')
                 ->where('owner_id', auth()->id())->latest()->get();
-            $facilities = FinanceFacility::with('partner', 'property')
+            $facilities = FinanceFacility::with('partner', 'property', 'application.partnerModule')
                 ->where('owner_id', auth()->id())->latest()->get()
-                ->each(fn (FinanceFacility $f) => $f->payoff = $interest->earlySettlementQuote($f)['total']->toDecimal());
+                ->each(function (FinanceFacility $f) use ($interest) {
+                    $q = $interest->earlySettlementQuote($f);
+                    $f->payoff           = $q['total']->toDecimal();
+                    $f->payoff_principal = $q['principal']->toDecimal();
+                    $f->payoff_interest  = $q['interest']->toDecimal();
+                    $f->payoff_penalty   = $q['penalty']->toDecimal();
+                    $f->payoff_fee       = $q['fee']->toDecimal();
+                    // Partner's early-settlement policy — surfaced so we never show
+                    // a settle button the financier disallows, and the fee is honest.
+                    $pm = $f->application?->partnerModule;
+                    $f->early_repayment_allowed = $pm ? ($pm->early_repayment_allowed !== false) : true;
+                    $f->early_repayment_fee_pct = $pm ? (float) $pm->early_repayment_penalty_percentage : 0.0;
+                    $f->accelerated_repayment_allowed = $pm ? ($pm->accelerated_repayment_allowed !== false) : true;
+                });
             $selfFinanced = SelfFinancedModule::with('module', 'property')
                 ->where('owner_id', auth()->id())->latest()->get();
         }
@@ -364,7 +387,11 @@ class FinancingController extends Controller
     public function accelerate(int $facilityId, FinanceFacilityService $facilities)
     {
         $facility = FinanceFacility::where('owner_id', auth()->id())->findOrFail($facilityId);
-        $facilities->setAccelerated($facility, ! $facility->accelerated_repayment);
+        try {
+            $facilities->setAccelerated($facility, ! $facility->accelerated_repayment);
+        } catch (\RuntimeException $e) {
+            return back()->with('error', __('Your financier does not offer accelerated repayment on this facility.'));
+        }
 
         return back()->with('success', $facility->fresh()->accelerated_repayment
             ? __('Accelerated repayment enabled.')
@@ -372,16 +399,23 @@ class FinancingController extends Controller
     }
 
     /** Settle a facility early. */
-    public function settleEarly(int $facilityId, FinanceFacilityService $facilities)
+    public function settleEarly(Request $request, int $facilityId, FinanceFacilityService $facilities)
     {
         $facility = FinanceFacility::where('owner_id', auth()->id())->findOrFail($facilityId);
+        $channel = $request->input('channel') === 'manual' ? 'manual' : 'mpesa';
 
         try {
-            $result = $facilities->settleEarly($facility);
+            $result = $facilities->initiateEarlySettlement($facility, $channel, $request->input('reference'));
         } catch (\RuntimeException $e) {
             return back()->with('error', __('Early settlement is not available on this facility.'));
         }
 
-        return back()->with('success', __('Facility settled early. Total paid: KES ') . number_format((float) $result['total'], 2));
+        if (($result['status'] ?? '') === 'settled') {
+            return back()->with('success', __('Facility settled. Total paid: KES ') . number_format((float) $result['total'], 2));
+        }
+
+        return back()->with('success', $channel === 'manual'
+            ? __('Recorded. Once the financier confirms your payment of KES :amt, the facility is closed.', ['amt' => number_format((float) $result['total'], 2)])
+            : __('Check your phone to authorise the M-Pesa payoff of KES :amt.', ['amt' => number_format((float) $result['total'], 2)]));
     }
 }

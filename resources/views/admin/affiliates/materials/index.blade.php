@@ -225,7 +225,7 @@
                                                     Edit
                                                 </a>
                                                 <form method="POST" action="{{ route('admin.materials.destroy', $m->id) }}" style="display:inline;"
-                                                      onsubmit="return confirm('Delete \'{{ addslashes($m->title) }}\'? This will detach it from all templates.')">
+                                                      data-cs-confirm="Delete '{{ $m->title }}'? This will detach it from all templates." data-cs-confirm-tone="danger" data-cs-confirm-ok="Delete">
                                                     @csrf @method('DELETE')
                                                     <button type="submit" class="at-action-btn at-action-btn--delete">
                                                         <svg width="12" height="12" viewBox="0 0 16 16" fill="none">

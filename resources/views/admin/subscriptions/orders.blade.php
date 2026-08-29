@@ -4,7 +4,9 @@
     <div class="main-content">
         <div class="page-content">
             <div class="container-fluid">
-                <div class="page-content-wrapper bg-white p-30 radius-20">
+                <div class="page-content-wrapper bg-white p-30 radius-20 cs-controls">
+                    @include('centresidence._design')
+
                     <div class="row">
                         <div class="col-12">
                             <div
@@ -24,7 +26,7 @@
                     </div>
 
                     <div class="row">
-                        <div class="billing-center-area bg-off-white theme-border radius-4 p-25">
+                        <div class="billing-center-area cs-card cs-card--pad">
                             <div class="tbl-tab-wrap border-bottom pb-25 mb-25">
                                 <ul class="nav nav-tabs billing-center-nav-tabs" id="myTab" role="tablist">
                                     <li class="nav-item" role="presentation">
@@ -174,7 +176,7 @@
     </div>
     {{-- modal  --}}
 
-    <div class="modal fade" id="payStatusChangeModal" tabindex="-1" aria-labelledby="payStatusChangeModalLabel"
+    <div class="modal fade cs-modal" id="payStatusChangeModal" tabindex="-1" aria-labelledby="payStatusChangeModalLabel"
         aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered modal-sm">
             <div class="modal-content">
@@ -218,7 +220,7 @@
         </div>
     </div>
 
-    <div class="modal fade" id="previewModal" tabindex="-1" aria-labelledby="previewModalLabel" aria-hidden="true">
+    <div class="modal fade cs-modal" id="previewModal" tabindex="-1" aria-labelledby="previewModalLabel" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content">
                 <div class="modal-header">

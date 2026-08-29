@@ -1,181 +1,101 @@
 <div class="col-md-12 col-lg-12 col-xl-4 col-xxl-3">
-    <div class="account-settings-leftside bg-white theme-border radius-4 p-20 mb-25">
-        <div class="tenants-details-leftsidebar-wrap d-flex">
-            <ul class="account-settings-menu list-group">
-                <li>
-                    <a href="{{ route('admin.setting.general-setting') }}"
-                        class="account-settings-menu-item {{ @$subGeneralSettingActiveClass }}">
-                        <span class="iconify" data-icon="carbon:settings"></span>{{ __('Basic Setting') }}
-                    </a>
-                </li>
-                <li>
-                    <a href="{{ route('admin.setting.color-setting') }}"
-                        class="account-settings-menu-item {{ @$subColorSettingActiveClass }}">
-                        <span class="iconify"
-                            data-icon="fluent:color-background-24-regular"></span>{{ __('Color Setting') }}
-                    </a>
-                </li>
-                <li>
-                    <a href="{{ route('admin.language.index') }}"
-                        class="account-settings-menu-item {{ @$subLanguageActiveClass }}">
-                        <span class="iconify" data-icon="clarity:language-line"></span>{{ __('Language') }}
-                    </a>
-                </li>
-                <li>
-                    <a href="{{ route('admin.setting.currency.index') }}"
-                        class="account-settings-menu-item {{ @$subCurrencyActiveClass }}">
-                        <span class="iconify" data-icon="heroicons:currency-dollar"></span>{{ __('Currency') }}
-                    </a>
-                </li>
-                @if (isAddonInstalled('PROTYSAAS') > 1)
-                    <li>
-                        <a href="{{ route('admin.setting.gateway.index') }}"
-                            class="account-settings-menu-item {{ @$subGatewaySettingActiveClass }}">
-                            <span class="iconify"
-                                data-icon="fluent:payment-16-regular"></span>{{ __('Payment Gateway') }}
-                        </a>
-                    </li>
-                    <li>
-                        <a href="{{ route('admin.setting.marketplaceaccounts.setting') }}"
-                            class="account-settings-menu-item {{ @$subMarketplaceAccountsSettingActiveClass }}">
-                            <span class="iconify" data-icon="mdi:account-cog-outline"></span>{{ __('Marketplace, Subs & SMS Accounts') }}
-                        </a>
-                    </li>
-                    <li>
-                        <a href="{{ route('admin.setting.rentaccounts.setting') }}"
-                            class="account-settings-menu-item {{ @$subRentAccountSettingActiveClass }}">
-                            <span class="iconify" data-icon="mdi:account-cog-outline"></span>{{ __('Rent Accounts') }}
-                        </a>
-                    </li>
-                    <li>
-                        <a href="{{ route('admin.setting.frontend.setting') }}"
-                            class="account-settings-menu-item {{ @$subFrontendSettingActiveClass }}">
-                            <span class="iconify"
-                                data-icon="icon-park-outline:setting-laptop"></span>{{ __('Frontend Setting') }}
-                        </a>
-                    </li>
-                @endif
-                <li>
-                    <a href="{{ route('admin.setting.affiliate.setting') }}"
-                        class="account-settings-menu-item {{ @$subAffiliateSettingActiveClass }}">
-                        <span class="iconify"
-                            data-icon="fluent:payment-16-regular"></span>{{ __('Affiliate Commissions') }}
-                    </a>
-                </li>
-                <li>
-                    <a href="{{ route('admin.setting.smtp.setting') }}"
-                        class="account-settings-menu-item {{ @$subSmtpSettingActiveClass }}">
-                        <span class="iconify" data-icon="mdi:git-issue"></span>{{ __('SMTP Setting') }}
-                    </a>
-                </li>
-                <li>
-                    <a href="{{ route('admin.setting.recaptcha.setting') }}"
-                        class="account-settings-menu-item {{ @$subRecaptchaSettingActiveClass }}">
-                        <span class="iconify" data-icon="logos:recaptcha"></span>{{ __('reCaptcha Setting') }}
-                    </a>
-                </li>
-                @if (isAddonInstalled('PROTYSMS', 0) > 0)
-                    <li>
-                        <a href="{{ route('admin.setting.sms.setting') }}"
-                            class="account-settings-menu-item {{ @$subSmsSettingActiveClass }}">
-                            <span class="iconify"
-                                data-icon="icon-park-outline:setting-web"></span>{{ __('Sms/Mail Setting') }}
-                        </a>
-                    </li>
-                    <li>
-                        <a href="{{ route('admin.setting.reminder.setting') }}"
-                            class="account-settings-menu-item {{ @$subReminderSettingActiveClass }}">
-                            <span class="iconify" data-icon="carbon:reminder"></span>{{ __('Invoice Reminder Setting') }}
-                        </a>
-                    </li>
-                    <li>
-                        <a href="{{ route('admin.setting.subscription.reminder.setting') }}"
-                            class="account-settings-menu-item {{ @$subSubscriptionReminderSettingActiveClass }}">
-                            <span class="iconify" data-icon="carbon:reminder"></span>{{ __('Subscriptions Reminder Setting') }}
-                        </a>
-                    </li>
-                @endif
-                @if (isAddonInstalled('PROTYAGREEMENT', 0) > 0)
-                    <li>
-                        <a href="{{ route('admin.setting.agreement.setting') }}"
-                            class="account-settings-menu-item {{ @$subAgreementSettingActiveClass }}">
-                            <span class="iconify"
-                                data-icon="icon-park-outline:agreement"></span>{{ __('Agreement Setting') }}
-                        </a>
-                    </li>
-                @endif
-                @if (isAddonInstalled('PROTYTENANCY', 0) > 0)
-                    <li>
-                        <a href="{{ route('admin.setting.tenancy.setting') }}"
-                            class="account-settings-menu-item {{ @$subTenancySettingActiveClass }}">
-                            <span class="iconify"
-                                data-icon="material-symbols:tenancy-outline"></span>{{ __('Tenancy Setting') }}
-                        </a>
-                    </li>
-                @endif
-                @if (isAddonInstalled('PROTYLISTING', 0) > 0)
-                    <li>
-                        <a href="{{ route('admin.setting.listing.setting') }}"
-                            class="account-settings-menu-item {{ @$subListingSettingActiveClass }}">
-                            <span class="iconify" data-icon="ri:threads-fill"></span>{{ __('Listing Setting') }}
-                        </a>
-                    </li>
-                    <li>
-                        <a href="{{ route('admin.setting.map-box.setting') }}"
-                            class="account-settings-menu-item {{ @$subMapBoxSettingActiveClass }}">
-                            <span class="iconify" data-icon="bx:map"></span>{{ __('Mapbox Setting') }}
-                        </a>
-                    </li>
-                @endif
-                <li>
-                    <a href="{{ route('admin.setting.cron.setting') }}"
-                        class="account-settings-menu-item {{ @$subCronSettingActiveClass }}">
-                        <span class="iconify" data-icon="carbon:batch-job"></span>{{ __('Cron Setting') }}
-                    </a>
-                </li>
-                @if (isAddonInstalled('PROTYSAAS') > 1)
-                    <li class="mt-25">
-                        <b>{{ __('Landing Page Setting') }}</b>
-                    </li>
-                    <li>
-                        <a href="{{ route('admin.home-setting.section') }}"
-                            class="account-settings-menu-item {{ @$subHomeSectionSettingActiveClass }}">
-                            <span class="iconify" data-icon="carbon:settings"></span>{{ __('Section Show/Hide') }}
-                        </a>
-                    </li>
-                    <li>
-                        <a href="{{ route('admin.feature.index') }}"
-                            class="account-settings-menu-item {{ @$subFeatureActiveClass }}">
-                            <span class="iconify" data-icon="carbon:settings"></span>{{ __('Features') }}
-                        </a>
-                    </li>
-
-                    <li>
-                        <a href="{{ route('admin.how-it-work.index') }}"
-                            class="account-settings-menu-item {{ @$subHowItWorkActiveClass }}">
-                            <span class="iconify" data-icon="carbon:settings"></span>{{ __('How It Work') }}
-                        </a>
-                    </li>
-                    <li>
-                        <a href="{{ route('admin.core-page.index') }}"
-                            class="account-settings-menu-item {{ @$subCorePageActiveClass }}">
-                            <span class="iconify" data-icon="carbon:settings"></span>{{ __('Core Page') }}
-                        </a>
-                    </li>
-                    <li>
-                        <a href="{{ route('admin.testimonials.index') }}"
-                            class="account-settings-menu-item {{ @$subTestimonialsActiveClass }}">
-                            <span class="iconify" data-icon="carbon:settings"></span>{{ __('Testimonials') }}
-                        </a>
-                    </li>
-                    <li>
-                        <a href="{{ route('admin.faq.index') }}"
-                            class="account-settings-menu-item {{ @$subFaqActiveClass }}">
-                            <span class="iconify" data-icon="carbon:settings"></span>{{ __('Faq') }}
-                        </a>
-                    </li>
-                @endif
-            </ul>
-        </div>
+    <div class="cs-card stg-nav">
+        <a href="{{ route('admin.setting.general-setting') }}" class="stg-nav__item {{ @$subGeneralSettingActiveClass ? 'is-active' : '' }}">
+            <span class="iconify" data-icon="carbon:settings"></span><span>{{ __('Basic Setting') }}</span>
+        </a>
+        <a href="{{ route('admin.setting.color-setting') }}" class="stg-nav__item {{ @$subColorSettingActiveClass ? 'is-active' : '' }}">
+            <span class="iconify" data-icon="fluent:color-background-24-regular"></span><span>{{ __('Color Setting') }}</span>
+        </a>
+        <a href="{{ route('admin.language.index') }}" class="stg-nav__item {{ @$subLanguageActiveClass ? 'is-active' : '' }}">
+            <span class="iconify" data-icon="clarity:language-line"></span><span>{{ __('Language') }}</span>
+        </a>
+        <a href="{{ route('admin.setting.currency.index') }}" class="stg-nav__item {{ @$subCurrencyActiveClass ? 'is-active' : '' }}">
+            <span class="iconify" data-icon="heroicons:currency-dollar"></span><span>{{ __('Currency') }}</span>
+        </a>
+        @if (isAddonInstalled('PROTYSAAS') > 1)
+            <a href="{{ route('admin.setting.gateway.index') }}" class="stg-nav__item {{ @$subGatewaySettingActiveClass ? 'is-active' : '' }}">
+                <span class="iconify" data-icon="fluent:payment-16-regular"></span><span>{{ __('Payment Gateway') }}</span>
+            </a>
+            <a href="{{ route('admin.setting.marketplaceaccounts.setting') }}" class="stg-nav__item {{ @$subMarketplaceAccountsSettingActiveClass ? 'is-active' : '' }}">
+                <span class="iconify" data-icon="mdi:account-cog-outline"></span><span>{{ __('Marketplace, Subs & SMS Accounts') }}</span>
+            </a>
+            <a href="{{ route('admin.setting.rentaccounts.setting') }}" class="stg-nav__item {{ @$subRentAccountSettingActiveClass ? 'is-active' : '' }}">
+                <span class="iconify" data-icon="mdi:account-cog-outline"></span><span>{{ __('Rent & Disbursement Accounts') }}</span>
+            </a>
+            <a href="{{ route('admin.setting.frontend.setting') }}" class="stg-nav__item {{ @$subFrontendSettingActiveClass ? 'is-active' : '' }}">
+                <span class="iconify" data-icon="icon-park-outline:setting-laptop"></span><span>{{ __('Frontend Setting') }}</span>
+            </a>
+        @endif
+        <a href="{{ route('admin.setting.affiliate.setting') }}" class="stg-nav__item {{ @$subAffiliateSettingActiveClass ? 'is-active' : '' }}">
+            <span class="iconify" data-icon="fluent:payment-16-regular"></span><span>{{ __('Affiliate Commissions') }}</span>
+        </a>
+        <a href="{{ route('admin.setting.smtp.setting') }}" class="stg-nav__item {{ @$subSmtpSettingActiveClass ? 'is-active' : '' }}">
+            <span class="iconify" data-icon="mdi:git-issue"></span><span>{{ __('SMTP Setting') }}</span>
+        </a>
+        <a href="{{ route('admin.setting.recaptcha.setting') }}" class="stg-nav__item {{ @$subRecaptchaSettingActiveClass ? 'is-active' : '' }}">
+            <span class="iconify" data-icon="logos:recaptcha"></span><span>{{ __('reCaptcha Setting') }}</span>
+        </a>
+        @if (isAddonInstalled('PROTYSMS', 0) > 0)
+            <a href="{{ route('admin.setting.sms.setting') }}" class="stg-nav__item {{ @$subSmsSettingActiveClass ? 'is-active' : '' }}">
+                <span class="iconify" data-icon="icon-park-outline:setting-web"></span><span>{{ __('Sms/Mail Setting') }}</span>
+            </a>
+            <a href="{{ route('admin.setting.reminder.setting') }}" class="stg-nav__item {{ @$subReminderSettingActiveClass ? 'is-active' : '' }}">
+                <span class="iconify" data-icon="carbon:reminder"></span><span>{{ __('Invoice Reminder Setting') }}</span>
+            </a>
+            <a href="{{ route('admin.setting.subscription.reminder.setting') }}" class="stg-nav__item {{ @$subSubscriptionReminderSettingActiveClass ? 'is-active' : '' }}">
+                <span class="iconify" data-icon="carbon:reminder"></span><span>{{ __('Subscriptions Reminder Setting') }}</span>
+            </a>
+        @endif
+        @if (isAddonInstalled('PROTYTENANCY', 0) > 0)
+            <a href="{{ route('admin.setting.tenancy.setting') }}" class="stg-nav__item {{ @$subTenancySettingActiveClass ? 'is-active' : '' }}">
+                <span class="iconify" data-icon="material-symbols:tenancy-outline"></span><span>{{ __('Tenancy Setting') }}</span>
+            </a>
+        @endif
+        @if (isAddonInstalled('PROTYLISTING', 0) > 0)
+            <a href="{{ route('admin.setting.listing.setting') }}" class="stg-nav__item {{ @$subListingSettingActiveClass ? 'is-active' : '' }}">
+                <span class="iconify" data-icon="ri:threads-fill"></span><span>{{ __('Listing Setting') }}</span>
+            </a>
+            <a href="{{ route('admin.setting.map-box.setting') }}" class="stg-nav__item {{ @$subMapBoxSettingActiveClass ? 'is-active' : '' }}">
+                <span class="iconify" data-icon="bx:map"></span><span>{{ __('Mapbox Setting') }}</span>
+            </a>
+        @endif
+        <a href="{{ route('admin.setting.cron.setting') }}" class="stg-nav__item {{ @$subCronSettingActiveClass ? 'is-active' : '' }}">
+            <span class="iconify" data-icon="carbon:batch-job"></span><span>{{ __('Cron Setting') }}</span>
+        </a>
+        @if (isAddonInstalled('PROTYSAAS') > 1)
+            <div class="stg-nav__label">{{ __('Landing Page Setting') }}</div>
+            <a href="{{ route('admin.home-setting.section') }}" class="stg-nav__item {{ @$subHomeSectionSettingActiveClass ? 'is-active' : '' }}">
+                <span class="iconify" data-icon="carbon:settings"></span><span>{{ __('Section Show/Hide') }}</span>
+            </a>
+            <a href="{{ route('admin.feature.index') }}" class="stg-nav__item {{ @$subFeatureActiveClass ? 'is-active' : '' }}">
+                <span class="iconify" data-icon="carbon:settings"></span><span>{{ __('Features') }}</span>
+            </a>
+            <a href="{{ route('admin.how-it-work.index') }}" class="stg-nav__item {{ @$subHowItWorkActiveClass ? 'is-active' : '' }}">
+                <span class="iconify" data-icon="carbon:settings"></span><span>{{ __('How It Work') }}</span>
+            </a>
+            <a href="{{ route('admin.core-page.index') }}" class="stg-nav__item {{ @$subCorePageActiveClass ? 'is-active' : '' }}">
+                <span class="iconify" data-icon="carbon:settings"></span><span>{{ __('Core Page') }}</span>
+            </a>
+            <a href="{{ route('admin.testimonials.index') }}" class="stg-nav__item {{ @$subTestimonialsActiveClass ? 'is-active' : '' }}">
+                <span class="iconify" data-icon="carbon:settings"></span><span>{{ __('Testimonials') }}</span>
+            </a>
+            <a href="{{ route('admin.faq.index') }}" class="stg-nav__item {{ @$subFaqActiveClass ? 'is-active' : '' }}">
+                <span class="iconify" data-icon="carbon:settings"></span><span>{{ __('Faq') }}</span>
+            </a>
+        @endif
     </div>
 </div>
+
+<style>
+    .stg-nav { padding:8px; margin-bottom:18px; }
+    .stg-nav__item { display:flex; align-items:center; gap:10px; padding:10px 12px; border-radius:8px;
+        font-size:13px; font-weight:500; color:var(--gray-700); text-decoration:none; transition:all .13s; }
+    .stg-nav__item + .stg-nav__item { margin-top:2px; }
+    .stg-nav__item .iconify, .stg-nav__item i { font-size:17px; color:var(--gray-400); flex:none; }
+    .stg-nav__item:hover { background:var(--gray-50); color:var(--gray-900); }
+    .stg-nav__item:hover .iconify { color:var(--gray-700); }
+    .stg-nav__item.is-active { background:var(--blue-light); color:#0C447C; }
+    .stg-nav__item.is-active .iconify { color:var(--blue); }
+    .stg-nav__label { font-size:10px; font-weight:600; text-transform:uppercase; letter-spacing:.07em;
+        color:var(--gray-400); padding:14px 12px 6px; }
+</style>

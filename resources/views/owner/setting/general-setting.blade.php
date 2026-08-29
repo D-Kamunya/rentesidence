@@ -136,7 +136,7 @@
                                                                         {{ __('Active') }}</option>
                                                                     <option value="2"
                                                                         {{ getOption('app_preloader_status') != 1 ? 'selected' : '' }}>
-                                                                        {{ __('Deactivate') }}</option>
+                                                                        {{ __('Inactive') }}</option>
                                                                 </select>
                                                             </div>
                                                             <div class="col-md-12 mb-25">

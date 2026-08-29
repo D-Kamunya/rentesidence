@@ -223,7 +223,7 @@
                                     <a href="{{ route('admin.materials.index') }}" class="at-btn-ghost">Cancel</a>
                                 </div>
                                 <form method="POST" action="{{ route('admin.materials.destroy', $material->id) }}"
-                                      onsubmit="return confirm('Delete \'{{ addslashes($material->title) }}\'? It will be detached from all templates.')">
+                                      data-cs-confirm="Delete '{{ $material->title }}'? It will be detached from all templates." data-cs-confirm-tone="danger" data-cs-confirm-ok="Delete">
                                     @csrf @method('DELETE')
                                     <button type="submit" class="at-btn-danger">
                                         <svg width="13" height="13" viewBox="0 0 16 16" fill="none">

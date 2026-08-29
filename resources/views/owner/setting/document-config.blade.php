@@ -5,6 +5,8 @@
         <div class="page-content">
             <div class="container-fluid">
                 <div class="page-content-wrapper bg-white p-30 radius-20">
+                    @include('centresidence._design')
+
                     <div class="row">
                         <div class="col-12">
                             <div
@@ -28,7 +30,7 @@
                         <div class="row">
                             @include('owner.setting.sidebar')
                             <div class="col-md-12 col-lg-12 col-xl-8 col-xxl-9">
-                                <div class="account-settings-rightside bg-off-white theme-border radius-4 p-25">
+                                <div class="account-settings-rightside cs-card cs-card--pad cs-controls">
                                     <div class="invoice-type-settings-page-area">
                                         <div class="account-settings-content-box">
                                             <div class="account-settings-title border-bottom mb-20 pb-20">
@@ -47,7 +49,7 @@
                                                 </div>
                                             </div>
                                             <div class="invoice-type-table-area">
-                                                <div class="bg-white theme-border radius-4 p-25">
+                                                <div class="pt-2">
                                                     <table id="allDataTable"
                                                         class="table bg-white theme-border p-20 dt-responsive">
                                                         <thead>
@@ -66,12 +68,7 @@
                                                             @foreach ($kycConfigs as $kycConfig)
                                                                 <tr>
                                                                     <td>{{ $loop->iteration }}</td>
-                                                                    <td>
-                                                                        <a href="{{ $kycConfig->image }}" download>
-                                                                            <img class="img-thumbnail"
-                                                                                src="{{ $kycConfig->image }}">
-                                                                        </a>
-                                                                    </td>
+                                                                    <td>{!! app(\App\Services\KycVerificationService::class)->docThumb($kycConfig->image) !!}</td>
                                                                     <td>{{ $kycConfig->name }}</td>
                                                                     <td>
                                                                         @if ($kycConfig->first_name)
@@ -103,7 +100,7 @@
                                                                         @else
                                                                             <div
                                                                                 class="status-btn status-btn-red font-13 radius-4">
-                                                                                {{ __('Deactivate') }}</div>
+                                                                                {{ __('Inactive') }}</div>
                                                                         @endif
                                                                     </td>
 
@@ -115,20 +112,26 @@
                                                                                 <span class="iconify"
                                                                                     data-icon="clarity:note-edit-solid"></span>
                                                                             </a>
-                                                                            <a href="#"
-                                                                                class="p-1 tbl-action-btn deleteItem"
-                                                                                data-formid="delete_row_form_{{ $kycConfig->id }}"
-                                                                                title="{{ __('Delete') }}"><span
-                                                                                    class="iconify"
-                                                                                    data-icon="ep:delete-filled"></span></a>
-                                                                            <form
-                                                                                action="{{ route('owner.setting.document-config.delete', [$kycConfig->id]) }}"
-                                                                                method="post"
-                                                                                id="delete_row_form_{{ $kycConfig->id }}">
-                                                                                {{ method_field('DELETE') }}
-                                                                                <input type="hidden" name="_token"
-                                                                                    value="{{ csrf_token() }}">
-                                                                            </form>
+                                                                            @if (!$kycConfig->is_default)
+                                                                                <a href="#"
+                                                                                    class="p-1 tbl-action-btn deleteItem"
+                                                                                    data-formid="delete_row_form_{{ $kycConfig->id }}"
+                                                                                    title="{{ __('Delete') }}"><span
+                                                                                        class="iconify"
+                                                                                        data-icon="ep:delete-filled"></span></a>
+                                                                                <form
+                                                                                    action="{{ route('owner.setting.document-config.delete', [$kycConfig->id]) }}"
+                                                                                    method="post"
+                                                                                    id="delete_row_form_{{ $kycConfig->id }}">
+                                                                                    {{ method_field('DELETE') }}
+                                                                                    <input type="hidden" name="_token"
+                                                                                        value="{{ csrf_token() }}">
+                                                                                </form>
+                                                                            @else
+                                                                                <span class="p-1" title="{{ __('Default — required document, cannot be deleted') }}">
+                                                                                    <span class="iconify" data-icon="ri:lock-line" style="color:#9ca3af;"></span>
+                                                                                </span>
+                                                                            @endif
                                                                         </div>
                                                                     </td>
                                                                 </tr>
@@ -148,7 +151,7 @@
         </div>
     </div>
 
-    <div class="modal fade" id="addModal" tabindex="-1" aria-labelledby="addModalLabel" aria-hidden="true">
+    <div class="modal fade cs-modal" id="addModal" tabindex="-1" aria-labelledby="addModalLabel" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content">
                 <div class="modal-header">
@@ -163,16 +166,8 @@
                     <div class="modal-body">
                         <div class="modal-inner-form-box">
                             <div class="row">
-                                <div class="col-md-12 mb-3">
-                                    <label
-                                        class="label-text-title color-heading font-medium mb-2">{{ __('Tenant') }}</label>
-                                    <select name="tenant_id" id="" class="form-control">
-                                        <option value="">{{ __('All') }}</option>
-                                        @foreach ($tenants as $tenant)
-                                            <option value="{{ $tenant->id }}">{{ $tenant->first_name }}
-                                                {{ $tenant->last_name }}</option>
-                                        @endforeach
-                                    </select>
+                                <div class="col-md-12 mb-2">
+                                    <p class="font-13 text-muted mb-2">{{ __('This applies to all your tenants. To request a document from one specific tenant, use their profile page.') }}</p>
                                 </div>
                                 <div class="col-md-12 mb-3">
                                     <label
@@ -219,7 +214,7 @@
             </div>
         </div>
     </div>
-    <div class="modal fade" id="editModal" tabindex="-1" aria-labelledby="editModalLabel" aria-hidden="true">
+    <div class="modal fade cs-modal" id="editModal" tabindex="-1" aria-labelledby="editModalLabel" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content">
                 <div class="modal-header">
@@ -235,17 +230,6 @@
                     <div class="modal-body">
                         <div class="modal-inner-form-box">
                             <div class="row">
-                                <div class="col-md-12 mb-3">
-                                    <label
-                                        class="label-text-title color-heading font-medium mb-2">{{ __('Tenant') }}</label>
-                                    <select name="tenant_id" id="" class="form-control tenant_id">
-                                        <option value="">{{ __('All') }}</option>
-                                        @foreach ($tenants as $tenant)
-                                            <option value="{{ $tenant->id }}">{{ $tenant->first_name }}
-                                                {{ $tenant->last_name }}</option>
-                                        @endforeach
-                                    </select>
-                                </div>
                                 <div class="col-md-12 mb-3">
                                     <label
                                         class="label-text-title color-heading font-medium mb-2">{{ __('Name') }}</label>

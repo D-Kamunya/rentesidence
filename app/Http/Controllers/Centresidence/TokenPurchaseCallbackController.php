@@ -26,7 +26,26 @@ class TokenPurchaseCallbackController extends Controller
         $resultCode = $callback['ResultCode'] ?? -1;
 
         if ((int) $resultCode === 0) {
-            $amount = $this->amount($callback);
+            // Authenticity: only settle against a push WE initiated. Claim the pending row
+            // by the callback's CheckoutRequestID + the module/tenant from the URL; a
+            // forged/replayed callback finds none → credits nothing. The amount comes from
+            // the CLAIMED push (never the attacker-controllable payload figure).
+            $pending = \App\Centresidence\Models\StkPending::claim(
+                'token',
+                $callback['CheckoutRequestID'] ?? null,
+                ['property_module_id' => $propertyModule, 'tenant_user_id' => $tenant]
+            );
+
+            if (! $pending) {
+                Log::warning('Centresidence token STK callback rejected: no matching pending push', [
+                    'property_module_id' => $propertyModule, 'tenant_user_id' => $tenant,
+                    'checkout_request_id' => $callback['CheckoutRequestID'] ?? null,
+                ]);
+
+                return response()->json(['ResultCode' => 0, 'ResultDesc' => 'Accepted']);
+            }
+
+            $amount = (float) $pending->expected_amount;
 
             if ($amount > 0) {
                 $tokens->settle($propertyModule, $tenant, $amount, $this->receipt($callback));

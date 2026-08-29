@@ -181,10 +181,10 @@ class MaintenanceRequestService
             if (isset($property)) {
                 if ($property->maintainer_id) {
                     $issueUrl = route('maintainer.maintenance-request.index');
-                    addNotification(__('New maintenance Request'), $request->details, $issueUrl, null, $property->maintainer_id, auth()->id());
+                    addNotification(__('New maintenance request'), $request->details, $issueUrl, null, $property->maintainer_id, auth()->id());
                 }
                 $issueUrl = route('owner.maintenance-request.index');
-                addNotification(__('New maintenance Request'), $request->details, $issueUrl, null, $property->owner_user_id, auth()->id());
+                addNotification(__('New maintenance request'), $request->details, $issueUrl, null, $property->owner_user_id, auth()->id());
             }
 
             DB::commit();

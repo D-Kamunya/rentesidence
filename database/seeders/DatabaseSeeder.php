@@ -26,8 +26,11 @@ class DatabaseSeeder extends Seeder
             // Centresidence production content — module catalog + partner KB.
             // Idempotent and demo-data-free, so `php artisan db:seed` ships the
             // configured environment to live without manual setup.
+            BrandingSeeder::class,
             CentresidenceCatalogSeeder::class,
             KnowledgeBaseSeeder::class,
+            AffiliateKnowledgeBaseSeeder::class,
+            AffiliateAcademySeeder::class,
         ]);
     }
 }

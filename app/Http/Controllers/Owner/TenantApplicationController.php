@@ -30,10 +30,13 @@ class TenantApplicationController extends Controller
     {
         $ownerId = auth()->id();
 
+        // Only PENDING applications belong here — once assigned, an applicant becomes a real
+        // tenant and shows on the Tenants page, so keeping accepted ones here is duplicate/noise.
         $applications = HouseHuntApplication::with(['propertyUnit.property'])
             ->whereHas('propertyUnit.property', function ($q) use ($ownerId) {
                 $q->where('owner_user_id', $ownerId);
             })
+            ->where('status', HOUSE_HUNT_APPLICATION_PENDING)
             ->latest()
             ->get();
 
@@ -77,7 +80,10 @@ class TenantApplicationController extends Controller
             }
 
             // ── 3. Enforce owner tenant limit ─────────────────────────────────
-            if (!getOwnerLimit(RULES_TENANT) > 0) {
+            // NB: the old `!getOwnerLimit(...) > 0` only tripped when the limit was exactly 0
+            // (operator precedence), so an over-limit owner could still assign. Match the
+            // create-tenant flow's `< 1` check.
+            if (getOwnerLimit(RULES_TENANT) < 1) {
                 throw new Exception(__('Your Tenant Limit is Finished. Choose or Renew Package Plan'));
             }
 
@@ -98,6 +104,21 @@ class TenantApplicationController extends Controller
                     $autoPassword = Str::random(12);
                     $user         = new User();
                     $user->password = Hash::make($autoPassword);
+                    // Force the tenant to set their own password on first login — same
+                    // onboarding rule as an owner-created tenant (WP1). See [[tenant-credentials-onboarding]].
+                    $user->must_change_password = 1;
+                }
+            }
+
+            // SECURITY: assignment below sets role=TENANT + owner_user_id=$ownerId. Never let
+            // that flip an EXISTING owner/admin account — or another owner's tenant — into this
+            // owner's tenant (account hijack / cross-owner theft via a colliding email/user_id).
+            // Only reuse a brand-new account, or a tenant that already belongs to this owner.
+            if ($user->exists) {
+                $safeToReuse = $user->role == USER_ROLE_TENANT
+                    && (is_null($user->owner_user_id) || (int) $user->owner_user_id === (int) $ownerId);
+                if (!$safeToReuse) {
+                    throw new Exception(__('An account with this email already exists and cannot be assigned as a tenant here.'));
                 }
             }
 
@@ -151,34 +172,19 @@ class TenantApplicationController extends Controller
             $application->save();
 
             // ── 8. Notifications ──────────────────────────────────────────────
+            // (a) Credentials for a BRAND-NEW account — email AND SMS, and NEVER gated
+            // behind send_email_status (a password the tenant can't receive = a
+            // locked-out tenant). Uses the SAME shared sender + auto-password +
+            // forced first-login reset as an owner-created tenant, so an
+            // application-assigned tenant onboards identically. See [[tenant-credentials-onboarding]].
+            if ($autoPassword) {
+                \App\Jobs\SendTenantCredentialsJob::dispatch($user->id, $autoPassword, 'both');
+            }
+
+            // (b) Tenancy-assigned notice (nice-to-have) — fine behind the email toggle.
             if (getOption('send_email_status', 0) == ACTIVE) {
                 $mailService = new MailService();
 
-                // (a) Welcome / sign-up email — only for brand-new accounts
-                if ($autoPassword) {
-                    $emails  = [$user->email];
-                    $subject = getOption('app_name') . ' ' . __('welcome you');
-                    $message = __('You have successfully been registered');
-
-                    $template = EmailTemplate::where('owner_user_id', $ownerId)
-                        ->where('category', EMAIL_TEMPLATE_SIGN_UP)
-                        ->where('status', ACTIVE)
-                        ->first();
-
-                    if ($template) {
-                        $fields  = [
-                            '{{email}}'    => $user->email,
-                            '{{password}}' => $autoPassword,
-                            '{{app_name}}' => getOption('app_name'),
-                        ];
-                        $content = getEmailTemplate($template->body, $fields);
-                        $mailService->sendCustomizeMail($emails, $template->subject, $content);
-                    } else {
-                        $mailService->sendSignUpMail($emails, $subject, $message, $ownerId, $autoPassword);
-                    }
-                }
-
-                // (b) Tenancy-assigned notification email
                 // Uses EMAIL_TEMPLATE_TENANT_ASSIGNED if the owner has configured
                 // one; otherwise falls back to a generic notice.
                 $assignTemplate = EmailTemplate::where('owner_user_id', $ownerId)
@@ -211,6 +217,10 @@ class TenantApplicationController extends Controller
             }
 
             DB::commit();
+
+            // Plug-and-play: create the unit's auto-recurring rent setting now that the tenant
+            // is active (immediate; the generate:invoice cron backfill is the safety net).
+            app(\App\Services\InvoiceRecurringService::class)->ensureUnitRecurringSetting($tenant);
 
             return $this->success(
                 ['tenant_id' => $tenant->id],

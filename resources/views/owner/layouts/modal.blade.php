@@ -1,5 +1,15 @@
 <!-- Choose a plan Modal Start -->
 @if (isAddonInstalled('PROTYSAAS') > 1)
+    <style>
+        /* Modernize the plan modal heading — drop the heavy legacy display look. */
+        #choosePlanModal .choose-plan-area-title {
+            font-family: system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            font-weight: 600;
+            font-size: 26px;
+            letter-spacing: -0.02em;
+            color: #111827;
+        }
+    </style>
     <div class="modal fade big-modal" id="choosePlanModal" tabindex="-1" aria-hidden="true">
         <input type="hidden" id="chooseAPanRoute" value="{{ route('owner.subscription.get_plan') }}">
         <input type="hidden" id="confirmFreeRoute" value="{{ route('owner.subscription.confirm.free.view') }}">
@@ -14,7 +24,8 @@
                     <!-- Choose a plan content Start -->
                     <div class="choose-plan-area">
                         <h2 class="choose-plan-area-title text-center">{{ __('Choose A Plan') }}</h2>
-                        <div class="d-flex justify-content-center align-items-center pb-30">
+                        {{-- Billing cycle toggle — hidden by confirm-free/transaction (no billing period) --}}
+                        <div class="d-flex justify-content-center align-items-center pb-30" id="planBillingToggleRow">
                             <span class="mx-3">{{ __('Monthly') }}</span>
                             <div class="payment-subscription-switch form-check form-switch">
                                 <input class="form-check-input" type="checkbox" value="1"

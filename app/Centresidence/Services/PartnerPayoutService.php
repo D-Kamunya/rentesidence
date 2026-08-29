@@ -4,7 +4,6 @@ namespace App\Centresidence\Services;
 
 use App\Centresidence\Models\PartnerRemittanceBatch;
 use App\Services\Payment\MpesaB2BService;
-use App\Services\Payment\MpesaB2CService;
 use Illuminate\Support\Facades\Log;
 
 /**
@@ -71,20 +70,21 @@ class PartnerPayoutService
     private function payViaMpesa(array $account, float $amount, ?string $resultUrl = null): array
     {
         switch ($account['type'] ?? null) {
-            case 'mpesa_b2c':
-                // NOTE: B2C partner payout confirmation is not yet wired (MpesaB2CService
-                // has no per-call result URL); most partners settle via B2B paybill/bank.
-                return app(MpesaB2CService::class)->send((string) $account['phone'], $amount);
-
             case 'mpesa_paybill':
             case 'bank':
+                // Bank partners are paid via M-Pesa B2B to their bank paybill with the
+                // account number as reference — always tied to an account, and the
+                // async B2B result is reconciled back to the batch via $resultUrl.
                 return app(MpesaB2BService::class)->send((string) $account['paybill'], $amount, (string) ($account['account'] ?? ''), 'BusinessPayBill', $resultUrl);
 
             case 'mpesa_till':
                 return app(MpesaB2BService::class)->send((string) $account['till'], $amount, '', 'BusinessBuyGoods', $resultUrl);
 
             default:
-                return ['success' => false, 'reference' => null, 'message' => 'Unsupported or missing settlement account type.'];
+                // B2C (pay-to-phone) is intentionally unsupported: it can't be reconciled
+                // to an account and has no per-call result URL. Partners must set a
+                // paybill / bank / till (enforced before they can publish a product).
+                return ['success' => false, 'reference' => null, 'message' => 'Set a paybill or bank payout account — pay-to-phone (B2C) is not supported.'];
         }
     }
 }

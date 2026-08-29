@@ -114,7 +114,18 @@ class SettingController extends Controller
 
     public function getLanguageJson($code)
     {
-        $data = json_decode(file_get_contents(resource_path('lang/' . $code . '.json')));
+        // This endpoint is public; `$code` builds a file path, so reject anything but
+        // a plain language code to prevent path traversal into arbitrary .json files.
+        if (! preg_match('/^[A-Za-z_-]{2,10}$/', (string) $code)) {
+            return $this->error([], __('Invalid language code'));
+        }
+
+        $path = resource_path('lang/' . $code . '.json');
+        if (! is_file($path)) {
+            return $this->error([], __('Language not found'));
+        }
+
+        $data = json_decode(file_get_contents($path));
         return $this->success($data);
     }
 }

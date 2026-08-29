@@ -43,6 +43,15 @@ class LoginController extends Controller
         $this->middleware('guest')->except('logout');
     }
 
+    /**
+     * After logout, drop the user on the login screen (not the marketing home page) so they can
+     * sign straight back in. Overrides AuthenticatesUsers::logout()'s default redirect('/').
+     */
+    protected function loggedOut(\Illuminate\Http\Request $request)
+    {
+        return redirect()->route('login');
+    }
+
     public function login(LoginRequest $request)
     {
         $field = 'email';
@@ -83,6 +92,8 @@ class LoginController extends Controller
             Auth::logout();
             return redirect("login")->with('error', __('Your account has been deleted.'));
         } elseif (isset($user) && ($user->status == USER_STATUS_ACTIVE)) {
+            // Stamp the sign-in (used to target credential re-sends at tenants who never logged in).
+            $user->forceFill(['last_login_at' => now()])->saveQuietly();
             if (isset($user) && $user->role == USER_ROLE_OWNER) {
                 return redirect()->route('owner.dashboard');
             } elseif (isset($user) && ($user->role == USER_ROLE_TENANT)) {

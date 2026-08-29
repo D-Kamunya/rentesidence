@@ -27,6 +27,11 @@ class InfraStandingGateTest extends CentresidenceDatabaseTestCase
 
     private function overdueInfra(int $ownerId): void
     {
+        // The infra gate only applies to subscription owners (transaction owners recover
+        // infra from rent), so mark this owner subscription-billed for the gate to engage.
+        \Illuminate\Support\Facades\DB::table('owner_packages')
+            ->where('user_id', $ownerId)->update(['pricing_model' => 'subscription']);
+
         CentresidenceCommissionInvoice::create([
             'owner_id' => $ownerId, 'property_id' => 1,
             'billing_month' => Carbon::now()->subMonths(2)->startOfMonth(), // well past grace

@@ -2,98 +2,70 @@
 
 @section('content')
     <div class="main-content">
-
         <div class="page-content">
             <div class="container-fluid">
-                <!-- Page Content Wrapper Start -->
                 <div class="page-content-wrapper bg-white p-30 radius-20">
-                    <!-- start page title -->
-                    <div class="row">
-                        <div class="col-12">
-                            <div
-                                class="page-title-box d-sm-flex align-items-center justify-content-between border-bottom mb-20">
-                                <div class="page-title-left">
-                                    <h3 class="mb-sm-0">{{ $pageTitle }}</h3>
-                                </div>
-                                <div class="page-title-right">
-                                    <ol class="breadcrumb mb-0">
-                                        <li class="breadcrumb-item"><a href="{{ route('owner.dashboard') }}"
-                                                title="Dashboard">{{ __('Dashboard') }}</a></li>
-                                        <li class="breadcrumb-item active" aria-current="page">{{ $pageTitle }}</li>
-                                    </ol>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    <!-- Information Page Area row Start -->
-                    <div class="row">
-                        <!-- Property Top Search Bar Start -->
-                        <h4 class="mb-20">{{ __('All Maintainer') }}</h4>
-                        <div class="property-top-search-bar">
-                            <div class="property-search-inner-bg bg-off-white theme-border radius-4 p-25 pb-0 mb-25">
-                                <div class="row align-items-center">
-                                    <div class="col-md-6">
-                                        <div class="property-top-search-bar-left">
-                                            <div class="row">
-                                                <div class="col-md-6 col-lg-6 col-xl-4 mb-25">
-                                                    <select class="form-select flex-shrink-0 " id="search_property">
-                                                        <option value="" selected>--{{ __('Select Property') }}--
-                                                        </option>
-                                                        @foreach ($properties as $property)
-                                                            <option value="{{ $property->name }}">{{ $property->name }}
-                                                            </option>
-                                                        @endforeach
-                                                    </select>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div class="col-md-6">
-                                        <div class="property-top-search-bar-right text-end">
-                                            <button type="button" class="theme-btn mb-25 add"
-                                                title="{{ __('Add Maintainer') }}">{{ __('Add Maintainer') }}</button>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        <!-- Property Top Search Bar End -->
+                    @include('centresidence._design')
 
-                        <!-- All Maintainer Table Area Start -->
-                        <div class="all-maintainer-table-area">
-                            <!-- datatable Start -->
-                            <div class="bg-off-white theme-border radius-4 p-25">
-                                <table id="allMaintainerDataTable"
-                                    class="table bg-off-white aaa theme-border dt-responsive">
-                                    <thead>
-                                        <tr>
-                                            <th>{{ __('SL') }}</th>
-                                            <th>{{ __('Image') }}</th>
-                                            <th data-priority="1">{{ __('Name') }}</th>
-                                            <th class="d-none">{{ __('Name') }}</th>
-                                            <th>{{ __('Email') }}</th>
-                                            <th>{{ __('Contact Number') }}</th>
-                                            <th>{{ __('Property') }}</th>
-                                            <th>{{ __('Status') }}</th>
-                                            <th>{{ __('Action') }}</th>
-                                        </tr>
-                                    </thead>
-                                </table>
-                            </div>
-                            <!-- datatable End -->
+                    <div class="cs-titlebar">
+                        <div>
+                            <h1 class="cs-title">{{ $pageTitle }}</h1>
+                            <ol class="cs-crumb"><li><a href="{{ route('owner.dashboard') }}">{{ __('Dashboard') }}</a></li><li>›</li><li>{{ $pageTitle }}</li></ol>
                         </div>
-                        <!-- All Maintainer Table Area End -->
+                        <button type="button" class="cs-btn cs-btn--primary add" title="{{ __('Add Maintainer') }}">
+                            <i class="ri-add-line"></i> {{ __('Add Maintainer') }}
+                        </button>
                     </div>
-                    <!-- Information Page Area row End -->
+
+                    <div class="cs-card cs-card--pad" style="margin-bottom:16px;">
+                        <div class="cr-perm">
+                            <div class="cr-perm__text">
+                                <h3 class="cs-card__title">{{ __('Let caretakers confirm cash rent') }}</h3>
+                                <p class="cr-perm__desc">{{ __('Off by default. When on, a caretaker can confirm that a tenant paid rent in cash — it records the payment against the invoice, is logged against the caretaker, and notifies you every time. Leave it off to keep rent confirmation to yourself.') }}</p>
+                            </div>
+                            <label class="cr-switch" title="{{ __('Toggle caretaker cash confirmation') }}">
+                                <input type="checkbox" id="caretakerConfirmToggle" {{ !empty($canConfirmRent) ? 'checked' : '' }}>
+                                <span class="cr-switch__slider"></span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="cs-card cs-card--pad cs-controls" style="margin-bottom:16px;">
+                        <label class="cs-label">{{ __('Filter by property') }}</label>
+                        <div style="max-width:320px;">
+                            <select class="form-select" id="search_property">
+                                <option value="" selected>{{ __('All properties') }}</option>
+                                @foreach ($properties as $property)
+                                    <option value="{{ $property->name }}">{{ $property->name }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="cs-card"><div class="cs-card__body">
+                        <table id="allMaintainerDataTable" class="table aaa dt-responsive" style="width:100%;">
+                            <thead>
+                                <tr>
+                                    <th>{{ __('SL') }}</th>
+                                    <th>{{ __('Image') }}</th>
+                                    <th data-priority="1">{{ __('Name') }}</th>
+                                    <th class="d-none">{{ __('Name') }}</th>
+                                    <th>{{ __('Email') }}</th>
+                                    <th>{{ __('Contact Number') }}</th>
+                                    <th>{{ __('Property') }}</th>
+                                    <th>{{ __('Status') }}</th>
+                                    <th>{{ __('Action') }}</th>
+                                </tr>
+                            </thead>
+                        </table>
+                    </div></div>
                 </div>
-                <!-- Page Content Wrapper End -->
             </div>
         </div>
-        <!-- End Page-content -->
     </div>
 
     <!-- Add Information Modal Start -->
-    <div class="modal fade" id="addMaintainerModal" tabindex="-1" aria-labelledby="addMaintainerModalLabel"
+    <div class="modal fade cs-modal" id="addMaintainerModal" tabindex="-1" aria-labelledby="addMaintainerModalLabel"
         aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content">
@@ -202,6 +174,18 @@
 @push('style')
     @include('common.layouts.datatable-style')
     <link rel="stylesheet" href="{{ asset('assets/libs/bootstrap-select/bootstrap-select.min.css') }}">
+    <style>
+        .cr-perm { display:flex; align-items:flex-start; justify-content:space-between; gap:18px; flex-wrap:wrap; }
+        .cr-perm__text { max-width:640px; }
+        .cr-perm__desc { font-size:13px; color:#6b7280; margin:4px 0 0; line-height:1.55; }
+        .cr-switch { position:relative; display:inline-block; width:46px; height:26px; flex:none; cursor:pointer; }
+        .cr-switch input { opacity:0; width:0; height:0; }
+        .cr-switch__slider { position:absolute; inset:0; background:#cbd5e1; border-radius:99px; transition:background .2s; }
+        .cr-switch__slider::before { content:''; position:absolute; height:20px; width:20px; left:3px; top:3px; background:#fff; border-radius:50%; transition:transform .2s; box-shadow:0 1px 3px rgba(0,0,0,.2); }
+        .cr-switch input:checked + .cr-switch__slider { background:#185FA5; }
+        .cr-switch input:checked + .cr-switch__slider::before { transform:translateX(20px); }
+        .cr-switch input:disabled + .cr-switch__slider { opacity:.6; cursor:not-allowed; }
+    </style>
 @endpush
 
 @push('script')
@@ -209,4 +193,34 @@
     <script src="{{ asset('assets/libs/bootstrap-select/bootstrap-select.min.js') }}"></script>
     <script src="{{ asset('assets/js/pages/maintainer-profile-photo.init.js') }}"></script>
     <script src="{{ asset('assets/js/custom/maintainer.js') }}"></script>
+    <script>
+        (function () {
+            const toggle = document.getElementById('caretakerConfirmToggle');
+            if (!toggle) return;
+            toggle.addEventListener('change', function () {
+                const on = toggle.checked;
+                toggle.disabled = true;
+                fetch("{{ route('owner.maintainer.permissions') }}", {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                        'Accept': 'application/json',
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ caretaker_can_confirm_rent: on ? 1 : 0 }),
+                })
+                .then(r => r.json())
+                .then(data => {
+                    if (typeof toastr !== 'undefined') {
+                        (data.status ? toastr.success : toastr.info)(data.message || '{{ __('Saved.') }}');
+                    }
+                })
+                .catch(() => {
+                    toggle.checked = !on; // revert on failure
+                    if (typeof toastr !== 'undefined') toastr.error('{{ __('Could not update. Please try again.') }}');
+                })
+                .finally(() => { toggle.disabled = false; });
+            });
+        })();
+    </script>
 @endpush

@@ -17,6 +17,11 @@ class PartnerRemittanceBatch extends Model
     protected $casts = [
         'remittance_date'          => 'date',
         'total_amount'             => 'decimal:2',
+        'gross_amount'             => 'decimal:2',
+        'servicing_fee'            => 'decimal:2',
+        'origination_fee'          => 'decimal:2',
+        'net_amount'               => 'decimal:2',
+        'sent_at'                  => 'datetime',
         'confirmation_received_at' => 'datetime',
     ];
 

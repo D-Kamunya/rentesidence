@@ -153,7 +153,11 @@ class OwnerWalletController extends Controller
                     'commission_rate'   => $transaction->commission_rate,
                     'commission_amount' => $transaction->commission_amount,
                     'net_amount'        => $transaction->net_amount,
-                ],
+
+                    // Centresidence deduct-at-source (folded into net) — itemised from
+                    // the settlement so the modal shows every deduction for this one
+                    // payment event in a single place.
+                ] + $this->settlementBreakdown((int) $transaction->invoice_order_id),
             ]);
 
         } catch (\Exception $e) {
@@ -167,6 +171,31 @@ class OwnerWalletController extends Controller
                 'message' => __('Could not load payment details.'),
             ], 500);
         }
+    }
+
+    /**
+     * Centresidence deduct-at-source breakdown for one rent payment, itemised from
+     * the settlement transactions so the payment's modal can show every deduction
+     * (infrastructure, financing, overdue recovery) that was folded into its net.
+     *
+     * @return array{infra_amount:float, financing_amount:float, overdue_amount:float, total_deduction:float}
+     */
+    private function settlementBreakdown(int $orderId): array
+    {
+        $infra = 0.0; $financing = 0.0; $overdue = 0.0;
+        if ($orderId && \Illuminate\Support\Facades\Schema::hasTable('settlement_transactions')) {
+            $txns = \App\Centresidence\Models\SettlementTransaction::where('rent_transaction_id', $orderId)->get();
+            $infra     = (float) $txns->where('transaction_type', 'infrastructure_recovery')->sum('amount');
+            $financing = (float) $txns->whereIn('transaction_type', ['rent_deduction_principal', 'rent_deduction_interest', 'rent_deduction_penalty'])->sum('amount');
+            $overdue   = (float) $txns->where('transaction_type', 'commission_recovery')->sum('amount');
+        }
+
+        return [
+            'infra_amount'     => round($infra, 2),
+            'financing_amount' => round($financing, 2),
+            'overdue_amount'   => round($overdue, 2),
+            'total_deduction'  => round($infra + $financing + $overdue, 2),
+        ];
     }
 
     
@@ -339,58 +368,55 @@ class OwnerWalletController extends Controller
             return response()->json(['success' => false, 'error' => 'Already processed.']);
         }
 
-        DB::beginTransaction();
+        // Fire B2C BEFORE mutating state and OUTSIDE any transaction: an accepted
+        // request must never be lost to a rollback. Daraja's sync response only
+        // confirms the request was accepted, so the payout is held as 'processing'
+        // until the ResultURL (MpesaController::B2CResult) confirms delivery or
+        // failure. On failure the balance is refunded there.
         try {
             $result = app(MpesaB2CService::class)->send($withdrawal->phone, $withdrawal->amount);
-
-            if (!($result['success'] ?? false)) {
-                throw new \Exception($result['message'] ?? __('M-Pesa B2C request failed.'));
-            }
-
-            $withdrawal->update([
-                'status'          => 'approved',
-                'processed_at'    => now(),
-                'mpesa_reference' => $result['reference'] ?? null,
-            ]);
-
-            WalletTransaction::where('owner_wallet_id', $withdrawal->owner_wallet_id)
-                ->where('description', "Withdrawal request #{$withdrawal->id} — pending")
-                ->update(['description' => "Withdrawal #{$withdrawal->id} — paid via M-Pesa B2C"]);
-
-            DB::commit();
-
-            // ── Notify owner: withdrawal approved ────────────────────
-            $recipient = $withdrawal->wallet->user;
-            if ($recipient) {
-                $emailData = (object) [
-                    'subject' => __('Withdrawal Approved — KSh ') . number_format($withdrawal->amount, 2),
-                    'message' => __('Your withdrawal of KSh ') . number_format($withdrawal->amount, 2) .
-                                 __(' has been approved and sent to ') . $withdrawal->phone .
-                                 __(' via M-Pesa. It should arrive within minutes.'),
-                ];
-                $notificationData = (object) [
-                    'title' => __('Withdrawal Approved'),
-                    'body'  => __('KSh ') . number_format($withdrawal->amount, 2) .
-                               __(' has been sent to ') . $withdrawal->phone . '.',
-                    'url'   => route('owner.wallet.index'),
-                ];
-                SendWalletNotificationJob::dispatch($recipient, $emailData, $notificationData, $withdrawal);
-            }
-
-            return response()->json([
-                'success' => true,
-                'message' => __('Withdrawal approved and sent via M-Pesa.'),
-            ]);
-
-        } catch (\Exception $e) {
-            DB::rollBack();
-            Log::error('Withdrawal approval failed: ' . $e->getMessage());
-
-            return response()->json([
-                'success' => false,
-                'error'   => __('Approval failed: ') . $e->getMessage(),
-            ]);
+        } catch (\Throwable $e) {
+            Log::error('Owner B2C send threw: ' . $e->getMessage(), ['withdrawal_id' => $withdrawal->id]);
+            return response()->json(['success' => false, 'error' => __('M-Pesa payout could not be initiated. Please try again.')]);
         }
+
+        if (!($result['success'] ?? false)) {
+            // Rejected up-front — stays 'pending', balance still reserved, safe to retry.
+            Log::warning('Owner B2C rejected on send', ['withdrawal_id' => $withdrawal->id, 'message' => $result['message'] ?? null]);
+            return response()->json(['success' => false, 'error' => __('M-Pesa rejected the payout: ') . ($result['message'] ?? __('unknown error'))]);
+        }
+
+        $withdrawal->update([
+            'status'          => 'processing',
+            'mpesa_reference' => $result['reference'] ?? null,
+        ]);
+
+        WalletTransaction::where('owner_wallet_id', $withdrawal->owner_wallet_id)
+            ->where('description', "Withdrawal request #{$withdrawal->id} — pending")
+            ->update(['description' => "Withdrawal request #{$withdrawal->id} — processing"]);
+
+        // ── Notify owner: payout is on its way ───────────────────
+        $recipient = $withdrawal->wallet->user;
+        if ($recipient) {
+            $emailData = (object) [
+                'subject' => __('Withdrawal Processing — KSh ') . number_format($withdrawal->amount, 2),
+                'message' => __('Your withdrawal of KSh ') . number_format($withdrawal->amount, 2) .
+                             __(' is being sent to ') . $withdrawal->phone .
+                             __(' via M-Pesa. You will be notified once it is confirmed.'),
+            ];
+            $notificationData = (object) [
+                'title' => __('Withdrawal Processing'),
+                'body'  => __('KSh ') . number_format($withdrawal->amount, 2) .
+                           __(' is being sent to ') . $withdrawal->phone . '.',
+                'url'   => route('owner.wallet.index'),
+            ];
+            SendWalletNotificationJob::dispatch($recipient, $emailData, $notificationData, $withdrawal);
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => __('M-Pesa payout initiated. It will be confirmed once M-Pesa completes the transfer.'),
+        ]);
     }
 
     /**

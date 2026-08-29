@@ -148,110 +148,71 @@ function dateFormat(date, format = "MM-DD-YYYY") {
 }
 
 function deleteItem(url, id) {
-    Swal.fire({
-        title: "Sure! You want to delete?",
-        text: "You won't be able to revert this!",
-        icon: "warning",
-        showCancelButton: true,
-        confirmButtonColor: "#3085d6",
-        cancelButtonColor: "#d33",
-        confirmButtonText: "Yes, Delete It!",
-    }).then((result) => {
-        if (result.value) {
-            $.ajax({
-                type: "GET",
-                url: url,
-                success: function (data) {
-                    Swal.fire({
-                        title: "Deleted",
-                        html: ' <span style="color:red">Item has been deleted</span> ',
-                        timer: 6000,
-                        icon: "success",
-                    });
-                    toastr.success(data.message);
-                    if (id == "allDataTableDoc") {
-                        location.reload();
-                    } else {
-                        location.reload();
-                    }
-                },
-                error: function (error) {
-                    toastr.error(error.responseJSON.message);
-                },
-            });
-        }
+    csConfirm({
+        title: "Delete this item?",
+        message: "This can't be undone.",
+        tone: "danger",
+        confirmText: "Delete",
+    }).then(function (ok) {
+        if (!ok) return;
+        $.ajax({
+            type: "GET",
+            url: url,
+            success: function (data) {
+                toastr.success(data.message);
+                location.reload();
+            },
+            error: function (error) {
+                toastr.error(error.responseJSON.message);
+            },
+        });
     });
 }
 
 $(document).on("click", ".deleteItem", function () {
     let form_id = this.dataset.formid;
-    Swal.fire({
-        title: "Sure! You want to delete?",
-        text: "You won't be able to revert this!",
-        icon: "warning",
-        showCancelButton: true,
-        confirmButtonColor: "#3085d6",
-        cancelButtonColor: "#d33",
-        confirmButtonText: "Yes, Delete It!",
-    }).then((result) => {
-        if (result.value) {
-            $("#" + form_id).submit();
-        } else if (result.dismiss === "cancel") {
-            Swal.fire("Cancelled", "Your file is safe :)", "error");
-        }
+    csConfirm({
+        title: "Delete this item?",
+        message: "This can't be undone.",
+        tone: "danger",
+        confirmText: "Delete",
+    }).then(function (ok) {
+        if (ok) $("#" + form_id).submit();
     });
 });
 
 $(document).on("click", ".subscriptionCancel", function () {
     let stateSelect = $(this);
-    Swal.fire({
-        title: "Sure! You want to cancel?",
-        text: "You won't be able to revert this!",
-        icon: "warning",
-        showCancelButton: true,
-        confirmButtonColor: "#3085d6",
-        cancelButtonColor: "#d33",
-        confirmButtonText: "Yes, Cancel It!",
-    }).then((result) => {
-        if (result.value) {
-            stateSelect.closest("form").submit();
-        } else if (result.dismiss === "cancel") {
-            Swal.fire("Cancelled", "Your file is safe :)", "error");
-        }
+    csConfirm({
+        title: "Cancel this subscription?",
+        message: "This can't be undone.",
+        tone: "danger",
+        confirmText: "Yes, cancel",
+    }).then(function (ok) {
+        if (ok) stateSelect.closest("form").submit();
     });
 });
 
 $(document).on("click", "a.delete", function () {
     const selector = $(this);
     const isReload = $(this).data("reload");
-    Swal.fire({
-        title: "Sure! You want to delete?",
-        text: "You won't be able to revert this!",
-        icon: "warning",
-        showCancelButton: true,
-        confirmButtonColor: "#3085d6",
-        cancelButtonColor: "#d33",
-        confirmButtonText: "Yes, Delete It!",
-    }).then((result) => {
-        if (result.value) {
-            $.ajax({
-                type: "GET",
-                url: $(this).data("url"),
-                success: function (data) {
-                    selector.closest(".removable-item").fadeOut("fast");
-                    Swal.fire({
-                        title: "Deleted",
-                        html: ' <span style="color:red">Deleted Successfully</span> ',
-                        timer: 6000,
-                        icon: "success",
-                    });
-
-                    if (typeof isReload != "undefined") {
-                        location.reload();
-                    }
-                },
-            });
-        }
+    const url = $(this).data("url");
+    csConfirm({
+        title: "Delete this item?",
+        message: "This can't be undone.",
+        tone: "danger",
+        confirmText: "Delete",
+    }).then(function (ok) {
+        if (!ok) return;
+        $.ajax({
+            type: "GET",
+            url: url,
+            success: function (data) {
+                selector.closest(".removable-item").fadeOut("fast");
+                toastr.success(data && data.message ? data.message : "Deleted successfully");
+                if (typeof isReload != "undefined") location.reload();
+            },
+        });
     });
 });
 
@@ -259,37 +220,25 @@ $(document).on("click", ".statusChange", function () {
     let url = this.dataset.url;
     let id = this.dataset.id;
     let status = this.dataset.status;
-    Swal.fire({
-        title: "Sure! You want to change status?",
-        text: "You won't be able to revert this!",
-        icon: "warning",
-        showCancelButton: true,
-        confirmButtonColor: "#3085d6",
-        cancelButtonColor: "#d33",
-        confirmButtonText: "Yes, Change It!",
-    }).then((result) => {
-        if (result.value) {
-            $.ajax({
-                type: "GET",
-                url: url,
-                data: { id: id, status: status },
-                success: function (data) {
-                    Swal.fire({
-                        title: "Changed",
-                        html: ' <span style="color:red">Status has been Changed</span> ',
-                        timer: 6000,
-                        icon: "success",
-                    });
-                    toastr.success(data.message);
-                    location.reload();
-                },
-                error: function (error) {
-                    toastr.error(error.responseJSON.message);
-                },
-            });
-        } else if (result.dismiss === "cancel") {
-            Swal.fire("Cancelled", "Your file is safe :)", "error");
-        }
+    csConfirm({
+        title: "Change status?",
+        message: "This will update the item's status.",
+        tone: "warning",
+        confirmText: "Change status",
+    }).then(function (ok) {
+        if (!ok) return;
+        $.ajax({
+            type: "GET",
+            url: url,
+            data: { id: id, status: status },
+            success: function (data) {
+                toastr.success(data.message);
+                location.reload();
+            },
+            error: function (error) {
+                toastr.error(error.responseJSON.message);
+            },
+        });
     });
 });
 

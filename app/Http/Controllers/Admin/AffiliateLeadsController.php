@@ -106,6 +106,15 @@ class AffiliateLeadsController extends Controller
             $company = $lead->company;
             $affiliateId = $lead->affiliate_id;
 
+            // A valid email is mandatory — the whole account is keyed on it (login, the
+            // setup/password-reset link, and the existing-user lookup below). Lead emails
+            // are nullable on the affiliate side, so guard here rather than mint an account
+            // with a null email that can never receive its setup link.
+            if (empty($company->email) || ! filter_var($company->email, FILTER_VALIDATE_EMAIL)) {
+                DB::rollBack();
+                return back()->with('error', 'This lead has no valid email address on file. Add one before approving — the account setup link is delivered there.');
+            }
+
             // Split company name safely
             $nameParts = explode(' ', $company->company_name, 2);
             $firstName = $nameParts[0] ?? 'Client';
@@ -254,6 +263,7 @@ class AffiliateLeadsController extends Controller
             setOwnerInvoiceType($user->id);
             setOwnerDefaultMaintenanceIssue($user->id);
             setOwnerDefaultTicketTopics($user->id);
+            setOwnerDefaultDocumentConfig($user->id);
 
             // Update lead status
             $lead->update([

@@ -5,6 +5,8 @@
         <div class="page-content">
             <div class="container-fluid">
                 <div class="page-content-wrapper bg-white p-30 radius-20">
+                    @include('centresidence._design')
+
                     <div class="row">
                         <div class="col-12">
                             <div
@@ -29,7 +31,7 @@
                         <div class="row">
                             @include('admin.setting.sidebar')
                             <div class="col-md-12 col-lg-12 col-xl-8 col-xxl-9">
-                                <div class="account-settings-rightside bg-off-white theme-border radius-4 p-25">
+                                <div class="account-settings-rightside cs-card cs-card--pad cs-controls">
                                     <!-- Payment Method Page Start -->
                                     <div class="language-settings-page-area">
                                         <!-- Account Settings Content Box Start -->
@@ -122,7 +124,7 @@
                                                                         {{ __('Active') }}</option>
                                                                     <option value="2"
                                                                         {{ getOption('app_preloader_status') != 1 ? 'selected' : '' }}>
-                                                                        {{ __('Deactivate') }}</option>
+                                                                        {{ __('Inactive') }}</option>
                                                                 </select>
                                                             </div>
                                                             <div class="col-md-12 mb-25">
@@ -337,6 +339,27 @@
                                                                 <span class="text-info">{{ __('Recomended size') }} :
                                                                     {{ __('576 x 458') }}</span>
                                                             </div>
+
+                                                            @foreach (['sign_in_image_2' => 2, 'sign_in_image_3' => 3, 'sign_in_image_4' => 4] as $slideKey => $slideNo)
+                                                                <div class="col-md-4 mb-25">
+                                                                    <label class="label-text-title color-heading font-medium mb-2">{{ __('Login Slideshow Image') }} {{ $slideNo }}</label>
+                                                                    <div class="upload-app-logo bg-light radius-4 text-center p-3">
+                                                                        <div class="profile-user position-relative d-inline-block">
+                                                                            <img src="@if (empty(getOption($slideKey))) {{ asset('assets/images/users/empty-user.jpg') }}@else{{ getSettingImage($slideKey) }}@endif"
+                                                                                class="rounded avatar-xl" alt="login-slide-{{ $slideNo }}">
+                                                                            <div class="avatar-xs p-0 rounded-circle signin-profile-photo-edit">
+                                                                                <input id="login-slide-input-{{ $slideNo }}" name="{{ $slideKey }}" type="file">
+                                                                                <label for="login-slide-input-{{ $slideNo }}" class="signin-profile-photo-edit avatar-xs">
+                                                                                    <span class="avatar-title rounded-circle" title="{{ __('Upload Image') }}">
+                                                                                        <i class="ri-camera-fill"></i>
+                                                                                    </span>
+                                                                                </label>
+                                                                            </div>
+                                                                        </div>
+                                                                    </div>
+                                                                    <span class="text-info">{{ __('Optional — extra images turn the login into a slideshow') }}</span>
+                                                                </div>
+                                                            @endforeach
                                                         </div>
                                                     </div>
                                                 </div>

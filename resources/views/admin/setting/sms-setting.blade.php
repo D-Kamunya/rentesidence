@@ -5,6 +5,8 @@
         <div class="page-content">
             <div class="container-fluid">
                 <div class="page-content-wrapper bg-white p-30 radius-20">
+                    @include('centresidence._design')
+
                     <div class="row">
                         <div class="col-12">
                             <div
@@ -29,8 +31,8 @@
                         <div class="row">
                             @include('admin.setting.sidebar')
                             <div class="col-md-12 col-lg-12 col-xl-8 col-xxl-9">
-                                <div class="account-settings-rightside bg-off-white ">
-                                    <div class="language-settings-page-area theme-border radius-4 p-25">
+                                <div class="account-settings-rightside cs-controls ">
+                                    <div class="language-settings-page-area cs-card cs-card--pad">
                                         <div class="account-settings-content-box">
                                             <div class="account-settings-title border-bottom mb-20 pb-20">
                                                 <div class="row align-items-center">
@@ -98,7 +100,7 @@
                                         </div>
                                     </div>
 
-                                    <div class="language-settings-page-area theme-border radius-4 p-25 mt-4">
+                                    <div class="language-settings-page-area cs-card cs-card--pad mt-4">
                                         <div class="account-settings-content-box">
                                             <div class="account-settings-title border-bottom mb-20 pb-20">
                                                 <div class="row align-items-center">
@@ -166,7 +168,7 @@
                                         </div>
                                     </div>
 
-                                    <div class="language-settings-page-area theme-border radius-4 p-25 mt-4">
+                                    <div class="language-settings-page-area cs-card cs-card--pad mt-4">
                                         <div class="account-settings-content-box">
                                             <form action="{{ route('admin.setting.general-setting.update') }}"
                                                 method="post" enctype="multipart/form-data">
@@ -191,7 +193,7 @@
                                                                         {{ __('Active') }}</option>
                                                                     <option value="0"
                                                                         {{ getOption('send_email_status', 0) != SEND_EMAIL_STATUS_ACTIVE ? 'selected' : '' }}>
-                                                                        {{ __('Deactivate') }}</option>
+                                                                        {{ __('Inactive') }}</option>
                                                                 </select>
                                                                 <small
                                                                     class="small">{{ __('Sent mail to Owner sign Up, New invoice generate, Subscription payment success, New tenant add, New maintainer add, New contact message etc.') }}</small>
@@ -206,7 +208,7 @@
                                                                         {{ __('Active') }}</option>
                                                                     <option value="0"
                                                                         {{ getOption('email_verification_status', 0) != EMAIL_VERIFICATION_STATUS_ACTIVE ? 'selected' : '' }}>
-                                                                        {{ __('Deactivate') }}</option>
+                                                                        {{ __('Inactive') }}</option>
                                                                 </select>
                                                             </div>
                                                         </div>
@@ -225,7 +227,7 @@
             </div>
         </div>
     </div>
-    <div class="modal fade" id="testSmsModal" tabindex="-1" aria-labelledby="testSmsModalLabel" aria-hidden="true">
+    <div class="modal fade cs-modal" id="testSmsModal" tabindex="-1" aria-labelledby="testSmsModalLabel" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content">
                 <div class="modal-header">

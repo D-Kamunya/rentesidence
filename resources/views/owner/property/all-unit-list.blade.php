@@ -96,51 +96,9 @@
                                     <th class="text-center">{{ __('Action') }}</th>
                                 </tr>
                             </thead>
-                            <tbody>
-                                @foreach ($units as $unit)
-                                <tr>
-                                    <td>{{ ($units->currentPage() - 1) * $units->perPage() + $loop->iteration }}</td>
-                                    <td style="font-weight:600;color:var(--gray-800);">{{ $unit->unit_name }}</td>
-                                    <td>
-                                        <img class="ul-unit-thumb" src="{{ $unit->first_image_url }}" alt="">
-                                    </td>
-                                    <td>{{ $unit->property_name }}</td>
-                                    <td>
-                                        @if ($unit->first_name)
-                                            <span class="ow-badge ow-badge--paid">{{ $unit->first_name }} {{ $unit->last_name }}</span>
-                                        @else
-                                            <span class="ow-badge ow-badge--grey">{{ __('Not Available') }}</span>
-                                        @endif
-                                    </td>
-                                    <td class="text-center">
-                                        <div class="ul-actions">
-                                            @if (is_null($unit->first_name))
-                                                <button class="ul-action-btn ul-action-btn--delete deleteItem"
-                                                        data-formid="delete_row_form_{{ $unit->id }}"
-                                                        title="{{ __('Delete') }}">
-                                                    <span class="iconify" data-icon="ep:delete-filled"></span>
-                                                </button>
-                                                <form action="{{ route('owner.property.unit.delete', [$unit->id]) }}"
-                                                      method="post"
-                                                      id="delete_row_form_{{ $unit->id }}">
-                                                    {{ method_field('DELETE') }}
-                                                    <input type="hidden" name="_token" value="{{ csrf_token() }}">
-                                                </form>
-                                            @endif
-                                            <button type="button"
-                                                    class="ul-action-btn ul-action-btn--edit unit-edit"
-                                                    data-detailsurl="{{ route('owner.property.unit.details', $unit->id) }}"
-                                                    title="{{ __('Edit') }}">
-                                                <span class="iconify" data-icon="clarity:note-edit-solid"></span>
-                                            </button>
-                                        </div>
-                                    </td>
-                                </tr>
-                                @endforeach
-                            </tbody>
+                            <tbody></tbody>
                         </table>
                     </div>
-                    <div class="ul-pagination">{{ $units->links() }}</div>
                 </div>
 
             </div>
@@ -155,8 +113,8 @@
 
             <div class="ul-modal__head">
                 <div>
-                    <div class="ul-modal__eyebrow">{{ __('Unit') }}</div>
-                    <h4 class="ul-modal__title" id="editUnitModalLabel">{{ __('Edit Unit') }}</h4>
+                    <div class="ul-modal__eyebrow">{{ __('Edit Unit') }}</div>
+                    <h4 class="ul-modal__title" id="editUnitModalLabel"><span class="edit-unit-name">{{ __('Unit') }}</span></h4>
                 </div>
                 <button type="button" class="ul-modal__close" data-bs-dismiss="modal" aria-label="Close">
                     <span class="iconify" data-icon="akar-icons:cross"></span>
@@ -258,24 +216,21 @@
                                     id="monthly-unit-block-tab" data-bs-toggle="tab"
                                     data-bs-target="#monthly-unit-block-tab-pane"
                                     type="button" role="tab" aria-controls="monthly-unit-block-tab-pane" aria-selected="true">
-                                <span class="select-property-nav-text d-flex align-items-center position-relative">
-                                    <span class="select-property-nav-text-box me-2"></span>{{ __('Monthly') }}
+                                <span class="select-property-nav-text d-flex align-items-center position-relative">{{ __('Monthly') }}
                                 </span>
                             </button>
                             <button class="ul-tab nav-link select_rent_type" data-rent_type="2" data-id=""
                                     id="yearly-unit-block-tab" data-bs-toggle="tab"
                                     data-bs-target="#yearly-unit-block-tab-pane"
                                     type="button" role="tab" aria-controls="yearly-unit-block-tab-pane" aria-selected="false">
-                                <span class="select-property-nav-text d-flex align-items-center position-relative">
-                                    <span class="select-property-nav-text-box me-2"></span>{{ __('Yearly') }}
+                                <span class="select-property-nav-text d-flex align-items-center position-relative">{{ __('Yearly') }}
                                 </span>
                             </button>
                             <button class="ul-tab nav-link select_rent_type" data-rent_type="3" data-id=""
                                     id="custom-unit-block-tab" data-bs-toggle="tab"
                                     data-bs-target="#custom-unit-block-tab-pane"
                                     type="button" role="tab" aria-controls="custom-unit-block-tab-pane" aria-selected="false">
-                                <span class="select-property-nav-text d-flex align-items-center position-relative">
-                                    <span class="select-property-nav-text-box me-2"></span>{{ __('Custom') }}
+                                <span class="select-property-nav-text d-flex align-items-center position-relative">{{ __('Custom') }}
                                 </span>
                             </button>
                         </div>
@@ -463,24 +418,21 @@
                                     id="monthly-add-unit-block-tab" data-bs-toggle="tab"
                                     data-bs-target="#monthly-add-unit-block-tab-pane"
                                     type="button" role="tab" aria-controls="monthly-add-unit-block-tab-pane" aria-selected="true">
-                                <span class="select-property-nav-text d-flex align-items-center position-relative">
-                                    <span class="select-property-nav-text-box me-2"></span>{{ __('Monthly') }}
+                                <span class="select-property-nav-text d-flex align-items-center position-relative">{{ __('Monthly') }}
                                 </span>
                             </button>
                             <button class="ul-tab nav-link add-select_rent_type" data-add-rent_type="2" data-id=""
                                     id="yearly-add-unit-block-tab" data-bs-toggle="tab"
                                     data-bs-target="#yearly-add-unit-block-tab-pane"
                                     type="button" role="tab" aria-controls="yearly-add-unit-block-tab-pane" aria-selected="false">
-                                <span class="select-property-nav-text d-flex align-items-center position-relative">
-                                    <span class="select-property-nav-text-box me-2"></span>{{ __('Yearly') }}
+                                <span class="select-property-nav-text d-flex align-items-center position-relative">{{ __('Yearly') }}
                                 </span>
                             </button>
                             <button class="ul-tab nav-link add-select_rent_type" data-add-rent_type="3" data-id=""
                                     id="custom-add-unit-block-tab" data-bs-toggle="tab"
                                     data-bs-target="#custom-add-unit-block-tab-pane"
                                     type="button" role="tab" aria-controls="custom-add-unit-block-tab-pane" aria-selected="false">
-                                <span class="select-property-nav-text d-flex align-items-center position-relative">
-                                    <span class="select-property-nav-text-box me-2"></span>{{ __('Custom') }}
+                                <span class="select-property-nav-text d-flex align-items-center position-relative">{{ __('Custom') }}
                                 </span>
                             </button>
                         </div>
@@ -903,7 +855,32 @@ div.dataTables_length { display: none !important; }
 
 @push('script')
     @include('common.layouts.datatable-script')
-    <script src="{{ asset('assets/js/pages/alldatatables.init.js') }}"></script>
+    <script>
+        $(function () {
+            $('#allDataTable').DataTable({
+                processing: true,
+                serverSide: true,
+                responsive: true,
+                searchDelay: 400,
+                order: [], // keep the query's default order (grouped by property)
+                language: { search: '', searchPlaceholder: '{{ __('Search units by name, property or tenant…') }}' },
+                ajax: '{{ route('owner.property.allUnit') }}',
+                columns: [
+                    { data: 'DT_RowIndex', name: 'DT_RowIndex', orderable: false, searchable: false },
+                    { data: 'name', name: 'property_units.unit_name' },
+                    { data: 'image', name: 'image', orderable: false, searchable: false },
+                    { data: 'property', name: 'properties.name' },
+                    { data: 'tenant', name: 'tenant' },
+                    { data: 'action', name: 'action', orderable: false, searchable: false },
+                ],
+                initComplete: function () {
+                    // Set the placeholder explicitly too — the page hides the "Search:" label
+                    // (font-size:0), and this guarantees the hint text shows in the input.
+                    $('#allDataTable_filter input').attr('placeholder', "{{ __('Search units by name, property or tenant…') }}");
+                },
+            });
+        });
+    </script>
     <script src="{{ asset('assets/js/custom/property.js') }}"></script>
     <script>
         document

@@ -163,25 +163,9 @@ $(document).on("click", ".gatewayCurrencyAmount", function () {
 });
 
 // ── M-Pesa preloader ─────────────────────────────────────────────────────────
-var timerInterval;
-
-function showMpesaPreloader() {
-    var countdown    = 120;
-    var timerElement = document.getElementById("mpesa-timer");
-    document.getElementById("mpesa-preloader").style.display = "block";
-    timerInterval = setInterval(function () {
-        var minutes = Math.floor(countdown / 60);
-        var seconds = countdown % 60;
-        timerElement.textContent = minutes + ":" + (seconds < 10 ? "0" + seconds : seconds);
-        if (countdown <= 0) clearInterval(timerInterval);
-        countdown--;
-    }, 1000);
-}
-
-function hideMpesaPreloader() {
-    clearInterval(timerInterval);
-    document.getElementById("mpesa-preloader").style.display = "none";
-}
+// Shared STK waiting overlay (common.partials.mpesa-stk-waiting).
+function showMpesaPreloader(amount) { if (window.mpesaWait) mpesaWait.show(amount ? { amount: amount } : {}); }
+function hideMpesaPreloader() { if (window.mpesaWait) mpesaWait.hide(); }
 
 // ── Pay button ───────────────────────────────────────────────────────────────
 $("#payBtn").on("click", function () {

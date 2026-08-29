@@ -32,7 +32,10 @@ Route::group(['middleware' => ['version.update', 'addon.update', 'isFrontend']],
 });
 
 Route::group(['prefix' => 'payment'], function () {
-    Route::post('/subscription', [PaymentSubscriptionController::class, 'checkout'])->name('payment.subscription.checkout');
+    // Subscription checkout is initiated only by an authenticated owner (the subscription
+    // modal) and uses auth()->id() internally — require auth so a guest can't POST here
+    // and spawn orphan subscription orders. The verify route stays public (STK redirect).
+    Route::post('/subscription', [PaymentSubscriptionController::class, 'checkout'])->middleware('auth')->name('payment.subscription.checkout');
     Route::match(array('GET', 'POST'), 'subscription/verify', [PaymentSubscriptionController::class, 'verify'])->name('payment.subscription.verify');
 });
 

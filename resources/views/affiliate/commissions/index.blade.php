@@ -218,9 +218,11 @@
                                         <svg width="12" height="12" viewBox="0 0 24 24" fill="none"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
                                         <select id="cmxWithdrawalStatusFilter" class="cmx-filter-select">
                                             <option value="">{{ __('All Statuses') }}</option>
-                                            <option value="pending">{{ __('Pending') }}</option>
-                                            <option value="approved">{{ __('Approved') }}</option>
-                                            <option value="rejected">{{ __('Rejected') }}</option>
+                                            <option value="{{ AFFILIATE_WITHDRAWAL_PENDING }}">{{ __('Pending') }}</option>
+                                            <option value="{{ AFFILIATE_WITHDRAWAL_PROCESSING }}">{{ __('Processing') }}</option>
+                                            <option value="{{ AFFILIATE_WITHDRAWAL_APPROVED }}">{{ __('Approved') }}</option>
+                                            <option value="{{ AFFILIATE_WITHDRAWAL_FAILED }}">{{ __('Failed') }}</option>
+                                            <option value="{{ AFFILIATE_WITHDRAWAL_REJECTED }}">{{ __('Rejected') }}</option>
                                         </select>
                                     </div>
                                 </div>
@@ -252,7 +254,7 @@
                                                     <span class="cmx-mono">{{ $withdrawal->phone }}</span>
                                                 </td>
                                                 <td>
-                                                    @if($withdrawal->status == AFFILIATE_WITHDRAWAL_APPROVED)
+                                                    @if(in_array($withdrawal->status, [AFFILIATE_WITHDRAWAL_APPROVED, AFFILIATE_WITHDRAWAL_PROCESSING, AFFILIATE_WITHDRAWAL_FAILED]))
                                                         @if($withdrawal->settlement_method === 'b2c')
                                                             <span class="cmx-method-badge cmx-method-badge--mpesa">
                                                                 <img src="{{ asset('assets/images/gateway-icon/mpesa.jpg') }}" alt="M-Pesa" style="width:16px;height:16px;border-radius:4px;object-fit:cover;">
@@ -262,18 +264,25 @@
                                                             <span class="cmx-method-badge">{{ __('Manual') }}</span>
                                                         @endif
                                                     @else
-                                                        {{-- No settlement has happened yet for pending/rejected. --}}
+                                                        {{-- No payout initiated yet for pending/rejected. --}}
                                                         <span class="cmx-method-badge" style="opacity:.55">—</span>
                                                     @endif
                                                 </td>
                                                 <td>
-                                                    <span class="cmx-status-badge cmx-status-badge--{{ $withdrawal->status }}">
+                                                    @php $cmxStatusClass = [AFFILIATE_WITHDRAWAL_PENDING=>'pending', AFFILIATE_WITHDRAWAL_PROCESSING=>'processing', AFFILIATE_WITHDRAWAL_APPROVED=>'approved', AFFILIATE_WITHDRAWAL_FAILED=>'failed', AFFILIATE_WITHDRAWAL_REJECTED=>'rejected'][$withdrawal->status] ?? 'pending'; @endphp
+                                                    <span class="cmx-status-badge cmx-status-badge--{{ $cmxStatusClass }}">
                                                         @if($withdrawal->status == AFFILIATE_WITHDRAWAL_PENDING)
                                                             <svg width="12" height="12" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2"/><path d="M12 6v6l4 2" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
                                                             {{ __('Pending') }}
+                                                        @elseif($withdrawal->status == AFFILIATE_WITHDRAWAL_PROCESSING)
+                                                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none"><path d="M21 12a9 9 0 11-6.219-8.56" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+                                                            {{ __('Processing') }}
                                                         @elseif($withdrawal->status == AFFILIATE_WITHDRAWAL_APPROVED)
                                                             <svg width="12" height="12" viewBox="0 0 24 24" fill="none"><path d="M22 11.08V12a10 10 0 11-5.93-9.14" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><polyline points="22 4 12 14.01 9 11.01" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
                                                             {{ __('Approved') }}
+                                                        @elseif($withdrawal->status == AFFILIATE_WITHDRAWAL_FAILED)
+                                                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2"/><line x1="12" y1="8" x2="12" y2="12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><line x1="12" y1="16" x2="12.01" y2="16" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+                                                            {{ __('Failed') }}
                                                         @elseif($withdrawal->status == AFFILIATE_WITHDRAWAL_REJECTED)
                                                             <svg width="12" height="12" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2"/><line x1="15" y1="9" x2="9" y2="15" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><line x1="9" y1="9" x2="15" y2="15" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
                                                             {{ __('Rejected') }}
@@ -786,9 +795,11 @@
     padding:3px 10px; border-radius:99px;
     font-size:11px; font-weight:600; white-space:nowrap;
 }
-.cmx-status-badge--pending  { background:#FEF3C7; color:#92400E; }
-.cmx-status-badge--approved { background:var(--cmx-green-light); color:var(--cmx-green-dark); }
-.cmx-status-badge--rejected { background:var(--cmx-red-light); color:var(--cmx-red); }
+.cmx-status-badge--pending    { background:#FEF3C7; color:#92400E; }
+.cmx-status-badge--processing { background:var(--cmx-blue-light); color:var(--cmx-blue); }
+.cmx-status-badge--approved   { background:var(--cmx-green-light); color:var(--cmx-green-dark); }
+.cmx-status-badge--failed     { background:var(--cmx-red-light); color:var(--cmx-red); }
+.cmx-status-badge--rejected   { background:var(--cmx-red-light); color:var(--cmx-red); }
 
 .cmx-method-badge {
     display:inline-flex; align-items:center; gap:5px;

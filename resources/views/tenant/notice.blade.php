@@ -5,49 +5,37 @@
         <div class="page-content">
             <div class="container-fluid">
                 <div class="page-content-wrapper bg-white p-30 radius-20">
-                    <div class="row">
-                        <div class="col-12">
-                            <div
-                                class="page-title-box d-sm-flex align-items-center justify-content-between border-bottom mb-20">
-                                <div class="page-title-left">
-                                    <h3 class="mb-sm-0">{{ $pageTitle }}</h3>
-                                </div>
-                                <div class="page-title-right">
-                                    <ol class="breadcrumb mb-0">
-                                        <li class="breadcrumb-item"><a href="{{ route('tenant.dashboard') }}"
-                                                title="{{ __('Dashboard') }}">{{ __('Dashboard') }}</a></li>
-                                        <li class="breadcrumb-item active" aria-current="page">{{ $pageTitle }}</li>
-                                    </ol>
-                                </div>
-                            </div>
+                    @include('centresidence._design')
+
+                    <div class="cs-titlebar">
+                        <div>
+                            <h1 class="cs-title">{{ $pageTitle }}</h1>
+                            <ol class="cs-crumb"><li><a href="{{ route('tenant.dashboard') }}">{{ __('Dashboard') }}</a></li><li>›</li><li>{{ $pageTitle }}</li></ol>
                         </div>
                     </div>
-                    <div class="row">
-                        <div class="information-table-area">
-                            <div class="table-responsive bg-off-white theme-border radius-4 p-25">
-                                <table id="allDataTable" class="table bg-off-white theme-border p-20 dt-responsive">
-                                    <thead>
-                                        <tr>
-                                            <th>{{ __('SL') }}</th>
-                                            <th class="desktop">{{ __('Title') }}</th>
-                                            <th class="desktop">{{ __('Details') }}</th>
-                                            <th class="desktop">{{ __('Date') }}</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        @foreach ($notices as $notice)
-                                            <tr>
-                                                <td>{{ $loop->iteration }}</td>
-                                                <td>{!! $notice->title !!}</td>
-                                                <td>{!! $notice->details !!}</td>
-                                                <td>{{ $notice->start_date }}</td>
-                                            </tr>
-                                        @endforeach
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
-                    </div>
+
+                    <div class="cs-card"><div class="cs-card__body">
+                        <table id="allDataTable" class="table dt-responsive" style="width:100%;">
+                            <thead>
+                                <tr>
+                                    <th>{{ __('SL') }}</th>
+                                    <th class="desktop">{{ __('Title') }}</th>
+                                    <th class="desktop">{{ __('Details') }}</th>
+                                    <th class="desktop">{{ __('Date') }}</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach ($notices as $notice)
+                                    <tr>
+                                        <td>{{ $loop->iteration }}</td>
+                                        <td>{{ $notice->title }}</td>
+                                        <td>{{ $notice->details }}</td>
+                                        <td>{{ $notice->start_date }}</td>
+                                    </tr>
+                                @endforeach
+                            </tbody>
+                        </table>
+                    </div></div>
                 </div>
             </div>
         </div>

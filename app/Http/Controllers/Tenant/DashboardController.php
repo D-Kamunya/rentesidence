@@ -56,10 +56,12 @@ class DashboardController extends Controller
                 ->get()
             : collect();
 
-        // Centresidence: surface the utilities top-up entry only when the tenant
-        // actually has a metered module on their unit (guarded — no-op elsewhere).
-        $data['hasUtilities'] = \Illuminate\Support\Facades\Schema::hasTable('property_modules')
-            && app(\App\Centresidence\Services\TokenPurchaseCollectionService::class)->hasUtilities((int) auth()->id());
+        // Centresidence: surface the tenant's metered utilities (with live balances)
+        // as dashboard cards — only when they actually have modules (guarded elsewhere).
+        $data['utilityModules'] = \Illuminate\Support\Facades\Schema::hasTable('property_modules')
+            ? app(\App\Centresidence\Services\TokenPurchaseCollectionService::class)->modulesFor((int) auth()->id())
+            : collect();
+        $data['hasUtilities'] = $data['utilityModules']->isNotEmpty();
 
         return view('tenant.dashboard')->with($data);
     }

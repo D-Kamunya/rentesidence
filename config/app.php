@@ -138,6 +138,9 @@ return [
     'cipher' => 'AES-256-CBC',
 
     'app_code' => env('APP_CODE', 'PROPERTY'),
+    // Secret for the public URL-cron hook /recurring-generate-invoice?key=… — unset by
+    // default so the endpoint is disabled (404) unless a host deliberately relies on it.
+    'recurring_invoice_key' => env('RECURRING_INVOICE_KEY'),
     'build_version' => env('BUILD_VERSION', 18),
     'current_version' => env('CURRENT_VERSION', '3.5'),
     'sql_path' => app_path('demo.sql'),
@@ -201,7 +204,6 @@ return [
         Illuminate\Translation\TranslationServiceProvider::class,
         Illuminate\Validation\ValidationServiceProvider::class,
         Illuminate\View\ViewServiceProvider::class,
-        DocuSign\eSign\ESignServiceProvider::class,
 
         /*
          * Package Service Providers...

@@ -58,7 +58,7 @@ class PackageService
                 if ($package->status == ACTIVE) {
                     return '<div class="status-btn status-btn-green font-13 radius-4">Active</div>';
                 } else {
-                    return '<div class="status-btn status-btn-orange font-13 radius-4">Deactivate</div>';
+                    return '<div class="status-btn status-btn-orange font-13 radius-4">Inactive</div>';
                 }
             })
             ->addColumn('trail', function ($package) {
@@ -221,7 +221,7 @@ class PackageService
                 if ($ownerPackage->status == ACTIVE) {
                     return '<div class="status-btn status-btn-blue font-13 radius-4">Active</div>';
                 } else {
-                    return '<div class="status-btn status-btn-orange font-13 radius-4">Deactivate</div>';
+                    return '<div class="status-btn status-btn-orange font-13 radius-4">Inactive</div>';
                 }
             })->addColumn('action', function ($ownerPackage) {
                 return '<div class="tbl-action-btns d-inline-flex">
@@ -277,7 +277,7 @@ class PackageService
             DB::commit();
 
             $invoiceUrl = route('owner.subscription.index');
-            $title      = __('Subscription Activated Successfully');
+            $title      = __('Subscription activated');
             $body       = __('Your subscription package has been successfully activated by the administrator.');
             addNotification($title, $body, $invoiceUrl, null, $ownerUser->id, $adminUser->id);
 

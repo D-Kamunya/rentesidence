@@ -52,10 +52,10 @@ class ProductController extends Controller
             $query->where('category', $category);
         }
 
-        // Paginate the results with a limit of 10 per page
+        // 12 per page keeps the product card grid evenly balanced (2/3/4-col rows)
         $products = $query
             ->with('productCategory')
-            ->paginate(10)
+            ->paginate(12)
             ->appends([
                 'type' => $type,
                 'category' => $category,
@@ -191,7 +191,7 @@ class ProductController extends Controller
         ->when($request->type, function ($query) use ($request) {
             return $query->where('type', $request->type);
         })
-        ->paginate(10)
+        ->paginate(12)
         ->appends($request->only('category', 'type'));
 
         return view('tenant.products.index', compact('products', 'categories'));

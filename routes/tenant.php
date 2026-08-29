@@ -8,6 +8,7 @@ use App\Http\Controllers\Tenant\ProductOrderController;
 use App\Http\Controllers\Tenant\UtilityTokenController;
 use App\Http\Controllers\Tenant\MaintenanceRequestController;
 use App\Http\Controllers\Tenant\TicketController;
+use App\Http\Controllers\Tenant\RentalScoreController;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\PaymentController;
 use Illuminate\Support\Facades\Route;
@@ -17,10 +18,20 @@ Route::group(['prefix' => 'tenant', 'as' => 'tenant.', 'middleware' => ['auth', 
     Route::get('notification', [DashboardController::class, 'notification'])->name('notification');
     Route::get('notices', [DashboardController::class, 'notices'])->name('notices');
 
+    // My Rental Score — the tenant-owned Global Tenant ID (transparency + activate + dispute).
+    Route::group(['prefix' => 'rental-score', 'as' => 'rental-score.'], function () {
+        Route::get('/', [RentalScoreController::class, 'index'])->name('index');
+        Route::post('activate', [RentalScoreController::class, 'activate'])->name('activate');
+        Route::post('dispute', [RentalScoreController::class, 'dispute'])->name('dispute');
+        Route::post('dispute/reply', [RentalScoreController::class, 'disputeReply'])->name('dispute.reply');
+    });
+
     Route::group(['prefix' => 'invoice', 'as' => 'invoice.'], function () {
         Route::get('/', [InvoiceController::class, 'index'])->name('index');
         Route::get('print/{id}', [InvoiceController::class, 'details'])->name('print');
         Route::get('pay/{id}', [InvoiceController::class, 'pay'])->name('pay');
+        Route::get('receipt/{id}', [InvoiceController::class, 'receipt'])->name('receipt');
+        Route::post('pay-upcoming', [InvoiceController::class, 'generateUpcoming'])->name('pay.upcoming');
         Route::get('get-currency-by-gateway', [InvoiceController::class, 'getCurrencyByGateway'])->name('get.currency');
     });
 
@@ -79,5 +90,9 @@ Route::group(['prefix' => 'tenant', 'as' => 'tenant.', 'middleware' => ['auth', 
 Route::get('/pay/invoice/{token}', [InvoiceController::class, 'instantRentPayShow'])
     ->name('instant.invoice.pay');
 
-Route::post('/instant-invoice-pay/{token}', [PaymentController::class, 'instantCheckout'])->name('instant.payment.checkout');
+// Throttled: unauthenticated STK-trigger endpoint — cap attempts per IP so a leaked
+// pay link can't be used to spam STK prompts at an arbitrary phone number.
+Route::post('/instant-invoice-pay/{token}', [PaymentController::class, 'instantCheckout'])
+    ->middleware('throttle:6,1')
+    ->name('instant.payment.checkout');
 

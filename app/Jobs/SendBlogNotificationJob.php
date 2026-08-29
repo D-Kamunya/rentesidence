@@ -29,7 +29,12 @@ class SendBlogNotificationJob implements ShouldQueue
             }
 
             $postUrl = route('blog.show', $this->post->slug);
-            $unsubscribeUrl = route('blog.unsubscribe', ['email' => $this->subscriber->email]);
+            // Signed so the link can't be used to unsubscribe an arbitrary email —
+            // BlogController::unsubscribe rejects any request without a valid signature.
+            $unsubscribeUrl = \Illuminate\Support\Facades\URL::signedRoute(
+                'blog.unsubscribe',
+                ['email' => $this->subscriber->email]
+            );
             
             Mail::send([], [], function ($message) use ($postUrl, $unsubscribeUrl) {
                 $message->to($this->subscriber->email)

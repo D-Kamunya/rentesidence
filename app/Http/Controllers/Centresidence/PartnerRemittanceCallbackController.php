@@ -28,6 +28,20 @@ class PartnerRemittanceCallbackController extends Controller
             return $this->ack();
         }
 
+        // Authenticity: while the batch is actionable (SENT), the async result must echo
+        // the same ConversationID Safaricom issued for THIS batch's payout (stored as
+        // `reference` at send). Reject a forged result — otherwise anyone could confirm a
+        // payout that never landed, or fail one that did (forcing a double-payout retry).
+        // Already-settled batches are harmless no-ops via the service's status guards.
+        if ($batchModel->status === PartnerRemittanceBatch::STATUS_SENT
+            && ! $this->resultMatchesBatch($result, $batchModel)) {
+            Log::warning('Centresidence remittance callback rejected: conversation id mismatch', [
+                'batch_id' => $batch,
+            ]);
+
+            return $this->ack();
+        }
+
         if ((int) $code === 0) {
             $remittances->confirmBatch($batchModel, $this->receipt($result));
         } else {
@@ -39,6 +53,28 @@ class PartnerRemittanceCallbackController extends Controller
         }
 
         return $this->ack();
+    }
+
+    /**
+     * True when the async result carries the ConversationID Safaricom issued for this
+     * batch's payout (stored as `reference` at send). Accepts either ConversationID or
+     * OriginatorConversationID (the B2B result echoes the value the send returned).
+     */
+    private function resultMatchesBatch(array $result, PartnerRemittanceBatch $batch): bool
+    {
+        $ref = (string) ($batch->reference ?? '');
+        if ($ref === '') {
+            return false;
+        }
+
+        foreach (['ConversationID', 'OriginatorConversationID'] as $key) {
+            $value = $result[$key] ?? null;
+            if (! empty($value) && hash_equals($ref, (string) $value)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /** Pull the M-Pesa transaction receipt from the B2B result, if present. */

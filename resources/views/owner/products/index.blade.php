@@ -68,6 +68,35 @@
                         @endif
                     </div>
 
+                    {{-- Dispatch handling config --}}
+                    <div class="dispatch-cfg mb-4">
+                        <div class="dispatch-cfg__info">
+                            <i class="ri-truck-line"></i>
+                            <div>
+                                <strong>{{ $owner->caretaker_dispatch_enabled ? __('Your caretaker handles dispatch') : __('You handle dispatch yourself') }}</strong>
+                                <span>{{ $owner->caretaker_dispatch_enabled
+                                    ? __('When a tenant buys, your on-site caretaker sees it in their Dispatch queue and delivers it.')
+                                    : __('Marketplace orders won\'t appear in any caretaker\'s queue — you\'ll organise delivery yourself.') }}</span>
+                            </div>
+                        </div>
+                        <form action="{{ route('owner.productOrder.dispatchSetting') }}" method="POST">
+                            @csrf
+                            <input type="hidden" name="caretaker_dispatch_enabled" value="{{ $owner->caretaker_dispatch_enabled ? 0 : 1 }}">
+                            <button type="submit" class="dispatch-cfg__btn">
+                                {{ $owner->caretaker_dispatch_enabled ? __('I\'ll dispatch myself') : __('Let my caretaker dispatch') }}
+                            </button>
+                        </form>
+                    </div>
+                    <style>
+                        .dispatch-cfg { display:flex; align-items:center; justify-content:space-between; gap:16px; flex-wrap:wrap; background:#F5F9FD; border:0.5px solid #d7e3f2; border-radius:12px; padding:14px 18px; }
+                        .dispatch-cfg__info { display:flex; gap:12px; align-items:flex-start; }
+                        .dispatch-cfg__info i { font-size:22px; color:#185FA5; flex:none; margin-top:1px; }
+                        .dispatch-cfg__info strong { display:block; font-size:14px; color:#111827; }
+                        .dispatch-cfg__info span { font-size:12.5px; color:#6b7280; line-height:1.5; }
+                        .dispatch-cfg__btn { background:#fff; color:#185FA5; border:0.5px solid #B5D4F4; border-radius:9px; font-size:13px; font-weight:600; padding:9px 16px; cursor:pointer; white-space:nowrap; }
+                        .dispatch-cfg__btn:hover { background:#185FA5; color:#fff; }
+                    </style>
+
                     {{-- Filter Bar --}}
                     <div class="filter-bar mb-4">
                         <form method="GET" action="{{ route('owner.products.index') }}" class="filter-bar__form">
@@ -177,7 +206,7 @@
                                             <form action="{{ route('owner.products.destroy', $product->id) }}" 
                                                 method="POST" 
                                                 class="delete-form"
-                                                onsubmit="return confirm('{{ __('Are you sure you want to delete this product?') }}')">
+                                                data-cs-confirm="{{ __('Are you sure you want to delete this product?') }}" data-cs-confirm-tone="danger" data-cs-confirm-ok="{{ __('Delete') }}">
                                                 @csrf
                                                 @method('DELETE')
                                                 <button type="submit" class="product-action-btn product-action-btn--delete" title="{{ __('Delete') }}">

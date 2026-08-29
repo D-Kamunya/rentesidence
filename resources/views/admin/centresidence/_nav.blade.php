@@ -12,6 +12,7 @@
         'self-financed'  => ['Self-financed', 'ri-hand-coin-line'],
         'devices'        => ['Devices', 'ri-cpu-line'],
         'infrastructure' => ['Infrastructure', 'ri-router-line'],
+        'integrations'   => ['Integrations', 'ri-plug-line'],
     ];
     $active = $active ?? 'index';
 @endphp

@@ -7,6 +7,8 @@ function getDataViewRes(response) {
     $('.name').html(response.data.name)
     $('.property').html(response.data.property_name)
     $('.distance').html(response.data.distance)
-    $('.contact_number').html(response.data.contact_number)
+    var contact = response.data.contact_number || '';
+    var telHref = contact.replace(/[^0-9+]/g, '');
+    $('.contact_number').html(contact ? '<a href="tel:' + telHref + '">' + contact + '</a>' : '')
     $('.additional_information').html(response.data.additional_information)
 }

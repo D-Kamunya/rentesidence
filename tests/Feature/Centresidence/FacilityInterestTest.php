@@ -75,6 +75,28 @@ class FacilityInterestTest extends CentresidenceDatabaseTestCase
             ->where('transaction_type', 'fee')->count());
     }
 
+    public function test_manual_early_settlement_stays_pending_until_partner_confirms(): void
+    {
+        $facility = $this->facility('reducing_balance');
+        $svc = app(FinanceFacilityService::class);
+
+        // Manual channel → recorded, but NOT completed (no free status flip).
+        $res = $svc->initiateEarlySettlement($facility, 'manual', 'BANK-REF-1');
+        $this->assertSame('pending', $res['status']);
+        $facility->refresh();
+        $this->assertSame(FinanceFacility::EARLY_PENDING, $facility->early_settlement_status);
+        $this->assertSame(FinanceFacility::STATUS_ACTIVE, $facility->status, 'not completed until confirmed');
+
+        // Partner confirms receipt → completed + the partner is owed the payoff for remittance.
+        $svc->confirmEarlySettlement($facility);
+        $facility->refresh();
+        $this->assertSame(FinanceFacility::STATUS_COMPLETED, $facility->status);
+        $this->assertSame(FinanceFacility::EARLY_SETTLED, $facility->early_settlement_status);
+        $partnerOwed = \App\Centresidence\Models\SettlementTransaction::where('finance_facility_id', $facility->id)
+            ->where('beneficiary_type', 'finance_partner')->sum('amount');
+        $this->assertEqualsWithDelta(39270.0, (float) $partnerOwed, 0.01); // principal 38,500 + 2% fee 770
+    }
+
     // ── Flat: interest pre-booked, no early saving ────────────────────────
 
     public function test_flat_prebooks_interest_and_early_settlement_keeps_it(): void

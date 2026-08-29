@@ -30,6 +30,18 @@
                         <span>{{ __('Maintenance Request') }}</span>
                     </a>
                 </li>
+                <li>
+                    <a href="{{ route('maintainer.rent.index') }}">
+                        <i class="ri-money-dollar-circle-line"></i>
+                        <span>{{ __('Rent & Payments') }}</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="{{ route('maintainer.dispatch.index') }}">
+                        <i class="ri-truck-line"></i>
+                        <span>{{ __('Dispatch') }}</span>
+                    </a>
+                </li>
 
                 <li>
                     <a href="javascript: void(0);" class="has-arrow">

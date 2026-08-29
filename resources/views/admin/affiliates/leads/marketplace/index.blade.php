@@ -267,7 +267,7 @@
                                                     {{-- Only allow pull if not yet claimed --}}
                                                     @if($lead->marketplace_status === 'marketplace')
                                                         <form method="POST" action="{{ route('admin.marketplace.destroy', $lead->id) }}" style="display:inline;"
-                                                              onsubmit="return confirm('Remove this lead from the marketplace?')">
+                                                              data-cs-confirm="Remove this lead from the marketplace?" data-cs-confirm-tone="danger">
                                                             @csrf
                                                             @method('DELETE')
                                                             <button type="submit" class="mp-action-btn mp-action-btn--remove">

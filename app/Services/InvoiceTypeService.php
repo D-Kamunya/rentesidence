@@ -13,6 +13,8 @@ class InvoiceTypeService
 
     public function getAll()
     {
+        ensureOwnerDefaults(auth()->id(), InvoiceType::class, 'setOwnerInvoiceType');
+
         return InvoiceType::where('owner_user_id', auth()->id())->get();
     }
 
@@ -59,6 +61,12 @@ class InvoiceTypeService
         DB::beginTransaction();
         try {
             $invoiceType = InvoiceType::where('owner_user_id', auth()->id())->findOrFail($id);
+
+            if ((int) $invoiceType->is_default === 1) {
+                DB::rollBack();
+                return $this->error([], __('Default invoice types cannot be deleted.'));
+            }
+
             $invoiceType->delete();
             DB::commit();
             $message = __(DELETED_SUCCESSFULLY);

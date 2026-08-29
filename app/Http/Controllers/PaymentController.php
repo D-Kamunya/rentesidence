@@ -401,8 +401,15 @@ class PaymentController extends Controller
 
             if (filter_var($stkSuccess, FILTER_VALIDATE_BOOLEAN) === true) {
 
-                $order = Order::find($order_id);
-                if ($order && $order->payment_status !== INVOICE_STATUS_PAID) {
+                $order  = Order::find($order_id);
+                $isPaid = $order && (int) $order->payment_status === INVOICE_STATUS_PAID;
+
+                // SECURITY: the browser `stk_success` flag is client-set and cannot
+                // authorise settlement — confirm the STK result server-side before marking
+                // the order paid / crediting rent commission, so a payer can't forge "paid"
+                // (and phantom commission) without paying. The authenticated M-Pesa callback
+                // stays the primary settlement path (it may already have marked it paid).
+                if ($order && !$isPaid && mpesaStkConfirmed($order->payment_id)) {
                     DB::beginTransaction();
                     try {
                         $order->payment_status = INVOICE_STATUS_PAID;
@@ -418,6 +425,34 @@ class PaymentController extends Controller
                         }
 
                         DB::commit();
+                        $isPaid = true;
+
+                        // Centresidence facility repayment / settlement. This branch may
+                        // mark the order paid before the webhook arrives; the webhook only
+                        // settles while status is PENDING, so it would then skip settlement.
+                        // Run it here too — idempotent per order (rent_transaction_id guard)
+                        // so at most one path actually deducts. Scoped to the RENT portion.
+                        if (
+                            $isRentTransaction && config('centresidence.enabled', true)
+                            && ($invoice = Invoice::find($order->invoice_id))
+                            && ($rentPortion = min((float) $invoice->rentPortion(), (float) $order->transaction_amount)) > 0
+                            && app(\App\Centresidence\Services\PaymentModeService::class)
+                                ->isTransactionMode((int) $invoice->owner_user_id)
+                        ) {
+                            try {
+                                app(\App\Centresidence\Services\RentSettlementService::class)->handleRentPayment(
+                                    (int) $invoice->property_id,
+                                    (int) $invoice->owner_user_id,
+                                    \App\Centresidence\Support\Money::fromDecimal((string) $rentPortion),
+                                    ['rent_transaction_id' => (int) $order->id]
+                                );
+                            } catch (\Throwable $settlementException) {
+                                Log::error('Centresidence rent settlement failed in verify (Pusher branch)', [
+                                    'order_id' => $order->id,
+                                    'error'    => $settlementException->getMessage(),
+                                ]);
+                            }
+                        }
                     } catch (\Exception $e) {
                         DB::rollBack();
                         Log::error('Rent commission failed in verify (Pusher branch)', [
@@ -425,11 +460,22 @@ class PaymentController extends Controller
                             'error'    => $e->getMessage(),
                             'trace'    => $e->getTraceAsString(),
                         ]);
-                        // Do NOT return error — payment succeeded, commission is secondary
                     }
                 }
 
-                return redirect($redirect)
+                // Not yet confirmed (callback still in flight) — don't claim success.
+                if (!$isPaid) {
+                    return redirect($redirect)
+                        ->with('info', __('Your rent payment is being confirmed. Please refresh in a moment.'));
+                }
+
+                // Authenticated tenants land on the rent receipt (mirrors the marketplace
+                // order receipt); guests on an instant link keep their token page.
+                $successRedirect = (auth()->check() && $order && $order->invoice_id)
+                    ? route('tenant.invoice.receipt', $order->invoice_id)
+                    : $redirect;
+
+                return redirect($successRedirect)
                     ->with('success', __($formattedGateway . ' STK Payment Successful. Rent Paid!'));
 
             } else {
@@ -444,7 +490,10 @@ class PaymentController extends Controller
         $order = Order::findOrFail($order_id);
 
         if ($order->payment_status == INVOICE_STATUS_PAID) {
-            return redirect($redirect)
+            $successRedirect = (auth()->check() && $order->invoice_id)
+                ? route('tenant.invoice.receipt', $order->invoice_id)
+                : $redirect;
+            return redirect($successRedirect)
                 ->with('success', __($formattedGateway . ' Payment Successful. Rent Paid!'));
         }
 

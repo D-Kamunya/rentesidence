@@ -139,7 +139,9 @@
                                     <select id="statusFilter" class="aw-filter__select">
                                         <option value="">{{ __('All Statuses') }}</option>
                                         <option value="0">{{ __('Pending') }}</option>
+                                        <option value="3">{{ __('Processing') }}</option>
                                         <option value="1">{{ __('Approved') }}</option>
+                                        <option value="4">{{ __('Failed') }}</option>
                                         <option value="2">{{ __('Rejected') }}</option>
                                     </select>
                                 </div>
@@ -180,7 +182,7 @@
                                         <td><span class="aw-amount-badge">KSh {{ number_format($wd->amount, 2) }}</span></td>
                                         <td class="aw-muted">{{ $wd->phone ?? '—' }}</td>
                                         <td>
-                                            @if($wd->status == AFFILIATE_WITHDRAWAL_APPROVED)
+                                            @if(in_array($wd->status, [AFFILIATE_WITHDRAWAL_APPROVED, AFFILIATE_WITHDRAWAL_PROCESSING, AFFILIATE_WITHDRAWAL_FAILED]))
                                                 @if($wd->settlement_method === 'manual')
                                                     <span class="aw-method-badge aw-method-badge--manual">{{ __('Manual') }}</span>
                                                 @else
@@ -190,7 +192,7 @@
                                                     </span>
                                                 @endif
                                             @else
-                                                {{-- Settlement method only exists once a withdrawal is actually paid out. --}}
+                                                {{-- Settlement method only exists once a payout has been initiated. --}}
                                                 <span class="aw-muted">—</span>
                                             @endif
                                         </td>
@@ -198,8 +200,12 @@
                                         <td>
                                             @if($wd->status == AFFILIATE_WITHDRAWAL_PENDING)
                                                 <span class="aw-status-badge aw-status-badge--pending">{{ __('Pending') }}</span>
+                                            @elseif($wd->status == AFFILIATE_WITHDRAWAL_PROCESSING)
+                                                <span class="aw-status-badge aw-status-badge--processing">{{ __('Processing') }}</span>
                                             @elseif($wd->status == AFFILIATE_WITHDRAWAL_APPROVED)
                                                 <span class="aw-status-badge aw-status-badge--approved">{{ __('Approved') }}</span>
+                                            @elseif($wd->status == AFFILIATE_WITHDRAWAL_FAILED)
+                                                <span class="aw-status-badge aw-status-badge--failed">{{ __('Failed') }}</span>
                                             @else
                                                 <span class="aw-status-badge aw-status-badge--rejected">{{ __('Rejected') }}</span>
                                             @endif
@@ -561,7 +567,9 @@
 .aw-method-badge--manual{background:var(--amber-light);color:var(--amber);border:0.5px solid var(--amber-border)}
 .aw-status-badge{display:inline-flex;align-items:center;padding:3px 9px;border-radius:99px;font-size:11px;font-weight:500;white-space:nowrap}
 .aw-status-badge--pending{background:var(--amber-light);color:var(--amber);border:0.5px solid var(--amber-border)}
+.aw-status-badge--processing{background:var(--blue-light);color:var(--blue);border:0.5px solid var(--blue-border)}
 .aw-status-badge--approved{background:var(--green-light);color:var(--green-dark)}
+.aw-status-badge--failed{background:var(--red-light);color:var(--red);border:0.5px solid var(--red-border,transparent)}
 .aw-status-badge--rejected{background:var(--red-light);color:var(--red)}
 .aw-notes-cell{display:inline-flex;align-items:center;gap:4px;font-size:11px;color:var(--gray-500);cursor:help;max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .aw-action-group{display:flex;gap:6px}

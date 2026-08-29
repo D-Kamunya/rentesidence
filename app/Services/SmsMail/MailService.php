@@ -9,6 +9,7 @@ use App\Mail\ReminderMail;
 use App\Mail\SignUpMail;
 use App\Mail\SubscriptionSuccessMail;
 use App\Mail\ProductOrderSuccessMail;
+use App\Mail\RentPaymentSuccessMail;
 use App\Mail\ThankYouMail;
 use App\Mail\UserEmailVerification;
 use App\Mail\WelcomeMail;
@@ -52,7 +53,7 @@ class MailService
 
     public static function sendMail($emails = [], $subject = null, $message = null, $ownerUserId = null)
     {
-        if (env('MAIL_STATUS', 0) == 1 && env('MAIL_USERNAME')) {
+        if (config('mail.status') == 1 && config('mail.mailers.smtp.username')) {
             if (count($emails)) {
                 foreach ($emails as $key => $email) {
                     try {
@@ -83,7 +84,7 @@ class MailService
 
     public static function sendSignUpMail($emails = [], $subject = null, $message = null, $ownerUserId = null, $password = null)
     {
-        if (env('MAIL_STATUS', 0) == 1 && env('MAIL_USERNAME')) {
+        if (config('mail.status') == 1 && config('mail.mailers.smtp.username')) {
             if (count($emails)) {
                 foreach ($emails as $key => $email) {
                     try {
@@ -116,7 +117,7 @@ class MailService
 
     public static function sendWelcomeMail($emails = [], $subject = null, $message = null, $ownerUserId = null)
     {
-        if (env('MAIL_STATUS', 0) == 1 && env('MAIL_USERNAME')) {
+        if (config('mail.status') == 1 && config('mail.mailers.smtp.username')) {
             if (count($emails)) {
                 foreach ($emails as $key => $email) {
                     try {
@@ -147,7 +148,7 @@ class MailService
 
     public static function sendUserEmailVerificationMail($emails = [], $subject = null, $message = null, $user = null, $ownerUserId = null)
     {
-        if (env('MAIL_STATUS', 0) == 1 && env('MAIL_USERNAME')) {
+        if (config('mail.status') == 1 && config('mail.mailers.smtp.username')) {
             if (count($emails)) {
                 foreach ($emails as $key => $email) {
                     try {
@@ -179,7 +180,7 @@ class MailService
 
     public static function sendReminderMail($emails = [], $subject = null, $message = null, $ownerUserId = null)
     {
-        if (env('MAIL_STATUS', 0) == 1 && env('MAIL_USERNAME')) {
+        if (config('mail.status') == 1 && config('mail.mailers.smtp.username')) {
             if (count($emails)) {
                 foreach ($emails as $key => $email) {
                     try {
@@ -210,7 +211,7 @@ class MailService
 
     public static function sendSubscriptionSuccessMail($ownerUserId, $emails = [], $subject = null, $message = null, $title = null, $method = null, $status = null, $amount = 0, $duration = 30)
     {
-        if (env('MAIL_STATUS', 0) == 1 && env('MAIL_USERNAME')) {
+        if (config('mail.status') == 1 && config('mail.mailers.smtp.username')) {
             if (count($emails)) {
                 foreach ($emails as $key => $email) {
                     try {
@@ -246,7 +247,7 @@ class MailService
 
     public static function sendProductOrderSuccessMail($tenantUserId, $emails = [], $subject = null, $message = null, $title = null, $method = null, $status = null, $amount = 0)
     {
-        if (env('MAIL_STATUS', 0) == 1 && env('MAIL_USERNAME')) {
+        if (config('mail.status') == 1 && config('mail.mailers.smtp.username')) {
             if (count($emails)) {
                 foreach ($emails as $key => $email) {
                     try {
@@ -279,9 +280,47 @@ class MailService
         }
     }
 
+    public static function sendRentPaymentSuccessMail($tenantUserId, $emails = [], $subject = null, $message = null, $title = null, $method = null, $status = null, $amount = 0, $invoiceNo = null, $month = null, $code = null)
+    {
+        if (config('mail.status') == 1 && config('mail.mailers.smtp.username')) {
+            if (count($emails)) {
+                foreach ($emails as $key => $email) {
+                    try {
+                        if (filter_var($email, FILTER_VALIDATE_EMAIL)) {
+                            $details['subject']   = $subject;
+                            $details['message']   = $message;
+                            $details['title']     = $title;
+                            $details['method']    = $method;
+                            $details['status']    = $status;
+                            $details['amount']    = $amount;
+                            $details['invoiceNo'] = $invoiceNo;
+                            $details['month']     = $month;
+                            $details['code']      = $code;
+                            // send mail
+                            Mail::to($email)->send(new RentPaymentSuccessMail($details));
+                            // log generate
+                            Log::channel('sms-mail')->info('email : ' . $email . ', subject : ' . $subject . ', message : ' . $message . 'key : ' . $key . ', date : ' . date('d-m-Y'));
+                            self::historyStore($tenantUserId, $email, $subject, $message, SMS_STATUS_DELIVERED);
+                        } else {
+                            throw new Exception('Email ' . $email . ' is not valid');
+                        }
+                    } catch (Exception $e) {
+                        Log::channel('sms-mail')->info($e->getMessage());
+                        self::historyStore($tenantUserId, $email, $subject, $message, SMS_STATUS_FAILED, $e->getMessage());
+                    }
+                }
+                return 'success';
+            } else {
+                return __('No email found');
+            }
+        } else {
+            return __('Smtp setting not enabled');
+        }
+    }
+
     public static function sendInvoiceMail($ownerUserId, $status, $emails = [], $subject = null, $message = null, $title = null, $amount = 0, $token=null, $dueDate = null, $month = null, $invoiceNo = null)
     {
-        if (env('MAIL_STATUS', 0) == 1 && env('MAIL_USERNAME')) {
+        if (config('mail.status') == 1 && config('mail.mailers.smtp.username')) {
             if (count($emails)) {
                 foreach ($emails as $key => $email) {
                     try {
@@ -319,7 +358,7 @@ class MailService
 
     public static function sendContactThankYouMail($emails = [], $subject = null, $message = null, $title = null)
     {
-        if (env('MAIL_STATUS', 0) == 1 && env('MAIL_USERNAME')) {
+        if (config('mail.status') == 1 && config('mail.mailers.smtp.username')) {
             if (count($emails)) {
                 foreach ($emails as $key => $email) {
                     try {
@@ -349,7 +388,7 @@ class MailService
 
     public static function sendCustomizeMail($emails, $subject, $content)
     {
-        if (env('MAIL_STATUS', 0) == 1 && env('MAIL_USERNAME')) {
+        if (config('mail.status') == 1 && config('mail.mailers.smtp.username')) {
             if (count($emails)) {
                 foreach ($emails as $key => $email) {
                     try {
@@ -392,7 +431,7 @@ class MailService
 
     public static function sendSubscriptionReminderMail($ownerUserId, $emails = [], $subject = null, $message = null, $title = null, $subscription = null)
     {
-        if (env('MAIL_STATUS', 0) == 1 && env('MAIL_USERNAME')) {
+        if (config('mail.status') == 1 && config('mail.mailers.smtp.username')) {
 
             if (count($emails)) {
                 foreach ($emails as $email) {

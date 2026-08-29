@@ -4,7 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Owner;
-use App\Models\SmsCreditTransaction;
+use App\Models\OwnerCreditTransaction;
 use App\Services\Sms\SmsCreditsService;
 use Illuminate\Http\Request;
 
@@ -15,13 +15,15 @@ class SmsCreditsAdminController extends Controller
         $pricePerSms  = getOption('sms_credit_price', 1.00);
         $lowThreshold = getOption('sms_low_credit_threshold', 50);
 
-        $recentPurchases = SmsCreditTransaction::whereIn('type', ['purchase', 'manual_topup', 'package_grant'])
+        $recentPurchases = OwnerCreditTransaction::where('bucket', 'sms')
+            ->whereIn('type', ['purchase', 'manual_topup', 'package_grant'])
             ->where('status', 'success')
             ->with('owner.user')
             ->latest()
             ->paginate(20);
 
-        $totalRevenue = SmsCreditTransaction::where('type', 'purchase')
+        $totalRevenue = OwnerCreditTransaction::where('bucket', 'sms')
+            ->where('type', 'purchase')
             ->where('status', 'success')
             ->sum('amount_paid');
 

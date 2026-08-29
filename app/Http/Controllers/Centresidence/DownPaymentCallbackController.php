@@ -27,6 +27,22 @@ class DownPaymentCallbackController extends Controller
             return $this->ack();
         }
 
+        // Authenticity: the callback must echo the CheckoutRequestID we stored on this
+        // facility when the STK push was initiated (down_payment_reference). Reject a
+        // forged result that doesn't match — otherwise anyone could mark a facility's
+        // down-payment collected (or failed) without a real payment.
+        $callbackCid = $callback['CheckoutRequestID'] ?? null;
+        if (empty($facilityModel->down_payment_reference)
+            || empty($callbackCid)
+            || ! hash_equals((string) $facilityModel->down_payment_reference, (string) $callbackCid)) {
+            Log::warning('Centresidence down-payment callback rejected: reference mismatch', [
+                'facility_id' => $facility,
+                'checkout_request_id' => $callbackCid,
+            ]);
+
+            return $this->ack();
+        }
+
         if ((int) $resultCode === 0) {
             $collections->markCollected($facilityModel, $this->receipt($callback));
         } else {

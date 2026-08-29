@@ -666,31 +666,31 @@ if (!function_exists('setUserPackage')) {
             'status'            => ACTIVE,
         ]);
 
-        // ── Grant monthly SMS credits for this package ────────────────
+        // ââ Grant monthly SMS credits for this package ââââââââââââââââ
         // Wrapped in try/catch so a credit failure never breaks activation
         try {
             PackageSmsCreditsService::grantOnActivation($userId, $package->id);
         } catch (\Exception $e) {
             Log::error(
-                "setUserPackage: SMS credit grant failed for user_id={$userId}, package_id={$package->id} — " . $e->getMessage()
+                "setUserPackage: SMS credit grant failed for user_id={$userId}, package_id={$package->id} â " . $e->getMessage()
             );
         }
-        // ─────────────────────────────────────────────────────────────
+        // âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
 
-        // ── Centresidence: keep module billing in step with the pricing mode ──
+        // ââ Centresidence: keep module billing in step with the pricing mode ââ
         // Activating a package can change the owner's pricing model, so re-tag
         // their modules' billing_model to match (mode is authoritative). Guarded
         // and try/catch so it can never break activation on any install.
         try {
             app(\App\Centresidence\Services\PaymentModeService::class)->syncModulesToOwnerMode((int) $userId);
         } catch (\Throwable $e) {
-            Log::error("setUserPackage: module billing sync failed for user_id={$userId} — " . $e->getMessage());
+            Log::error("setUserPackage: module billing sync failed for user_id={$userId} â " . $e->getMessage());
         }
-        // ─────────────────────────────────────────────────────────────
+        // âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
 
-        // ── MERGE (B2 stage 4): settle bundled module-infra on activation ──
+        // ââ MERGE (B2 stage 4): settle bundled module-infra on activation ââ
         // Central chokepoint for EVERY paid-order confirmation path (M-Pesa callback,
-        // gateway confirmation, …). When the paying order bundled the owner's infra
+        // gateway confirmation, â¦). When the paying order bundled the owner's infra
         // (infra_amount > 0), settle those invoices in the same success. Idempotent
         // (markPaid no-ops if nothing is outstanding) and guarded so a settlement
         // hiccup never breaks the plan activation the owner already paid for.
@@ -702,10 +702,10 @@ if (!function_exists('setUserPackage')) {
                         ->markPaid((int) $userId, $paidOrder->payment_id ?? null);
                 }
             } catch (\Throwable $e) {
-                Log::error("setUserPackage: infra settlement failed for user_id={$userId}, order={$orderId} — " . $e->getMessage());
+                Log::error("setUserPackage: infra settlement failed for user_id={$userId}, order={$orderId} â " . $e->getMessage());
             }
         }
-        // ─────────────────────────────────────────────────────────────
+        // âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
     }
 }
 
@@ -717,6 +717,9 @@ if (!function_exists('setOwnerInvoiceType')) {
         $invoiceType->tax='0.00';
         $invoiceType->owner_user_id=$userId;
         $invoiceType->status=ACTIVE;
+        if (\Illuminate\Support\Facades\Schema::hasColumn('invoice_types', 'is_default')) {
+            $invoiceType->is_default = true;
+        }
         $invoiceType->save();
     }
 }
@@ -725,12 +728,16 @@ if (!function_exists('setOwnerDefaultMaintenanceIssue')) {
     function setOwnerDefaultMaintenanceIssue($userId)
     {   
         $defaultIssues = ['Leakage', 'Blockage', 'Other'];
+        $markDefault = \Illuminate\Support\Facades\Schema::hasColumn('maintenance_issues', 'is_default');
 
         foreach ($defaultIssues as $issueName) {
             $maintenanceIssue = new MaintenanceIssue;
             $maintenanceIssue->name = $issueName;
             $maintenanceIssue->owner_user_id = $userId;
             $maintenanceIssue->status = ACTIVE;
+            if ($markDefault) {
+                $maintenanceIssue->is_default = true;
+            }
             $maintenanceIssue->save();
         }
     }
@@ -769,6 +776,168 @@ if (!function_exists('setOwnerDefaultTicketTopics')) {
     }
 }
 
+if (!function_exists('setOwnerDefaultDocumentConfig')) {
+    /**
+     * Seed a plug-and-play set of document requests for a new owner, so a tenant can
+     * upload documents WITHOUT the owner having to configure anything first (same class
+     * of empty-state block we fixed for ticket topics). tenant_id = null â applies to
+     * every tenant of this owner. Owners can edit/remove these in Settings â Document
+     * Config. Idempotent-safe: only call at owner creation / backfill for owners with none.
+     */
+    function setOwnerDefaultDocumentConfig($userId)
+    {
+        $defaults = [
+            ['name' => 'National ID',              'details' => 'A clear copy of the front and back of your national ID card.', 'is_both' => ACTIVE],
+            ['name' => 'Good Conduct Certificate', 'details' => 'A valid police clearance (certificate of good conduct).',       'is_both' => DEACTIVATE],
+            ['name' => 'KRA PIN Certificate',      'details' => 'Your KRA PIN certificate for tax identification.',              'is_both' => DEACTIVATE],
+            ['name' => 'Passport Photo',           'details' => 'A recent passport-size photograph.',                            'is_both' => DEACTIVATE],
+        ];
+
+        // Guarded so seeding still works if the schema migration hasn't run yet (defaults
+        // just aren't marked protected until it does) â keeps live setup zero-touch.
+        $markDefault = \Illuminate\Support\Facades\Schema::hasColumn('kyc_configs', 'is_default');
+
+        foreach ($defaults as $doc) {
+            $config = new \App\Models\KycConfig;
+            $config->name = $doc['name'];
+            $config->details = $doc['details'];
+            $config->owner_user_id = $userId;
+            $config->tenant_id = null; // applies to all of this owner's tenants
+            $config->is_both = $doc['is_both'];
+            $config->status = ACTIVE;
+            if ($markDefault) {
+                $config->is_default = true;
+            }
+            $config->save();
+        }
+    }
+}
+
+if (!function_exists('setOwnerDefaultAgreementTemplate')) {
+    /**
+     * Plug-and-play default agreement template — a general Kenyan residential tenancy body
+     * with {{placeholders}} autofilled per tenant at send time. Seeded so an owner can send
+     * agreements without crafting anything; they can edit it or upload their own, and keep
+     * reusing it until they change it. Marked is_default (undeletable) when the column exists.
+     */
+    function setOwnerDefaultAgreementTemplate($userId)
+    {
+        $body = <<<'HTML'
+<h2 style="text-align:center;margin:0 0 4px;">RESIDENTIAL TENANCY AGREEMENT</h2>
+<p style="text-align:center;color:#555;margin:0 0 18px;">Made on {{today}}</p>
+
+<p>This Tenancy Agreement is made between:</p>
+<p><strong>Landlord:</strong> {{owner_name}} ({{owner_contact}}) ("the Landlord"), and<br>
+<strong>Tenant:</strong> {{tenant_name}} ({{tenant_contact}}) ("the Tenant").</p>
+
+<p><strong>1. Premises.</strong> The Landlord lets to the Tenant the premises known as
+<strong>{{unit_name}}, {{property_name}}</strong> ("the Premises"), for residential use only.</p>
+
+<p><strong>2. Term.</strong> The tenancy begins on {{lease_start}} and continues on a monthly basis
+until terminated in accordance with this Agreement.</p>
+
+<p><strong>3. Rent.</strong> The Tenant shall pay rent of <strong>{{rent_amount}}</strong> per month,
+in advance, on or before the due date each month, through the channels provided by the Landlord.</p>
+
+<p><strong>4. Deposit.</strong> The Tenant has paid a deposit of {{deposit_amount}}, refundable at the
+end of the tenancy less any lawful deductions for unpaid rent, utilities or damage beyond fair wear and tear.</p>
+
+<p><strong>5. Use &amp; Care.</strong> The Tenant shall keep the Premises clean and in good condition,
+shall not sublet without written consent, and shall not use the Premises for any unlawful purpose.</p>
+
+<p><strong>6. Utilities.</strong> The Tenant is responsible for utilities consumed at the Premises
+(water, electricity and any metered services) unless otherwise agreed in writing.</p>
+
+<p><strong>7. Repairs.</strong> The Tenant shall report defects promptly. The Landlord shall keep the
+structure and installations in reasonable repair.</p>
+
+<p><strong>8. Termination.</strong> Either party may terminate this tenancy by giving one (1) month's
+written notice. The Landlord may terminate for breach, including non-payment of rent.</p>
+
+<p><strong>9. Entire Agreement.</strong> This document, once signed electronically by the Tenant, forms
+the whole agreement between the parties for the Premises.</p>
+
+<p style="margin-top:24px;">Signed by the Tenant, {{tenant_name}}, having read and agreed to the terms above.</p>
+HTML;
+
+        $markDefault = \Illuminate\Support\Facades\Schema::hasColumn('agreement_templates', 'is_default');
+
+        $template = new \App\Models\AgreementTemplate;
+        $template->owner_user_id = $userId;
+        $template->name = 'Residential Tenancy Agreement';
+        $template->source = \App\Models\AgreementTemplate::SOURCE_TEMPLATE;
+        $template->body = $body;
+        $template->is_active = true;
+        if ($markDefault) {
+            $template->is_default = true;
+        }
+        $template->save();
+    }
+}
+
+if (!function_exists('ensureOwnerDefaults')) {
+    /**
+     * Self-healing plug-and-play seeding, shared across features. Seeds an owner's
+     * defaults the FIRST time the feature is read (owner opens the settings page, or a
+     * tenant opens the feature) â so nothing needs to be run on the live shared host.
+     * Uses withTrashed() (when the model soft-deletes) so an owner who INTENTIONALLY
+     * cleared all of theirs is never re-seeded. Guarded so it can never break the page.
+     *
+     * @param  int|null   $ownerUserId
+     * @param  string     $modelClass   e.g. App\Models\TicketTopic::class
+     * @param  callable   $seeder       e.g. 'setOwnerDefaultTicketTopics'
+     */
+    function ensureOwnerDefaults($ownerUserId, string $modelClass, callable $seeder): void
+    {
+        if (! $ownerUserId) {
+            return;
+        }
+
+        try {
+            $usesSoftDeletes = in_array('Illuminate\\Database\\Eloquent\\SoftDeletes', class_uses_recursive($modelClass));
+            $query = $usesSoftDeletes ? $modelClass::withTrashed() : $modelClass::query();
+
+            if (! $query->where('owner_user_id', $ownerUserId)->exists()) {
+                $seeder($ownerUserId);
+            }
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::error("ensureOwnerDefaults: seed failed for {$modelClass} owner {$ownerUserId} â " . $e->getMessage());
+        }
+    }
+}
+
+if (!function_exists('effectiveOwnerPrintDetails')) {
+    /**
+     * Plug-and-play print/company details for owner invoices. When an owner hasn't customised
+     * their print details, default the invoice header to their OWN profile (name + phone)
+     * rather than the platform — otherwise invoices go out branded as the app (Centresidence)
+     * with a blank contact number. Address falls back to the platform location (owners have no
+     * dedicated address field). Owners can still override all three in Profile → Print Details.
+     *
+     * @param  object|null $profile carries first_name / last_name / contact_number
+     * @return array{0:string,1:string,2:string} [print_name, print_address, print_contact]
+     */
+    function effectiveOwnerPrintDetails($printName, $printAddress, $printContact, $profile = null): array
+    {
+        $printName    = trim((string) $printName);
+        $printAddress = trim((string) $printAddress);
+        $printContact = trim((string) $printContact);
+
+        if ($printName === '') {
+            $ownerName = trim((string) ($profile->first_name ?? '') . ' ' . (string) ($profile->last_name ?? ''));
+            $printName = $ownerName !== '' ? $ownerName : (string) getOption('app_name');
+        }
+        if ($printContact === '') {
+            $printContact = (string) ($profile->contact_number ?? '') ?: (string) getOption('app_contact_number');
+        }
+        if ($printAddress === '') {
+            $printAddress = (string) getOption('app_location');
+        }
+
+        return [$printName, $printAddress, $printContact];
+    }
+}
+
 if (!function_exists('handleSubscriptionPaymentConfirmation')) {
     function handleSubscriptionPaymentConfirmation($order, $payerId = null, $gateway_slug, $paymentCheck = null)
     {
@@ -804,8 +973,8 @@ if (!function_exists('handleSubscriptionPaymentConfirmation')) {
                     DB::commit();
 
                     $invoiceUrl = route('owner.subscription.index');
-                    $title = __("Subscription success");
-                    $body = __("Subscription payment complete");
+                    $title = __("Subscription activated");
+                    $body = __("Your subscription payment was received — your plan is now active.");
                     $adminUser = User::where('role', USER_ROLE_ADMIN)->first();
                     addNotification($title, $body, $invoiceUrl, null,$order->user_id,$adminUser->id);
 
@@ -890,14 +1059,14 @@ if (!function_exists('handleProductPaymentConfirmation')) {
 
             if ($payment_data['success'] && $payment_data['data']['payment_status'] === 'success') {
 
-                // ── Guard: only update + process if not already paid ─────────
+                // ââ Guard: only update + process if not already paid âââââââââ
                 if ($order->payment_status !== ORDER_PAYMENT_STATUS_PAID) {
                     $order->payment_status = ORDER_PAYMENT_STATUS_PAID;
                     $order->transaction_id = str_replace('-', '', uuid_create());
                     $order->save();
                 }
 
-                // ── Guard: only process commission if not already recorded ───
+                // ââ Guard: only process commission if not already recorded âââ
                 $alreadyProcessed = \App\Models\WalletTransaction::where('product_order_id', $order->id)->exists();
 
                 if (!$alreadyProcessed) {
@@ -916,10 +1085,10 @@ if (!function_exists('handleProductPaymentConfirmation')) {
 
                 DB::commit();
 
-                // ── Notifications ────────────────────────────────────────────
+                // ââ Notifications ââââââââââââââââââââââââââââââââââââââââââââ
                 $invoiceUrl  = route('tenant.order.index');
-                $title       = __('Payment Successful');
-                $body        = __('Products payment verified successfully');
+                $title       = __('Payment received');
+                $body        = __('Your product order payment was received successfully.');
                 $ownerUserID = $gateway->owner_user_id;
                 addNotification($title, $body, $invoiceUrl, null, $order->user_id, $ownerUserID);
 
@@ -942,7 +1111,7 @@ if (!function_exists('handleProductPaymentConfirmation')) {
 
                 // Only send SMS if owner number is available
                 if ($ownerNumber) {
-                    $message = __('New order ' . $order->order_id . ' from Centresidence. Kindly Dispatch');
+                    $message = __('New order :id from :app. Please dispatch.', ['id' => $order->order_id, 'app' => getOption('app_name') ?: 'Centresidence']);
                     SendSmsJob::dispatch([$ownerNumber], $message, $order->user_id);
                 }
 
@@ -956,7 +1125,7 @@ if (!function_exists('handleProductPaymentConfirmation')) {
 
             } else {
 
-                // ── Payment not successful ───────────────────────────────────
+                // ââ Payment not successful âââââââââââââââââââââââââââââââââââ
                 if ($gateway_slug === 'mpesa') {
                     $errorMessage = $payment_data['data']['error'] ?? null;
 
@@ -1015,7 +1184,7 @@ if (!function_exists('handlePaymentConfirmation')) {
 
             DB::beginTransaction();
 
-            // ── MercadoPago guard ────────────────────────────────────────────
+            // ââ MercadoPago guard ââââââââââââââââââââââââââââââââââââââââââââ
             if ($order->gateway_id == $gateway->id && $gateway->slug == MERCADOPAGO) {
                 $payment_id        = $order->payment_id;
                 $order->payment_id = $payment_id;
@@ -1033,7 +1202,7 @@ if (!function_exists('handlePaymentConfirmation')) {
 
             if ($payment_data['success'] && ($payment_data['data']['payment_status'] ?? null) === 'success') {
 
-                // ── Guard: only mark paid if not already paid ────────────────
+                // ââ Guard: only mark paid if not already paid ââââââââââââââââ
                 // Prevents double-processing when both Pusher callback and
                 // timeout redirect reach this function for the same order.
                 if ($order->payment_status !== INVOICE_STATUS_PAID) {
@@ -1042,7 +1211,7 @@ if (!function_exists('handlePaymentConfirmation')) {
                     $order->save();
                 }
 
-                // ── Mark invoice paid ────────────────────────────────────────
+                // ââ Mark invoice paid ââââââââââââââââââââââââââââââââââââââââ
                 // Use order->invoice_id (reliable) NOT Invoice::where('order_id')
                 // because invoices.order_id may not be set yet at this point.
                 $invoice = $order->invoice ?? \App\Models\Invoice::find($order->invoice_id);
@@ -1058,9 +1227,9 @@ if (!function_exists('handlePaymentConfirmation')) {
                     ]);
                 }
 
-                // ── Rent commission ──────────────────────────────────────────
+                // ââ Rent commission ââââââââââââââââââââââââââââââââââââââââââ
                 // Uses WalletTransaction.invoice_order_id as the idempotency key.
-                // Safe to call from multiple code paths — will not double-credit.
+                // Safe to call from multiple code paths â will not double-credit.
                 if ($isRentTransaction) {
                     $alreadyProcessed = \App\Models\WalletTransaction::where('invoice_order_id', $order->id)->exists();
 
@@ -1070,7 +1239,7 @@ if (!function_exists('handlePaymentConfirmation')) {
                             $commissionService->processRentCommission($order);
                         } catch (\Exception $commissionException) {
                             // Commission failure must NOT roll back the payment.
-                            // The tenant's rent is paid — commission is secondary.
+                            // The tenant's rent is paid â commission is secondary.
                             // Log for manual review.
                             \Illuminate\Support\Facades\Log::error(
                                 'Rent commission failed in handlePaymentConfirmation',
@@ -1084,13 +1253,14 @@ if (!function_exists('handlePaymentConfirmation')) {
                     }
                 }
 
-                // ── Centresidence facility repayment / settlement ────────────
+                // ââ Centresidence facility repayment / settlement ââââââââââââ
                 // Layered on top of the owner-wallet credit above: deducts active
                 // facility repayments + overdue commission from this rent in strict
                 // priority order. Idempotent per order; a no-op for properties with
                 // no Centresidence obligations; never rolls back the rent payment.
                 if (
                     $isRentTransaction && $invoice && config('centresidence.enabled', true)
+                    && ($rentPortion = min((float) $invoice->rentPortion(), (float) $order->transaction_amount)) > 0
                     && app(\App\Centresidence\Services\PaymentModeService::class)
                         ->isTransactionMode((int) $invoice->owner_user_id)
                 ) {
@@ -1098,7 +1268,7 @@ if (!function_exists('handlePaymentConfirmation')) {
                         app(\App\Centresidence\Services\RentSettlementService::class)->handleRentPayment(
                             (int) $invoice->property_id,
                             (int) $invoice->owner_user_id,
-                            \App\Centresidence\Support\Money::fromDecimal((string) $order->transaction_amount),
+                            \App\Centresidence\Support\Money::fromDecimal((string) $rentPortion),
                             ['rent_transaction_id' => (int) $order->id]
                         );
                     } catch (\Throwable $settlementException) {
@@ -1111,28 +1281,30 @@ if (!function_exists('handlePaymentConfirmation')) {
 
                 DB::commit();
 
-                // ── Invoice paid notification ────────────────────────────────
+                // ââ Invoice paid notification ââââââââââââââââââââââââââââââââ
+                // Bell notification only (mirrors the marketplace order flow). The
+                // tenant-facing email is the rent receipt dispatched below via
+                // SendPaymentsSuccessEmailJob, so we do NOT also send the generic
+                // invoice email here to avoid double-emailing on one payment.
                 if ($invoice) {
-                    $emailData = (object) [
-                        'subject' => __("Rent payment complete"),
-                        'title'   => __("INVOICE PAID SUCCESSFULLY"),
-                        'message' => $invoice->invoice_no . ' ' . __('paid successfully'),
-                    ];
-                    $notificationData = (object) [
-                        'title' => __('Rent Payment successful!'),
-                        'body'  => $invoice->invoice_no . ' ' . __('paid successfully'),
-                        'url'   => route('tenant.invoice.index'),
-                    ];
-                    SendInvoiceNotificationAndEmailJob::dispatch($invoice, $emailData, $notificationData);
+                    addNotification(
+                        __('Rent payment successful'),
+                        $invoice->invoice_no . ' ' . __('paid successfully'),
+                        route('tenant.invoice.receipt', $invoice->id),
+                        null,
+                        $invoice->tenant->user->id,
+                        $invoice->owner_user_id
+                    );
                 }
 
-                // ── Owner SMS notification ───────────────────────────────────
+                // ââ Owner SMS notification âââââââââââââââââââââââââââââââââââ
                 try {
                     $ownerNumber = $order->gateway->owner->contact_number ?? null;
                     if ($ownerNumber) {
-                        $message = __('New rent payment for Invoice #')
-                                 . ($invoice->invoice_no ?? $order->invoice_id)
-                                 . __(' from Centresidence.');
+                        $message = __('New rent payment received for invoice :no from :app.', [
+                            'no'  => $invoice->invoice_no ?? $order->invoice_id,
+                            'app' => getOption('app_name') ?: 'Centresidence',
+                        ]);
                         SendSmsJob::dispatch([$ownerNumber], $message, $order->user_id);
                     }
                 } catch (\Exception $notifyException) {
@@ -1142,13 +1314,13 @@ if (!function_exists('handlePaymentConfirmation')) {
                     );
                 }
 
-                // ── Payment success email ────────────────────────────────────
+                // ââ Payment success email ââââââââââââââââââââââââââââââââââââ
                 if (getOption('send_email_status', 0) == ACTIVE) {
                     try {
                         SendPaymentsSuccessEmailJob::dispatch(
                             [$order->user->email],
-                            __('Rent Payment Successful!'),
-                            __('You have successfully made your rent payment.'),
+                            __('Invoice Payment Successful!'),
+                            __('You have successfully made your payment.'),
                             __('Congratulations!'),
                             $gateway->slug,
                             'Paid',
@@ -1164,17 +1336,23 @@ if (!function_exists('handlePaymentConfirmation')) {
                     }
                 }
 
-                return redirect($redirect)
+                // Authenticated tenants land on the rent receipt (mirrors the marketplace
+                // order receipt); guests paying via instant link keep their token page.
+                $successRedirect = (auth()->check() && $invoice)
+                    ? route('tenant.invoice.receipt', $invoice->id)
+                    : $redirect;
+
+                return redirect($successRedirect)
                     ->with('success', __($formattedGateway . ' Payment Successful. Rent Paid!'));
 
             } else {
 
-                // ── Payment not successful ───────────────────────────────────
+                // ââ Payment not successful âââââââââââââââââââââââââââââââââââ
                 if ($gateway_slug === 'mpesa') {
                     $errorMessage = $payment_data['data']['error'] ?? null;
 
                     if ($errorMessage === MPESA_REQUEST_CANCELLED) {
-                        // Only cancel if still pending — never overwrite a paid status
+                        // Only cancel if still pending â never overwrite a paid status
                         if ($order->payment_status === INVOICE_STATUS_PENDING) {
                             $order->payment_status = ORDER_PAYMENT_STATUS_CANCELLED;
                             $order->transaction_id = str_replace('-', '', uuid_create());
@@ -1323,6 +1501,13 @@ if (!function_exists('getOwnerLimit')) {
     {
         if (isAddonInstalled('PROTYSAAS') < 1) {
             return true;
+        }
+        // Plan gating is UNIT-ONLY by product decision — property- and tenant-count limiting are
+        // disabled (their max_* columns are dormant), so those channels are always unlimited.
+        // Units (RULES_UNIT) is the single gate. This neutralises every property/tenant limit
+        // check in one place, so the choice is honoured in code, not just greyed out in the admin.
+        if ($type === RULES_PROPERTY || $type === RULES_TENANT) {
+            return PHP_INT_MAX;
         }
         $userId = is_null($userId) ? auth()->id() : $userId;
         $ownerPlan = OwnerPackage::where('status', ACTIVE)->where('user_id', $userId)->whereDate('end_date', '>=', now()->toDateTimeString())->first();
@@ -1560,6 +1745,76 @@ if (!function_exists('mpesaPhoneFromReference')) {
     {
         $last9 = substr(preg_replace('/\D/', '', $reference), -9);
         return '0' . $last9;
+    }
+}
+
+if (!function_exists('mpesaStkConfirmed')) {
+    /**
+     * Server-side confirmation that an M-Pesa STK payment actually succeeded — queries
+     * Safaricom (stkquery) on the CheckoutRequestID stored at push time. The browser
+     * `stk_success` flag is appended CLIENT-SIDE (see the pay JS) and must NOT authorise
+     * any money effect (mark-paid / commission / credit) on its own — otherwise a payer
+     * could self-settle for free by hitting the verify URL with stk_success=1 without
+     * paying. Gate those effects on THIS instead. Fail-closed: any error / inconclusive
+     * result returns false — the authenticated M-Pesa server callback remains the primary
+     * settlement path, so a false here only defers (the user refreshes), it never loses a
+     * real payment.
+     */
+    function mpesaStkConfirmed(?string $checkoutRequestId): bool
+    {
+        if (empty($checkoutRequestId)) {
+            return false;
+        }
+        try {
+            $confirm = (new \App\Services\Payment\Payment('mpesa', ['type' => 'RentPayment']))
+                ->paymentConfirmation($checkoutRequestId);
+
+            return ($confirm['success'] ?? false)
+                && (($confirm['data']['payment_status'] ?? null) === 'success');
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::error('mpesaStkConfirmed failed: ' . $e->getMessage());
+            return false;
+        }
+    }
+}
+
+if (!function_exists('maskPhone')) {
+    /**
+     * Mask a phone number for display on a BEARER (unauthenticated, forwardable)
+     * page — keeps the leading area and the last 3 digits, hides the middle:
+     * "0712345678" -> "0712 xxx 678". The payer already knows their own number;
+     * masking only costs someone the link was forwarded/leaked to.
+     */
+    function maskPhone($number)
+    {
+        $digits = preg_replace('/\D/', '', (string) $number);
+        if (strlen($digits) < 7) {
+            return $number; // too short to mask meaningfully
+        }
+        $head = substr($digits, 0, 4);
+        $tail = substr($digits, -3);
+        return $head . ' xxx ' . $tail;
+    }
+}
+
+if (!function_exists('invoicePayTokenExpiry')) {
+    /**
+     * Lifetime for an invoice's instant-pay (bearer) link. Derived from the invoice
+     * DUE DATE + a grace window so the link stays live through the whole payable
+     * period — a flat "N days from generation" can lapse before the invoice is even
+     * due when the owner's due-day is far out, stranding on-time payers who click the
+     * SMS/email link. Floored at 7 days from now so it never regresses below the old
+     * behaviour, and so re-issuing an OVERDUE invoice's link (due date already past)
+     * still yields a fresh live window.
+     */
+    function invoicePayTokenExpiry($dueDate = null, int $graceDays = 14): \Carbon\Carbon
+    {
+        $floor = now()->addDays(7)->endOfDay();
+        if (empty($dueDate)) {
+            return $floor;
+        }
+        $candidate = \Carbon\Carbon::parse($dueDate)->addDays($graceDays)->endOfDay();
+        return $candidate->greaterThan($floor) ? $candidate : $floor;
     }
 }
 if (!function_exists('getYoutubeId')) {

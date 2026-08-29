@@ -18,8 +18,22 @@
                             <td>{{ optional($a->property)->name ?? ('#' . $a->property_id) }}</td>
                             <td>{{ optional($a->module)->name ?? '—' }}</td>
                             <td class="cs-amt">KES {{ number_format($a->requested_amount, 2) }}</td>
-                            <td>@include('admin.centresidence._status', ['status' => $a->status])</td>
-                            <td><a href="{{ route('finance-partner.applications.show', $a->id) }}" class="cs-btn cs-btn--primary cs-btn--sm">{{ __('Review') }}</a></td>
+                            <td>
+                                @include('admin.centresidence._status', ['status' => $a->status])
+                                @php $fac = $a->facility; @endphp
+                                @if ($fac && ($fac->disbursement_status ?? 'disbursed') !== 'disbursed')
+                                    <div style="margin-top:5px;">
+                                        <span class="cs-badge is-pending">{{ ($fac->disbursement_status === 'pending_confirmation') ? __('Disbursement — awaiting confirmation') : __('Disbursement pending') }}</span>
+                                    </div>
+                                @endif
+                            </td>
+                            <td>
+                                @if ($a->facility && ($a->facility->disbursement_status ?? 'disbursed') === 'awaiting')
+                                    <a href="{{ route('finance-partner.applications.show', $a->id) }}" class="cs-btn cs-btn--pending cs-btn--sm">{{ __('Disburse') }}</a>
+                                @else
+                                    <a href="{{ route('finance-partner.applications.show', $a->id) }}" class="cs-btn cs-btn--primary cs-btn--sm">{{ __('Review') }}</a>
+                                @endif
+                            </td>
                         </tr>
                     @empty
                         <tr><td colspan="7" class="cs-empty">{{ __('No applications yet') }}</td></tr>

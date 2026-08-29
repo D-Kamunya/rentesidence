@@ -13,7 +13,7 @@
 
         <form method="POST" action="{{ route('admin.centresidence.modules.update', $module->id) }}" enctype="multipart/form-data">
             @csrf @method('PUT')
-            <div class="row">
+            <div class="row" style="margin-bottom:26px;">
                 <div class="col-lg-8">
                     <div class="cs-card"><div class="cs-card__body">
                         <div class="row">
@@ -80,7 +80,7 @@
                 </div>
 
                 {{-- Live card preview --}}
-                <div class="col-lg-4">
+                <div class="col-lg-4" style="align-self:flex-start;position:sticky;top:20px;">
                     <div class="cs-section__label">{{ __('Owner card preview') }}</div>
                     <div class="cs-modcard" style="max-width:280px;">
                         <div id="pvMedia" class="cs-modcard__media" style="background:linear-gradient(135deg, {{ $module->displayColor() }}, {{ $module->displayColor() }}cc);">
@@ -106,7 +106,7 @@
                 {{-- Per-row update + delete forms (referenced via the HTML5 form attribute) --}}
                 @foreach ($module->costComponents as $c)
                     <form id="ccform-{{ $c->id }}" method="POST" action="{{ route('admin.centresidence.cost-components.update', $c->id) }}" class="d-none">@csrf @method('PUT')</form>
-                    <form id="ccdel-{{ $c->id }}" method="POST" action="{{ route('admin.centresidence.cost-components.destroy', $c->id) }}" class="d-none">@csrf @method('DELETE')</form>
+                    <form id="ccdel-{{ $c->id }}" method="POST" action="{{ route('admin.centresidence.cost-components.destroy', $c->id) }}" class="d-none" data-cs-confirm="{{ __('Remove this cost component?') }}" data-cs-confirm-tone="danger" data-cs-confirm-ok="{{ __('Remove') }}">@csrf @method('DELETE')</form>
                 @endforeach
 
                 <div class="cs-tablewrap">
@@ -138,7 +138,7 @@
                                     </td>
                                     <td style="white-space:nowrap;">
                                         <button type="submit" form="ccform-{{ $c->id }}" class="cs-btn cs-btn--ghost cs-btn--sm">{{ __('Save') }}</button>
-                                        <button type="submit" form="ccdel-{{ $c->id }}" class="cs-btn cs-btn--ghost cs-btn--sm" onclick="return confirm('{{ __('Remove this cost component?') }}')">✕</button>
+                                        <button type="submit" form="ccdel-{{ $c->id }}" class="cs-btn cs-btn--ghost cs-btn--sm">✕</button>
                                     </td>
                                 </tr>
                             @empty

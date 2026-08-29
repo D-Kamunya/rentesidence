@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 /**
  * An owner's financing application (handbook §9.3.2). Lifecycle status moves
@@ -85,6 +86,11 @@ class FinanceApplication extends Model
     public function statusHistory(): HasMany
     {
         return $this->hasMany(ApplicationStatusHistory::class)->orderBy('id');
+    }
+
+    public function facility(): HasOne
+    {
+        return $this->hasOne(FinanceFacility::class, 'finance_application_id')->latestOfMany();
     }
 
     // ── Helpers ───────────────────────────────────────────────────────────

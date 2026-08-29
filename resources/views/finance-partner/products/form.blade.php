@@ -2,6 +2,9 @@
 
 @section('content')
     @php $editing = $product->exists; @endphp
+    <style>
+        .cs-help { font-size:11.5px; color:#6b7280; line-height:1.5; margin-top:5px; }
+    </style>
     <div class="cs-titlebar"><h1 class="cs-title">{{ $editing ? __('Edit product') : __('New product') }}</h1></div>
 
     <form method="POST" action="{{ $editing ? route('finance-partner.products.update', $product->id) : route('finance-partner.products.store') }}">
@@ -86,8 +89,21 @@
                     <div class="col-md-3 cs-field"><label class="cs-label">{{ __('Default threshold (days)') }}</label><input type="number" name="default_threshold_days" class="cs-input" value="{{ old('default_threshold_days', $product->default_threshold_days ?? 30) }}"></div>
                 </div>
                 <div class="row">
-                    <div class="col-md-3 cs-field"><label class="cs-label">{{ __('Early repayment allowed') }}</label><select name="early_repayment_allowed" class="cs-select"><option value="1" @selected($product->early_repayment_allowed)>{{ __('Yes') }}</option><option value="0" @selected(!$product->early_repayment_allowed)>{{ __('No') }}</option></select></div>
-                    <div class="col-md-3 cs-field"><label class="cs-label">{{ __('Early settlement fee %') }}</label><input type="number" step="0.01" name="early_repayment_penalty_percentage" class="cs-input" value="{{ old('early_repayment_penalty_percentage', $product->early_repayment_penalty_percentage ?? 0) }}"></div>
+                    <div class="col-md-3 cs-field">
+                        <label class="cs-label">{{ __('Early repayment allowed') }}</label>
+                        <select name="early_repayment_allowed" class="cs-select"><option value="1" @selected($product->early_repayment_allowed)>{{ __('Yes') }}</option><option value="0" @selected(!$product->early_repayment_allowed)>{{ __('No') }}</option></select>
+                        <div class="cs-help">{{ __('“Yes” lets an owner pay off the whole facility in one lump sum before term. Future interest is waived (their saving), so on reducing-balance products you earn less interest — charge an early-settlement fee to offset it. “No” keeps them on the schedule.') }}</div>
+                    </div>
+                    <div class="col-md-3 cs-field">
+                        <label class="cs-label">{{ __('Early settlement fee %') }}</label>
+                        <input type="number" step="0.01" name="early_repayment_penalty_percentage" class="cs-input" value="{{ old('early_repayment_penalty_percentage', $product->early_repayment_penalty_percentage ?? 0) }}">
+                        <div class="cs-help">{{ __('A one-off fee, % of the outstanding principal, added to the payoff when an owner settles early. Leave 0 for no fee.') }}</div>
+                    </div>
+                    <div class="col-md-3 cs-field">
+                        <label class="cs-label">{{ __('Accelerated repayment allowed') }}</label>
+                        <select name="accelerated_repayment_allowed" class="cs-select"><option value="1" @selected($product->accelerated_repayment_allowed ?? true)>{{ __('Yes') }}</option><option value="0" @selected(isset($product->accelerated_repayment_allowed) && !$product->accelerated_repayment_allowed)>{{ __('No') }}</option></select>
+                        <div class="cs-help">{{ __('“Yes” lets an owner voluntarily put more of each rent payment toward the facility (within your rent-deduction cap), clearing it faster. It stays on schedule otherwise. Like early settlement, faster clearing lowers total interest on reducing-balance products — no fee applies. “No” fixes the pace at the standard monthly amount.') }}</div>
+                    </div>
                     <div class="col-md-3 cs-field"><label class="cs-label">{{ __('Daily settlement') }}</label><select name="daily_settlement_enabled" class="cs-select"><option value="0" @selected(!$product->daily_settlement_enabled)>{{ __('No') }}</option><option value="1" @selected($product->daily_settlement_enabled)>{{ __('Yes') }}</option></select></div>
                     <div class="col-md-3 cs-field"><label class="cs-label">{{ __('Monthly settlement day') }}</label><input type="number" min="1" max="28" name="settlement_day" class="cs-input" value="{{ old('settlement_day', $product->settlement_day ?? 1) }}"></div>
                 </div>

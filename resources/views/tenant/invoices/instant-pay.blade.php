@@ -19,8 +19,12 @@
             $invoice->paidOrder &&
             Str::startsWith($invoice->paidOrder->payment_id, 'ws_CO')
         ) {
-            $mpesaNumber = mpesaPhoneFromReference($invoice->paidOrder->payment_id);
+            // Paid: the field is read-only display only — show the payer's number MASKED,
+            // since this bearer link can be forwarded/leaked to someone other than the payer.
+            $mpesaNumber = maskPhone(mpesaPhoneFromReference($invoice->paidOrder->payment_id));
         } else {
+            // Unpaid: prefill the registered number so the tenant (or their parent) can
+            // pay or edit it — the whole point of the pay-with-a-different-number flow.
             $mpesaNumber = $invoice->tenant->user->contact_number ?? '';
         }
     }
@@ -62,18 +66,6 @@
 </style>
 
 <div class="main-content">
-    <div id="mpesa-preloader" style="display: none;">
-        <div id="mpesa-preloaderInner">
-            <img src="{{asset('assets/images/gateway-icon/mpesa.jpg')}}" alt="M-PESA Image">
-            <div>
-                <p>Please follow the instructions and do not refresh or leave this page.</p><br>
-                <p>This may take up to <span id="mpesa-timer">2:00 minute(s)</span>.</p><br>
-                <p>You will receive a prompt on mobile number to enter your PIN to authorize your payment request.</p><br>
-                <p> Please ensure your phone is on and unlocked to enable you to complete the process. Thank you.</p>
-            </div>
-            <img src="{{asset('assets/images/loading.svg')}}" alt="M-PESA Image">
-        </div>
-    </div>
 
     <div class="container-fluid py-4">
         <div class="row justify-content-center">
@@ -136,7 +128,7 @@
                                         <div class="row mb-2">
                                             <div class="col-6 text-muted">Paid By</div>
                                             <div class="col-6 text-end fw-semibold">
-                                                {{ mpesaPhoneFromReference($invoice->paidOrder->payment_id) }}
+                                                {{ maskPhone(mpesaPhoneFromReference($invoice->paidOrder->payment_id)) }}
                                             </div>
                                         </div>
                                     @endif

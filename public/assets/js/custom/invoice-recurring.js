@@ -177,10 +177,14 @@
         selector.modal("show");
         selector.find(".invoiceNo").text(response.data.invoice.invoice_no);
         var status = "Deactivate";
+        var statusClass = "ipv-status-off";
         if (response.data.invoice.status == "1") {
             status = "Active";
+            statusClass = "ipv-status-paid";
         }
-        selector.find(".invoiceStatus").html(status);
+        selector
+            .find(".invoiceStatus")
+            .html('<span class="' + statusClass + '">' + status + "</span>");
 
         selector
             .find(".tenantName")

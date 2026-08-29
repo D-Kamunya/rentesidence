@@ -46,7 +46,7 @@ class UtilityTokenController extends Controller
         }
 
         if (! empty($result['settled'])) {
-            return back()->with('success', __('Tokens credited to your wallet.'));
+            return back()->with('success', __('Units credited to your meter.'));
         }
 
         return back()->with('success', __('Check your phone to authorise the M-Pesa payment. Your tokens are credited once payment is confirmed.'));

@@ -68,8 +68,14 @@ Route::group(['prefix' => 'user', 'as' => 'user.'], function () {
 });
 
 Route::group(['prefix' => 'payment'], function () {
-    Route::post('/', [PaymentController::class, 'checkout'])->name('payment.checkout');
-    Route::post('/products', [ProductPaymentController::class, 'checkout'])->name('payment.products.checkout');
+    // Checkout is initiated only by an authenticated tenant (the invoice / marketplace
+    // pay pages). Require auth so a guest can't POST here and spawn orphan orders / hit
+    // null-user errors. (The guest instant-pay flow uses the separate, throttled
+    // `instant.payment.checkout`.) The verify/redirect routes below stay public by
+    // design — the guest instant-pay redirect lands on them, and money effects there are
+    // gated on server-side STK confirmation, not on the request being authenticated.
+    Route::post('/', [PaymentController::class, 'checkout'])->middleware('auth')->name('payment.checkout');
+    Route::post('/products', [ProductPaymentController::class, 'checkout'])->middleware('auth')->name('payment.products.checkout');
     Route::match(array('GET', 'POST'), 'verify', [PaymentController::class, 'verify'])->name('payment.verify');
     Route::get('verify-redirect/{type?}', [PaymentController::class, 'verifyRedirect'])->name('payment.verify.redirect');
     Route::match(array('GET', 'POST'), 'products/verify', [ProductPaymentController::class, 'verify'])->name('payment.products.verify');
@@ -79,15 +85,21 @@ Route::group(['prefix' => 'payment'], function () {
 // Public Blog Routes
 Route::prefix('blog')->name('blog.')->group(function () {
     Route::get('/', [BlogController::class, 'index'])->name('index');
+    // Static routes MUST come before the /{slug} catch-all, or they get matched as a
+    // post slug (this is why unsubscribe silently 404'd before).
+    Route::get('/unsubscribe', [BlogController::class, 'unsubscribe'])->name('unsubscribe');
+    Route::post('/subscribe', [BlogController::class, 'subscribe'])->name('subscribe');
     Route::get('/{slug}', [BlogController::class, 'show'])->name('show');
     Route::post('/{post}/comment', [BlogController::class, 'comment'])->name('comment');
     Route::post('/{post}/like', [BlogController::class, 'like'])->name('like');
     Route::post('/{post}/share', [BlogController::class, 'share'])->name('share');
-    Route::post('/subscribe', [BlogController::class, 'subscribe'])->name('subscribe');
-    Route::get('/unsubscribe', [BlogController::class, 'unsubscribe'])->name('unsubscribe');
 });
 
-Route::get('/blog/unsubscribe', [BlogController::class, 'unsubscribe'])->name('blog.unsubscribe');
+// Public certificate verification — anyone holding a signed agreement certificate can
+// confirm its authenticity (gated by the unguessable code, so agreements can't be enumerated).
+Route::get('/agreement/verify/{code?}', [\App\Http\Controllers\Agreement\VerificationController::class, 'show'])->name('agreement.verify');
+Route::post('/agreement/verify/{code}/document', [\App\Http\Controllers\Agreement\VerificationController::class, 'check'])->name('agreement.verify.document');
+Route::post('/agreement/verify-by-document', [\App\Http\Controllers\Agreement\VerificationController::class, 'checkByDocument'])->name('agreement.verify.by-document');
 
 Route::get('/get-filters', [HouseHuntController::class, 'getFiltersByType'])->name('get.filters');
 Route::get('/get-cities', [HouseHuntController::class, 'getCitiesByState'])->name('get.cities');

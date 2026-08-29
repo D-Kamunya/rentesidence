@@ -534,8 +534,8 @@
     document.addEventListener('keydown', function (e) { if (e.key === 'Escape') closeApprove(); });
 
     window.rejectWithdrawal = function (id) {
-        if (!confirm('{{ __("Reject this withdrawal? The amount will be returned to the owner\'s wallet.") }}')) return;
-        doAction('{{ route("admin.wallet.withdrawal.reject", ":id") }}'.replace(':id', id));
+        csConfirm({ title: '{{ __("Reject this withdrawal?") }}', message: '{{ __("The amount will be returned to the owner\'s wallet.") }}', tone: 'danger', confirmText: '{{ __("Reject") }}' })
+            .then(function (ok) { if (ok) doAction('{{ route("admin.wallet.withdrawal.reject", ":id") }}'.replace(':id', id)); });
     };
 
     function doAction(url) {

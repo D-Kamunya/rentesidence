@@ -1,3 +1,4 @@
+@include('common.layouts._kb-nav-style')
 <div class="vertical-menu">
     <div data-simplebar class="h-100">
 
@@ -66,7 +67,7 @@
                 </li>
 
                 <li>
-                    <a href="{{ route('affiliate.kb.index') }}">
+                    <a href="{{ route('affiliate.kb.index') }}" class="kb-nav-highlight">
                         <i class="fa fa-book"></i>
                         <span>{{ __('Knowledge Base') }}</span>
                     </a>

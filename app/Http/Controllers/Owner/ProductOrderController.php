@@ -53,6 +53,18 @@ class ProductOrderController extends Controller
     //     }
     // }
 
+    /** Owner toggle: does the on-site caretaker (maintainer) handle marketplace dispatch, or does
+     *  the owner organise it themselves? Surfaced on the shop dashboard. Default ON. */
+    public function updateDispatchSetting(Request $request)
+    {
+        $enabled = $request->boolean('caretaker_dispatch_enabled');
+        Owner::where('user_id', auth()->id())->update(['caretaker_dispatch_enabled' => $enabled]);
+
+        return back()->with('success', $enabled
+            ? __('Your caretaker will now handle dispatch for marketplace orders.')
+            : __('You\'ll organise dispatch yourself — your caretaker won\'t see the dispatch queue.'));
+    }
+
     public function markComplete(Request $request, $id)
     {
         // Scope to orders belonging to this owner only
@@ -68,18 +80,19 @@ class ProductOrderController extends Controller
     
         $order->order_status = ORDER_STATUS_COMPLETED;
         $order->payment_status = ORDER_PAYMENT_STATUS_PAID;
+        $order->fulfilment_status = FULFILMENT_DELIVERED; // completing = delivered; keeps it out of the caretaker dispatch queue
         $order->save();
     
         // ── Dispatch notification to tenant ──────────────────────────
         $emailData = (object) [
-            'subject' => __('Your order #') . $order->order_id . __(' has been completed'),
-            'title'   => __('Order Completed'),
-            'message' => __('Your order #') . $order->order_id . __(' has been marked as completed by the owner. Your product is on its way or ready for collection.'),
+            'subject' => __('Your order #:id is complete', ['id' => $order->order_id]),
+            'title'   => __('Order complete'),
+            'message' => __('Your order #:id has been completed. Your product is on its way or ready for collection.', ['id' => $order->order_id]),
         ];
-    
+
         $notificationData = (object) [
-            'title' => __('Order Completed'),
-            'body'  => __('Order #') . $order->order_id . __(' has been completed.'),
+            'title' => __('Order complete'),
+            'body'  => __('Order #:id has been completed.', ['id' => $order->order_id]),
             'url'   => route('tenant.order.index'),
         ];
     
@@ -111,13 +124,13 @@ class ProductOrderController extends Controller
         $order->save();
     
         $emailData = (object) [
-            'subject' => __('Your order #') . $order->order_id . __(' has been cancelled'),
-            'title'   => __('Order Cancelled'),
-            'message' => __('Your order #') . $order->order_id . __(' has been cancelled by the owner.'),
+            'subject' => __('Your order #:id has been cancelled', ['id' => $order->order_id]),
+            'title'   => __('Order cancelled'),
+            'message' => __('Your order #:id has been cancelled by the owner.', ['id' => $order->order_id]),
         ];
         $notificationData = (object) [
-            'title' => __('Order Cancelled'),
-            'body'  => __('Order #') . $order->order_id . __(' has been cancelled.'),
+            'title' => __('Order cancelled'),
+            'body'  => __('Order #:id has been cancelled.', ['id' => $order->order_id]),
             'url'   => route('tenant.order.index'),
         ];
         SendOrderStatusNotificationJob::dispatch($order, $emailData, $notificationData);
@@ -138,15 +151,25 @@ class ProductOrderController extends Controller
         $order->payment_status = PRODUCT_ORDER_STATUS_CANCELLED; // refund issued — close the loop
         $order->order_status   = ORDER_STATUS_CANCELLED;
         $order->save();
-    
+
+        // Reverse the money the sale booked (owner wallet credit + platform + affiliate commission)
+        // so the books reconcile. Idempotent; already-withdrawn proceeds become a carried-forward
+        // clawback. Secondary to the status change — log but don't block the confirmation.
+        $order->load('orderItems.product');
+        try {
+            app(\App\Services\CommissionService::class)->reverseOrderCommission($order);
+        } catch (\Throwable $e) {
+            \Log::error('Order refund reversal failed', ['order_id' => $order->id, 'error' => $e->getMessage()]);
+        }
+
         $emailData = (object) [
-            'subject' => __('Refund confirmed for order #') . $order->order_id,
-            'title'   => __('Refund Confirmed'),
-            'message' => __('The owner has confirmed your refund for order #') . $order->order_id . __('. Please allow 3–5 business days for funds to reflect.'),
+            'subject' => __('Refund confirmed for order #:id', ['id' => $order->order_id]),
+            'title'   => __('Refund confirmed'),
+            'message' => __('The owner has confirmed your refund for order #:id. Please allow 3–5 business days for the funds to reflect.', ['id' => $order->order_id]),
         ];
         $notificationData = (object) [
-            'title' => __('Refund Confirmed'),
-            'body'  => __('Your refund for order #') . $order->order_id . __(' has been confirmed.'),
+            'title' => __('Refund confirmed'),
+            'body'  => __('Your refund for order #:id has been confirmed.', ['id' => $order->order_id]),
             'url'   => route('tenant.order.index'),
         ];
         SendOrderStatusNotificationJob::dispatch($order, $emailData, $notificationData);

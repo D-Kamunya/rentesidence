@@ -27,11 +27,9 @@ class PackageSmsCreditsService
 
             $credits = (int) ($package->monthly_sms_credits ?? 0);
 
-            if ($credits <= 0) {
-                // Free tier or package with no SMS credits configured — skip silently
-                return;
-            }
-
+            // Always RESET the granted allowance to this package's amount for the new period —
+            // including 0 (free / transaction tier), which clears any leftover grant. Purchased
+            // credits are never touched. (No rollover of unspent grant — the agreed policy.)
             SmsCreditsService::grantPackageCredits($ownerUserId, $credits, $package->name);
 
         } catch (\Exception $e) {

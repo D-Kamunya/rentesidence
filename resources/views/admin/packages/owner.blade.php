@@ -4,7 +4,9 @@
     <div class="main-content">
         <div class="page-content">
             <div class="container-fluid">
-                <div class="page-content-wrapper bg-white p-30 radius-20">
+                <div class="page-content-wrapper bg-white p-30 radius-20 cs-controls">
+                    @include('centresidence._design')
+
                     <div class="row">
                         <div class="col-12">
                             <div
@@ -36,7 +38,7 @@
                                 </div>
                             </div>
                         @endif
-                        <div class="billing-center-area bg-off-white theme-border radius-4 p-25">
+                        <div class="billing-center-area cs-card cs-card--pad">
                             <table id="allOwnerPackageDataTable" class="table theme-border p-20 ">
                                 <thead>
                                     <th>{{ __('SL') }}</th>
@@ -58,7 +60,7 @@
     </div>
 
     @if (isAddonInstalled('PROTYSAAS') > 5)
-        <div class="modal fade" id="addPackageModal" tabindex="-1" aria-labelledby="addPackageModalLabel"
+        <div class="modal fade cs-modal" id="addPackageModal" tabindex="-1" aria-labelledby="addPackageModalLabel"
             aria-hidden="true">
             <div class="modal-dialog modal-dialog-centered">
                 <div class="modal-content">

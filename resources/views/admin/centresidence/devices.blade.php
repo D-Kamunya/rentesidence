@@ -65,7 +65,7 @@
             <table class="cs-table">
                 <thead><tr>
                     <th>{{ __('Ref #') }}</th><th>{{ __('Device') }}</th><th>{{ __('Module') }}</th><th>{{ __('Property') }}</th>
-                    <th>{{ __('DevEUI') }}</th><th>{{ __('Gateway') }}</th><th>{{ __('Status') }}</th><th></th>
+                    <th>{{ __('Unit') }}</th><th>{{ __('DevEUI') }}</th><th>{{ __('Gateway') }}</th><th>{{ __('Status') }}</th><th></th>
                 </tr></thead>
                 <tbody>
                     @forelse ($devices as $d)
@@ -74,7 +74,19 @@
                             <td><input type="text" name="name" form="devform-{{ $d->id }}" class="cs-input cs-input--sm" value="{{ $d->name }}" style="min-width:140px;"></td>
                             <td>{{ optional(optional($d->propertyModule)->module)->name ?? '—' }}</td>
                             <td>{{ optional(optional($d->propertyModule)->property)->name ?? '—' }}</td>
-                            <td><input type="text" name="dev_eui" form="devform-{{ $d->id }}" class="cs-input cs-input--sm" value="{{ $d->dev_eui }}" placeholder="—" style="min-width:170px;font-family:monospace;"></td>
+                            @php $pid = optional($d->propertyModule)->property_id; $units = $unitsByProperty[$pid] ?? collect(); @endphp
+                            <td>
+                                <select name="property_unit_id" form="devform-{{ $d->id }}" class="cs-input cs-input--sm" style="min-width:120px;" title="{{ __('Which unit this meter serves — drives token & consumption attribution') }}">
+                                    <option value="">{{ __('— unassigned —') }}</option>
+                                    @foreach ($units as $u)
+                                        <option value="{{ $u->id }}" @selected($d->property_unit_id == $u->id)>{{ $u->unit_name }}</option>
+                                    @endforeach
+                                </select>
+                            </td>
+                            <td style="min-width:180px;">
+                                <input type="text" name="dev_eui" form="devform-{{ $d->id }}" class="cs-input cs-input--sm" value="{{ $d->dev_eui }}" placeholder="{{ __('DevEUI') }}" style="width:100%;font-family:monospace;">
+                                <input type="text" name="app_key" form="devform-{{ $d->id }}" class="cs-input cs-input--sm" value="" autocomplete="off" placeholder="{{ ($d->metadata['app_key'] ?? null) ? __('AppKey set — blank keeps it') : __('OTAA AppKey (32 hex)') }}" style="width:100%;font-family:monospace;margin-top:4px;" title="{{ __('Enter the meter’s OTAA AppKey to register it on the network. Never shown once saved.') }}">
+                            </td>
                             <td>
                                 <select name="gateway_id" form="devform-{{ $d->id }}" class="cs-input cs-input--sm" style="min-width:150px;">
                                     <option value="">{{ __('— none —') }}</option>
@@ -96,7 +108,7 @@
                             <td><button type="submit" form="devform-{{ $d->id }}" class="cs-btn cs-btn--ghost cs-btn--sm">{{ __('Save') }}</button></td>
                         </tr>
                     @empty
-                        <tr><td colspan="8" class="cs-empty">{{ ($filters['q'] ?? $filters['property_id'] ?? $filters['gateway_id'] ?? $filters['status'] ?? null) ? __('No devices match your search.') : __('No devices provisioned yet.') }} <a href="{{ route('admin.centresidence.deploy') }}">{{ __('Deploy a module') }}</a>.</td></tr>
+                        <tr><td colspan="9" class="cs-empty">{{ ($filters['q'] ?? $filters['property_id'] ?? $filters['gateway_id'] ?? $filters['status'] ?? null) ? __('No devices match your search.') : __('No devices provisioned yet.') }} <a href="{{ route('admin.centresidence.deploy') }}">{{ __('Deploy a module') }}</a>.</td></tr>
                     @endforelse
                 </tbody>
             </table>

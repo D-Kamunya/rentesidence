@@ -96,6 +96,134 @@ class CentresidenceController extends Controller
         return view('admin.centresidence.facilities', compact('facilities') + ['pageTitle' => 'Finance Facilities']);
     }
 
+    /** Confirm a partner-recorded disbursement (Centresidence is the payee for installer modules). */
+    public function confirmDisbursement(int $id, \App\Centresidence\Services\FinanceFacilityService $facilities)
+    {
+        $facility = FinanceFacility::findOrFail($id);
+        if ($facility->disbursement_status !== FinanceFacility::DISBURSE_PENDING) {
+            return back()->with('error', __('Nothing to confirm — this facility isn’t awaiting confirmation.'));
+        }
+        $facilities->confirmDisbursement($facility);
+        // Owner notify + SMS handled by the FacilityDisbursed listener.
+        return back()->with('success', __('Disbursement confirmed. Repayment can now begin.'));
+    }
+
+    /** Manual admin lever: record a disbursement done outside the system (bank/M-Pesa) and release the facility. */
+    public function forceDisburse(Request $request, int $id, \App\Centresidence\Services\FinanceFacilityService $facilities)
+    {
+        $facility = FinanceFacility::findOrFail($id);
+        if ($facility->isDisbursed()) {
+            return back()->with('error', __('This facility is already disbursed.'));
+        }
+        $data = $request->validate([
+            'disbursement_channel'   => 'required|in:mpesa,bank,manual',
+            'disbursement_reference' => 'nullable|string|max:191',
+        ]);
+        $facility->forceFill(['disbursement_channel' => $data['disbursement_channel']])->save();
+        $facilities->disburse($facility, $data['disbursement_reference'] ?? null, $data['disbursement_channel']);
+        // Owner notify + SMS handled by the FacilityDisbursed listener.
+        return back()->with('success', __('Facility marked disbursed. Repayment can now begin.'));
+    }
+
+    /** Partner remittances — prepare batches from collected repayments, mark them sent (bank), confirm. */
+    public function remittances()
+    {
+        $batches = \App\Centresidence\Models\PartnerRemittanceBatch::with('partner', 'items.facility', 'items.settlementTransaction')->latest()->paginate(20);
+        $pendingPartnerIds = \App\Centresidence\Models\SettlementTransaction::query()
+            ->where('beneficiary_type', \App\Centresidence\Models\SettlementTransaction::BENEFICIARY_PARTNER)
+            ->where('reconciliation_status', \App\Centresidence\Models\SettlementTransaction::RECON_PENDING)
+            ->distinct()->pluck('beneficiary_id');
+
+        return view('admin.centresidence.remittances', compact('batches', 'pendingPartnerIds') + ['pageTitle' => 'Remittances']);
+    }
+
+    /** Prepare a remittance batch for every partner with collected-but-unremitted repayments. */
+    public function remittancePrepare(\App\Centresidence\Services\PartnerRemittanceService $remittances)
+    {
+        $ids = \App\Centresidence\Models\SettlementTransaction::query()
+            ->where('beneficiary_type', \App\Centresidence\Models\SettlementTransaction::BENEFICIARY_PARTNER)
+            ->where('reconciliation_status', \App\Centresidence\Models\SettlementTransaction::RECON_PENDING)
+            ->distinct()->pluck('beneficiary_id');
+
+        $n = 0;
+        foreach ($ids as $pid) {
+            if ($remittances->prepareBatchForPartner((int) $pid)) {
+                $n++;
+            }
+        }
+        return back()->with('success', __(':n remittance batch(es) prepared.', ['n' => $n]));
+    }
+
+    /** Manual lever: record that a batch was paid to the partner by bank; they confirm receipt. */
+    public function remittanceMarkSent(Request $request, int $id, \App\Centresidence\Services\PartnerRemittanceService $remittances)
+    {
+        $batch = \App\Centresidence\Models\PartnerRemittanceBatch::findOrFail($id);
+        $batch->forceFill(['settlement_method' => 'bank_transfer'])->save();
+        $remittances->markSent($batch, $request->input('reference'));
+
+        return back()->with('success', __('Marked sent — the partner will confirm receipt.'));
+    }
+
+    // ── Integrations (operational drivers + secret status) ─────────────────
+
+    /**
+     * Safe, DB-backed operational toggles + a read-only status of the secrets
+     * that stay in .env. Lets an operator go live without editing .env; secret
+     * VALUES are never shown or editable here.
+     */
+    public function integrations()
+    {
+        $drivers = [
+            'collection' => getOption('centresidence_collection_driver') ?: config('centresidence.collections.driver', 'log'),
+            'payout'     => getOption('centresidence_payout_driver') ?: config('centresidence.payouts.driver', 'log'),
+            'chirpstack' => getOption('centresidence_chirpstack_driver') ?: config('centresidence.chirpstack.driver', 'simulated'),
+        ];
+
+        // Secret presence only — never the value.
+        $secrets = [
+            ['M-Pesa API key/secret', (bool) config('mpesa.mpesa_consumer_key') && (bool) config('mpesa.mpesa_consumer_secret'), __('Collections & payouts (STK / B2B)')],
+            ['M-Pesa STK passkey',    (bool) config('mpesa.passkey'),              __('STK push')],
+            ['M-Pesa payout initiator', (bool) config('mpesa.initiator_name') && (bool) config('mpesa.initiator_password'), __('B2B partner payouts')],
+            ['ChirpStack API token',  (bool) config('centresidence.chirpstack.api_token'), __('Live LoRaWAN provisioning')],
+            ['ChirpStack webhook secret', (bool) config('centresidence.chirpstack.webhook_secret'), __('Authenticating meter uplinks')],
+        ];
+
+        return view('admin.centresidence.integrations', [
+            'pageTitle' => 'Integrations',
+            'drivers'   => $drivers,
+            'secrets'   => $secrets,
+        ]);
+    }
+
+    public function integrationsSave(Request $request)
+    {
+        $data = $request->validate([
+            'collection_driver' => 'required|in:log,mpesa',
+            'payout_driver'     => 'required|in:log,mpesa',
+            'chirpstack_driver' => 'required|in:simulated,live',
+        ]);
+
+        setOption('centresidence_collection_driver', $data['collection_driver']);
+        setOption('centresidence_payout_driver', $data['payout_driver']);
+        setOption('centresidence_chirpstack_driver', $data['chirpstack_driver']);
+
+        return back()->with('success', __('Integration settings saved. New payments and provisioning use these immediately.'));
+    }
+
+    /** Tell the owner (and partner) the facility is live and repayment starts. */
+    private function notifyDisbursed(FinanceFacility $facility): void
+    {
+        if (function_exists('addNotification') && $facility->owner_id) {
+            addNotification(
+                __('Your financed infrastructure is live'),
+                __('Facility :ref has been disbursed — repayment begins from your next rent.', ['ref' => $facility->facility_number ?? ('#' . $facility->id)]),
+                route('owner.financing.mine'),
+                null,
+                $facility->owner_id
+            );
+        }
+    }
+
     public function defaults()
     {
         $defaults = $this->migrated()
@@ -314,13 +442,17 @@ class CentresidenceController extends Controller
             ? __(':n device(s) provisioned. Attach the real DevEUIs as the hardware is fitted.', ['n' => $created])
             : __('No new devices to provision — this module is already deployed to that quantity on the property.');
 
-        return redirect()->route('admin.centresidence.devices', ['property_module_id' => $propertyModule->id])
-            ->with('success', $message);
+        // Carry BOTH filters: property_module_id shows exactly the freshly-deployed
+        // set, property_id makes the property filter dropdown reflect "…meters for X".
+        return redirect()->route('admin.centresidence.devices', [
+            'property_module_id' => $propertyModule->id,
+            'property_id'        => $propertyModule->property_id,
+        ])->with('success', $message);
     }
 
     public function devices(Request $request)
     {
-        $query = Device::with('propertyModule.module', 'propertyModule.property', 'gateway')->latest();
+        $query = Device::with('propertyModule.module', 'propertyModule.property', 'gateway', 'propertyUnit')->latest();
 
         if ($pmId = $request->integer('property_module_id')) {
             $query->where('property_module_id', $pmId);
@@ -345,14 +477,22 @@ class CentresidenceController extends Controller
         }
 
         // Property filter list = only properties that actually have deployments.
-        $properties = \App\Models\Property::whereIn('id', PropertyModule::distinct()->pluck('property_id'))
+        $deployedPropertyIds = PropertyModule::distinct()->pluck('property_id');
+        $properties = \App\Models\Property::whereIn('id', $deployedPropertyIds)
             ->orderBy('name')->get();
+
+        // Units per deployed property → populates each device's unit selector.
+        $unitsByProperty = \App\Models\PropertyUnit::whereIn('property_id', $deployedPropertyIds)
+            ->orderBy('unit_name')
+            ->get(['id', 'property_id', 'unit_name'])
+            ->groupBy('property_id');
 
         return view('admin.centresidence.devices', [
             'pageTitle' => 'Devices',
             'devices' => $query->paginate(50)->withQueryString(),
             'gateways' => Gateway::orderBy('name')->get(),
             'properties' => $properties,
+            'unitsByProperty' => $unitsByProperty,
             'filters' => $request->only(['q', 'property_id', 'gateway_id', 'status', 'property_module_id']),
         ]);
     }
@@ -364,8 +504,20 @@ class CentresidenceController extends Controller
             'dev_eui' => 'nullable|string|max:191|unique:devices,dev_eui,' . $device->id,
             'name' => 'nullable|string|max:191',
             'gateway_id' => 'nullable|integer|exists:cs_gateways,id',
+            'property_unit_id' => 'nullable|integer|exists:property_units,id',
+            'app_key' => ['nullable', 'string', 'regex:/^[0-9a-fA-F]{32}$/'],
             'status' => 'required|in:provisioning,active,inactive,decommissioned',
         ]);
+
+        // A meter can only be attached to a unit on its OWN property (no cross-property leak).
+        if (! empty($data['property_unit_id'])) {
+            $propertyId = optional($device->propertyModule)->property_id;
+            $unitOnProperty = \App\Models\PropertyUnit::where('id', $data['property_unit_id'])
+                ->where('property_id', $propertyId)->exists();
+            if (! $unitOnProperty) {
+                return back()->with('error', __('That unit does not belong to this device’s property.'));
+            }
+        }
 
         // Respect gateway capacity when re-binding to a different gateway.
         if (! empty($data['gateway_id']) && (int) $data['gateway_id'] !== (int) $device->gateway_id) {
@@ -379,11 +531,27 @@ class CentresidenceController extends Controller
         }
 
         $device->update([
-            'dev_eui'    => $data['dev_eui'] ?: null,
-            'name'       => $data['name'] ?? $device->name,
-            'gateway_id' => $data['gateway_id'] ?: null,
-            'status'     => $data['status'],
+            'dev_eui'          => $data['dev_eui'] ?: null,
+            'name'             => $data['name'] ?? $device->name,
+            'gateway_id'       => $data['gateway_id'] ?: null,
+            'property_unit_id' => $data['property_unit_id'] ?: null,
+            'status'           => $data['status'],
         ]);
+
+        // OTAA AppKey (device secret): only overwrite when a new one is supplied —
+        // an empty submit keeps the existing key. Never echoed back to the page.
+        if (! empty($data['app_key'])) {
+            $device->forceFill([
+                'metadata' => array_merge($device->metadata ?? [], ['app_key' => strtolower($data['app_key'])]),
+            ])->save();
+        }
+
+        // Live network: once a real DevEUI is set (placeholder replaced), (re)register
+        // the device on ChirpStack so it can join. Idempotent + logs-and-continues.
+        if (config('centresidence.chirpstack.driver') === 'live'
+            && $device->dev_eui && ! str_starts_with($device->dev_eui, 'DEV-')) {
+            app(\App\Centresidence\Services\ChirpStack\ChirpStackDriver::class)->registerDevice($device->fresh());
+        }
 
         // Keep the module's active_meter_count in sync with status changes.
         if ($device->propertyModule) {
@@ -450,6 +618,8 @@ class CentresidenceController extends Controller
             'email' => 'required|email|unique:users,email',
             'phone' => 'nullable|string|max:50',
             'password' => 'required|string|min:6',
+            'origination_fee_percentage' => 'nullable|numeric|min:0|max:100',
+            'servicing_fee_percentage'   => 'nullable|numeric|min:0|max:100',
         ]);
 
         $partners->provision(
@@ -460,6 +630,8 @@ class CentresidenceController extends Controller
                 'email'          => $data['email'],
                 'phone'          => $data['phone'] ?? null,
                 'status'         => FinancePartner::STATUS_ACTIVE,
+                'origination_fee_percentage' => $data['origination_fee_percentage'] ?? null,
+                'servicing_fee_percentage'   => $data['servicing_fee_percentage'] ?? null,
             ],
             [
                 'first_name' => $data['contact_person'] ?: $data['company_name'],
@@ -471,6 +643,24 @@ class CentresidenceController extends Controller
 
         return redirect()->route('admin.centresidence.partners')
             ->with('success', __('Finance partner created. They can sign in with that email and password (role: finance partner).'));
+    }
+
+    /** Set (or clear, to fall back to the platform default) a partner's Centresidence fee rates. */
+    public function partnerFees(Request $request, int $id)
+    {
+        $data = $request->validate([
+            'origination_fee_percentage' => 'nullable|numeric|min:0|max:100',
+            'servicing_fee_percentage'   => 'nullable|numeric|min:0|max:100',
+        ]);
+
+        $partner = FinancePartner::findOrFail($id);
+        $partner->update([
+            'origination_fee_percentage' => $data['origination_fee_percentage'] ?? null,
+            'servicing_fee_percentage'   => $data['servicing_fee_percentage'] ?? null,
+        ]);
+
+        return redirect()->route('admin.centresidence.partners')
+            ->with('success', __('Fees updated for :name. New facilities and remittances use these rates.', ['name' => $partner->company_name]));
     }
 
     public function infrastructure()

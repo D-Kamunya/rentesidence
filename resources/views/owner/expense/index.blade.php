@@ -5,58 +5,39 @@
         <div class="page-content">
             <div class="container-fluid">
                 <div class="page-content-wrapper bg-white p-30 radius-20">
-                    <div class="row">
-                        <div class="col-12">
-                            <div
-                                class="page-title-box d-sm-flex align-items-center justify-content-between border-bottom mb-20">
-                                <div class="page-title-left">
-                                    <h3 class="mb-sm-0">{{ $pageTitle }}</h3>
-                                </div>
-                                <div class="page-title-right">
-                                    <ol class="breadcrumb mb-0">
-                                        <li class="breadcrumb-item"><a href="{{ route('owner.dashboard') }}"
-                                                title="{{ __('Dashboard') }}">{{ __('Dashboard') }}</a></li>
-                                        <li class="breadcrumb-item active" aria-current="page">{{ $pageTitle }}</li>
-                                    </ol>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="row">
-                        <div class="property-top-search-bar">
-                            <div class="row align-items-center">
+                    @include('centresidence._design')
 
-                                <div class="col-md-12">
-                                    <div class="property-top-search-bar-right text-end">
-                                        <button type="button" class="theme-btn mb-25 addExpenses"
-                                            title="{{ __('Add New Expenses') }}">{{ __('Add New Expenses') }}
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
+                    <div class="cs-titlebar">
+                        <div>
+                            <h1 class="cs-title">{{ $pageTitle }}</h1>
+                            <ol class="cs-crumb"><li><a href="{{ route('owner.dashboard') }}">{{ __('Dashboard') }}</a></li><li>›</li><li>{{ $pageTitle }}</li></ol>
                         </div>
-                        <div class="billing-center-area bg-off-white theme-border radius-4 p-25">
-                            <table id="expensesDatatable" class="table responsive theme-border p-20 ">
-                                <thead>
-                                    <tr>
-                                        <th>{{ __('Name') }}</th>
-                                        <th>{{ __('Property') }}</th>
-                                        <th>{{ __('Expenses Type') }}</th>
-                                        <th>{{ __('Responsibility') }}</th>
-                                        <th>{{ __('Amount') }}</th>
-                                        <th>{{ __('Action') }}</th>
-                                    </tr>
-                                </thead>
-                            </table>
-                        </div>
+                        <button type="button" class="cs-btn cs-btn--primary addExpenses" title="{{ __('Add New Expenses') }}">
+                            <i class="ri-add-line"></i> {{ __('Add New Expenses') }}
+                        </button>
                     </div>
+
+                    <div class="cs-card"><div class="cs-card__body">
+                        <table id="expensesDatatable" class="table responsive" style="width:100%;">
+                            <thead>
+                                <tr>
+                                    <th>{{ __('Name') }}</th>
+                                    <th>{{ __('Property') }}</th>
+                                    <th>{{ __('Expenses Type') }}</th>
+                                    <th>{{ __('Responsibility') }}</th>
+                                    <th>{{ __('Amount') }}</th>
+                                    <th>{{ __('Action') }}</th>
+                                </tr>
+                            </thead>
+                        </table>
+                    </div></div>
                 </div>
             </div>
         </div>
     </div>
 
     <!-- Add Expenses Modal Start -->
-    <div class="modal fade" id="addExpensesModal" tabindex="-1" aria-labelledby="addExpensesModalLabel" aria-hidden="true">
+    <div class="modal fade cs-modal" id="addExpensesModal" tabindex="-1" aria-labelledby="addExpensesModalLabel" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content">
                 <div class="modal-header">
@@ -175,7 +156,7 @@
         </div>
     </div>
 
-    <div class="modal fade" id="editExpensesModal" tabindex="-1" aria-labelledby="editExpensesModalLabel"
+    <div class="modal fade cs-modal" id="editExpensesModal" tabindex="-1" aria-labelledby="editExpensesModalLabel"
         aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content">
@@ -291,7 +272,7 @@
         </div>
     </div>
 
-    <div class="modal fade" id="addTypeModal" tabindex="-1" aria-labelledby="addTypeModalLabel" aria-hidden="true">
+    <div class="modal fade cs-modal" id="addTypeModal" tabindex="-1" aria-labelledby="addTypeModalLabel" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content">
                 <div class="modal-header">

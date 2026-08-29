@@ -31,10 +31,16 @@ class InfraBillPaymentTest extends CentresidenceDatabaseTestCase
         ], $attrs));
     }
 
-    private function fireCallback(int $owner, int $resultCode)
+    private function fireCallback(int $owner, int $resultCode, string $cid = 'CHECKOUT-INFRA-1', bool $recordPush = true)
     {
+        // A genuine callback is preceded by a push we recorded (binds the callback to it).
+        if ($recordPush) {
+            \App\Centresidence\Models\StkPending::record('infra_bill', $cid, ['owner_user_id' => $owner], 500.0);
+        }
+
         $body = ['Body' => ['stkCallback' => [
             'ResultCode' => $resultCode,
+            'CheckoutRequestID' => $cid,
             'CallbackMetadata' => ['Item' => [['Name' => 'MpesaReceiptNumber', 'Value' => 'ABC123']]],
         ]]];
         $req = Request::create("/api/centresidence/infra-bill/{$owner}/callback", 'POST', [], [], [], [], json_encode($body));
@@ -107,5 +113,16 @@ class InfraBillPaymentTest extends CentresidenceDatabaseTestCase
 
         $this->assertSame(0, $second);
         $this->assertSame(0.0, $this->svc()->outstanding(1)['total']);
+    }
+
+    public function test_forged_callback_without_a_push_is_rejected(): void
+    {
+        $this->invoice(1);
+
+        // No pending push recorded → simulates a crafted callback hitting the public
+        // webhook. It must clear nothing (debt stays, readonly gate stays down).
+        $this->fireCallback(1, 0, 'FORGED-CID', recordPush: false);
+
+        $this->assertSame(500.0, $this->svc()->outstanding(1)['total']);
     }
 }

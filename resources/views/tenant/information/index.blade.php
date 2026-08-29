@@ -5,77 +5,68 @@
         <div class="page-content">
             <div class="container-fluid">
                 <div class="page-content-wrapper bg-white p-30 radius-20">
-                    <div class="row">
-                        <div class="col-12">
-                            <div
-                                class="page-title-box d-sm-flex align-items-center justify-content-between border-bottom mb-20">
-                                <div class="page-title-left">
-                                    <h3 class="mb-sm-0">{{ $pageTitle }}</h3>
-                                </div>
-                                <div class="page-title-right">
-                                    <ol class="breadcrumb mb-0">
-                                        <li class="breadcrumb-item"><a href="{{ route('tenant.dashboard') }}"
-                                                title="{{ __('Dashboard') }}">{{ __('Dashboard') }}</a></li>
-                                        <li class="breadcrumb-item active" aria-current="page">{{ $pageTitle }}</li>
-                                    </ol>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="row">
-                        <div class="tenant-portal-information-item-wrap">
-                            <div class="row">
-                                @forelse ($information as $info)
-                                    <div class="col-md-6 col-lg-6 col-xl-4 col-xxl-3">
-                                        <div
-                                            class="property-item tenant-information-item bg-off-white theme-border radius-10 mb-25">
-                                            <a href="#" data-bs-toggle="modal"
-                                                class="property-item-img-wrap information-item-wrap d-block position-relative overflow-hidden radius-10">
-                                                <div class="property-item-img">
-                                                    <img src="{{ $info->image }}" alt=""
-                                                        class="fit-image radius-4">
-                                                </div>
-                                            </a>
-                                            <div class="property-item-content p-20">
-                                                <h4 class="property-item-title">
-                                                    <a href="#" data-bs-toggle="modal"
-                                                        class="color-heading link-hover-effect">{{ $info->name }}</a>
-                                                </h4>
-                                                <p class="mt-15">{{ Str::limit($info->additional_information, 50, '...') }}
-                                                </p>
-                                                <p class="font-medium mt-15">{{ __('Distance') }}:<span
-                                                        class="ms-2 color-heading">{{ $info->distance }}</span></p>
-                                                <p class="font-medium mt-15">{{ __('Contact Number') }}:<span
-                                                        class="ms-2 color-heading">{{ $info->contact_number }}</span></p>
+                    @include('centresidence._design')
 
-                                                <button type="button" class="theme-btn mt-20 w-100 view"
-                                                    data-id="{{ $info->id }}" data-bs-toggle="modal"
-                                                    data-bs-target="#viewTenantInformationModal"
-                                                    title="{{ __('View Details') }}">{{ __('View Details') }}</button>
-                                            </div>
-                                        </div>
-                                    </div>
-                                @empty
-                                    <div class="row justify-content-center">
-                                        <div class="col-12 col-md-6 col-lg-6 col-xl-4">
-                                            <div class="empty-properties-box text-center">
-                                                <img src="{{ asset('assets/images/empty-img.png') }}" alt=""
-                                                    class="img-fluid">
-                                                <h3 class="mt-25">{{ __('Empty Information') }}</h3>
-                                            </div>
-                                        </div>
-                                    </div>
-                                @endforelse
-                            </div>
+                    <div class="cs-titlebar">
+                        <div>
+                            <h1 class="cs-title">{{ $pageTitle }}</h1>
+                            <ol class="cs-crumb"><li><a href="{{ route('tenant.dashboard') }}">{{ __('Dashboard') }}</a></li><li>›</li><li>{{ $pageTitle }}</li></ol>
                         </div>
                     </div>
+
+                    <p class="cs-muted" style="margin-bottom:20px;max-width:640px;">
+                        {{ __('Useful places near your home — shared by your landlord.') }}
+                    </p>
+
+                    @if ($information->isEmpty())
+                        <div class="cs-card"><div class="cs-card__body" style="text-align:center;padding:56px 20px;">
+                            <i class="ri-map-pin-2-line" style="font-size:38px;color:var(--blue);"></i>
+                            <p style="font-size:15px;font-weight:600;color:var(--gray-700);margin:14px 0 4px;">{{ __('No nearby information yet') }}</p>
+                            <p class="cs-muted" style="max-width:420px;margin:0 auto;">{{ __('When your landlord adds nearby amenities, they will show up here.') }}</p>
+                        </div></div>
+                    @else
+                        <div class="info-grid">
+                            @foreach ($information as $info)
+                                <div class="cs-card info-card">
+                                    <div class="info-card__img">
+                                        <img src="{{ $info->image }}" alt="{{ $info->name }}">
+                                    </div>
+                                    <div class="cs-card__body">
+                                        <p class="info-card__name">{{ $info->name }}</p>
+                                        <p class="cs-muted" style="margin:6px 0 0;">{{ Str::limit($info->additional_information, 60, '…') }}</p>
+                                        <div class="info-card__meta">
+                                            <span><i class="ri-route-line"></i> {{ $info->distance }}</span>
+                                            <span><i class="ri-phone-line"></i> <a href="tel:{{ preg_replace('/[^0-9+]/', '', $info->contact_number) }}" class="info-card__tel">{{ $info->contact_number }}</a></span>
+                                        </div>
+                                        <button type="button" class="cs-btn cs-btn--ghost view" style="width:100%;justify-content:center;margin-top:14px;"
+                                            data-id="{{ $info->id }}" data-bs-toggle="modal"
+                                            data-bs-target="#viewTenantInformationModal"
+                                            title="{{ __('View Details') }}">{{ __('View Details') }}</button>
+                                    </div>
+                                </div>
+                            @endforeach
+                        </div>
+                    @endif
                 </div>
             </div>
         </div>
     </div>
 
+    <style>
+        .info-grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(280px, 1fr)); gap:18px; }
+        .info-card { margin-bottom:0; display:flex; flex-direction:column; }
+        .info-card__img { height:150px; overflow:hidden; background:var(--gray-100); }
+        .info-card__img img { width:100%; height:100%; object-fit:cover; display:block; }
+        .info-card .cs-card__body { display:flex; flex-direction:column; flex:1; }
+        .info-card__name { font-size:14px; font-weight:600; color:var(--gray-900); margin:0; }
+        .info-card__meta { display:flex; flex-direction:column; gap:6px; margin-top:12px; font-size:12.5px; color:var(--gray-700); }
+        .info-card__meta i { color:var(--blue); margin-right:4px; }
+        .info-card__tel { color:var(--blue); font-weight:500; text-decoration:none; }
+        .info-card__tel:hover { text-decoration:underline; }
+    </style>
+
     {{-- Modal  --}}
-    <div class="modal fade" id="viewTenantInformationModal" tabindex="-1" aria-labelledby="viewTenantInformationModalLabel"
+    <div class="modal fade cs-modal" id="viewTenantInformationModal" tabindex="-1" aria-labelledby="viewTenantInformationModalLabel"
         aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content">

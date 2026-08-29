@@ -46,7 +46,7 @@
                 </div>
                 <div class="ow-info-row border-0">
                     <span class="ow-info-label">{{ __('Status') }}</span>
-                    <div>
+                    <div style="display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end;">
                         @if ($tenant->userStatus == USER_STATUS_DELETED)
                             <span class="ow-badge ow-badge--overdue">{{ __('Deleted') }}</span>
                         @else
@@ -55,9 +55,14 @@
                             @elseif($tenant->status == TENANT_STATUS_INACTIVE)
                                 <span class="ow-badge ow-badge--overdue">{{ __('Inactive') }}</span>
                             @elseif($tenant->status == TENANT_STATUS_CLOSE)
-                                <span class="ow-badge ow-badge--amber">{{ __('Close') }}</span>
+                                <span class="ow-badge ow-badge--amber">{{ __('Closed') }}</span>
                             @else
                                 <span class="ow-badge ow-badge--blue">{{ __('Draft') }}</span>
+                            @endif
+                            @if (!empty($tenant->must_change_password))
+                                <span class="ow-badge ow-badge--amber" title="{{ __('Hasn\'t signed in or set their password yet') }}">
+                                    <i class="ri-login-circle-line" style="font-size:12px;"></i> {{ __('Not signed in') }}
+                                </span>
                             @endif
                         @endif
                     </div>

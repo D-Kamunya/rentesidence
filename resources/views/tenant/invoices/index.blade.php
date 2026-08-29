@@ -25,6 +25,15 @@
                                 </ol>
                             </nav>
                         </div>
+                        <div>
+                            <button type="button" class="inv-btn inv-btn--pay" data-bs-toggle="modal" data-bs-target="#payUpcomingModal">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+                                    <rect x="3" y="5" width="18" height="16" rx="2" stroke="currentColor" stroke-width="1.8"/>
+                                    <path d="M3 9h18M8 3v4M16 3v4M12 13v4M10 15h4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+                                </svg>
+                                {{ __('Pay Upcoming Rent') }}
+                            </button>
+                        </div>
                     </div>
 
                     {{-- Invoice Summary Strip --}}
@@ -542,7 +551,7 @@
     }
     .inv-btn--pay:hover {
         background: #0F4A84;
-        color: #fff;
+        color: #fff !important;
         transform: translateY(-1px);
         box-shadow: 0 4px 12px rgba(24,95,165,.3);
         text-decoration: none;
@@ -699,6 +708,88 @@
     }
 </style>
 
+{{-- Pay Upcoming / Advance Rent --}}
+<style>
+    .pur-list { display:flex; flex-direction:column; border:0.5px solid #e5e7eb; border-radius:10px; overflow:hidden; }
+    .pur-row { display:flex; align-items:center; justify-content:space-between; gap:10px; margin:0;
+        padding:11px 14px; border-bottom:0.5px solid #f3f4f6; cursor:pointer; font-size:13px; }
+    .pur-row:last-child { border-bottom:none; }
+    .pur-row--available:hover { background:#f7f9fc; }
+    .pur-row--paid, .pur-row--invoiced { cursor:default; background:#fafafa; }
+    .pur-row__left { display:flex; align-items:center; gap:10px; min-width:0; }
+    .pur-check { width:16px; height:16px; accent-color:#185FA5; flex:none; }
+    .pur-check-spacer { width:16px; flex:none; }
+    .pur-row__month { font-weight:500; color:#1f2937; }
+    .pur-row--paid .pur-row__month, .pur-row--invoiced .pur-row__month { color:#9ca3af; }
+    .pur-row__right { display:flex; align-items:center; gap:10px; flex:none; }
+    .pur-row__amt { font-variant-numeric:tabular-nums; color:#374151; font-weight:500; }
+    .pur-badge { font-size:10px; font-weight:600; padding:2px 9px; border-radius:99px; text-decoration:none; white-space:nowrap; }
+    .pur-badge--paid { background:#E1F5EE; color:#0F6E56; }
+    .pur-badge--pay { background:#E6F1FB; color:#0C447C; border:0.5px solid #B5D4F4; }
+    .pur-badge--pay:hover { background:#185FA5; color:#fff !important; }
+    .pur-total { display:flex; align-items:center; justify-content:space-between; margin-top:14px;
+        padding-top:12px; border-top:0.5px solid #e5e7eb; font-size:13px; color:#6b7280; }
+    .pur-total strong { font-size:15px; color:#111827; font-variant-numeric:tabular-nums; }
+</style>
+<div class="modal fade" id="payUpcomingModal" tabindex="-1" aria-labelledby="payUpcomingLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content" style="border-radius:14px;overflow:hidden;">
+            <form action="{{ route('tenant.invoice.pay.upcoming') }}" method="POST">
+                @csrf
+                <div class="modal-header" style="background:#fafafa;border-bottom:0.5px solid #e5e7eb;">
+                    <h5 class="modal-title" id="payUpcomingLabel" style="font-size:15px;font-weight:600;color:#111827;">{{ __('Pay Upcoming Rent') }}</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body" style="padding:18px 20px;">
+                    @if (empty($upcomingRentMonths))
+                        <p style="font-size:13px;color:#6b7280;line-height:1.6;margin:0;">
+                            {{ __('Advance rent payment isn\'t available for your unit — it applies to monthly-rent units. Please contact your landlord.') }}
+                        </p>
+                    @else
+                        <p style="font-size:13px;color:#6b7280;line-height:1.6;margin-bottom:14px;">
+                            {{ __('Tick the months you\'d like to pay — you can settle ahead even before an invoice is generated. Each selected month becomes a payable invoice below.') }}
+                        </p>
+                        <div class="pur-list">
+                            @foreach ($upcomingRentMonths as $month)
+                                <label class="pur-row pur-row--{{ $month['state'] }}">
+                                    <span class="pur-row__left">
+                                        @if ($month['state'] === 'available')
+                                            <input type="checkbox" name="periods[]" value="{{ $month['period'] }}" class="pur-check" data-amount="{{ $month['amount'] }}">
+                                        @else
+                                            <span class="pur-check-spacer"></span>
+                                        @endif
+                                        <span class="pur-row__month">{{ $month['label'] }}</span>
+                                    </span>
+                                    <span class="pur-row__right">
+                                        <span class="pur-row__amt">{{ currencyPrice($month['amount']) }}</span>
+                                        @if ($month['state'] === 'paid')
+                                            <span class="pur-badge pur-badge--paid">{{ __('Paid') }}</span>
+                                        @elseif ($month['state'] === 'invoiced')
+                                            <a href="{{ route('tenant.invoice.pay', $month['invoice_id']) }}" class="pur-badge pur-badge--pay">{{ __('Pay') }}</a>
+                                        @endif
+                                    </span>
+                                </label>
+                            @endforeach
+                        </div>
+                        <div class="pur-total">
+                            <span>{{ __('Selected total') }}</span>
+                            <strong id="purTotal"
+                                    data-symbol="{{ getCurrencySymbol() }}"
+                                    data-placement="{{ getCurrencyPlacement() }}">{{ currencyPrice(0) }}</strong>
+                        </div>
+                    @endif
+                </div>
+                <div class="modal-footer" style="border-top:0.5px solid #e5e7eb;">
+                    <button type="button" class="inv-btn inv-btn--ghost" data-bs-dismiss="modal">{{ __('Cancel') }}</button>
+                    @if (!empty($upcomingRentMonths))
+                        <button type="submit" class="inv-btn inv-btn--pay">{{ __('Prepare Invoices') }}</button>
+                    @endif
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
 @endsection
 
 @push('style')
@@ -708,4 +799,26 @@
 @push('script')
     @include('common.layouts.datatable-script')
     <script src="{{ asset('/') }}assets/js/pages/alldatatables.init.js"></script>
+    <script>
+        (function () {
+            var totalEl = document.getElementById('purTotal');
+            if (!totalEl) return;
+            var symbol    = totalEl.getAttribute('data-symbol') || '';
+            var placement = totalEl.getAttribute('data-placement') || 'before';
+            function fmt(n) {
+                var s = Number(n).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+                return placement === 'after' ? (s + ' ' + symbol) : (symbol + s);
+            }
+            function recalc() {
+                var total = 0;
+                document.querySelectorAll('.pur-check:checked').forEach(function (c) {
+                    total += parseFloat(c.getAttribute('data-amount')) || 0;
+                });
+                totalEl.textContent = fmt(total);
+            }
+            document.querySelectorAll('.pur-check').forEach(function (c) {
+                c.addEventListener('change', recalc);
+            });
+        })();
+    </script>
 @endpush

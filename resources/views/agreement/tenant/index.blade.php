@@ -1,54 +1,64 @@
 @extends('tenant.layouts.app')
 
 @section('content')
-    <div class="main-content">
-        <div class="page-content">
-            <div class="container-fluid">
-                <div class="page-content-wrapper bg-white p-30 radius-20">
-                    <div class="row">
-                        <div class="col-12">
-                            <div
-                                class="page-title-box d-sm-flex align-items-center justify-content-between border-bottom mb-20">
-                                <div class="page-title-left">
-                                    <h3 class="mb-sm-0">{{ $pageTitle }}</h3>
-                                </div>
-                                <div class="page-title-right">
-                                    <ol class="breadcrumb mb-0">
-                                        <li class="breadcrumb-item"><a href="{{ route('tenant.dashboard') }}"
-                                                title="{{ __('Dashboard') }}">{{ __('Dashboard') }}</a></li>
-                                        <li class="breadcrumb-item active" aria-current="page">{{ $pageTitle }}</li>
-                                    </ol>
-                                </div>
-                            </div>
+<div class="main-content">
+    <div class="page-content">
+        <div class="container-fluid">
+            <div class="page-content-wrapper bg-white p-30 radius-20">
+                <div class="container">
+
+                    <div class="ag-header mb-4">
+                        <div>
+                            <h2 class="ag-title">{{ $pageTitle }}</h2>
+                            <p class="ag-sub">{{ __('Agreements from your landlord to review and sign.') }}</p>
                         </div>
+                        <a href="{{ route('agreement.verify') }}" target="_blank" class="ag-link" style="font-size:12.5px;display:inline-flex;align-items:center;gap:5px;">
+                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M12 2l7 3v6c0 4.5-3 8-7 9-4-1-7-4.5-7-9V5l7-3z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/><path d="M9 12l2 2 4-4" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                            {{ __('Verify a certificate') }}
+                        </a>
                     </div>
-                    <div class="row">
-                        <div class="billing-center-area bg-off-white theme-border radius-4 p-25">
-                            <table id="allDataTable" class="table responsive theme-border p-20 ">
+
+                    <div class="ag-card">
+                        <div class="table-responsive">
+                            <table class="table align-middle mb-0 ag-table">
                                 <thead>
                                     <tr>
-                                        <td>{{ __('SL') }}</td>
-                                        <td>{{ __('Sender Name') }}</td>
-                                        <td>{{ __('Date') }}</td>
-                                        <td class="text-center">{{ __('Action') }}</td>
+                                        <th>{{ __('Agreement') }}</th>
+                                        <th>{{ __('From') }}</th>
+                                        <th>{{ __('Received') }}</th>
+                                        <th>{{ __('Status') }}</th>
+                                        <th style="text-align:right;">{{ __('Actions') }}</th>
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    @foreach ($agreements as $agreement)
+                                    @forelse ($agreements as $a)
                                         <tr>
-                                            <td>{{ $loop->iteration }}</td>
-                                            <td>{{ $agreement->first_name }} {{ $agreement->last_name }}</td>
-                                            <td>{{ date('Y-m-d', strtotime($agreement->status_date_time)) }}</td>
-                                            <td class="text-center">
-                                                <div class="tbl-action-btns d-inline-flex">
-                                                    <a href="{{ route('tenant.agreement.download', $agreement->envelope_id) }}"
-                                                        class="p-1 tbl-action-btn" title="{{ __('Download') }}"><span
-                                                            class="iconify"
-                                                            data-icon="material-symbols:download"></span></a>
-                                                </div>
+                                            <td>{{ $a->title }}</td>
+                                            <td class="ag-muted">{{ optional($a->owner)->name ?? '—' }}</td>
+                                            <td class="ag-muted">{{ optional($a->sent_at)->format('d M Y') }}</td>
+                                            <td>@include('agreement.partials.status-badge', ['status' => $a->status])</td>
+                                            <td style="text-align:right;">
+                                                @if ($a->status === 'signed')
+                                                    @if ($a->source === 'upload')
+                                                        <a href="{{ route('tenant.agreement.document', $a->id) }}" target="_blank" class="ag-link">{{ __('Agreement') }}</a>
+                                                        @if ($a->signed_file_id)
+                                                            &middot; <a href="{{ route('tenant.agreement.download', $a->id) }}" class="ag-link">{{ __('Certificate') }}</a>
+                                                        @endif
+                                                    @elseif ($a->signed_file_id)
+                                                        <a href="{{ route('tenant.agreement.download', $a->id) }}" class="ag-link">{{ __('Download') }}</a>
+                                                    @else
+                                                        <span class="ag-muted">{{ __('Signed') }}</span>
+                                                    @endif
+                                                @elseif ($a->status === 'declined')
+                                                    <span class="ag-muted">{{ __('Declined') }}</span>
+                                                @else
+                                                    <a href="{{ route('tenant.agreement.show', $a->id) }}" class="ag-link">{{ __('Review & Sign') }}</a>
+                                                @endif
                                             </td>
                                         </tr>
-                                    @endforeach
+                                    @empty
+                                        <tr><td colspan="5" class="ag-empty">{{ __('No agreements yet.') }}</td></tr>
+                                    @endforelse
                                 </tbody>
                             </table>
                         </div>
@@ -57,9 +67,9 @@
             </div>
         </div>
     </div>
+</div>
 @endsection
 
-
-@push('script')
-    <script src="{{ asset('assets/js/pages/alldatatables.init.js') }}"></script>
+@push('style')
+    @include('agreement.partials.styles')
 @endpush

@@ -122,6 +122,16 @@ class ProductPaymentController extends Controller
 
                 $order = ProductOrder::find($order_id);
                 if ($order && $order->payment_status !== ORDER_PAYMENT_STATUS_PAID) {
+                    // SECURITY: the browser `stk_success` flag can't authorise settlement
+                    // (it's client-set) — confirm the STK result server-side before marking
+                    // the order paid / paying commission, so a buyer can't get goods free
+                    // by forging the flag. The authenticated callback is the primary path;
+                    // if we can't confirm yet, defer to the receipt (shows pending state).
+                    if (!mpesaStkConfirmed($order->payment_id)) {
+                        return redirect()->route('tenant.product.order.receipt', $order_id)
+                            ->with('info', __('Your payment is being confirmed. This page will update shortly.'));
+                    }
+
                     DB::beginTransaction();
                     try {
                         $order->payment_status = ORDER_PAYMENT_STATUS_PAID;

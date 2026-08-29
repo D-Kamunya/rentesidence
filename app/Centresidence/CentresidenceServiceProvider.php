@@ -2,6 +2,7 @@
 
 namespace App\Centresidence;
 
+use App\Centresidence\Console\DispatchDeviceCommandsCommand;
 use App\Centresidence\Console\ProcessCollectionsCommand;
 use App\Centresidence\Console\RemitPartnersCommand;
 use App\Centresidence\Console\RunBillingCycleCommand;
@@ -37,10 +38,19 @@ class CentresidenceServiceProvider extends ServiceProvider
             'centresidence'
         );
 
+        // The device-specific payload codec (config-driven — the only piece that
+        // depends on the physical meter).
+        $this->app->singleton(\App\Centresidence\Services\ChirpStack\Codec\MeterCodec::class, function ($app) {
+            $class = config('centresidence.chirpstack.codec', \App\Centresidence\Services\ChirpStack\Codec\GenericMeterCodec::class);
+            return $app->make($class);
+        });
+
         // Resolve the ChirpStack driver from config (simulated default | live).
-        $this->app->singleton(\App\Centresidence\Services\ChirpStack\ChirpStackDriver::class, function () {
+        $this->app->singleton(\App\Centresidence\Services\ChirpStack\ChirpStackDriver::class, function ($app) {
             return config('centresidence.chirpstack.driver') === 'live'
-                ? new \App\Centresidence\Services\ChirpStack\LiveChirpStackDriver()
+                ? new \App\Centresidence\Services\ChirpStack\LiveChirpStackDriver(
+                    $app->make(\App\Centresidence\Services\ChirpStack\Codec\MeterCodec::class)
+                )
                 : new \App\Centresidence\Services\ChirpStack\SimulatedChirpStackDriver();
         });
 
@@ -53,6 +63,7 @@ class CentresidenceServiceProvider extends ServiceProvider
             ProcessCollectionsCommand::class,
             SnapshotFinanceAnalyticsCommand::class,
             RemitPartnersCommand::class,
+            DispatchDeviceCommandsCommand::class,
         ]);
     }
 
@@ -72,9 +83,21 @@ class CentresidenceServiceProvider extends ServiceProvider
             __DIR__ . '/../../config/centresidence.php' => config_path('centresidence.php'),
         ], 'centresidence-config');
 
+        // Plug-and-play: let admins flip the operational drivers from the DB
+        // (Admin → Centresidence → Integrations) without touching .env on the
+        // shared host. Precedence = DB setting → .env/config default (the lifeline).
+        // Secrets (keys/passwords) always stay in .env — never DB-backed.
+        $this->applyDriverOverrides();
+
         // Finance ecosystem event wiring: an approved application creates a
         // facility + repayment schedule.
         Event::listen(ApplicationApproved::class, CreateFacilityForApprovedApplication::class);
+
+        // In-app + SMS notifications across the financing lifecycle (partners had no
+        // in-app notifications; owners get platform-paid, ungated SMS on approve/disburse).
+        Event::listen(\App\Centresidence\Events\ApplicationSubmitted::class, \App\Centresidence\Listeners\NotifyPartnerOnApplicationSubmitted::class);
+        Event::listen(ApplicationApproved::class, \App\Centresidence\Listeners\NotifyOwnerOnApplicationApproved::class);
+        Event::listen(FacilityDisbursed::class, \App\Centresidence\Listeners\NotifyOwnerOnFacilityDisbursed::class);
 
         // On disbursement, collect the owner's down-payment (partial financing)
         // to Centresidence as the installer/payee. No-op when contribution = 0.
@@ -111,6 +134,41 @@ class CentresidenceServiceProvider extends ServiceProvider
                 ->dailyAt('04:00')
                 ->withoutOverlapping()
                 ->appendOutputTo(storage_path('logs/centresidence_remittances.log'));
+
+            // Drain queued device downlinks (e.g. token credits) to the LoRaWAN
+            // network. Every minute so tenant token credits reach meters promptly.
+            $schedule->command('centresidence:dispatch-device-commands')
+                ->everyMinute()
+                ->withoutOverlapping()
+                ->appendOutputTo(storage_path('logs/centresidence_device_commands.log'));
         });
+    }
+
+    /**
+     * Override the operational drivers from DB settings when present, so admins
+     * can go live from the Integrations page without editing .env. A missing DB
+     * setting leaves the .env/config default in force (the fallback lifeline).
+     * Wrapped defensively: never break boot on a fresh install / no DB.
+     */
+    private function applyDriverOverrides(): void
+    {
+        try {
+            if (! \Illuminate\Support\Facades\Schema::hasTable('settings')) {
+                return;
+            }
+            $map = [
+                'centresidence_collection_driver' => 'centresidence.collections.driver',
+                'centresidence_payout_driver'     => 'centresidence.payouts.driver',
+                'centresidence_chirpstack_driver' => 'centresidence.chirpstack.driver',
+            ];
+            foreach ($map as $optionKey => $configKey) {
+                $val = getOption($optionKey);
+                if (! empty($val)) {
+                    config([$configKey => $val]);
+                }
+            }
+        } catch (\Throwable $e) {
+            // DB unavailable (e.g. during install/migrate) — keep .env defaults.
+        }
     }
 }

@@ -22,7 +22,8 @@ class SendWalletNotificationJob implements ShouldQueue
         public User $recipient,
         public object $emailData,
         public object $notificationData,
-        public WithdrawalRequest|AffiliateWithdrawal|null $withdrawal = null
+        public WithdrawalRequest|AffiliateWithdrawal|null $withdrawal = null,
+        public bool $sendSms = true   // affiliate flows pass false to stay email-only (SMS cost)
     ) {}
 
     public function handle(): void
@@ -40,25 +41,21 @@ class SendWalletNotificationJob implements ShouldQueue
                 'updated_at' => now(),
             ]);
 
-            // ── Email notification ───────────────────────────────────
-            
+            // ── Email notification (branded CS shell, respects mail gate) ──
             if ($this->recipient->email) {
-                Mail::send([], [], function ($message) {
-                    $message->to($this->recipient->email)
-                            ->subject($this->emailData->subject)
-                            ->html(
-                                '<p>Hello ' . e($this->recipient->name) . ',</p>' .
-                                '<p>' . e($this->emailData->message) . '</p>' .
-                                '<p><a href="' . $this->notificationData->url . '">View your wallet</a></p>'
-                            );
-                });
+                \App\Services\SmsMail\MailService::sendMail(
+                    [$this->recipient->email],
+                    $this->emailData->subject,
+                    $this->emailData->message,
+                    null
+                );
             }
 
-            // ── SMS notification ─────────────────────────────────────
+            // ── SMS notification (skipped when sendSms=false, e.g. affiliate) ──
+            $phone = $this->sendSms
+                ? ($this->recipient->contact_number ?: getOption('app_contact_number'))
+                : null;
 
-            $phone = $this->recipient->contact_number 
-            ?: getOption('app_contact_number');
-        
             if (!empty($phone)) {
                 $smsMessage = $this->emailData->message .
                     ' ' . __('View your wallet: ') . $this->notificationData->url;

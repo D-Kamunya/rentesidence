@@ -34,6 +34,7 @@ class FinancePartnerModule extends Model
         'daily_settlement_enabled'       => 'boolean',
         'monthly_settlement_enabled'     => 'boolean',
         'early_repayment_allowed'        => 'boolean',
+        'accelerated_repayment_allowed'  => 'boolean',
         'insurance_required'             => 'boolean',
         'configuration_json'             => 'array',
     ];

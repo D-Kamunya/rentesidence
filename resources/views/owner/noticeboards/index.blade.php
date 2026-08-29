@@ -295,7 +295,7 @@
                         </div>
                     </div>
 
-                    <div class="nb-view-field">
+                    <div class="nb-view-field" id="nbAttachmentField">
                         <span class="nb-view-field__label">{{ __('Attachment') }}</span>
                         <div class="nb-attachment">
                             <div class="nb-attachment__icon">

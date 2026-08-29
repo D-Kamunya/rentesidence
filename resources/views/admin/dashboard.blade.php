@@ -294,6 +294,49 @@
 
     /* ── Price cell ── */
     .dash-price { font-weight: 600; color: var(--gray-800); }
+
+    /* ── Platform earnings quick-view ── */
+    .earn-section { margin-bottom: 22px; }
+    .earn-hero {
+        display: flex; align-items: center; justify-content: space-between; gap: 20px;
+        background: linear-gradient(135deg, #185FA5 0%, #0F4A84 100%);
+        border-radius: 16px; padding: 22px 26px; margin-bottom: 16px;
+        box-shadow: 0 10px 30px rgba(24,95,165,.22);
+    }
+    .earn-hero__eyebrow { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: .08em; color: rgba(255,255,255,.72); margin: 0 0 8px; display: block; }
+    .earn-hero__amount { font-size: 34px; font-weight: 700; color: #fff; line-height: 1; }
+    .earn-hero__period { font-size: 13px; font-weight: 500; color: rgba(255,255,255,.75); margin-left: 8px; }
+    .earn-hero__all { font-size: 13px; color: rgba(255,255,255,.82); margin-top: 9px; }
+    .earn-hero__icon { width: 60px; height: 60px; border-radius: 14px; background: rgba(255,255,255,.14); display: flex; align-items: center; justify-content: center; flex: none; }
+    .earn-hero__icon svg { width: 30px; height: 30px; stroke: #fff; fill: none; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+
+    .earn-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
+    @media (max-width: 1100px) { .earn-grid { grid-template-columns: repeat(2, 1fr); } }
+    @media (max-width: 540px)  { .earn-grid { grid-template-columns: 1fr; } }
+    .earn-card {
+        background: #fff; border: 0.5px solid var(--blue-faint); border-top: 3px solid var(--gray-200);
+        border-radius: 14px; padding: 18px;
+        box-shadow: 0 4px 12px rgba(0,0,0,.04), 0 6px 18px rgba(24,95,165,.06);
+    }
+    .earn-card--blue   { border-top-color: var(--blue);   }
+    .earn-card--green  { border-top-color: var(--green);  }
+    .earn-card--amber  { border-top-color: var(--amber);  }
+    .earn-card--violet { border-top-color: var(--purple); }
+    .earn-card__head { display: flex; align-items: center; gap: 9px; margin-bottom: 14px; }
+    .earn-card__ic { width: 32px; height: 32px; border-radius: 9px; display: flex; align-items: center; justify-content: center; flex: none; }
+    .earn-card__ic svg { width: 17px; height: 17px; fill: none; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+    .earn-card--blue   .earn-card__ic { background: var(--blue-light);  } .earn-card--blue   .earn-card__ic svg { stroke: var(--blue);       }
+    .earn-card--green  .earn-card__ic { background: var(--green-light); } .earn-card--green  .earn-card__ic svg { stroke: var(--green-dark); }
+    .earn-card--amber  .earn-card__ic { background: var(--amber-light); } .earn-card--amber  .earn-card__ic svg { stroke: var(--amber);      }
+    .earn-card--violet .earn-card__ic { background: #EEEDF9;            } .earn-card--violet .earn-card__ic svg { stroke: var(--purple);     }
+    .earn-card__label { font-size: 13px; font-weight: 600; color: var(--gray-800); }
+    .earn-card__amt { font-size: 22px; font-weight: 700; color: var(--gray-900); line-height: 1; }
+    .earn-card__sub { font-size: 10px; color: var(--gray-400); text-transform: uppercase; letter-spacing: .06em; margin-top: 5px; }
+    .earn-card__all { font-size: 12px; color: var(--gray-500); margin-top: 9px; padding-top: 9px; border-top: 0.5px solid var(--gray-100); }
+    .earn-card__note { font-size: 11.5px; color: var(--gray-400); margin-top: 6px; line-height: 1.45; }
+    .earn-buckets { margin-top: 11px; display: flex; flex-direction: column; gap: 6px; }
+    .earn-bucket { display: flex; align-items: center; justify-content: space-between; font-size: 11.5px; color: var(--gray-500); }
+    .earn-bucket span:last-child { font-weight: 600; color: var(--gray-700); }
 </style>
 
 <div class="dash-page">
@@ -360,6 +403,51 @@
 
     </div>
     @endif
+
+    {{-- ══════════════════════════════════════════════
+         PLATFORM EARNINGS — quick view across every revenue stream
+         ══════════════════════════════════════════════ --}}
+    @php $earn = $earnings ?? ['streams' => [], 'total_all' => 0, 'total_month' => 0]; @endphp
+    <div class="earn-section">
+        <div class="earn-hero">
+            <div>
+                <span class="earn-hero__eyebrow">{{ __('Platform earnings') }}</span>
+                <div class="earn-hero__amount">{{ currencyPrice($earn['total_month']) }}<span class="earn-hero__period">{{ __('this month') }}</span></div>
+                <div class="earn-hero__all">{{ currencyPrice($earn['total_all']) }} {{ __('all-time across every revenue stream') }}</div>
+            </div>
+            <div class="earn-hero__icon">
+                <svg viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+            </div>
+        </div>
+        <div class="earn-grid">
+            @foreach ($earn['streams'] as $key => $s)
+            <div class="earn-card earn-card--{{ $s['accent'] }}">
+                <div class="earn-card__head">
+                    <span class="earn-card__ic">
+                        @switch($key)
+                            @case('subscriptions')<svg viewBox="0 0 24 24"><path d="M12 2l2.4 4.9 5.4.8-3.9 3.8.9 5.4-4.8-2.5-4.8 2.5.9-5.4L4.2 7.7l5.4-.8z"/></svg>@break
+                            @case('marketplace')<svg viewBox="0 0 24 24"><path d="M3 9l1-5h16l1 5"/><path d="M4 9v11h16V9"/><path d="M9 20v-6h6v6"/></svg>@break
+                            @case('infrastructure')<svg viewBox="0 0 24 24"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>@break
+                            @default<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v10M9.5 10h4a2 2 0 0 1 0 4h-4"/></svg>
+                        @endswitch
+                    </span>
+                    <span class="earn-card__label">{{ $s['label'] }}</span>
+                </div>
+                <div class="earn-card__amt">{{ currencyPrice($s['month']) }}</div>
+                <div class="earn-card__sub">{{ __('this month') }}</div>
+                <div class="earn-card__all">{{ currencyPrice($s['all']) }} {{ __('all-time') }}</div>
+                <div class="earn-card__note">{{ $s['note'] }}</div>
+                @if (!empty($s['buckets']))
+                <div class="earn-buckets">
+                    @foreach ($s['buckets'] as $b)
+                    <div class="earn-bucket"><span>{{ $b['label'] }}</span><span>{{ currencyPrice($b['all']) }}</span></div>
+                    @endforeach
+                </div>
+                @endif
+            </div>
+            @endforeach
+        </div>
+    </div>
 
     {{-- ── Stat Cards ── --}}
     <div class="dash-stats">

@@ -241,7 +241,9 @@ select.ta-form-control {
                     <div class="col-12">
                         <div class="page-title-box d-sm-flex align-items-center justify-content-between border-bottom mb-20">
                             <div class="page-title-left">
-                                <h3 class="mb-sm-0">{{ __('Tenant Applications') }}</h3>
+                                <h3 class="mb-sm-0">{{ __('Tenant Applications') }}
+                                    <span style="display:inline-flex;align-items:center;font-size:12px;font-weight:600;color:var(--amber);background:var(--amber-light);border:0.5px solid var(--amber-border);border-radius:99px;padding:2px 10px;margin-left:8px;vertical-align:middle;">{{ $applications->count() }} {{ __('pending') }}</span>
+                                </h3>
                             </div>
                             <div class="page-title-right">
                                 <ol class="breadcrumb mb-0">
@@ -258,53 +260,6 @@ select.ta-form-control {
                     </div>
                 </div>
 
-                @php
-                    $pageTitle     = 'Tenant Applications';
-                    $totalCount    = $applications->count();
-                    $pendingCount  = $applications->where('status', 2)->count();
-                    $acceptedCount = $applications->where('status', 1)->count();
-                @endphp
-
-                {{-- Summary Strip --}}
-                <div class="ta-summary-strip">
-                    <div class="ta-strip-item">
-                        <div class="ta-strip-dot" style="background:var(--blue)"></div>
-                        <div>
-                            <div class="ta-strip-label">{{ __('Total') }}</div>
-                            <div class="ta-strip-value" style="color:var(--blue)">{{ $totalCount }}</div>
-                        </div>
-                    </div>
-                    <div class="ta-strip-item">
-                        <div class="ta-strip-dot" style="background:var(--amber)"></div>
-                        <div>
-                            <div class="ta-strip-label">{{ __('Pending') }}</div>
-                            <div class="ta-strip-value" style="color:var(--amber)">{{ $pendingCount }}</div>
-                        </div>
-                    </div>
-                    <div class="ta-strip-item">
-                        <div class="ta-strip-dot" style="background:var(--green)"></div>
-                        <div>
-                            <div class="ta-strip-label">{{ __('Assigned') }}</div>
-                            <div class="ta-strip-value" style="color:var(--green)">{{ $acceptedCount }}</div>
-                        </div>
-                    </div>
-                </div>
-
-                {{-- Filter Tabs --}}
-                <div class="ta-filter-bar">
-                    <div class="ta-filter-tabs">
-                        <button class="ta-tab active" data-filter="all">
-                            <span class="ta-tab-dot" style="background:var(--blue)"></span>{{ __('All') }}
-                        </button>
-                        <button class="ta-tab" data-filter="pending">
-                            <span class="ta-tab-dot" style="background:var(--amber)"></span>{{ __('Pending') }}
-                        </button>
-                        <button class="ta-tab" data-filter="accepted">
-                            <span class="ta-tab-dot" style="background:var(--green)"></span>{{ __('Assigned') }}
-                        </button>
-                    </div>
-                </div>
-
                 {{-- Cards Grid --}}
                 <div class="row g-4" id="applicationsGrid">
 
@@ -312,19 +267,10 @@ select.ta-form-control {
                         @php
                             $unit     = $app->propertyUnit;
                             $property = $unit?->property;
-
-                            $statusKey = match((int)$app->status) {
-                                1 => 'accepted',
-                                default                          => 'pending',
-                            };
-                            $statusText = match((int)$app->status) {
-                                1 => __('Assigned'),
-                                default                          => __('Pending'),
-                            };
                             $initials = strtoupper(substr($app->first_name, 0, 1) . substr($app->last_name, 0, 1));
                         @endphp
 
-                        <div class="col-12 col-md-6 col-xl-4 ta-card-col" data-status="{{ $statusKey }}">
+                        <div class="col-12 col-md-6 col-xl-4 ta-card-col">
                             <div class="ta-card">
 
                                 {{-- Card Head --}}
@@ -334,10 +280,9 @@ select.ta-form-control {
                                         <p class="ta-applicant-name">{{ $app->first_name }} {{ $app->last_name }}</p>
                                         <p class="ta-applicant-meta">{{ $app->email }}</p>
                                     </div>
-                                    <span class="ta-badge ta-badge-{{ $statusKey }}">
-                                        <span style="width:5px;height:5px;border-radius:50%;display:inline-block;
-                                            background:{{ $statusKey === 'accepted' ? 'var(--green-dark)' : 'var(--amber)' }}"></span>
-                                        {{ $statusText }}
+                                    <span class="ta-badge ta-badge-pending">
+                                        <span style="width:5px;height:5px;border-radius:50%;display:inline-block;background:var(--amber)"></span>
+                                        {{ __('Pending') }}
                                     </span>
                                 </div>
 
@@ -400,42 +345,33 @@ select.ta-form-control {
 
                                 {{-- Card Footer --}}
                                 <div class="ta-card-footer">
-                                    @if((int)$app->status === 2)
+                                    {{-- Assign → opens assign modal --}}
+                                    <button type="button"
+                                            class="ta-btn ta-btn-primary"
+                                            data-bs-toggle="modal"
+                                            data-bs-target="#assignModal{{ $app->id }}">
+                                        <svg width="13" height="13" viewBox="0 0 13 13" fill="none" aria-hidden="true">
+                                            <path d="M2 6.5L5.5 10L11 3" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+                                        </svg>
+                                        {{ __('Assign as Tenant') }}
+                                    </button>
 
-                                        {{-- Assign → opens assign modal --}}
-                                        <button type="button"
-                                                class="ta-btn ta-btn-primary"
-                                                data-bs-toggle="modal"
-                                                data-bs-target="#assignModal{{ $app->id }}">
-                                            <svg width="13" height="13" viewBox="0 0 13 13" fill="none" aria-hidden="true">
-                                                <path d="M2 6.5L5.5 10L11 3" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
-                                            </svg>
-                                            {{ __('Assign as Tenant') }}
-                                        </button>
-
-                                        {{-- Reject + Delete --}}
-                                        <button type="button"
-                                                class="ta-btn ta-btn-danger"
-                                                data-bs-toggle="modal"
-                                                data-bs-target="#rejectModal{{ $app->id }}">
-                                            <svg width="13" height="13" viewBox="0 0 13 13" fill="none" aria-hidden="true">
-                                                <path d="M3 3l7 7M10 3l-7 7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
-                                            </svg>
-                                            {{ __('Reject & Remove') }}
-                                        </button>
-
-                                    @else
-                                        <span class="ta-badge ta-badge-accepted w-100 justify-content-center py-2" style="margin-left:0">
-                                            ✓ {{ __('Tenant Assigned') }}
-                                        </span>
-                                    @endif
+                                    {{-- Reject + Delete --}}
+                                    <button type="button"
+                                            class="ta-btn ta-btn-danger"
+                                            data-bs-toggle="modal"
+                                            data-bs-target="#rejectModal{{ $app->id }}">
+                                        <svg width="13" height="13" viewBox="0 0 13 13" fill="none" aria-hidden="true">
+                                            <path d="M3 3l7 7M10 3l-7 7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+                                        </svg>
+                                        {{ __('Reject & Remove') }}
+                                    </button>
                                 </div>
 
                             </div>{{-- /.ta-card --}}
                         </div>{{-- /.col --}}
 
                         {{-- ── ASSIGN MODAL ─────────────────────────────────── --}}
-                        @if((int)$app->status === 2)
                         <div class="modal fade ta-modal" id="assignModal{{ $app->id }}" tabindex="-1"
                              aria-labelledby="assignModalLabel{{ $app->id }}" aria-hidden="true">
                             <div class="modal-dialog modal-dialog-centered modal-lg">
@@ -667,7 +603,6 @@ select.ta-form-control {
                                 </div>
                             </div>
                         </div>
-                        @endif
                         {{-- ── END MODALS ───────────────────────────────────── --}}
 
                     @empty
@@ -694,21 +629,6 @@ select.ta-form-control {
 
 <script>
 document.addEventListener('DOMContentLoaded', function () {
-
-    // ── Filter tabs ────────────────────────────────────────────────────
-    var tabs  = document.querySelectorAll('.ta-tab');
-    var cards = document.querySelectorAll('.ta-card-col');
-
-    tabs.forEach(function (tab) {
-        tab.addEventListener('click', function () {
-            tabs.forEach(function (t) { t.classList.remove('active'); });
-            tab.classList.add('active');
-            var filter = tab.dataset.filter;
-            cards.forEach(function (card) {
-                card.style.display = (filter === 'all' || card.dataset.status === filter) ? '' : 'none';
-            });
-        });
-    });
 
     // ── Optional section toggle (per-card, inside assign modal) ───────
     document.querySelectorAll('.ta-optional-toggle').forEach(function (btn) {

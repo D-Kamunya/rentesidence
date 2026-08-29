@@ -5,6 +5,7 @@ namespace App\Console\Commands;
 use App\Models\Lead;
 use App\Models\LeadActivity;
 use App\Models\Owner;
+use App\Models\Package;
 use App\Services\SmsMail\MailService;
 use Carbon\Carbon;
 use Illuminate\Console\Command;
@@ -90,6 +91,22 @@ class ExpireTrials extends Command
                     'type'        => 'trial_expired',
                     'description' => 'Trial period ended. Lead reverted to pending conversion.',
                 ]);
+
+                // Demote the owner's account to the FREE tier now the trial has lapsed.
+                // (Before the free tier existed we only reverted the lead; now the account
+                // must land on the free plan rather than sit on an expired trial package.)
+                $freePackage = Package::where('status', ACTIVE)
+                    ->where('pricing_model', 'free')
+                    ->where('is_trail', '!=', ACTIVE) // the is_trail plan is the trial itself
+                    ->orderByDesc('is_default')
+                    ->first();
+
+                if ($freePackage) {
+                    // 50-year duration → effectively never expires (mirrors activateFree).
+                    setUserPackage($owner->user_id, $freePackage, 365 * 50, 1, null);
+                } else {
+                    Log::warning("trials:expire — no active free package configured; could not demote lead #{$lead->id} (owner user_id {$owner->user_id}).");
+                }
 
                 DB::commit();
 

@@ -31,6 +31,10 @@ Route::group([
             Route::post('/{module}/submit', [AcademyController::class, 'submit'])->name('academy.submit');
         });
 
+        // Notifications — accessible to all affiliates (incl. before academy completion,
+        // e.g. "new module" alerts).
+        Route::get('notifications', [DashboardController::class, 'notification'])->name('notification');
+
         // -------------------------------
         // Locked Affiliate Routes (requires academy completion)
         // -------------------------------

@@ -46,6 +46,12 @@ class Device extends Model
         return $this->belongsTo(Gateway::class);
     }
 
+    /** The specific unit this meter serves (legacy PropertyUnit). Drives wallet attribution. */
+    public function propertyUnit(): BelongsTo
+    {
+        return $this->belongsTo(\App\Models\PropertyUnit::class, 'property_unit_id');
+    }
+
     public function telemetry(): HasMany
     {
         return $this->hasMany(DeviceTelemetry::class);

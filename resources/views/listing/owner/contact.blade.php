@@ -3,7 +3,9 @@
     <div class="main-content">
         <div class="page-content">
             <div class="container-fluid">
-                <div class="page-content-wrapper bg-white p-30 radius-20">
+                <div class="page-content-wrapper bg-white p-30 radius-20 cs-controls">
+                    @include('centresidence._design')
+
                     <div class="row">
                         <div class="col-12">
                             <div
@@ -22,7 +24,7 @@
                         </div>
                     </div>
                     <div class="row">
-                        <div class="billing-center-area bg-off-white theme-border radius-4 p-25">
+                        <div class="billing-center-area cs-card cs-card--pad">
                             <table id="contactDataTable" class="table responsive theme-border p-20 ">
                                 <thead>
                                     <th>{{ __('SL') }}</th>
@@ -41,7 +43,7 @@
             </div>
         </div>
     </div>
-    <div class="modal fade" id="replyModal" tabindex="-1" aria-labelledby="replyModalLabel" aria-hidden="true">
+    <div class="modal fade cs-modal" id="replyModal" tabindex="-1" aria-labelledby="replyModalLabel" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content">
                 <div class="modal-header">

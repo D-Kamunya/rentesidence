@@ -6,7 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Jobs\RetrySmsJob;
 use App\Models\Owner;
 use App\Models\SmsHistory;
-use App\Models\SmsCreditTransaction;
+use App\Models\OwnerCreditTransaction;
 use App\Services\Sms\SmsCreditsService;
 use Illuminate\Http\Request;
 
@@ -14,14 +14,17 @@ class SmsCreditsController extends Controller
 {
     public function index()
     {
-        $owner   = Owner::where('user_id', auth()->id())->firstOrFail();
-        $balance = $owner->sms_credits;
+        $owner    = Owner::where('user_id', auth()->id())->firstOrFail();
+        $balance  = $owner->sms_credits;
+        $creditPools = SmsCreditsService::breakdown(auth()->id()); // granted (resets) + purchased (kept)
 
-        $transactions = SmsCreditTransaction::where('owner_user_id', auth()->id())
+        $transactions = OwnerCreditTransaction::where('owner_user_id', auth()->id())
+            ->where('bucket', 'sms')
             ->latest()
             ->paginate(15, ['*'], 'tx_page');
 
-        $stats = SmsCreditTransaction::where('owner_user_id', auth()->id())
+        $stats = OwnerCreditTransaction::where('owner_user_id', auth()->id())
+            ->where('bucket', 'sms')
             ->selectRaw("
                 SUM(CASE WHEN type = 'deduct'   AND status = 'success' THEN quantity ELSE 0 END) as total_sent,
                 SUM(CASE WHEN status = 'failed'                         THEN quantity ELSE 0 END) as total_failed,
@@ -34,7 +37,7 @@ class SmsCreditsController extends Controller
         $lowThreshold   = (int)   getOption('sms_low_credit_threshold', 50);
 
         return view('owner.sms-credits.index', compact(
-            'balance', 'transactions', 'stats',
+            'balance', 'creditPools', 'transactions', 'stats',
             'failedMessages', 'pricePerSms', 'lowThreshold'
         ));
     }

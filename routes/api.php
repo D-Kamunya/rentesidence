@@ -73,6 +73,16 @@ Route::post('centresidence/infra-bill/{owner}/callback', \App\Http\Controllers\C
 Route::post('centresidence/token/{propertyModule}/{tenant}/callback', \App\Http\Controllers\Centresidence\TokenPurchaseCallbackController::class)
     ->name('centresidence.token.callback');
 
+// Centresidence owner early-settlement payoff (M-Pesa STK) callback — completes the facility.
+Route::post('centresidence/settle/{facility}/callback', \App\Http\Controllers\Centresidence\SettleEarlyCallbackController::class)
+    ->name('centresidence.settle.callback');
+
+// Centresidence LoRaWAN inbound: ChirpStack HTTP integration posts device events
+// here (join → activate device, up → consumption drawdown, txack → downlink ack).
+// Fail-closed on the shared webhook secret (see ChirpStackUplinkController).
+Route::post('centresidence/chirpstack/uplink', \App\Http\Controllers\Centresidence\ChirpStackUplinkController::class)
+    ->name('centresidence.chirpstack.uplink');
+
 
 Route::match(array('GET', 'POST'), 'payment-subscription/verify', [PaymentSubscriptionController::class, 'verify']);
 Route::match(array('GET', 'POST'), 'payment-verify', [PaymentController::class, 'verify']);

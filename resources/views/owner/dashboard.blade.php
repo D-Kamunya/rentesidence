@@ -698,37 +698,10 @@
 
             </div>
 
-            {{-- M-Pesa waiting overlay (inside modal) --}}
-            <div id="modalMpesaWait" style="display:none;position:absolute;inset:0;background:rgba(255,255,255,.96);border-radius:16px;flex-direction:column;align-items:center;justify-content:center;gap:16px;text-align:center;padding:2rem;">
-                <img src="{{ asset('assets/images/gateway-icon/mpesa.jpg') }}"
-                     alt="M-PESA" style="width:70px;height:70px;border-radius:12px;object-fit:cover;">
-                <div>
-                    <p style="font-size:14px;font-weight:600;color:#111827;margin:0 0 6px;">{{ __('Check your phone') }}</p>
-                    <p style="font-size:13px;color:#6b7280;margin:0;">{{ __('Enter your M-Pesa PIN to complete payment.') }}</p>
-                    <p style="font-size:13px;color:#6b7280;margin:6px 0 0;">
-                        {{ __('Time remaining:') }} <strong id="modalTimer" style="color:#185FA5;">2:00</strong>
-                    </p>
-                </div>
-                <img src="{{ asset('assets/images/loading.svg') }}" alt="Loading" style="width:32px;">
-            </div>
-
         </div>
     </div>
 </div>
-
-{{-- Preloader (page-level, same as products checkout — used after Pusher redirect) --}}
-<div id="mpesa-preloader" style="display:none;">
-    <div id="mpesa-preloaderInner">
-        <img src="{{ asset('assets/images/gateway-icon/mpesa.jpg') }}" alt="M-PESA">
-        <div>
-            <p>{{ __('Please follow the instructions and do not refresh or leave this page.') }}</p>
-            <p>{{ __('This may take up to') }} <span id="mpesa-timer">2:00</span> {{ __('minute(s).') }}</p>
-            <p>{{ __('You will receive a prompt on your mobile number to enter your PIN to authorize payment.') }}</p>
-            <p>{{ __('Please ensure your phone is on and unlocked. Thank you.') }}</p>
-        </div>
-        <img src="{{ asset('assets/images/loading.svg') }}" alt="Loading">
-    </div>
-</div>
+{{-- STK waiting overlay is now the shared common.partials.mpesa-stk-waiting component. --}}
 
 @push('style')
 <style>
@@ -741,21 +714,7 @@
 .sms-pack-btn:hover, .sms-pack-btn.active {
     border-color:#185FA5; background:#E6F1FB;
 }
-/* ── Page-level preloader ─────────────────────────────────── */
-#mpesa-preloader {
-    position:fixed; inset:0; background:rgba(0,0,0,.55);
-    z-index:9999; display:flex; align-items:center; justify-content:center;
-}
-#mpesa-preloaderInner {
-    background:#fff; border-radius:16px; padding:2rem;
-    max-width:420px; width:90%; display:flex; flex-direction:column;
-    align-items:center; gap:16px; text-align:center;
-    box-shadow:0 20px 40px rgba(0,0,0,.2);
-}
-#mpesa-preloaderInner img:first-child { width:80px; height:80px; object-fit:contain; border-radius:12px; }
-#mpesa-preloaderInner p { font-size:13px; color:#374151; margin:0; line-height:1.6; }
-#mpesa-timer { font-weight:600; color:#185FA5; }
-#mpesa-preloaderInner img:last-child { width:36px; }
+/* STK waiting overlay is now the shared common.partials.mpesa-stk-waiting component. */
 </style>
 @endpush
 
@@ -779,8 +738,15 @@
         buyBtn.style.opacity = valid ? '1' : '.5';
         buyBtn.style.cursor  = valid ? 'pointer' : 'not-allowed';
         const total = (selectedQty * pricePerSms).toFixed(2);
-        buyAmountEl.textContent = selectedQty >= 10 ? 'KSh ' + total : '';
+        const amtEl = document.getElementById('modalBuyAmount'); // re-query (button html may have been swapped)
+        if (amtEl) amtEl.textContent = selectedQty >= 10 ? 'KSh ' + total : '';
     }
+
+    // Money-safety: a second, amount-showing tap is required before charging; any change to
+    // the quantity cancels a pending confirm.
+    let confirming = false, confirmReset;
+    const origBtnHtml = buyBtn ? buyBtn.innerHTML : '';
+    function resetConfirm(){ confirming = false; clearTimeout(confirmReset); if (buyBtn){ buyBtn.style.background = '#185FA5'; buyBtn.innerHTML = origBtnHtml; updateBuyBtn(); } }
 
     // Quick-pick
     document.querySelectorAll('.sms-pack-btn').forEach(btn => {
@@ -790,62 +756,44 @@
             selectedQty = parseInt(this.dataset.qty);
             customQtyEl.value = selectedQty;
             customTotalEl.textContent = (selectedQty * pricePerSms).toFixed(2);
-            updateBuyBtn();
+            updateBuyBtn(); resetConfirm();
         });
     });
 
     // Custom qty
+    customQtyEl.addEventListener('focus', function(){ this.select(); }); // avoid fat-fingering an existing value
     customQtyEl.addEventListener('input', function () {
         selectedQty = parseInt(this.value) || 0;
         customTotalEl.textContent = (selectedQty * pricePerSms).toFixed(2);
         document.querySelectorAll('.sms-pack-btn').forEach(b => b.classList.remove('active'));
-        updateBuyBtn();
+        updateBuyBtn(); resetConfirm();
     });
 
     // Phone change
-    phoneEl.addEventListener('input', updateBuyBtn);
+    phoneEl.addEventListener('input', function(){ updateBuyBtn(); resetConfirm(); });
 
-    // ── Modal waiting overlay timer ───────────────────────────
-    let modalTimer;
-    const modalWait  = document.getElementById('modalMpesaWait');
-    const modalTimerEl = document.getElementById('modalTimer');
-
-    function showModalWait() {
-        let countdown = 120;
-        modalWait.style.display = 'flex';
-        modalTimer = setInterval(() => {
-            const m = Math.floor(countdown / 60);
-            const s = countdown % 60;
-            modalTimerEl.textContent = `${m}:${s < 10 ? '0' + s : s}`;
-            if (countdown-- <= 0) clearInterval(modalTimer);
-        }, 1000);
-    }
-
-    function hideModalWait() {
-        clearInterval(modalTimer);
-        modalWait.style.display = 'none';
-    }
-
-    // ── Page-level preloader ──────────────────────────────────
-    let pageTimer;
-    function showPagePreloader() {
-        let countdown = 120;
-        const el = document.getElementById('mpesa-timer');
-        document.getElementById('mpesa-preloader').style.display = 'flex';
-        pageTimer = setInterval(() => {
-            const m = Math.floor(countdown / 60);
-            const s = countdown % 60;
-            el.textContent = `${m}:${s < 10 ? '0' + s : s}`;
-            if (countdown-- <= 0) clearInterval(pageTimer);
-        }, 1000);
-    }
+    // ── STK waiting overlay (shared common.partials.mpesa-stk-waiting) ──
+    function showModalWait(amount) { mpesaWait.show(amount ? { amount: amount } : {}); }
+    function hideModalWait() { mpesaWait.hide(); }
+    function showPagePreloader() { mpesaWait.show(); }
 
     // ── Pay button ────────────────────────────────────────────
     buyBtn.addEventListener('click', function () {
         if (selectedQty < 10 || phoneEl.value.trim().length < 9) return;
 
         const total = (selectedQty * pricePerSms).toFixed(2);
-        showModalWait();
+
+        // First tap arms an explicit confirmation of the exact total; only the second charges.
+        if (!confirming) {
+            confirming = true;
+            buyBtn.style.background = '#B45309';
+            buyBtn.innerHTML = '<span style="font-weight:700;white-space:nowrap;">{{ __("Confirm") }} KSh ' + total + ' &rarr;</span>';
+            confirmReset = setTimeout(resetConfirm, 8000);
+            return;
+        }
+        clearTimeout(confirmReset); confirming = false;
+
+        showModalWait('KSh ' + Number(total).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
 
         const formData = new FormData();
         formData.append('_token',    '{{ csrf_token() }}');
@@ -875,21 +823,21 @@
 
                     channel.bind('MpesaTransactionDeclined', function () {
                         clearTimeout(redirectTimeout);
-                        hideModalWait();
+                        hideModalWait(); resetConfirm();
                         if (typeof toastr !== 'undefined') {
                             toastr.error('{{ __("Payment was declined. Please try again.") }}');
                         }
                     });
 
                 } else {
-                    hideModalWait();
+                    hideModalWait(); resetConfirm();
                     if (typeof toastr !== 'undefined') {
                         toastr.error(data.error || '{{ __("Payment failed. Please try again.") }}');
                     }
                 }
             })
             .catch(() => {
-                hideModalWait();
+                hideModalWait(); resetConfirm();
                 if (typeof toastr !== 'undefined') {
                     toastr.error('{{ __("Something went wrong. Please try again.") }}');
                 }
@@ -898,7 +846,7 @@
 
     // Reset modal state when closed
     document.getElementById('smsTopupModal').addEventListener('hidden.bs.modal', function () {
-        hideModalWait();
+        hideModalWait(); resetConfirm();
         document.querySelectorAll('.sms-pack-btn').forEach(b => b.classList.remove('active'));
         customQtyEl.value = '';
         customTotalEl.textContent = '0.00';

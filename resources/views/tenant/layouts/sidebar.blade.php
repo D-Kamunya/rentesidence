@@ -18,6 +18,12 @@
                         <span>{{ __('Invoices') }}</span>
                     </a>
                 </li>
+                <li class="{{ @$navRentalScoreMMActiveClass }}">
+                    <a href="{{ route('tenant.rental-score.index') }}" class="{{ @$navRentalScoreActiveClass }}">
+                        <i class="ri-shield-star-line"></i>
+                        <span>{{ __('My Rental Score') }}</span>
+                    </a>
+                </li>
                 <li class="{{ @$navMarketPlaceMMActiveClass }}">
                     <a href="{{ route('tenant.product.index') }}" class="{{ @$navMarketPlaceActiveClass }}">
                         <i class="ri-store-2-fill "></i>

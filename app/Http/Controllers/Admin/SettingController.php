@@ -59,6 +59,18 @@ class SettingController extends Controller
                 $upload = settingImageStoreUpdate($option->id, $request->sign_in_image, 'login');
                 $option->option_value = $upload;
                 $option->save();
+            } elseif ($request->hasFile('sign_in_image_2') && $key == 'sign_in_image_2') {
+                $upload = settingImageStoreUpdate($option->id, $request->sign_in_image_2, 'login');
+                $option->option_value = $upload;
+                $option->save();
+            } elseif ($request->hasFile('sign_in_image_3') && $key == 'sign_in_image_3') {
+                $upload = settingImageStoreUpdate($option->id, $request->sign_in_image_3, 'login');
+                $option->option_value = $upload;
+                $option->save();
+            } elseif ($request->hasFile('sign_in_image_4') && $key == 'sign_in_image_4') {
+                $upload = settingImageStoreUpdate($option->id, $request->sign_in_image_4, 'login');
+                $option->option_value = $upload;
+                $option->save();
             } elseif ($request->hasFile('home_hero_image') && $key == 'home_hero_image') {
                 $upload = settingImageStoreUpdate($option->id, $request->home_hero_image, 'hero-main');
                 $option->option_value = $upload;
@@ -193,22 +205,6 @@ class SettingController extends Controller
         return view('admin.setting.listing-setting')->with($data);
     }
 
-    public function agreementSetting()
-    {
-        if (isAddonInstalled('PROTYAGREEMENT') < 1) {
-            abort(404);
-        }
-        $path = storage_path('app/jwt/private.key');
-        if (!file_exists(storage_path('app/jwt'))) {
-            mkdir(storage_path('app/jwt'), 0777, true);
-        }
-        if (!file_exists($path)) {
-            fopen($path, 'w');
-        }
-        $data['pageTitle'] = __("Docu Sign Setting");
-        $data['subAgreementSettingActiveClass'] = 'active';
-        return view('admin.setting.agreement-setting')->with($data);
-    }
 
     public function cronSetting()
     {
@@ -256,11 +252,17 @@ class SettingController extends Controller
     {
         $request->validate([
             'centresidence_rent_mpesa_account_id' => 'required|exists:mpesa_accounts,id',
+            'centresidence_disbursement_bank_details' => 'nullable|string|max:1000',
         ]);
 
         \App\Models\Setting::updateOrCreate(
             ['option_key' => 'centresidence_rent_mpesa_account_id'],
             ['option_value' => $request->centresidence_rent_mpesa_account_id]
+        );
+
+        \App\Models\Setting::updateOrCreate(
+            ['option_key' => 'centresidence_disbursement_bank_details'],
+            ['option_value' => $request->centresidence_disbursement_bank_details]
         );
 
         $settings = \App\Models\Setting::pluck('option_value', 'option_key')->toArray();

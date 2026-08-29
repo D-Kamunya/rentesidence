@@ -80,7 +80,7 @@ class CentresidenceDemoSeeder extends Seeder
         ]);
         $partner = FinancePartner::firstOrCreate(['user_id' => $user->id], [
             'company_name' => 'Bridgewater Capital', 'trading_name' => 'Bridgewater', 'status' => FinancePartner::STATUS_ACTIVE,
-            'settlement_account_details' => ['type' => 'mpesa_b2c', 'phone' => '254700111222'],
+            'settlement_account_details' => ['type' => 'bank', 'label' => 'Equity Bank', 'paybill' => '247247', 'account' => 'BWC-001'],
         ]);
 
         foreach ($modules as $m) {

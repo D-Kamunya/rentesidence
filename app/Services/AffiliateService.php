@@ -26,6 +26,10 @@ class AffiliateService
         $user->password = Hash::make($plainPassword);
         $user->status = USER_STATUS_UNVERIFIED;
         $user->role = USER_ROLE_AFFILIATE;
+        // System-generated password → force the affiliate to set their own on first
+        // login (same onboarding rule as owner-created tenants). Cleared in
+        // ProfileController::changePasswordUpdate; enforced by ForcePasswordChange.
+        $user->must_change_password = 1;
         $user->verify_token = str_replace('-', '', Str::uuid()->toString());
         $user->save();
 
@@ -99,7 +103,7 @@ class AffiliateService
                 if ($affiliate->status == ACTIVE) {
                     return '<div class="status-btn status-btn-green font-13 radius-4">Active</div>';
                 } else {
-                    return '<div class="status-btn status-btn-orange font-13 radius-4">Deactivate</div>';
+                    return '<div class="status-btn status-btn-orange font-13 radius-4">Inactive</div>';
                 }
             })
             ->rawColumns(['name', 'status', 'trail', 'action'])

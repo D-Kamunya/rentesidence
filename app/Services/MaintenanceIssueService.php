@@ -13,12 +13,16 @@ class MaintenanceIssueService
 
     public function getAll()
     {
+        ensureOwnerDefaults(auth()->id(), MaintenanceIssue::class, 'setOwnerDefaultMaintenanceIssue');
+
         return MaintenanceIssue::where('owner_user_id', auth()->id())->get();
     }
 
     public function getActiveAll()
     {
         $ownerUserId = auth()->user()->role == USER_ROLE_OWNER ? auth()->id() : auth()->user()->owner_user_id;
+        ensureOwnerDefaults($ownerUserId, MaintenanceIssue::class, 'setOwnerDefaultMaintenanceIssue');
+
         return MaintenanceIssue::where('owner_user_id', $ownerUserId)->where('status', ACTIVE)->get();
     }
 
@@ -52,6 +56,11 @@ class MaintenanceIssueService
     public function delete($id)
     {
         $issue = MaintenanceIssue::where('owner_user_id', auth()->id())->findOrFail($id);
+
+        if ((int) $issue->is_default === 1) {
+            return redirect()->back()->with('error', __('Default maintenance issues cannot be deleted.'));
+        }
+
         $issue->delete();
         return redirect()->back()->with('success', __(DELETED_SUCCESSFULLY));
     }

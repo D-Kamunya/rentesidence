@@ -262,7 +262,7 @@
                                                             Edit
                                                         </a>
                                                         <form action="{{ route('admin.kb.articles.destroy', $article) }}" method="POST" 
-                                                            onsubmit="return confirm('Are you sure you want to delete this article?');"
+                                                            data-cs-confirm="Are you sure you want to delete this article?" data-cs-confirm-tone="danger"
                                                             style="display: inline;">
                                                             @csrf
                                                             @method('DELETE')

@@ -6,7 +6,9 @@
         <div class="page-content">
             <div class="container-fluid">
                 <!-- Page Content Wrapper Start -->
-                <div class="page-content-wrapper bg-white p-30 radius-20">
+                <div class="page-content-wrapper bg-white p-30 radius-20 cs-controls">
+                    @include('centresidence._design')
+
                     <!-- start page title -->
                     <div class="row">
                         <div class="col-12">
@@ -33,9 +35,9 @@
                                     <form action="{{ route('admin.affiliates.register.store') }}" method="POST">
                                         @csrf
                                         <div
-                                            class="form-card bg-off-white theme-border radius-4 p-20">
+                                            class="form-card cs-card cs-card--pad">
                                             <div
-                                                class="bg-white theme-border radius-4 p-20 pb-0 mb-25">
+                                                class="pb-0 mb-25">
                                                 <div class="owners-inner-box-block">
                                                     <div class="add-property-title border-bottom pb-25 mb-25">
                                                         <h4>{{ __('Personal Information') }}</h4>

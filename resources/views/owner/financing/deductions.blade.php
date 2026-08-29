@@ -26,7 +26,7 @@
                 <table class="cs-table">
                     <thead><tr>
                         <th>{{ __('Date') }}</th><th>{{ __('Property') }}</th><th>{{ __('Rent') }}</th>
-                        <th>{{ __('Module costs') }}</th><th>{{ __('Financing') }}</th><th>{{ __('Overdue recovery') }}</th>
+                        <th>{{ __('Platform fee') }}</th><th>{{ __('Module costs') }}</th><th>{{ __('Financing') }}</th><th>{{ __('Overdue recovery') }}</th>
                         <th>{{ __('To your wallet') }}</th>
                     </tr></thead>
                     <tbody>
@@ -35,6 +35,7 @@
                                 <td style="white-space:nowrap;">{{ optional($r['date'])->format('M j, Y') }}</td>
                                 <td>{{ optional($r['property'])->name ?? '—' }}</td>
                                 <td class="cs-amt">{{ $r['gross'] > 0 ? 'KES ' . number_format($r['gross'], 2) : '—' }}</td>
+                                <td>{{ ($r['platform_fee'] ?? 0) > 0 ? 'KES ' . number_format($r['platform_fee'], 2) : '—' }}</td>
                                 <td>{{ $r['infra'] > 0 ? 'KES ' . number_format($r['infra'], 2) : '—' }}</td>
                                 <td>{{ $r['facility'] > 0 ? 'KES ' . number_format($r['facility'], 2) : '—' }}</td>
                                 <td>{{ $r['commission'] > 0 ? 'KES ' . number_format($r['commission'], 2) : '—' }}</td>
@@ -45,7 +46,7 @@
                 </table>
             </div>
             <p class="cs-muted" style="margin-top:12px;font-size:11.5px;">
-                {{ __('“Module costs” = software & gateway for your smart modules. “Financing” = repayment of your active facilities. “Overdue recovery” = any past-due metered commission caught up. Deductions are capped so you always keep a protected share of every rent payment.') }}
+                {{ __('“Platform fee” = the transaction-mode commission on your rent. “Module costs” = software & gateway for your smart modules. “Financing” = repayment of your active facilities. “Overdue recovery” = any past-due metered commission caught up. Only the rent portion of an invoice is deducted from — late fees and other charges reach you in full — and deductions are capped so you always keep a protected share of every rent payment.') }}
             </p>
         @endif
     </div>

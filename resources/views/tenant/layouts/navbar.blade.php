@@ -3,14 +3,7 @@
         <div class="d-flex">
             <!-- LOGO -->
             <div class="navbar-brand-box">
-                <a href="{{ route('tenant.dashboard') }}" class="logo logo-light">
-                    <span class="logo-sm">
-                        <img src="{{ getSettingImage('app_logo') }}" alt="logo-sm-light">
-                    </span>
-                    <span class="logo-lg">
-                        <img src="{{ getSettingImage('app_logo') }}" alt="logo-light">
-                    </span>
-                </a>
+                @include('common.layouts._brand', ['brandHref' => route('tenant.dashboard')])
             </div>
             <button type="button" class="btn-sm px-3 font-24 header-item" id="vertical-menu-btn">
                 <i class="ri-indent-decrease"></i>
@@ -23,8 +16,12 @@
             <div class="dropdown d-inline-block">
                 <button type="button" class="header-item noti-icon" id="page-header-languages-dropdown"
                     data-bs-toggle="dropdown" aria-expanded="false">
-                    <img src="{{ asset(selectedLanguage()->icon) }}" alt="{{ selectedLanguage()->name ?? 'English' }}"
-                        title="{{ selectedLanguage()->name ?? 'English' }}" class="rounded-circle avatar-xs fit-image">
+                    @php $langIcon = selectedLanguage()->icon; $langName = selectedLanguage()->name ?? "English"; @endphp
+                    @if ($langIcon && ! \Illuminate\Support\Str::contains($langIcon, ["no-image", "empty-user"]))
+                        <img src="{{ $langIcon }}" alt="{{ $langName }}" title="{{ $langName }}" class="rounded-circle avatar-xs fit-image">
+                    @else
+                        <i class="ri-global-line cs-lang-globe" title="{{ $langName }}"></i>
+                    @endif
                 </button>
                 <div class="dropdown-menu {{ selectedLanguage()->rtl == 1 ? 'dropdown-menu-start' : 'dropdown-menu-end' }}"
                     aria-labelledby="page-header-languages-dropdown">
@@ -99,9 +96,7 @@
             <div class="dropdown d-inline-block user-dropdown">
                 <button type="button" class="header-item" id="page-header-user-dropdown" data-bs-toggle="dropdown"
                     aria-haspopup="true" aria-expanded="false">
-                    <img class="rounded-circle avatar-xs fit-image header-profile-user"
-                        title="{{ auth()->user()->name }}" src="{{ auth()->user()->image }}"
-                        alt="{{ auth()->user()->name }}">
+                    @include('common.layouts._avatar', ['name' => auth()->user()->name, 'image' => auth()->user()->image, 'avatarClass' => 'avatar-xs header-profile-user'])
                     <span class="d-none d-xl-inline-block ms-1 font-medium">{{ auth()->user()->name }}</span>
                     <i class="mdi mdi-chevron-down d-xl-inline-block"></i>
                 </button>

@@ -97,7 +97,7 @@
                                     </svg>
                                     Edit
                                 </button>
-                                <form action="{{ route('admin.kb.categories.destroy', $category) }}" method="POST" onsubmit="return confirm('Delete this category?');" style="display: inline;">
+                                <form action="{{ route('admin.kb.categories.destroy', $category) }}" method="POST" data-cs-confirm="Delete this category?" data-cs-confirm-tone="danger" style="display: inline;">
                                     @csrf
                                     @method('DELETE')
                                     <button type="submit" class="ow-btn" style="background: #185ea51c; color: #374151; display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 500; padding: 7px 15px; border-radius: 7px; border: none; cursor: pointer; transition: all .13s;" 

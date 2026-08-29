@@ -3,18 +3,6 @@
 @section('content')
 
 {{-- M-PESA Preloader (unchanged, hidden by default) --}}
-<div id="mpesa-preloader" style="display:none;">
-    <div id="mpesa-preloaderInner">
-        <img src="{{ asset('assets/images/gateway-icon/mpesa.jpg') }}" alt="M-PESA">
-        <div>
-            <p>Please follow the instructions and do not refresh or leave this page.</p>
-            <p>This may take up to <span id="mpesa-timer">2:00 minute(s)</span>.</p><br>
-            <p>You will receive a prompt on your mobile to enter your PIN.</p><br>
-            <p>Please ensure your phone is on and unlocked. Thank you.</p>
-        </div>
-        <img src="{{ asset('assets/images/loading.svg') }}" alt="Loading">
-    </div>
-</div>
 
 <style>
 /* ─── Design Tokens ─────────────────────────────── */

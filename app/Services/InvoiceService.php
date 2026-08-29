@@ -545,8 +545,8 @@ class InvoiceService
 
         $emailData = (object) [
             'subject' => __('Invoice') . ' ' . $invoice->invoice_no . ' ' . __('due on') . ' ' . $invoice->due_date,
-            'title'   => __('A new invoice was generated!'),
-            'message' => __('You have a new invoice'),
+            'title'   => __('A new invoice was generated'),
+            'message' => __('You have a new invoice.'),
         ];
         $notificationData = (object) [
             'title' => __('You have a new invoice'),
@@ -555,7 +555,12 @@ class InvoiceService
         ];
         SendInvoiceNotificationAndEmailJob::dispatch($invoice, $emailData, $notificationData);
 
-        $message = __('New ' . $invoice->month . ' invoice  from Centresidence due on' . ' ' . $invoice->due_date . '. Pay instantly: ') . route('instant.invoice.pay', ['token' => $invoice->payment_token]);
+        $message = __('New :month invoice from :app, due :date. Pay instantly: :url', [
+            'month' => $invoice->month,
+            'app'   => getOption('app_name') ?: 'Centresidence',
+            'date'  => $invoice->due_date,
+            'url'   => route('instant.invoice.pay', ['token' => $invoice->payment_token]),
+        ]);
         SendSmsJob::dispatch([$tenant->user->contact_number], $message, auth()->id());
     }
 
@@ -694,7 +699,7 @@ class InvoiceService
         $invoice->month                   = $request->month;
         $invoice->due_date                = $request->due_date;
         $invoice->payment_token           = Str::uuid();
-        $invoice->payment_token_expires_at = now()->addDays(7);
+        $invoice->payment_token_expires_at = invoicePayTokenExpiry($invoice->due_date);
         $invoice->save();
 
         return $invoice;
@@ -819,10 +824,76 @@ class InvoiceService
                 }
             }
 
-            return $this->success([], __('Notification Sent Successfully'));
+            // Optional: a TEMPLATED reminder SMS with the secure pay link. The owner
+            // only opts in — the wording is system-authored (never the free-text body),
+            // so an owner can't send unprofessional copy through our shortcode.
+            $message = __('Notification Sent Successfully');
+            if ($request->boolean('send_sms')) {
+                $sms      = $this->sendReminderSms($invoice);
+                $message .= ' — ' . $sms['reason'];
+            }
+
+            return $this->success([], $message);
         } catch (\Exception $e) {
             return $this->error([], getErrorMessage($e, $e->getMessage()));
         }
+    }
+
+    /**
+     * Send the system-authored reminder SMS (with the instant-pay link) for one
+     * invoice, guarded by a per-invoice cooldown + an SMS-credit pre-check. Returns
+     * ['sent' => bool, 'reason' => string] so the caller can report the outcome.
+     * Owner free-text never reaches this — the copy is fixed (brand/shortcode safety).
+     */
+    private function sendReminderSms(Invoice $invoice): array
+    {
+        $ownerUserId = (int) auth()->id();
+        $phone       = optional(optional($invoice->tenant)->user)->contact_number;
+
+        if (! $phone) {
+            return ['sent' => false, 'reason' => __('SMS skipped — the tenant has no phone number on file.')];
+        }
+        if ((int) $invoice->status == INVOICE_STATUS_PAID) {
+            return ['sent' => false, 'reason' => __('SMS skipped — this invoice is already paid.')];
+        }
+
+        // Per-invoice cooldown (anti-spam): at most one reminder SMS per window.
+        $cooldownHours = (int) getOption('sms_reminder_cooldown_hours', 24);
+        if ($invoice->last_reminder_sms_at
+            && Carbon::parse($invoice->last_reminder_sms_at)->gt(now()->subHours($cooldownHours))) {
+            $next = Carbon::parse($invoice->last_reminder_sms_at)->addHours($cooldownHours)->diffForHumans();
+            return ['sent' => false, 'reason' => __('SMS skipped — a reminder was sent recently (try again :when).', ['when' => $next])];
+        }
+
+        // Credit pre-check so we can tell the owner synchronously (the send itself is
+        // queued + credit-gated inside AdvantaSmsService).
+        if (\App\Services\Sms\SmsCreditsService::balance($ownerUserId) < 1) {
+            return ['sent' => false, 'reason' => __('SMS skipped — top up your SMS credits to send reminders.')];
+        }
+
+        // Ensure the instant-pay link is live: keep the existing token but extend its
+        // expiry (tokens lapse after 7 days, so an overdue invoice's link would be dead).
+        if (empty($invoice->payment_token)) {
+            $invoice->payment_token = Str::uuid();
+        }
+        // Re-issue: keep the link live through due date + grace, or at least a fresh
+        // 7-day floor when the invoice is already overdue (due date in the past).
+        $invoice->payment_token_expires_at = invoicePayTokenExpiry($invoice->due_date);
+        $invoice->last_reminder_sms_at     = now();
+        $invoice->save();
+
+        $overdue = (int) $invoice->status == INVOICE_STATUS_OVER_DUE
+            || (Carbon::parse($invoice->due_date)->lt(today()));
+
+        $link    = route('instant.invoice.pay', ['token' => $invoice->payment_token]);
+        $appName = getOption('app_name', 'Centresidence');
+        $message = $overdue
+            ? __(':month rent from :app is overdue (due :date). Pay instantly: :link', ['month' => $invoice->month, 'app' => $appName, 'date' => $invoice->due_date, 'link' => $link])
+            : __(':month rent from :app is due on :date. Pay instantly: :link', ['month' => $invoice->month, 'app' => $appName, 'date' => $invoice->due_date, 'link' => $link]);
+
+        SendSmsJob::dispatch([$phone], $message, $ownerUserId);
+
+        return ['sent' => true, 'reason' => __('an SMS reminder is on its way (1 credit).')];
     }
 
     public function sendMultiNotification($request)
@@ -900,11 +971,26 @@ class InvoiceService
 
     public function ownerInfo($ownerUserId)
     {
-        return Owner::query()
+        $owner = Owner::query()
             ->leftJoin('file_managers', 'owners.logo_id', '=', 'file_managers.id')
-            ->where('user_id', $ownerUserId)
-            ->select(['owners.print_name', 'owners.print_address', 'owners.print_contact', 'file_managers.folder_name', 'file_managers.file_name'])
+            ->join('users', 'owners.user_id', '=', 'users.id')
+            ->where('owners.user_id', $ownerUserId)
+            ->select([
+                'owners.print_name', 'owners.print_address', 'owners.print_contact',
+                'file_managers.folder_name', 'file_managers.file_name',
+                'users.first_name', 'users.last_name', 'users.contact_number',
+            ])
             ->first();
+
+        if ($owner) {
+            // Plug-and-play: when the owner hasn't customised their print/company details,
+            // default the invoice header to their OWN profile (name + phone) instead of the
+            // platform — otherwise invoices go out branded "Centresidence" with a blank
+            // contact number. The owner can still override these in Profile → Print Details.
+            [$owner->print_name, $owner->print_address, $owner->print_contact] =
+                effectiveOwnerPrintDetails($owner->print_name, $owner->print_address, $owner->print_contact, $owner);
+        }
+        return $owner;
     }
 
     public function getByTenantId($id)

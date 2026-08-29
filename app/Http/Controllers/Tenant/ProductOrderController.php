@@ -54,12 +54,26 @@ class ProductOrderController extends Controller
 
     public function cancel(Request $request, $id)
     {
-        $order = ProductOrder::where('user_id', auth()->id())
-            ->whereIn('payment_status', [ORDER_PAYMENT_STATUS_PENDING, ORDER_PAYMENT_STATUS_PAID])
-            ->where('order_status', '!=', ORDER_STATUS_COMPLETED)
-            ->where('order_status', '!=', ORDER_STATUS_CANCELLED)
-            ->findOrFail($id);
-    
+        $order = ProductOrder::where('user_id', auth()->id())->findOrFail($id);
+
+        // A tenant can self-cancel only while the order is still open, unpaid-or-paid, and NOT yet
+        // dispatched. Once it's on its way, cancellation must go through the owner/caretaker.
+        $cancellable = in_array($order->payment_status, [ORDER_PAYMENT_STATUS_PENDING, ORDER_PAYMENT_STATUS_PAID])
+            && $order->order_status !== ORDER_STATUS_COMPLETED
+            && $order->order_status !== ORDER_STATUS_CANCELLED
+            && (int) $order->fulfilment_status < FULFILMENT_DISPATCHED;
+
+        if (! $cancellable) {
+            $message = (int) $order->fulfilment_status >= FULFILMENT_DISPATCHED
+                ? __('This order is already on its way and can no longer be cancelled here. Please contact your property manager to arrange it.')
+                : __('This order can no longer be cancelled.');
+
+            if ($request->wantsJson()) {
+                return response()->json(['success' => false, 'message' => $message], 422);
+            }
+            return redirect()->back()->with('error', $message);
+        }
+
         if ($order->payment_status === ORDER_PAYMENT_STATUS_PAID) {
             // Money already moved — flag for refund
             $order->payment_status = PRODUCT_ORDER_STATUS_REFUND_PENDING;

@@ -427,6 +427,7 @@ function getDataEditRes(response) {
         document.getElementById("unit-image").setAttribute("src", domain + "/assets/images/no-image.jpg");
     }
     
+    selector.find(".edit-unit-name").text(response.data.unit.unit_name || "Unit");
     selector.find("input[name=property_id]").val(response.data.property.id);
     selector.find("input[name=unit_id]").val(response.data.unit.id);
     selector.find("input[name=unit_name]").val(response.data.unit.unit_name);
@@ -536,7 +537,7 @@ $(document).on("change", ".thumbnailImage", function () {
         fd.append("file", files[0]);
         commonAjax("POST", thumbnailImageRoute, getThumbnailImageRes, getThumbnailImageRes, fd);
     } else {
-        alert("Please select a file.");
+        (window.toastr ? toastr.error("Please select a file.") : (window.csAlert && csAlert("Please select a file.")));
     }
 });
 
@@ -715,7 +716,7 @@ document.addEventListener('click', function (e) {
                 button.closest('.existing-unit-image-box').remove();
             } else {
                 console.error("Error:", data);
-                alert("Server error!");
+                (window.toastr ? toastr.error("Server error!") : (window.csAlert && csAlert("Server error!")));
             }
         })
         .catch(err => console.error("Fetch error:", err));

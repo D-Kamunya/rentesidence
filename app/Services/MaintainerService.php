@@ -59,7 +59,7 @@ class MaintainerService
                 } else if ($maintainer->status == USER_STATUS_DELETED) {
                     return '<div class="status-btn status-btn-orange font-13 radius-4">Deleted</div>';
                 } else {
-                    return '<div class="status-btn status-btn-orange font-13 radius-4">Deactivate</div>';
+                    return '<div class="status-btn status-btn-orange font-13 radius-4">Inactive</div>';
                 }
             })
             ->addColumn('action', function ($maintainer) {

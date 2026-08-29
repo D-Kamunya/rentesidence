@@ -165,11 +165,11 @@ class AffiliateWithdrawalController extends Controller
             $outcome = DB::transaction(function () use ($affiliate, $amount, $phone, $svc) {
                 Affiliate::whereKey($affiliate->id)->lockForUpdate()->first();
 
-                $hasPending = AffiliateWithdrawal::where('affiliate_id', $affiliate->id)
-                    ->where('status', AFFILIATE_WITHDRAWAL_PENDING)
+                $hasInFlight = AffiliateWithdrawal::where('affiliate_id', $affiliate->id)
+                    ->whereIn('status', [AFFILIATE_WITHDRAWAL_PENDING, AFFILIATE_WITHDRAWAL_PROCESSING])
                     ->exists();
-                if ($hasPending) {
-                    return ['error' => __('You already have a pending withdrawal awaiting approval.')];
+                if ($hasInFlight) {
+                    return ['error' => __('You already have a withdrawal in progress. Please wait for it to complete.')];
                 }
 
                 $available = $svc->getAvailableBalance($affiliate->id);
@@ -194,14 +194,14 @@ class AffiliateWithdrawalController extends Controller
             // Notify admins
             $ownerName = auth()->user()->name;
             $adminEmailData = (object) [
-                'subject' => __('Affiliate Withdrawal Request — KSh ') . number_format($amount, 2),
-                'message' => $ownerName . __(' has requested a withdrawal of KSh ')
-                           . number_format($amount, 2) . __(' to ') . '+254' . $request->phone
-                           . __(' and is awaiting your approval.'),
+                'subject' => __('Affiliate withdrawal request — :amount', ['amount' => currencyPrice($amount)]),
+                'message' => __(':name has requested a withdrawal of :amount to :phone and is awaiting your approval.', [
+                    'name' => $ownerName, 'amount' => currencyPrice($amount), 'phone' => '+254' . $request->phone,
+                ]),
             ];
             $adminNotification = (object) [
-                'title' => __('Affiliate Withdrawal Needs Approval'),
-                'body'  => $ownerName . __(' requested KSh ') . number_format($amount, 2),
+                'title' => __('Affiliate withdrawal needs approval'),
+                'body'  => __(':name requested :amount.', ['name' => $ownerName, 'amount' => currencyPrice($amount)]),
                 'url'   => route('admin.affiliate.withdrawals'),
             ];
             \App\Models\User::where('role', USER_ROLE_ADMIN)
@@ -237,50 +237,84 @@ class AffiliateWithdrawalController extends Controller
             return response()->json(['success' => false, 'error' => __('Already processed.')]);
         }
 
+        // ── B2C: initiate, then hand off to the async ResultURL ───────────────
+        // Daraja's synchronous response only confirms the request was ACCEPTED for
+        // processing — not that the money reached the affiliate. So a B2C payout is
+        // marked PROCESSING here and only flips to APPROVED (or FAILED) once the
+        // ResultURL callback lands. See MpesaController::B2CResult.
+        if ($request->method === 'b2c') {
+            if (! $withdrawal->phone) {
+                return response()->json(['success' => false, 'error' => __('This withdrawal has no phone number for M-Pesa payout. Settle it manually.')]);
+            }
+
+            // Send BEFORE the state change and OUTSIDE a wrapping transaction: an
+            // accepted request must never be lost to a rollback (that would pay the
+            // affiliate with no record). If send is rejected, nothing changed.
+            try {
+                $result = app(MpesaB2CService::class)->send($withdrawal->phone, $withdrawal->amount);
+            } catch (\Throwable $e) {
+                Log::error('Affiliate B2C send threw: ' . $e->getMessage(), ['withdrawal_id' => $withdrawal->id]);
+                return response()->json(['success' => false, 'error' => __('M-Pesa payout could not be initiated. Please try again.')]);
+            }
+
+            if (! ($result['success'] ?? false)) {
+                // Rejected up-front — stays PENDING, safe to retry or settle manually.
+                Log::warning('Affiliate B2C rejected on send', ['withdrawal_id' => $withdrawal->id, 'message' => $result['message'] ?? null]);
+                return response()->json(['success' => false, 'error' => __('M-Pesa rejected the payout: ') . ($result['message'] ?? __('unknown error'))]);
+            }
+
+            // Accepted → in-flight. Store the correlation ref so B2CResult can find it.
+            $withdrawal->update([
+                'status'            => AFFILIATE_WITHDRAWAL_PROCESSING,
+                'settlement_method' => 'b2c',
+                'mpesa_reference'   => $result['reference'] ?? null,
+                'notes'             => $request->notes,
+            ]);
+
+            $recipient = $withdrawal->affiliate?->user;
+            if ($recipient) {
+                $emailData = (object) [
+                    'subject' => __('Withdrawal is being processed — :amount', ['amount' => currencyPrice($withdrawal->amount)]),
+                    'message' => __('Your withdrawal of :amount is being sent to M-Pesa :phone. You will be notified once it is confirmed.', ['amount' => currencyPrice($withdrawal->amount), 'phone' => $withdrawal->phone]),
+                ];
+                $notificationData = (object) [
+                    'title' => __('Withdrawal processing'),
+                    'body'  => __(':amount is being sent to your M-Pesa.', ['amount' => currencyPrice($withdrawal->amount)]),
+                    'url'   => route('affiliate.dashboard'),
+                ];
+                SendWalletNotificationJob::dispatch($recipient, $emailData, $notificationData, $withdrawal, false);
+            }
+
+            return response()->json([
+                'success' => true,
+                'message' => __('M-Pesa payout initiated. It will be confirmed once M-Pesa completes the transfer.'),
+            ]);
+        }
+
+        // ── Manual: admin confirms an out-of-band transfer → APPROVED now ─────
         DB::beginTransaction();
         try {
-            if ($request->method === 'b2c') {
-                $result = app(MpesaB2CService::class)->send($withdrawal->phone, $withdrawal->amount);
-
-                if (!($result['success'] ?? false)) {
-                    throw new \Exception($result['message'] ?? __('M-Pesa B2C request failed.'));
-                }
-
-                $withdrawal->update([
-                    'status'            => AFFILIATE_WITHDRAWAL_APPROVED,
-                    'settlement_method' => 'b2c',
-                    'mpesa_reference'   => $result['reference'] ?? null,
-                    'processed_at'      => now(),
-                    'notes'             => $request->notes,
-                ]);
-
-            } else {
-                // Manual settlement — admin confirms they paid outside system
-                $withdrawal->update([
-                    'status'            => AFFILIATE_WITHDRAWAL_APPROVED,
-                    'settlement_method' => 'manual',
-                    'processed_at'      => now(),
-                    'notes'             => $request->notes,
-                ]);
-            }
+            $withdrawal->update([
+                'status'            => AFFILIATE_WITHDRAWAL_APPROVED,
+                'settlement_method' => 'manual',
+                'processed_at'      => now(),
+                'notes'             => $request->notes,
+            ]);
 
             DB::commit();
 
-            // Notify affiliate
             $recipient = $withdrawal->affiliate?->user;
             if ($recipient) {
-                $method  = $request->method === 'b2c' ? 'M-Pesa' : 'manual transfer';
                 $emailData = (object) [
-                    'subject' => __('Withdrawal Approved — KSh ') . number_format($withdrawal->amount, 2),
-                    'message' => __('Your withdrawal of KSh ') . number_format($withdrawal->amount, 2)
-                               . __(' has been approved via ') . $method . '.',
+                    'subject' => __('Withdrawal approved — :amount', ['amount' => currencyPrice($withdrawal->amount)]),
+                    'message' => __('Your withdrawal of :amount has been approved via :method.', ['amount' => currencyPrice($withdrawal->amount), 'method' => __('manual transfer')]),
                 ];
                 $notificationData = (object) [
-                    'title' => __('Withdrawal Approved'),
-                    'body'  => __('KSh ') . number_format($withdrawal->amount, 2) . __(' approved via ') . $method . '.',
+                    'title' => __('Withdrawal approved'),
+                    'body'  => __(':amount approved via :method.', ['amount' => currencyPrice($withdrawal->amount), 'method' => __('manual transfer')]),
                     'url'   => route('affiliate.dashboard'),
                 ];
-                SendWalletNotificationJob::dispatch($recipient, $emailData, $notificationData, $withdrawal);
+                SendWalletNotificationJob::dispatch($recipient, $emailData, $notificationData, $withdrawal, false);
             }
 
             return response()->json([
@@ -315,18 +349,18 @@ class AffiliateWithdrawalController extends Controller
         // Notify affiliate
         $recipient = $withdrawal->affiliate?->user;
         if ($recipient) {
-            $reasonText = $request->notes ? __(' Reason: ') . $request->notes : '';
+            $reasonText = $request->notes ? ' ' . __('Reason: :notes', ['notes' => $request->notes]) : '';
             $emailData = (object) [
-                'subject' => __('Withdrawal Rejected — KSh ') . number_format($withdrawal->amount, 2),
-                'message' => __('Your withdrawal request of KSh ') . number_format($withdrawal->amount, 2)
-                           . __(' has been rejected.') . $reasonText . __(' Please contact support if you have questions.'),
+                'subject' => __('Withdrawal rejected — :amount', ['amount' => currencyPrice($withdrawal->amount)]),
+                'message' => __('Your withdrawal request of :amount has been rejected.', ['amount' => currencyPrice($withdrawal->amount)])
+                           . $reasonText . ' ' . __('Please contact support if you have any questions.'),
             ];
             $notificationData = (object) [
-                'title' => __('Withdrawal Rejected'),
-                'body'  => __('KSh ') . number_format($withdrawal->amount, 2) . __(' withdrawal was rejected.'),
+                'title' => __('Withdrawal rejected'),
+                'body'  => __(':amount withdrawal was rejected.', ['amount' => currencyPrice($withdrawal->amount)]),
                 'url'   => route('affiliate.dashboard'),
             ];
-            SendWalletNotificationJob::dispatch($recipient, $emailData, $notificationData, $withdrawal);
+            SendWalletNotificationJob::dispatch($recipient, $emailData, $notificationData, $withdrawal, false);
         }
 
         return response()->json([

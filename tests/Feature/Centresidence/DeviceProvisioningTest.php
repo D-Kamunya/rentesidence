@@ -133,10 +133,14 @@ class DeviceProvisioningTest extends CentresidenceDatabaseTestCase
 
     public function test_live_driver_leaves_devices_provisioning(): void
     {
+        \Illuminate\Support\Facades\Http::fake(); // no real ChirpStack calls in tests
         $module = Module::create(['key' => 'water_meter', 'name' => 'Water Meter', 'is_metered' => true]);
 
         // Live driver: devices await the ChirpStack join, so they stay provisioning.
-        $service = new DeviceProvisioningService(new LiveChirpStackDriver(), app(\App\Centresidence\Services\PaymentModeService::class));
+        $service = new DeviceProvisioningService(
+            new LiveChirpStackDriver(new \App\Centresidence\Services\ChirpStack\Codec\GenericMeterCodec()),
+            app(\App\Centresidence\Services\PaymentModeService::class)
+        );
         $pm = $service->deploy(1, 1, $module, 2);
 
         $devices = $pm->devices()->get();

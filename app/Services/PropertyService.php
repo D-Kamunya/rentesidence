@@ -28,7 +28,7 @@ class PropertyService
         $this->tenantService = new TenantService();
     }
 
-    public function getAll($paginate=true)
+    public function getAll($paginate=true, $request=null)
     {
         $data = Property::query()
             ->leftJoin('tenants', ['properties.id' => 'tenants.property_id', 'tenants.status' => (DB::raw(TENANT_STATUS_ACTIVE))])
@@ -39,11 +39,76 @@ class PropertyService
             ->groupBy('properties.id')
             ->where('properties.owner_user_id', auth()->id());
 
+        // Optional server-side search (All Property card view) — owner scope already applied.
+        if ($request && $request->filled('search')) {
+            $data->where('properties.name', 'like', '%' . $request->search . '%');
+        }
+
         if ($paginate){
-            return $data->paginate(10);
+            // 12 per page keeps the All Property card grid evenly balanced (2/3/4-col rows).
+            return $data->paginate(12);
         }else{
             return $data->get();
         }
+    }
+
+    /**
+     * Server-side (Yajra) datatable for the All Units page. Search + pagination run on the
+     * server across the whole owner's unit set — the old page paginated with Laravel and then
+     * ran a client-side DataTable over the DOM, so search only ever saw the current page.
+     */
+    public function getUnitDatatable()
+    {
+        $query = PropertyUnit::query()
+            ->join('properties', ['property_units.property_id' => 'properties.id'])
+            ->leftJoin('tenants', ['property_units.id' => 'tenants.unit_id', 'tenants.status' => DB::raw(TENANT_STATUS_ACTIVE)])
+            ->leftJoin('users', function ($q) {
+                $q->on('tenants.user_id', 'users.id')->whereNull('users.deleted_at');
+            })
+            ->where('properties.owner_user_id', auth()->id())
+            ->select('property_units.*', 'properties.name as property_name', 'users.first_name', 'users.last_name')
+            ->orderBy('properties.id', 'asc');
+
+        return datatables($query)
+            ->addIndexColumn()
+            ->addColumn('name', function ($u) {
+                return '<span style="font-weight:600;color:#1f2937;">' . e($u->unit_name) . '</span>';
+            })
+            ->addColumn('image', function ($u) {
+                $placeholder = asset('assets/images/no-image.jpg');
+                return '<img class="ul-unit-thumb" src="' . e($u->first_image_url) . '" alt="'
+                    . '" onerror="this.onerror=null;this.src=\'' . $placeholder . '\';">';
+            })
+            ->addColumn('property', function ($u) {
+                return e($u->property_name);
+            })
+            ->addColumn('tenant', function ($u) {
+                return $u->first_name
+                    ? '<span class="ow-badge ow-badge--paid">' . e(trim($u->first_name . ' ' . $u->last_name)) . '</span>'
+                    : '<span class="ow-badge ow-badge--grey">' . __('Vacant') . '</span>';
+            })
+            ->addColumn('action', function ($u) {
+                $edit = '<button type="button" class="ul-action-btn ul-action-btn--edit unit-edit" data-detailsurl="'
+                    . route('owner.property.unit.details', $u->id) . '" title="' . __('Edit') . '">'
+                    . '<span class="iconify" data-icon="clarity:note-edit-solid"></span></button>';
+                $delete = '';
+                if (is_null($u->first_name)) {
+                    $delete = '<button class="ul-action-btn ul-action-btn--delete deleteItem" data-formid="delete_row_form_'
+                        . $u->id . '" title="' . __('Delete') . '"><span class="iconify" data-icon="ep:delete-filled"></span></button>'
+                        . '<form action="' . route('owner.property.unit.delete', [$u->id]) . '" method="post" id="delete_row_form_'
+                        . $u->id . '">' . method_field('DELETE') . csrf_field() . '</form>';
+                }
+                return '<div class="ul-actions">' . $delete . $edit . '</div>';
+            })
+            ->filterColumn('tenant', function ($q, $keyword) {
+                // Group the OR so it can't break out of the owner_user_id scope (data-leak guard).
+                $q->where(function ($sub) use ($keyword) {
+                    $sub->where('users.first_name', 'like', "%{$keyword}%")
+                        ->orWhere('users.last_name', 'like', "%{$keyword}%");
+                });
+            })
+            ->rawColumns(['name', 'image', 'tenant', 'action'])
+            ->make(true);
     }
 
     public function getAllData()
@@ -268,9 +333,10 @@ class PropertyService
             ->groupBy('properties.id')
             ->where('properties.property_type', $type)
             ->where('properties.owner_user_id', auth()->id());
-        
+
         if ($paginate){
-            return $data->paginate(10);
+            // 12 per page keeps the Own/Lease property card grid evenly balanced.
+            return $data->paginate(12);
         }else{
             return $data->get();
         }
@@ -585,7 +651,18 @@ class PropertyService
                     foreach ($unitsData['images'][$i] as $image) {
                         if (!$image) continue;
 
-                        $filename = uniqid() . '-' . time() . '.' . $image->getClientOriginalExtension();
+                        // Security: accept real images only. The extension is otherwise
+                        // attacker-controlled and the file lands in a web-served path
+                        // (storage/app/public → public/storage), so an unchecked upload
+                        // (e.g. shell.php) would be remote code execution. Require both a
+                        // whitelisted extension AND a sniffed image/* MIME.
+                        $extension = strtolower($image->getClientOriginalExtension());
+                        if (! in_array($extension, imageExtensionList(), true)
+                            || strpos((string) $image->getMimeType(), 'image/') !== 0) {
+                            continue;
+                        }
+
+                        $filename = uniqid() . '-' . time() . '.' . $extension;
                         $folder = "PropertyUnit/{$property_unit->id}";
                         $image->storeAs("public/$folder", $filename);
 
@@ -809,12 +886,21 @@ class PropertyService
     {
         try {
             $data=[];
-            $data['unit'] = PropertyUnit::query()
-                        ->leftJoin('file_managers', ['property_units.id' => 'file_managers.origin_id', 'file_managers.origin_type' => (DB::raw("'App\\\Models\\\PropertyUnit'"))])
-                        ->select('property_units.*', 'file_managers.file_name', 'file_managers.folder_name')
+            $unit = PropertyUnit::query()
+                        ->select('property_units.*')
                         ->where('property_units.id', $id)
-                        ->first();
-            $data['property'] = Property::findOrFail($data['unit']->property_id);
+                        ->firstOrFail();
+
+            // Unit images live in property_unit_images (the same source the listing uses via
+            // first_image_url). The edit modal reads folder_name/file_name off the unit, so
+            // surface the first/oldest image from there. The previous file_managers join
+            // looked in the wrong table and always returned an empty picture in the modal.
+            $firstImage = $unit->images()->oldest()->first();
+            $unit->folder_name = $firstImage->folder_name ?? null;
+            $unit->file_name = $firstImage->file_name ?? null;
+
+            $data['unit'] = $unit;
+            $data['property'] = Property::findOrFail($unit->property_id);
             return $data;
         } catch (\Exception $e) {
             return $this->error([], getErrorMessage($e));

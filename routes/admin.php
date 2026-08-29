@@ -18,7 +18,6 @@ use App\Http\Controllers\Admin\ProductCategoryController;
 use App\Http\Controllers\Admin\AdminKnowledgeBaseController;
 use App\Http\Controllers\Owner\OwnerWalletController;
 use App\Http\Controllers\Owner\SmsCreditsController;
-use App\Http\Controllers\Owner\SmsCreditsPaymentController;
 use App\Http\Controllers\Admin\SmsCreditsAdminController;
 use App\Http\Controllers\Affiliates\AffiliateWithdrawalController;
 use App\Http\Controllers\Admin\SettingController;
@@ -37,6 +36,11 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'middleware' => ['auth', 'a
         Route::get('partners', [\App\Http\Controllers\Admin\CentresidenceController::class, 'partners'])->name('partners');
         Route::get('applications', [\App\Http\Controllers\Admin\CentresidenceController::class, 'applications'])->name('applications');
         Route::get('facilities', [\App\Http\Controllers\Admin\CentresidenceController::class, 'facilities'])->name('facilities');
+        Route::post('facilities/{id}/confirm-disbursement', [\App\Http\Controllers\Admin\CentresidenceController::class, 'confirmDisbursement'])->name('facilities.confirm-disbursement');
+        Route::post('facilities/{id}/force-disburse', [\App\Http\Controllers\Admin\CentresidenceController::class, 'forceDisburse'])->name('facilities.force-disburse');
+        Route::get('remittances', [\App\Http\Controllers\Admin\CentresidenceController::class, 'remittances'])->name('remittances');
+        Route::post('remittances/prepare', [\App\Http\Controllers\Admin\CentresidenceController::class, 'remittancePrepare'])->name('remittances.prepare');
+        Route::post('remittances/{id}/mark-sent', [\App\Http\Controllers\Admin\CentresidenceController::class, 'remittanceMarkSent'])->name('remittances.mark-sent');
         Route::get('defaults', [\App\Http\Controllers\Admin\CentresidenceController::class, 'defaults'])->name('defaults');
         Route::get('revenue', [\App\Http\Controllers\Admin\CentresidenceController::class, 'revenue'])->name('revenue');
         Route::get('modules', [\App\Http\Controllers\Admin\CentresidenceController::class, 'modules'])->name('modules');
@@ -53,7 +57,10 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'middleware' => ['auth', 'a
         Route::post('gateways', [\App\Http\Controllers\Admin\CentresidenceController::class, 'gatewayStore'])->name('gateways.store');
         Route::put('gateways/{id}', [\App\Http\Controllers\Admin\CentresidenceController::class, 'gatewayUpdate'])->name('gateways.update');
         Route::post('partners', [\App\Http\Controllers\Admin\CentresidenceController::class, 'partnerStore'])->name('partners.store');
+        Route::put('partners/{id}/fees', [\App\Http\Controllers\Admin\CentresidenceController::class, 'partnerFees'])->name('partners.fees');
         Route::get('infrastructure', [\App\Http\Controllers\Admin\CentresidenceController::class, 'infrastructure'])->name('infrastructure');
+        Route::get('integrations', [\App\Http\Controllers\Admin\CentresidenceController::class, 'integrations'])->name('integrations');
+        Route::post('integrations', [\App\Http\Controllers\Admin\CentresidenceController::class, 'integrationsSave'])->name('integrations.save');
     });
     // Academy landing (modules index)
     Route::get('academy', [AcademyAdminController::class, 'index'])->name('academy.index');
@@ -67,6 +74,8 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'middleware' => ['auth', 'a
     Route::get('academy/{module}/questions', [AcademyAdminController::class, 'questions'])->name('academy.questions');
     Route::get('academy/{module}/questions/create', [AcademyAdminController::class, 'createQuestion'])->name('academy.questions.create');
     Route::post('academy/{module}/questions', [AcademyAdminController::class, 'storeQuestion'])->name('academy.questions.store');
+    Route::delete('academy/questions/{question}', [AcademyAdminController::class, 'destroyQuestion'])->name('academy.questions.destroy');
+    Route::delete('academy/options/{option}', [AcademyAdminController::class, 'destroyOption'])->name('academy.options.destroy');
     // Affiliate performance
     Route::get('/affiliates/performance', [AcademyAdminController::class, 'affiliatesPerformance'])->name('affiliates.performance');
     // Reset failed module
@@ -177,6 +186,19 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'middleware' => ['auth', 'a
         Route::post('/topup',  [SmsCreditsAdminController::class, 'manualTopup'])->name('topup');
     });
 
+    Route::prefix('agreement-settings')->name('agreement.settings.')->group(function () {
+        Route::get('/',  [\App\Http\Controllers\Admin\AgreementSettingsController::class, 'index'])->name('index');
+        Route::put('/',  [\App\Http\Controllers\Admin\AgreementSettingsController::class, 'update'])->name('update');
+    });
+
+    Route::prefix('screening')->name('screening.')->group(function () {
+        Route::get('/',                       [\App\Http\Controllers\Admin\ScreeningAdminController::class, 'index'])->name('index');
+        Route::put('/settings',               [\App\Http\Controllers\Admin\ScreeningAdminController::class, 'updateSettings'])->name('settings');
+        Route::put('/disputes/{dispute}',     [\App\Http\Controllers\Admin\ScreeningAdminController::class, 'updateDispute'])->name('disputes.update');
+        Route::post('/recompute/{profile}',   [\App\Http\Controllers\Admin\ScreeningAdminController::class, 'recompute'])->name('recompute');
+        Route::post('/disputes/{dispute}/notify-owners', [\App\Http\Controllers\Admin\ScreeningAdminController::class, 'notifyOwners'])->name('disputes.notify');
+    });
+
     Route::group(['prefix' => 'owner', 'as' => 'owner.'], function () {
         Route::get('/', [OwnerController::class, 'index'])->name('index');
          // register owner
@@ -220,7 +242,6 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'middleware' => ['auth', 'a
         Route::post('marketplaceaccounts-setting', [SettingController::class, 'saveMarketplaceAccounts'])->name('marketplaceaccounts.setting.save');
         Route::get('rentaccounts-setting', [SettingController::class, 'rentAccounts'])->name('rentaccounts.setting');
         Route::post('rentaccounts-setting', [SettingController::class, 'saveRentAccounts'])->name('rentaccounts.setting.save');
-        Route::get('agreement-setting', [SettingController::class, 'agreementSetting'])->name('agreement.setting');
         Route::get('reminder-setting', [SettingController::class, 'reminderSetting'])->name('reminder.setting');
         Route::get('subscription-reminder-setting', [SettingController::class, 'subscriptionReminderSetting'])->name('subscription.reminder.setting');
         Route::get('cron-setting', [SettingController::class, 'cronSetting'])->name('cron.setting');

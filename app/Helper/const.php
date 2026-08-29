@@ -43,6 +43,11 @@ const PRODUCT_ORDER_STATUS_PAID = 1;
 const PRODUCT_ORDER_STATUS_CANCELLED = 2;
 const PRODUCT_ORDER_STATUS_REFUND_PENDING = 3;
 
+// Marketplace fulfilment (dispatch) lifecycle — product_orders.fulfilment_status
+const FULFILMENT_NONE = 0;       // paid, awaiting dispatch
+const FULFILMENT_DISPATCHED = 1; // out for delivery / with the caretaker
+const FULFILMENT_DELIVERED = 2;  // handed to the tenant
+
 const DURATION_TYPE_MONTHLY = 1;
 const DURATION_TYPE_YEARLY = 2;
 
@@ -263,9 +268,15 @@ const PACKAGE_TYPE_TENANT = 3;
 const NEW_CLIENT = 1;
 const RECURRING_CLIENT = 2;
 
-const AFFILIATE_WITHDRAWAL_PENDING = 0; 
+const AFFILIATE_WITHDRAWAL_PENDING = 0;
 const AFFILIATE_WITHDRAWAL_APPROVED = 1;
 const AFFILIATE_WITHDRAWAL_REJECTED = 2;
+// B2C payout accepted by Daraja, awaiting async settlement confirmation on the
+// ResultURL. Money is in-flight — reserved like PENDING/APPROVED, not yet delivered.
+const AFFILIATE_WITHDRAWAL_PROCESSING = 3;
+// B2C payout confirmed FAILED by Daraja (or timed out). Money never left, so the
+// reservation is released and the affiliate's balance is restored automatically.
+const AFFILIATE_WITHDRAWAL_FAILED = 4;
 
 const AFFILIATE_COMMISSION_SOURCE_SUBSCRIPTION = 'subscription';
 const AFFILIATE_COMMISSION_SOURCE_RENT         = 'rent';

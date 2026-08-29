@@ -82,6 +82,8 @@ class OwnerController extends Controller
 
             setOwnerDefaultTicketTopics($user->id);
 
+            setOwnerDefaultDocumentConfig($user->id);
+
             DB::commit();
             if (getOption('send_email_status', 0) == ACTIVE) {
                 $emails = [$user->email];
@@ -132,7 +134,7 @@ class OwnerController extends Controller
         $owner->status = 1;
         $owner->save();
 
-        return redirect()->back()->with('success', 'Owner activated successfully.');
+        return redirect()->back()->with('success', __('Owner activated successfully.'));
     }
 
     public function deactivate($id)
@@ -141,7 +143,7 @@ class OwnerController extends Controller
         $owner->status = 0;
         $owner->save();
 
-        return redirect()->back()->with('success', 'Owner deactivated successfully.');
+        return redirect()->back()->with('success', __('Owner deactivated successfully.'));
     }
 
 }

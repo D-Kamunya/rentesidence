@@ -2,18 +2,6 @@
 
 @section('content')
     {{-- M-Pesa Preloader --}}
-    <div id="mpesa-preloader" style="display: none;">
-        <div id="mpesa-preloaderInner">
-            <img src="{{ asset('assets/images/gateway-icon/mpesa.jpg') }}" alt="M-PESA">
-            <div>
-                <p>{{ __('Please follow the instructions and do not refresh or leave this page.') }}</p>
-                <p>{{ __('This may take up to') }} <span id="mpesa-timer">2:00</span> {{ __('minute(s).') }}</p>
-                <p>{{ __('You will receive a prompt on your mobile number to enter your PIN to authorize payment.') }}</p>
-                <p>{{ __('Please ensure your phone is on and unlocked. Thank you.') }}</p>
-            </div>
-            <img src="{{ asset('assets/images/loading.svg') }}" alt="Loading">
-        </div>
-    </div>
 
     <div class="main-content">
         <div class="page-content">
@@ -439,12 +427,7 @@
     .mpesa-step{display:flex;align-items:flex-start;gap:12px;font-size:13px;color:#374151;line-height:1.5}
     .mpesa-step__num{width:24px;height:24px;border-radius:50%;background:#185FA5;color:#fff;font-size:11px;font-weight:600;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px}
     .mpesa-highlight{background:#E6F1FB;color:#185FA5;padding:1px 6px;border-radius:4px;font-weight:600}
-    #mpesa-preloader{position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:9999;display:flex;align-items:center;justify-content:center}
-    #mpesa-preloaderInner{background:#fff;border-radius:16px;padding:2rem;max-width:420px;width:90%;display:flex;flex-direction:column;align-items:center;gap:16px;text-align:center;box-shadow:0 20px 40px rgba(0,0,0,.2)}
-    #mpesa-preloaderInner img:first-child{width:80px;height:80px;object-fit:contain;border-radius:12px}
-    #mpesa-preloaderInner p{font-size:13px;color:#374151;margin:0;line-height:1.6}
-    #mpesa-timer{font-weight:600;color:#185FA5}
-    #mpesa-preloaderInner img:last-child{width:36px}
+    /* M-Pesa STK waiting overlay is now the shared common.partials.mpesa-stk-waiting component. */
     .currency-section{background:#fafafa;border:0.5px solid #e5e7eb;border-radius:10px;overflow:hidden;margin-top:1rem}
     @keyframes currencyPulse{0%{box-shadow:0 0 0 0 rgba(24,95,165,.35);border-color:#185FA5}50%{box-shadow:0 0 0 6px rgba(24,95,165,0);border-color:#185FA5}100%{box-shadow:0 0 0 0 rgba(24,95,165,0);border-color:#e5e7eb}}
     .currency-section--pulse{animation:currencyPulse 1.2s ease-out 5}

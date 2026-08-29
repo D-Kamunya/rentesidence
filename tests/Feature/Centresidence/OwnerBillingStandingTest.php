@@ -20,6 +20,12 @@ class OwnerBillingStandingTest extends CentresidenceDatabaseTestCase
 
     private function invoice(int $ownerId, array $attrs = []): CentresidenceCommissionInvoice
     {
+        // Infra standing is a SUBSCRIPTION-owner mechanism (transaction owners recover
+        // infra from rent and are exempt from the gate), so an owner that has an infra
+        // invoice is, by definition, subscription-billed.
+        \Illuminate\Support\Facades\DB::table('owner_packages')
+            ->where('user_id', $ownerId)->update(['pricing_model' => 'subscription']);
+
         return CentresidenceCommissionInvoice::create(array_merge([
             'owner_id' => $ownerId,
             'property_id' => 1,
@@ -35,6 +41,29 @@ class OwnerBillingStandingTest extends CentresidenceDatabaseTestCase
     public function test_no_invoices_is_current(): void
     {
         $this->assertSame('current', $this->svc()->infraStanding(1)['state']);
+    }
+
+    /**
+     * A TRANSACTION-mode owner recovers module infra from rent flowing through us, so
+     * even with an unpaid (overdue) infra invoice they must never show as due/overdue
+     * or be put into readonly — that gate is for subscription owners only. (Regression:
+     * transaction owners were wrongly gated, blocking invoice creation.)
+     */
+    public function test_transaction_owner_is_exempt_from_infra_gate(): void
+    {
+        // Owner 1 is seeded pricing_model = 'transaction'. Create an overdue infra
+        // invoice directly (bypassing the subscription-flipping helper).
+        CentresidenceCommissionInvoice::create([
+            'owner_id' => 1, 'property_id' => 1,
+            'billing_month' => Carbon::now()->subMonths(2)->startOfMonth(),
+            'subscription_amount' => 0,
+            'metered_commission_total' => 300, 'non_metered_commission_total' => 200,
+            'total_amount' => 500, 'status' => CentresidenceCommissionInvoice::STATUS_PENDING,
+        ]);
+
+        $this->assertSame('current', $this->svc()->infraStanding(1)['state']);
+        $this->assertSame(0.0, $this->svc()->infraStanding(1)['amount_due']);
+        $this->assertFalse($this->svc()->isReadonly(1));
     }
 
     public function test_unpaid_within_grace_is_due(): void

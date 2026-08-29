@@ -31,6 +31,19 @@ Route::group(['prefix' => 'finance-partner', 'as' => 'finance-partner.', 'middle
     });
 
     Route::get('facilities', [PortalController::class, 'facilities'])->name('facilities');
+    Route::get('facilities/{id}/overview', [PortalController::class, 'facilityOverview'])->name('facilities.overview');
+    Route::post('facilities/{id}/record-disbursement', [PortalController::class, 'recordDisbursement'])->name('facilities.record-disbursement');
+    Route::post('facilities/{id}/confirm-settlement', [PortalController::class, 'confirmSettlement'])->name('facilities.confirm-settlement');
+    Route::get('remittances', [PortalController::class, 'remittances'])->name('remittances');
+    Route::post('remittances/{id}/confirm', [PortalController::class, 'confirmRemittance'])->name('remittances.confirm');
+
+    Route::get('payout-account', [PortalController::class, 'payoutAccount'])->name('payout-account');
+    Route::post('payout-account', [PortalController::class, 'payoutAccountSave'])->name('payout-account.save');
+
+    Route::get('notifications', [PortalController::class, 'notification'])->name('notification');
+    Route::get('profile', [PortalController::class, 'profile'])->name('profile');
+    Route::post('profile', [PortalController::class, 'profileUpdate'])->name('profile.update');
+    Route::post('profile/password', [PortalController::class, 'passwordUpdate'])->name('profile.password');
 
     // Learn — module education (financier lens)
     Route::prefix('learn')->name('learn.')->group(function () {

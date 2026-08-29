@@ -132,7 +132,7 @@ class BlogController extends Controller
             'status' => 'required|in:published,draft,scheduled',
             'body' => 'required|string',
             'excerpt' => 'nullable|string',
-            'featured_image' => 'nullable|image|max:5120',
+            'featured_image' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:5120', // explicit mimes excludes SVG (scriptable → stored XSS)
             'featured_image_alt' => 'nullable|string',
             'meta_title' => 'nullable|string|max:255',
             'meta_description' => 'nullable|string|max:500',
@@ -178,7 +178,7 @@ class BlogController extends Controller
             'status' => 'required|in:published,draft,scheduled',
             'body' => 'required|string',
             'excerpt' => 'nullable|string',
-            'featured_image' => 'nullable|image|max:5120',
+            'featured_image' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:5120', // explicit mimes excludes SVG (scriptable → stored XSS)
             'featured_image_alt' => 'nullable|string',
             'meta_title' => 'nullable|string|max:255',
             'meta_description' => 'nullable|string|max:500',

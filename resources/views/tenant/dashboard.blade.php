@@ -101,25 +101,31 @@
                     </div>
                     {{-- End Summary Cards --}}
 
-                    {{-- Utilities top-up hint (Centresidence — only when a metered module exists on the unit) --}}
+                    {{-- Utilities (Centresidence) — a balance card per metered module on the unit, else nothing --}}
                     @if (!empty($hasUtilities))
-                        <a href="{{ route('tenant.utilities.index') }}" class="util-hint">
-                            <span class="util-hint__icon">
-                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-                                    <path d="M12 3s6 5.5 6 10a6 6 0 11-12 0c0-4.5 6-10 6-10z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/>
-                                </svg>
-                            </span>
-                            <span class="util-hint__text">
-                                <span class="util-hint__title">{{ __('Buy prepaid utility tokens') }}</span>
-                                <span class="util-hint__sub">{{ __('Top up water, power or gas for your unit — credited to your wallet instantly.') }}</span>
-                            </span>
-                            <span class="util-hint__cta">
-                                {{ __('Top up') }}
-                                <svg width="13" height="13" viewBox="0 0 24 24" fill="none">
-                                    <path d="M5 12h14M13 6l6 6-6 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                                </svg>
-                            </span>
-                        </a>
+                        <div class="row g-3 mb-4">
+                            @foreach ($utilityModules as $um)
+                                @php
+                                    $uLabel   = optional($um->tokenConfig)->token_unit_label ?: __('units');
+                                    $uBalance = rtrim(rtrim(number_format((float) ($um->wallet_balance ?? 0), 4, '.', ','), '0'), '.');
+                                @endphp
+                                <div class="col-12 col-md-4">
+                                    <a href="{{ route('tenant.utilities.index') }}" class="util-mini">
+                                        <span class="util-mini__icon"><i class="{{ optional($um->module)->icon ?: 'ri-drop-line' }}"></i></span>
+                                        <span class="util-mini__body">
+                                            <span class="util-mini__name">{{ optional($um->module)->name ?? __('Utility') }}</span>
+                                            <span class="util-mini__bal">
+                                                <span class="util-mini__num">{{ $uBalance === '' ? '0' : $uBalance }}</span>
+                                                <span class="util-mini__unit">{{ $uLabel }}</span>
+                                            </span>
+                                            <span class="util-mini__cta">{{ __('Top up') }}
+                                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none"><path d="M5 12h14M13 6l6 6-6 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                                            </span>
+                                        </span>
+                                    </a>
+                                </div>
+                            @endforeach
+                        </div>
                     @endif
 
                     {{-- Invoices + Notice Board --}}
@@ -255,6 +261,16 @@
                                             </a>
                                         </div>
                                     @endif
+
+                                    {{-- Advance-pay whisper: teaches where to settle rent ahead of time, without a loud CTA --}}
+                                    <div class="inv-advance-hint">
+                                        <a href="{{ route('tenant.invoice.index') }}" class="inv-advance-hint__link">
+                                            <span>{{ __('Paying ahead? Settle upcoming rent') }}</span>
+                                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none">
+                                                <path d="M5 12h14M13 6l6 6-6 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                            </svg>
+                                        </a>
+                                    </div>
                                 </div>
 
                             </div>
@@ -583,45 +599,39 @@
     .glance-card--green .glance-card__deco { color: #1D9E75; }
     .glance-card--amber .glance-card__deco { color: #854F0B; }
 
-    /* ── Utilities top-up hint ───────────────────────────────── */
-    .util-hint {
-        display: flex;
-        align-items: center;
-        gap: 14px;
-        padding: 14px 18px;
-        margin-bottom: 1rem;
-        border-radius: 12px;
-        background: #FDF6EC;
-        border: 0.5px solid #F5D9A8;
-        text-decoration: none;
-        transition: transform .15s, box-shadow .15s;
+    /* ── Utilities balance cards (one per metered module) ─────── */
+    /* Sit in the same col-md-4 grid as the summary cards above so widths
+       line up exactly. Card fills its column height for a uniform row. */
+    .util-mini {
+        position: relative; height: 100%;
+        display: flex; align-items: center; gap: 16px;
+        padding: 1.25rem 1.4rem; border-radius: 14px;
+        background: #FDF6EC; border: 0.5px solid #F5D9A8;
+        text-decoration: none; transition: transform .18s, box-shadow .18s;
     }
-    .util-hint:hover { transform: translateY(-1px); box-shadow: 0 6px 18px rgba(133,79,11,.12); }
-    .util-hint__icon {
-        flex-shrink: 0;
-        width: 42px; height: 42px;
-        border-radius: 11px;
-        background: #FAEEDA;
-        color: #854F0B;
-        display: flex; align-items: center; justify-content: center;
+    .util-mini:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(133,79,11,.12); }
+    .util-mini__icon {
+        flex-shrink: 0; width: 46px; height: 46px; border-radius: 12px;
+        background: #FAEEDA; color: #854F0B;
+        display: flex; align-items: center; justify-content: center; font-size: 22px;
     }
-    .util-hint__text { flex: 1; min-width: 0; }
-    .util-hint__title { display: block; font-size: 14px; font-weight: 600; color: #6B3E08; }
-    .util-hint__sub   { display: block; font-size: 12px; color: #7A4A10; opacity: .8; margin-top: 2px; }
-    .util-hint__cta {
-        flex-shrink: 0;
-        display: inline-flex; align-items: center; gap: 6px;
-        background: #854F0B; color: #fff;
-        font-size: 12px; font-weight: 600;
-        padding: 8px 16px; border-radius: 8px;
-        white-space: nowrap;
-        transition: background .13s;
+    .util-mini__body { flex: 1; min-width: 0; }
+    .util-mini__name {
+        display: block; font-size: 11px; font-weight: 500;
+        text-transform: uppercase; letter-spacing: .07em; color: #854F0B; opacity: .7;
+        margin: 0 0 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
     }
-    .util-hint:hover .util-hint__cta { background: #6f4109; }
-    @media (max-width: 540px) {
-        .util-hint { flex-wrap: wrap; }
-        .util-hint__cta { width: 100%; justify-content: center; }
+    .util-mini__bal  { display: flex; align-items: baseline; gap: 7px; margin-bottom: 5px; }
+    .util-mini__num  { font-size: 26px; font-weight: 700; color: #6B3E08; line-height: 1; }
+    .util-mini__unit {
+        font-size: 10.5px; font-weight: 600; text-transform: uppercase; letter-spacing: .04em;
+        color: #9A6E2A; background: #FAEEDA; padding: 3px 8px; border-radius: 6px; white-space: nowrap;
     }
+    .util-mini__cta {
+        display: inline-flex; align-items: center; gap: 4px;
+        color: #854F0B; font-size: 12px; font-weight: 600; white-space: nowrap;
+    }
+    .util-mini:hover .util-mini__cta { color: #6f4109; text-decoration: underline; }
 
     /* ── Shared dash card ────────────────────────────────────── */
     .dash-card {
@@ -771,6 +781,34 @@
     }
 
     .view-all-link:hover svg {
+        transform: translateX(2px);
+    }
+
+    /* ── Advance-pay whisper (muted hint, not a CTA) ─────────── */
+    .inv-advance-hint {
+        margin-top: 6px;
+        text-align: center;
+    }
+    .inv-advance-hint__link {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 12px;
+        font-weight: 500;
+        color: #9ca3af;
+        text-decoration: none;
+        padding: 4px 10px;
+        border-radius: 6px;
+        transition: color 0.15s, background 0.15s;
+    }
+    .inv-advance-hint__link:hover {
+        color: #185FA5 !important;
+        background: #F7F9FC;
+    }
+    .inv-advance-hint__link svg {
+        transition: transform 0.15s;
+    }
+    .inv-advance-hint__link:hover svg {
         transform: translateX(2px);
     }
 

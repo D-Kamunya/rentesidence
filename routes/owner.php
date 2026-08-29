@@ -21,6 +21,7 @@ use App\Http\Controllers\Owner\PropertyController;
 use App\Http\Controllers\Owner\ReportController;
 use App\Http\Controllers\Owner\SettingController;
 use App\Http\Controllers\Owner\TenantController;
+use App\Http\Controllers\Owner\TenantImportController;
 use App\Http\Controllers\Owner\TicketController;
 use App\Http\Controllers\Owner\TicketTopicController;
 use App\Http\Controllers\Tenancy\DomainController;
@@ -28,7 +29,7 @@ use App\Http\Controllers\ProductController;
 use App\Http\Controllers\Admin\ProductCategoryController;
 use App\Http\Controllers\Owner\OwnerWalletController;
 use App\Http\Controllers\Owner\SmsCreditsController;
-use App\Http\Controllers\Owner\SmsCreditsPaymentController;
+use App\Http\Controllers\Owner\CreditTopUpController;
 use App\Http\Controllers\Owner\TenantApplicationController;
 use App\Http\Controllers\Owner\OwnerKnowledgeBaseController;
 use Illuminate\Support\Facades\Route;
@@ -38,7 +39,8 @@ Route::group(['prefix' => 'owner', 'as' => 'owner.', 'middleware' => ['auth', 'o
     Route::get('/', [DashboardController::class, 'dashboard'])->name('dashboard');
     Route::get('top-search', [DashboardController::class, 'topSearch'])->name('top.search');
     Route::get('notification', [DashboardController::class, 'notification'])->name('notification');
-    Route::get('send-login-dets', [TenantController::class, 'sendLoginDets'])->name('send.tenant.logins');
+    Route::post('tenant/resend-login', [TenantController::class, 'resendLogin'])->name('tenant.resend-login');
+    Route::post('tenant/bulk-resend-logins', [TenantController::class, 'bulkResendLogins'])->name('tenant.bulk-resend-logins');
     Route::delete('unit-image/{id}', [PropertyController::class, 'deleteUnitImage'])->name('unit.image.delete');
     Route::get('/wallet',          [OwnerWalletController::class, 'index'])->name('wallet.index');
     Route::post('/wallet/withdraw',[OwnerWalletController::class, 'withdraw'])->name('wallet.withdraw');
@@ -48,8 +50,18 @@ Route::group(['prefix' => 'owner', 'as' => 'owner.', 'middleware' => ['auth', 'o
         Route::get('/',          [SmsCreditsController::class, 'index'])->name('index');
         Route::post('/retry',    [SmsCreditsController::class, 'retryOne'])->name('retry.one');
         Route::post('/retry-all',[SmsCreditsController::class, 'retryAll'])->name('retry.all');
-        Route::post('/checkout', [SmsCreditsPaymentController::class, 'checkout'])->name('checkout');
-        Route::match(['GET', 'POST'], '/verify', [SmsCreditsPaymentController::class, 'verify'])->name('verify');
+        Route::post('/checkout', [CreditTopUpController::class, 'checkout'])->defaults('bucket', 'sms')->name('checkout');
+        Route::match(['GET', 'POST'], '/verify', [CreditTopUpController::class, 'verify'])->defaults('bucket', 'sms')->name('verify');
+    });
+
+    // Tenant screening — credit-metered objective lookup on the unified `screening` bucket.
+    Route::prefix('screening')->name('screening.')->group(function () {
+        Route::get('/',          [\App\Http\Controllers\Owner\OwnerScreeningController::class, 'index'])->name('index');
+        Route::post('/lookup',   [\App\Http\Controllers\Owner\OwnerScreeningController::class, 'lookup'])->name('lookup');
+        Route::prefix('credits')->name('credits.')->group(function () {
+            Route::post('/checkout', [CreditTopUpController::class, 'checkout'])->defaults('bucket', 'screening')->name('checkout');
+            Route::match(['GET', 'POST'], '/verify', [CreditTopUpController::class, 'verify'])->defaults('bucket', 'screening')->name('verify');
+        });
     });
 
     // Centresidence — infrastructure financing (distinct from the product shop).
@@ -111,6 +123,18 @@ Route::group(['prefix' => 'owner', 'as' => 'owner.', 'middleware' => ['auth', 'o
         Route::get('details/{id}', [TenantController::class, 'details'])->name('details');
         Route::post('close-history-store/{id}', [TenantController::class, 'closeHistoryStore'])->name('close.history.store');
         Route::post('delete', [TenantController::class, 'delete'])->name('delete');
+        Route::post('draft/discard', [TenantController::class, 'discardDraft'])->name('draft.discard');
+
+        // Bulk tenant/unit import (CSV) — upload → validated preview → queued import + progress.
+        Route::prefix('import')->name('import.')->group(function () {
+            Route::get('/', [TenantImportController::class, 'index'])->name('index');
+            Route::get('template', [TenantImportController::class, 'template'])->name('template');
+            Route::post('preview', [TenantImportController::class, 'preview'])->name('preview');
+            Route::post('{import}/confirm', [TenantImportController::class, 'confirm'])->name('confirm');
+            Route::get('{import}/status', [TenantImportController::class, 'status'])->name('status');
+            Route::get('{import}/progress', [TenantImportController::class, 'progress'])->name('progress');
+            Route::get('{import}/errors', [TenantImportController::class, 'errorsCsv'])->name('errors');
+        });
     });
 
     Route::controller(TenantApplicationController::class) ->prefix('tenant-applications')->name('tenant.applications.')
@@ -127,9 +151,9 @@ Route::group(['prefix' => 'owner', 'as' => 'owner.', 'middleware' => ['auth', 'o
         // Route::get('get-currency-by-gateway', [InvoiceController::class, 'getCurrencyByGateway'])->name('get.currency');
     });
 
+    Route::post('product-orders/dispatch-setting', [ProductOrderController::class, 'updateDispatchSetting'])->name('productOrder.dispatchSetting');
     Route::post('product-orders/{id}/complete', [ProductOrderController::class, 'markComplete'])->name('productOrder.markComplete');
     Route::post('product-orders/{id}/cancel', [ProductOrderController::class, 'cancel'])->name('productOrder.cancel');
-    Route::post('product-orders/{id}/cancel',         [ProductOrderController::class, 'cancel'])->name('productOrder.cancel');
     Route::post('product-orders/{id}/confirm-refund', [ProductOrderController::class, 'confirmRefund'])->name('productOrder.confirmRefund');
     Route::get('product-categories', [ProductCategoryController::class, 'forOwner'])->name('owner.product.categories');
 
@@ -145,6 +169,7 @@ Route::group(['prefix' => 'owner', 'as' => 'owner.', 'middleware' => ['auth', 'o
         Route::post('store', [MaintainerController::class, 'store'])->name('store');
         Route::get('get-info', [MaintainerController::class, 'getInfo'])->name('get.info'); // ajax
         Route::get('delete/{id}', [MaintainerController::class, 'delete'])->name('delete');
+        Route::post('permissions', [MaintainerController::class, 'updatePermissions'])->name('permissions');
     });
 
     Route::group(['prefix' => 'maintenance-request', 'as' => 'maintenance-request.'], function () {
@@ -225,6 +250,10 @@ Route::group(['prefix' => 'owner', 'as' => 'owner.', 'middleware' => ['auth', 'o
         Route::get('occupancy', [ReportController::class, 'occupancy'])->name('occupancy');
         Route::get('maintenance', [ReportController::class, 'maintenance'])->name('maintenance');
         Route::get('tenant', [ReportController::class, 'tenant'])->name('tenant');
+
+        // Server-side full-dataset PDF export (no page truncation). {report} is one of
+        // tenant|earning|expenses|lease|occupancy|maintenance.
+        Route::get('export/{report}', [ReportController::class, 'export'])->name('export');
     });
 
     // Knowledge Base

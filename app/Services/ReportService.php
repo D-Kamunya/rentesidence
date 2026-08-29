@@ -68,13 +68,18 @@ class ReportService
 
     public function lossProfitByMonth()
     {
+        // Scope to the authenticated owner — every other report method scopes by
+        // owner_user_id; without it this aggregated the ENTIRE platform's invoices/expenses
+        // (cross-owner data leak) AND spanned every month between the platform-wide earliest
+        // and latest record, which is what made the page load forever.
         $invoices = Invoice::query()
             ->select(
                 DB::raw('sum(invoices.amount) as `income`'),
                 DB::raw("DATE_FORMAT(invoices.due_date,'%Y-%m') as month"),
             )
-            ->groupBy(DB::raw('YEAR(invoices.due_date),MONTH(invoices.due_date)'))
+            ->where('invoices.owner_user_id', auth()->id())
             ->where('invoices.status', INVOICE_STATUS_PAID)
+            ->groupBy(DB::raw('YEAR(invoices.due_date),MONTH(invoices.due_date)'))
             ->get();
 
         $maxInvDate = '2000-12';
@@ -92,6 +97,7 @@ class ReportService
                 DB::raw('sum(total_amount) as `expense`'),
                 DB::raw("DATE_FORMAT(created_at,'%Y-%m') as month"),
             )
+            ->where('owner_user_id', auth()->id())
             ->groupBy(DB::raw('YEAR(created_at),MONTH(created_at)'))
             ->get();
 
@@ -106,22 +112,27 @@ class ReportService
 
         $data = [];
         $currentMonth = $minInvDate;
-        while (1) {
-            if ($currentMonth > $maxInvDate) {
-                break;
-            }
+        // Hard cap the month range (20 years) so a single stray/corrupt date can never spin
+        // the loop indefinitely.
+        $guard = 0;
+        while ($currentMonth <= $maxInvDate && $guard < 240) {
             $data[$currentMonth] = [
                 'income' => 0,
                 'expense' => 0,
                 'month' => $currentMonth,
             ];
             $currentMonth = date('Y-m', strtotime("+1 months", strtotime($currentMonth)));
+            $guard++;
         }
         foreach ($invoices as $invoice) {
-            $data[$invoice->month]['income'] = $invoice->income;
+            if (isset($data[$invoice->month])) {
+                $data[$invoice->month]['income'] = $invoice->income;
+            }
         }
         foreach ($expenses as $invoice) {
-            $data[$invoice->month]['expense'] = $invoice->expense;
+            if (isset($data[$invoice->month])) {
+                $data[$invoice->month]['expense'] = $invoice->expense;
+            }
         }
         return $data;
     }

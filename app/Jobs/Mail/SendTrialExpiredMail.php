@@ -2,6 +2,7 @@
 namespace App\Jobs\Mail;
 
 use App\Models\Lead;
+use App\Models\User;
 
 class SendTrialExpiredMail extends BaseMailJob
 {
@@ -9,9 +10,13 @@ class SendTrialExpiredMail extends BaseMailJob
 
     public function handle(): void
     {
-        $lead      = Lead::with('company')->findOrFail($this->leadId);
+        $lead      = Lead::with(['company', 'owner'])->findOrFail($this->leadId);
         $company   = $lead->company;
         $affiliate = $lead->affiliate;
+
+        // Notify the account holder (the converted lead's owner user) too — their trial
+        // ended and the account has been moved to the Free plan.
+        $this->notifyUser($lead, $company);
 
         if (!$affiliate || !$company) return;
 
@@ -56,6 +61,50 @@ class SendTrialExpiredMail extends BaseMailJob
                     </div>
                     <p style='color:#6b7280;font-size:13px;margin-top:30px;'>
                         Remember: Converting this lead to a paying customer means monthly recurring commissions for you!
+                    </p>
+                </div>
+            "
+        );
+    }
+
+    /**
+     * User-facing trial-ended email — the account holder is told their trial has ended
+     * and their account moved to the Free plan, with a path to upgrade. Distinct from the
+     * affiliate email above (which is about following up the lead).
+     */
+    private function notifyUser(Lead $lead, $company): void
+    {
+        $owner = $lead->owner;
+        $user  = $owner ? User::find($owner->user_id) : null;
+
+        if (!$user || empty($user->email)) return;
+
+        $appName    = getOption('app_name');
+        $firstName  = e($user->first_name ?: (optional($company)->company_name ?? 'there'));
+        $upgradeUrl = route('owner.subscription.index');
+
+        $this->send(
+            [$user->email],
+            'Your trial has ended — ' . $appName,
+            "
+                <div style='font-family:Arial,sans-serif;max-width:600px;margin:0 auto;'>
+                    <h2 style='color:#854F0B;'>Your free trial has ended</h2>
+                    <p>Hello <strong>{$firstName}</strong>,</p>
+                    <p>Your trial of <strong>" . e($appName) . "</strong> has come to an end. Your account has been
+                       moved to the <strong>Free plan</strong>, so you can keep signing in and using the essentials —
+                       nothing has been deleted.</p>
+                    <div style='background:#E6F1FB;border:1px solid #B5D4F4;border-radius:8px;padding:16px;margin:20px 0;'>
+                        <p style='margin:0;color:#0C447C;'>Want your full feature set back? Upgrade any time and pick the
+                           plan that fits your properties.</p>
+                    </div>
+                    <div style='text-align:center;margin:30px 0;'>
+                        <a href='{$upgradeUrl}'
+                           style='background:#185FA5;color:#fff;padding:12px 28px;text-decoration:none;border-radius:8px;display:inline-block;'>
+                           View plans &amp; upgrade
+                        </a>
+                    </div>
+                    <p style='color:#6b7280;font-size:13px;margin-top:30px;'>
+                        Thank you for trying {$appName}. We'd love to have you on board.
                     </p>
                 </div>
             "

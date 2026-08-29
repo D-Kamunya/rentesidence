@@ -84,9 +84,11 @@ class TokenEngine
 
             $wallet->creditUnits($units);
 
-            // Dispatch a downlink command to an active device, if any.
+            // Dispatch a downlink command to the BUYER's meter (the device on their
+            // unit), not just any device — so a multi-meter property credits the
+            // right meter. Falls back to the sole active device (single-meter module).
             $deviceCommandId = null;
-            $device = $propertyModule->activeDevices()->first();
+            $device = $this->resolveDeviceForTenant($propertyModule, $tenantUserId);
             if ($device) {
                 $deviceCommandId = DeviceCommand::create([
                     'device_id' => $device->id,
@@ -120,6 +122,30 @@ class TokenEngine
 
             return $purchase;
         });
+    }
+
+    /**
+     * The active meter serving the buying tenant's unit. Mirrors the inbound
+     * consumption attribution: tenant → unit → device. Falls back to the sole
+     * active device so single-meter modules are unchanged.
+     */
+    private function resolveDeviceForTenant(PropertyModule $propertyModule, ?int $tenantUserId): ?Device
+    {
+        if ($tenantUserId) {
+            $unitId = DB::table('tenants')
+                ->where('user_id', $tenantUserId)
+                ->whereNull('deleted_at')
+                ->value('unit_id');
+
+            if ($unitId) {
+                $onUnit = $propertyModule->activeDevices()->where('property_unit_id', $unitId)->first();
+                if ($onUnit) {
+                    return $onUnit;
+                }
+            }
+        }
+
+        return $propertyModule->activeDevices()->first();
     }
 
     /**

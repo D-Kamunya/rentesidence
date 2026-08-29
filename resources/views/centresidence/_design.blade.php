@@ -4,9 +4,10 @@
     :root {
         --blue:#185FA5; --blue-hover:#0F4A84; --blue-light:#E6F1FB; --blue-border:#B5D4F4;
         --blue-faint:#185ea56e; --blue-ghost:#185ea51c;
-        --green:#1D9E75; --green-dark:#0F6E56; --green-light:#E1F5EE;
-        --amber:#854F0B; --amber-light:#FAEEDA; --amber-border:#F5D9A8;
-        --red:#993C1D; --red-light:#FAECE7; --purple:#534AB7; --purple-hover:#3C3489;
+        --green:#1D9E75; --green-dark:#0F6E56; --green-light:#E1F5EE; --green-border:#9FE1CB; --green-icon-bg:#DCF3E9;
+        --amber:#854F0B; --amber-light:#FAEEDA; --amber-border:#F5D9A8; --amber-icon-bg:#FAEACB;
+        --red:#993C1D; --red-light:#FAECE7;
+        --purple:#534AB7; --purple-hover:#3C3489; --purple-light:#F5F3FC; --purple-border:#D6CBF0; --purple-icon-bg:#E9E3F7;
         --gray-900:#111827; --gray-800:#1f2937; --gray-700:#374151; --gray-500:#6b7280;
         --gray-400:#9ca3af; --gray-200:#e5e7eb; --gray-100:#f3f4f6; --gray-50:#fafafa;
     }
@@ -68,8 +69,42 @@
     .cs-btn--ghost { background:var(--gray-100); color:var(--gray-700); border:0.5px solid var(--gray-200); }
     .cs-btn--ghost:hover { background:var(--blue); color:#fff; }
     .cs-btn--complete { background:var(--green-light); color:var(--green-dark); border:0.5px solid #A7DFC9; }
+    .cs-btn--complete:hover { background:var(--green); color:#fff; border-color:var(--green); transform:translateY(-1px); }
+    /* Pending tone — a call-to-action on an item still awaiting confirmation (matches .cs-badge.is-pending). */
+    .cs-btn--pending { background:var(--amber-light); color:var(--amber); border:0.5px solid var(--amber-border); }
+    .cs-btn--pending:hover { background:var(--amber); color:#fff; border-color:var(--amber); transform:translateY(-1px); }
     .cs-btn--sm { padding:5px 11px; font-size:11.5px; }
     .cs-btn:disabled { cursor:not-allowed; }
+    /* Every cs button turns its label white on hover (all variants darken their fill). */
+    .cs-btn:hover { color:#fff; }
+
+    /* ── Stat cards (reusable dashboard metric card) ───────────────────────────
+       The official CS dashboard card: icon + value + label, four accent tones.
+       Use anywhere a dashboard needs headline metrics so every dashboard matches.
+         <a class="cs-statcard cs-statcard--blue">
+           <span class="cs-statcard__ic">…svg…</span>
+           <span class="cs-statcard__body">
+             <span class="cs-statcard__value">123</span><span class="cs-statcard__label">Label</span>
+           </span>
+         </a>
+    */
+    .cs-statgrid { display:grid; grid-template-columns:repeat(auto-fit,minmax(210px,1fr)); gap:14px; margin-bottom:16px; }
+    .cs-statcard { display:flex; align-items:center; gap:14px; padding:18px; border-radius:14px; text-decoration:none;
+        border:0.5px solid transparent; transition:transform .16s, box-shadow .16s; }
+    a.cs-statcard:hover { transform:translateY(-2px); box-shadow:0 10px 26px rgba(0,0,0,.07); }
+    .cs-statcard__ic { flex:none; width:46px; height:46px; border-radius:12px; display:flex; align-items:center; justify-content:center; }
+    .cs-statcard__ic svg { width:22px; height:22px; }
+    .cs-statcard__body { display:flex; flex-direction:column; min-width:0; }
+    .cs-statcard__value { font-size:22px; font-weight:700; color:var(--gray-900); line-height:1.15; font-variant-numeric:tabular-nums; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .cs-statcard__label { font-size:12px; color:var(--gray-500); margin-top:2px; }
+    .cs-statcard--blue   { background:var(--blue-light);   border-color:var(--blue-border); }
+    .cs-statcard--blue   .cs-statcard__ic { background:#E1EFFB; color:var(--blue); }
+    .cs-statcard--green  { background:var(--green-light);  border-color:var(--green-border); }
+    .cs-statcard--green  .cs-statcard__ic { background:var(--green-icon-bg); color:var(--green-dark); }
+    .cs-statcard--amber  { background:var(--amber-light);  border-color:var(--amber-border); }
+    .cs-statcard--amber  .cs-statcard__ic { background:var(--amber-icon-bg); color:var(--amber); }
+    .cs-statcard--purple { background:var(--purple-light); border-color:var(--purple-border); }
+    .cs-statcard--purple .cs-statcard__ic { background:var(--purple-icon-bg); color:var(--purple); }
 
     /* Cost breakdown lines (financing apply) */
     .cs-costline { display:flex; justify-content:space-between; align-items:center; gap:12px;
@@ -95,6 +130,62 @@
     .cs-input:focus, .cs-select:focus { outline:none; border-color:var(--blue); box-shadow:0 0 0 3px rgba(24,95,165,.1); }
     .cs-input--sm { padding:5px 8px; font-size:12px; width:auto; }
     .cs-field { margin-bottom:16px; }
+
+    /* Modals — opt in by adding `cs-modal` to the .modal element. Restyles the Bootstrap
+       modal chrome + its form controls/buttons in place, so no inner markup/JS hooks change. */
+    .cs-modal .modal-content { border:0.5px solid var(--blue-faint); border-radius:14px; overflow:hidden;
+        box-shadow:0 20px 60px rgba(17,24,39,.18); }
+    .cs-modal .modal-header { padding:15px 20px; border-bottom:0.5px solid var(--gray-200); background:var(--gray-50); align-items:center; }
+    .cs-modal .modal-title { font-size:15px; font-weight:600; color:var(--gray-900); }
+    .cs-modal .modal-body { padding:20px; }
+    .cs-modal .modal-footer { padding:14px 20px; border-top:0.5px solid var(--gray-200); gap:8px; }
+    .cs-modal .btn-close { border:none; background:transparent; color:var(--gray-400); font-size:15px; line-height:1;
+        display:inline-flex; align-items:center; justify-content:center; padding:4px; cursor:pointer; opacity:1; }
+    .cs-modal .btn-close:hover { color:var(--gray-900); }
+    .cs-modal .modal-inner-form-box + .modal-inner-form-box,
+    .cs-modal .modal-inner-form-box.border-bottom { border-color:var(--gray-200) !important; }
+    /* Labels + fields inside a cs modal */
+    .cs-modal .label-text-title { display:block; font-size:12px; font-weight:500; color:var(--gray-700);
+        margin-bottom:6px; letter-spacing:normal; text-transform:none; }
+    .cs-modal .form-control, .cs-modal .form-select, .cs-modal textarea.form-control {
+        width:100%; border:0.5px solid var(--gray-200); border-radius:7px; padding:8px 11px;
+        font-size:13px; color:var(--gray-700); background:#fff; box-shadow:none; }
+    .cs-modal .form-control:focus, .cs-modal .form-select:focus {
+        outline:none; border-color:var(--blue); box-shadow:0 0 0 3px rgba(24,95,165,.1); }
+    .cs-modal textarea.form-control { min-height:88px; }
+    /* Buttons inside a cs modal */
+    .cs-modal .theme-btn { display:inline-flex; align-items:center; gap:6px; font-size:12px; font-weight:500;
+        padding:8px 16px; border-radius:7px; border:none; background:var(--blue); color:#fff; transition:all .13s; }
+    .cs-modal .theme-btn:hover { background:var(--blue-hover) !important; transform:translateY(-1px); color:#fff !important; }
+    .cs-modal .theme-btn-back { display:inline-flex; align-items:center; gap:6px; font-size:12px; font-weight:500;
+        padding:8px 16px; border-radius:7px; background:var(--gray-100); color:var(--gray-700); border:0.5px solid var(--gray-200); }
+    .cs-modal .theme-btn-back:hover { background:var(--blue); color:#fff; }
+    /* View-mode display rows */
+    .cs-modal .view-information-page-box .label-text-title { color:var(--gray-400); font-size:10px;
+        text-transform:uppercase; letter-spacing:.07em; }
+    .cs-modal .information-details-img img { border-radius:8px; max-height:220px; object-fit:cover; width:100%; }
+
+    /* Filter/toolbar controls — opt in by adding `cs-controls` to a container (pair with
+       cs-card). Restyles legacy Bootstrap form controls + buttons in place, no class renames
+       so JS hooks (#ids, .form-select select2/date pickers) keep working. */
+    .cs-controls .form-control, .cs-controls .form-select {
+        border:0.5px solid var(--gray-200); border-radius:7px; padding:8px 11px; font-size:13px;
+        color:var(--gray-700); background:#fff; box-shadow:none; height:auto; }
+    .cs-controls .form-control:focus, .cs-controls .form-select:focus {
+        outline:none; border-color:var(--blue); box-shadow:0 0 0 3px rgba(24,95,165,.1); }
+    .cs-controls .input-group-text { border:0.5px solid var(--gray-200); background:var(--gray-50);
+        color:var(--gray-500); font-size:12px; }
+    .cs-controls label, .cs-controls .label-text-title { font-size:12px; font-weight:500;
+        color:var(--gray-700); text-transform:none; letter-spacing:normal; }
+    .cs-controls .theme-btn, .cs-controls .default-btn, .cs-controls .theme-btn-purple {
+        display:inline-flex; align-items:center; gap:6px; font-size:12px; font-weight:500;
+        padding:8px 16px; border-radius:7px; border:none; color:#fff; transition:all .13s; width:auto; }
+    .cs-controls .theme-btn, .cs-controls .default-btn { background:var(--blue) !important; }
+    .cs-controls .theme-btn:hover, .cs-controls .default-btn:hover { background:var(--blue-hover) !important; transform:translateY(-1px); color:#fff !important; }
+    .cs-controls .theme-btn-purple { background:var(--purple) !important; }
+    .cs-controls .theme-btn-purple:hover { background:var(--purple-hover) !important; transform:translateY(-1px); color:#fff !important; }
+    .cs-controls .theme-btn-back { display:inline-flex; align-items:center; gap:6px; font-size:12px; font-weight:500;
+        padding:8px 16px; border-radius:7px; background:var(--gray-100); color:var(--gray-700); border:0.5px solid var(--gray-200); }
 
     /* Alerts / notices */
     .cs-alert { border-radius:10px; padding:12px 16px; font-size:13px; margin-bottom:18px; }
@@ -162,11 +253,13 @@
     .cs-kbitem { display:flex; justify-content:space-between; gap:14px; align-items:center; padding:14px 18px;
         border-bottom:0.5px solid var(--gray-200); text-decoration:none; color:var(--gray-800); transition:background .15s ease; }
     .cs-kbitem:last-child { border-bottom:none; }
-    .cs-kbitem:hover { background:var(--blue-faint); }
+    /* Re-assert text colour on hover — a global `a:hover{color:primary!important}`
+       otherwise turns these list/card links blue. Keep the card text dark. */
+    .cs-kbitem:hover { background:var(--blue-faint); color:var(--gray-900) !important; }
     .cs-topic { display:block; text-decoration:none; color:inherit; background:#fff; border:0.5px solid var(--blue-faint);
         border-radius:12px; padding:18px; transition:all .2s ease;
         box-shadow:0 4px 12px rgba(0,0,0,0.04), 0 0 0 1px rgba(24,95,165,0.05), 0 6px 18px rgba(24,95,165,0.06); }
-    .cs-topic:hover { transform:translateY(-2px); border-color:var(--blue); }
+    .cs-topic:hover { transform:translateY(-2px); border-color:var(--blue); color:var(--gray-900) !important; }
     .cs-topic__ic { width:40px; height:40px; border-radius:10px; display:flex; align-items:center; justify-content:center;
         background:var(--blue-faint); color:var(--blue); font-size:20px; margin-bottom:12px; }
 

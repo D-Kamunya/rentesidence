@@ -47,6 +47,7 @@ class PartnerRemittanceConfirmationTest extends CentresidenceDatabaseTestCase
         return [
             'ResultCode' => 0,
             'ResultDesc' => 'The service request is processed successfully.',
+            'ConversationID' => 'AG_CONVERSATION_ID', // must echo the batch's provisional ref
             'TransactionID' => 'REC123',
             'ResultParameters' => ['ResultParameter' => [
                 ['Key' => 'TransactionReceipt', 'Value' => 'REC123'],
@@ -70,11 +71,24 @@ class PartnerRemittanceConfirmationTest extends CentresidenceDatabaseTestCase
     {
         $batch = $this->sentBatch();
 
-        $this->fireCallback($batch->id, ['ResultCode' => 2001, 'ResultDesc' => 'The initiator information is invalid.']);
+        $this->fireCallback($batch->id, ['ResultCode' => 2001, 'ConversationID' => 'AG_CONVERSATION_ID', 'ResultDesc' => 'The initiator information is invalid.']);
 
         $batch->refresh();
         $this->assertSame(PartnerRemittanceBatch::STATUS_FAILED, $batch->status);
         $this->assertStringContainsString('initiator', $batch->notes);
+    }
+
+    public function test_forged_result_with_wrong_conversation_id_is_rejected(): void
+    {
+        $batch = $this->sentBatch();
+
+        // A crafted result that doesn't echo the batch's ConversationID must not be able
+        // to confirm (or fail) the payout.
+        $this->fireCallback($batch->id, [
+            'ResultCode' => 0, 'ConversationID' => 'WRONG_ID', 'TransactionID' => 'REC999',
+        ]);
+
+        $this->assertSame(PartnerRemittanceBatch::STATUS_SENT, $batch->fresh()->status);
     }
 
     public function test_callback_is_idempotent_no_double_confirm(): void

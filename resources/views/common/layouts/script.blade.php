@@ -89,3 +89,6 @@
         $(this).parent().remove();
     });
 </script>
+
+@include('common.partials.cs-confirm')
+@include('common.partials.mpesa-stk-waiting')

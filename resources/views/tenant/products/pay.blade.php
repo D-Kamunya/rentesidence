@@ -2,19 +2,6 @@
 
 @section('content')
 
-    {{-- M-Pesa STK Preloader --}}
-    <div id="mpesa-preloader" style="display:none;">
-        <div id="mpesa-preloaderInner">
-            <img src="{{ asset('assets/images/gateway-icon/mpesa.jpg') }}" alt="M-PESA">
-            <div>
-                <p>{{ __('Please follow the instructions and do not refresh or leave this page.') }}</p>
-                <p>{{ __('This may take up to') }} <span id="mpesa-timer">2:00</span> {{ __('minute(s).') }}</p>
-                <p>{{ __('You will receive a prompt on your mobile number to enter your PIN to authorize payment.') }}</p>
-                <p>{{ __('Please ensure your phone is on and unlocked. Thank you.') }}</p>
-            </div>
-            <img src="{{ asset('assets/images/loading.svg') }}" alt="Loading">
-        </div>
-    </div>
 
     <div class="main-content">
         <div class="page-content">
@@ -228,12 +215,7 @@
 .checkout-btn__amount { font-size:13px; opacity:.85; font-weight:500; }
 
 /* ── M-Pesa preloader ────────────────────────────────────────── */
-#mpesa-preloader { position:fixed; inset:0; background:rgba(0,0,0,.55); z-index:9999; display:flex; align-items:center; justify-content:center; }
-#mpesa-preloaderInner { background:#fff; border-radius:16px; padding:2rem; max-width:420px; width:90%; display:flex; flex-direction:column; align-items:center; gap:16px; text-align:center; box-shadow:0 20px 40px rgba(0,0,0,.2); }
-#mpesa-preloaderInner img:first-child { width:80px; height:80px; object-fit:contain; border-radius:12px; }
-#mpesa-preloaderInner p { font-size:13px; color:#374151; margin:0; line-height:1.6; }
-#mpesa-timer { font-weight:600; color:#185FA5; }
-#mpesa-preloaderInner img:last-child { width:36px; }
+/* M-Pesa STK waiting overlay is now the shared common.partials.mpesa-stk-waiting component. */
 
 /* ── Responsive ──────────────────────────────────────────────── */
 @media (max-width: 900px) {
@@ -332,25 +314,8 @@
     renderCart();
 
     // ── Checkout button ────────────────────────────────────────
-    let timerInterval;
-
-    function showPreloader() {
-        let countdown = 120;
-        const timerEl = document.getElementById('mpesa-timer');
-        document.getElementById('mpesa-preloader').style.display = 'flex';
-        timerInterval = setInterval(() => {
-            const m = Math.floor(countdown / 60);
-            const s = countdown % 60;
-            timerEl.textContent = `${m}:${s < 10 ? '0' + s : s}`;
-            if (countdown <= 0) clearInterval(timerInterval);
-            countdown--;
-        }, 1000);
-    }
-
-    function hidePreloader() {
-        clearInterval(timerInterval);
-        document.getElementById('mpesa-preloader').style.display = 'none';
-    }
+    function showPreloader(amount) { mpesaWait.show(amount ? { amount: amount } : {}); }
+    function hidePreloader() { mpesaWait.hide(); }
 
     document.getElementById('checkoutBtn').addEventListener('click', function () {
         const total = parseFloat(cartTotalInput.value);
@@ -365,7 +330,7 @@
             return;
         }
 
-        showPreloader();
+        showPreloader('{{ getCurrencySymbol() }}' + Number(total).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
 
         const form     = document.getElementById('pay-products-order-form');
         const formData = new FormData(form);

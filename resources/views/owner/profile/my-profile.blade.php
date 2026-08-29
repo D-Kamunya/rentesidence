@@ -49,7 +49,7 @@
                                                         <div
                                                             class="avatar-xs p-0 rounded-circle default-profile-photo-edit">
                                                             <input id="default-profile-img-file-input" type="file"
-                                                                name="image" class="default-profile-img-file-input">
+                                                                name="image" class="default-profile-img-file-input js-image-resize">
                                                             <label for="default-profile-img-file-input"
                                                                 class="default-profile-photo-edit avatar-xs">
                                                                 <span class="avatar-title rounded-circle"
@@ -123,6 +123,7 @@
 @endsection
 
 @push('script')
+    @include('common.partials.image-resize')
     <!-- default profile-photo upload/change init js -->
     <script src="{{ asset('/') }}assets/js/pages/default-profile-setting.init.js"></script>
 @endpush

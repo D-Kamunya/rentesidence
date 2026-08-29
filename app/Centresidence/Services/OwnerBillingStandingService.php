@@ -28,6 +28,21 @@ class OwnerBillingStandingService
             return $none;
         }
 
+        // Transaction-mode owners recover module infra from the rent that flows
+        // through us (deduct-at-source in RentSettlementService), so the infra-bill
+        // standing + readonly gate never applies to them — it is a SUBSCRIPTION-owner
+        // collection mechanism. Without this, a stale/lingering commission invoice
+        // (e.g. left over from a prior subscription period before a mode switch) would
+        // wrongly put a transaction owner into readonly. Guarded so it can't break
+        // outside the app (e.g. the isolated sandbox with no owner_packages row).
+        try {
+            if (app(PaymentModeService::class)->isTransactionMode($ownerUserId)) {
+                return $none;
+            }
+        } catch (\Throwable $e) {
+            // fall through — treat as non-transaction if the mode can't be resolved
+        }
+
         $asOf      = ($asOf ?? Carbon::now())->copy();
         $graceDays = (int) config('centresidence.billing.commission_grace_days', 7);
 

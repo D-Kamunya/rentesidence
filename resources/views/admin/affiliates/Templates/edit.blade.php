@@ -224,7 +224,7 @@
 
                                 <!-- Delete form -->
                                 <form method="POST" action="{{ route('admin.templates.destroy', $template->id) }}"
-                                    onsubmit="return confirm('Delete this template permanently?')">
+                                    data-cs-confirm="Delete this template permanently?" data-cs-confirm-tone="danger">
                                     @csrf
                                     @method('DELETE')
                                     <button type="submit" class="at-btn-danger">

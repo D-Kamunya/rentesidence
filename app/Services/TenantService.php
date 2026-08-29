@@ -8,7 +8,9 @@ use App\Models\Invoice;
 use App\Models\Tenant;
 use App\Models\TenantDetails;
 use App\Models\User;
+use App\Jobs\SendTenantCredentialsJob;
 use App\Services\SmsMail\MailService;
+use Illuminate\Support\Str;
 use App\Traits\ResponseTrait;
 use Exception;
 use Illuminate\Http\Request;
@@ -36,16 +38,6 @@ class TenantService
     }
 
 
-    public function getAllTenantsLogins()
-    {
-        $data = Tenant::query()
-            ->leftJoin('users', 'tenants.user_id', '=', 'users.id')
-            ->where('tenants.owner_user_id', auth()->id())
-            ->select('users.first_name', 'users.contact_number', 'users.email')
-            ->get();
-        return $data;
-    }
-
     public function getActiveAll(Request $request = null)
     {
         $query = Tenant::query()
@@ -54,7 +46,7 @@ class TenantService
             ->leftJoin('property_units', 'tenants.unit_id', '=', 'property_units.id')
             ->leftJoin(DB::raw('(select tenant_id, SUM(amount) as due from invoices where status = 0 AND deleted_at IS NULL group By tenant_id) as inv'), ['inv.tenant_id' => 'tenants.id'])
             ->leftJoin(DB::raw('(select tenant_id, MAX(updated_at) as last_payment from invoices where status = 1 AND deleted_at IS NULL group By tenant_id) as inv_last'), ['inv_last.tenant_id' => 'tenants.id'])
-            ->select(['tenants.*', 'inv.due', 'inv_last.last_payment', 'users.first_name', 'users.last_name', 'users.status as userStatus', 'users.contact_number', 'users.email', 'property_units.unit_name', 'properties.name as property_name'])
+            ->select(['tenants.*', 'inv.due', 'inv_last.last_payment', 'users.first_name', 'users.last_name', 'users.status as userStatus', 'users.contact_number', 'users.email', 'users.must_change_password', 'users.last_login_at', 'property_units.unit_name', 'properties.name as property_name'])
             ->where('tenants.owner_user_id', auth()->id())
             ->where('tenants.status', TENANT_STATUS_ACTIVE);
 
@@ -135,11 +127,11 @@ class TenantService
                     if ($tenant->status == TENANT_STATUS_ACTIVE) {
                         $html = ' <div class="status-btn status-btn-green font-13 radius-4">' . __('Active') . '</div>';
                     } elseif ($tenant->status == TENANT_STATUS_INACTIVE) {
-                        $html = ' <div class="status-btn status-btn-orange font-13 radius-4">' . __('Deactivate') . '</div>';
+                        $html = ' <div class="status-btn status-btn-orange font-13 radius-4">' . __('Inactive') . '</div>';
                     } elseif ($tenant->status == TENANT_STATUS_DRAFT) {
                         $html = ' <div class="status-btn status-btn-blue font-13 radius-4">' . __('Draft') . '</div>';
                     } elseif ($tenant->status == TENANT_STATUS_CLOSE) {
-                        $html = ' <div class="status-btn status-btn-red font-13 radius-4">' . __('Close') . '</div>';
+                        $html = ' <div class="status-btn status-btn-red font-13 radius-4">' . __('Closed') . '</div>';
                     }
                 }
                 return $html;
@@ -207,7 +199,7 @@ class TenantService
     
                     case TENANT_STATUS_CLOSE:
                         return '<span style="display:inline-flex;align-items:center;font-size:11px;font-weight:500;padding:3px 9px;border-radius:99px;background:#FAECE7;color:#993C1D;white-space:nowrap;">'
-                            . __('Close') . '</span>';
+                            . __('Closed') . '</span>';
     
                     default:
                         return '—';
@@ -356,8 +348,19 @@ class TenantService
             $user->last_name = $request->last_name;
             $user->email = $request->email;
             $user->contact_number = $request->contact_number;
-            if ($request->password) {
+
+            // New tenants get a SYSTEM-generated password and must set their own on first login.
+            // The plaintext is captured here (the only moment we hold it) so we can send it, then
+            // it's never recoverable again. An owner-supplied reset on edit also forces a change.
+            $plainPassword = null;
+            if ($id == '') {
+                $plainPassword = Str::random(10);
+                $user->password = Hash::make($plainPassword);
+                $user->must_change_password = 1;
+            } elseif ($request->password) {
+                $plainPassword = $request->password;
                 $user->password = Hash::make($request->password);
+                $user->must_change_password = 1;
             }
             $user->role = USER_ROLE_TENANT;
             $user->status = ACTIVE;
@@ -370,7 +373,13 @@ class TenantService
             $tenant->job = $request->job;
             $tenant->age = $request->age;
             $tenant->family_member = $request->family_member;
-            $tenant->status = TENANT_STATUS_DRAFT;
+            // Only a BRAND-NEW tenancy starts as a draft. step1 also runs on edit, so setting this
+            // unconditionally used to revert a live ACTIVE tenant to DRAFT the moment their info was
+            // edited — making them vanish from "All Tenants" (they kept their unit, invoices, and
+            // login, so it looked like data loss). Editing must never downgrade an existing status.
+            if ($id == '') {
+                $tenant->status = TENANT_STATUS_DRAFT;
+            }
             $tenant->save();
 
             // Detail
@@ -412,28 +421,18 @@ class TenantService
 
             DB::commit();
             session(['tenant_id' => $tenant->id]);
-            if (getOption('send_email_status', 0) == ACTIVE) {
-                if ($id == '') {
-                    $emails = [$user->email];
-                    $subject = getOption('app_name') . ' ' . __('welcome you');
-                    $message = __('You have successfully been registered');
-                    $ownerUserId = auth()->id();
-                    $password = $request->password;
 
-                    $mailService = new MailService;
-                    $template = EmailTemplate::where('owner_user_id', $ownerUserId)->where('category', EMAIL_TEMPLATE_SIGN_UP)->where('status', ACTIVE)->first();
-                    if ($template) {
-                        $customizedFieldsArray = [
-                            '{{email}}' => $user->email,
-                            '{{password}}' => $password,
-                            '{{app_name}}' => getOption('app_name')
-                        ];
-                        $content = getEmailTemplate($template->body, $customizedFieldsArray);
-                        $mailService->sendCustomizeMail($emails, $template->subject, $content);
-                    } else {
-                        $mailService->sendSignUpMail($emails, $subject, $message, $ownerUserId, $password);
-                    }
-                }
+            // Deliver login credentials over email + SMS. This is the tenant's only way in, so it
+            // is NOT gated behind the global send_email_status toggle — a password they can't
+            // receive is a locked-out tenant. Fires only on first creation (when we hold the
+            // plaintext) and only when they actually have a channel to reach.
+            if ($id == '' && $plainPassword && ($user->email || $user->contact_number)) {
+                SendTenantCredentialsJob::dispatch($user->id, $plainPassword, 'both');
+            }
+            // DEV ONLY: keep the generated password in the session so the owner can copy it from
+            // the tenant's profile to test the login flow. Never stored in the DB; never in prod.
+            if ($id == '' && $plainPassword && config('app.debug')) {
+                session()->put('dev_pw_' . $tenant->id, $plainPassword);
             }
             $data = $tenant;
             $data->step = 'nextStep1';
@@ -446,35 +445,10 @@ class TenantService
         }
     }
 
-    public function screening()
-    {
-        try {
-            // Retrieve tenant data from the database
-            $tenantId = session('tenant_id'); // Ensure tenant_id is stored during step1
-            $currentTenant = Tenant::with('user')->findOrFail($tenantId);
-    
-            // Check if the tenant exists in the system (excluding the current owner)
-            $existingTenant = Tenant::where('first_name', $currentTenant->user->first_name)
-                ->where('last_name', $currentTenant->user->last_name)
-                ->where('contact_number', $currentTenant->user->contact_number)
-                ->where('owner_user_id', '!=', auth()->id()) // Exclude the current owner
-                ->whereNotNull('rent_payment_rating') // Ensure ratings exist
-                ->whereNotNull('discipline_rating')
-                ->first();
-    
-            // Prepare response data
-            $data = $existingTenant ?: null;
-    
-            if (!$data) {
-                $data['message'] = 'There are no previous ratings available for this tenant.';
-            }
-    
-            $message = $existingTenant ? __('Screening data retrieved successfully.') : __('No data found.');
-            return $this->success($data, $message);
-        } catch (Exception $e) {
-            return $this->error([], getErrorMessage($e, $e->getMessage()));
-        }
-    }    
+    // The old cross-owner rating lookup (broken — queried non-existent columns and leaked a
+    // single owner's raw record) has been removed. Screening is now the aggregated, consented
+    // TenantCreditProfile (App\Services\Screening) — no per-landlord declarations.
+
 
     public function step2(Request $request)
     {
@@ -534,6 +508,11 @@ class TenantService
             }
             /*End*/
             DB::commit();
+
+            // Plug-and-play: create the unit's auto-recurring rent setting the moment the tenant
+            // goes active (immediate; the generate:invoice cron backfill is the safety net).
+            app(\App\Services\InvoiceRecurringService::class)->ensureUnitRecurringSetting($tenant);
+
             $data = $tenant;
             $data->step = 'lastStep';;
             $message = __(UPDATED_SUCCESSFULLY);
@@ -578,9 +557,25 @@ class TenantService
             if ($tenant->user->email != $request->email) {
                 throw new Exception(__('Tenant Not Found'));
             }
-            User::findOrFail($tenant->user_id)->delete();
+            $userId = $tenant->user_id;
+
+            // The tenancy is disposable, the PERSON is not. Preserve the tenant's identity + credit
+            // profile (the Global Tenant ID moat) whenever they have any financial footprint — we
+            // only ever remove the tenancy, never a person's rental payment history. Only a bare
+            // mis-entry (single tenancy, zero invoices) may take the person account with it.
+            $personTenantIds = Tenant::withTrashed()->where('user_id', $userId)->pluck('id');
+            $hasHistory = $personTenantIds->count() > 1
+                || Invoice::whereIn('tenant_id', $personTenantIds)->exists();
+
+            // Remove the tenancy + its owner-scoped detail (soft delete — invoices stay linked and
+            // still feed the person's profile via withTrashed()).
             TenantDetails::where('tenant_id', $tenant->id)->delete();
             $tenant->delete();
+
+            if (! $hasHistory) {
+                User::where('id', $userId)->delete();
+            }
+
             DB::commit();
             $message = __(DELETED_SUCCESSFULLY);
             return $this->success([], $message);
@@ -589,6 +584,109 @@ class TenantService
             $message = getErrorMessage($e, $e->getMessage());
             return $this->error([],  $message);
         }
+    }
+
+    /**
+     * Discard a half-built DRAFT tenant (the owner started adding one but decided not to proceed —
+     * e.g. after screening showed they're unsuitable). Scoped strictly to the owner's own DRAFT
+     * rows so it can never touch a live tenancy. A draft has no financial history, so its person
+     * account is removed with it — this is exactly the cleanup that stops drafts piling up.
+     */
+    public function discardDraft($id)
+    {
+        DB::beginTransaction();
+        try {
+            $tenant = Tenant::where('owner_user_id', auth()->id())
+                ->where('status', TENANT_STATUS_DRAFT)
+                ->findOrFail($id);
+
+            $userId = $tenant->user_id;
+
+            // Safety: only remove the person if this draft is their entire footprint (no other
+            // tenancy, no invoices) — mirrors delete()'s person-preserving rule.
+            $personTenantIds = Tenant::withTrashed()->where('user_id', $userId)->pluck('id');
+            $hasHistory = $personTenantIds->count() > 1
+                || Invoice::whereIn('tenant_id', $personTenantIds)->exists();
+
+            TenantDetails::where('tenant_id', $tenant->id)->delete();
+            $tenant->forceDelete();
+
+            if (! $hasHistory) {
+                User::where('id', $userId)->forceDelete();
+            }
+
+            DB::commit();
+            return $this->success([], __('Draft discarded.'));
+        } catch (Exception $e) {
+            DB::rollBack();
+            return $this->error([], getErrorMessage($e, $e->getMessage()));
+        }
+    }
+
+    /**
+     * Reset ONE tenant's password and re-send their login details (email + SMS). The original
+     * password is hashed and unrecoverable, so "resend" necessarily means "reset + send new".
+     * Forces a first-login change on the new password.
+     */
+    public function resendLogin($tenantId): array
+    {
+        $tenant = Tenant::where('owner_user_id', auth()->id())->with('user')->findOrFail($tenantId);
+        $user = $tenant->user;
+        if (! $user) {
+            return ['ok' => false, 'message' => __('Tenant account not found.')];
+        }
+        if (empty($user->email) && empty($user->contact_number)) {
+            return ['ok' => false, 'message' => __('This tenant has no email or phone number to send login details to.')];
+        }
+
+        $plain = Str::random(10);
+        $user->password = Hash::make($plain);
+        $user->must_change_password = 1;
+        $user->save();
+
+        SendTenantCredentialsJob::dispatch($user->id, $plain, 'both');
+
+        // DEV ONLY: persist for copy from the profile header (never DB, never prod).
+        if (config('app.debug')) {
+            session()->put('dev_pw_' . $tenant->id, $plain);
+        }
+
+        return [
+            'ok'       => true,
+            'message'  => __('New login details are on their way to :name.', ['name' => $user->first_name]),
+            'password' => $plain, // surfaced to the owner ONLY in debug (see controller) for local testing
+        ];
+    }
+
+    /**
+     * Send login details to every ACTIVE tenant of this owner who hasn't onboarded yet (never set
+     * their own password → must_change_password is still on). Never touches a tenant who already
+     * signed in and set their own password. Each send regenerates a password + queues the invite.
+     */
+    public function bulkResendLogins(): array
+    {
+        $tenants = Tenant::where('owner_user_id', auth()->id())
+            ->where('status', TENANT_STATUS_ACTIVE)
+            ->whereHas('user', fn ($q) => $q->where('must_change_password', 1))
+            ->with('user')
+            ->get();
+
+        $count = 0;
+        foreach ($tenants as $tenant) {
+            $user = $tenant->user;
+            if (! $user || (empty($user->email) && empty($user->contact_number))) {
+                continue;
+            }
+            $plain = Str::random(10);
+            $user->password = Hash::make($plain);
+            $user->must_change_password = 1;
+            $user->save();
+
+            SendTenantCredentialsJob::dispatch($user->id, $plain, 'both');
+            $count++;
+        }
+
+        return ['ok' => true, 'count' => $count];
     }
 
     public function updateUnitTenant($unit)

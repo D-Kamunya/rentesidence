@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Owner;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\MaintainerRequest;
+use App\Models\Owner;
 use App\Services\MaintainerService;
 use App\Services\PropertyService;
 use App\Traits\ResponseTrait;
@@ -29,7 +30,19 @@ class MaintainerController extends Controller
         if ($request->ajax()) {
             return $this->maintainerService->getAllData();
         }
+        $data['canConfirmRent'] = (bool) Owner::where('user_id', auth()->id())->value('caretaker_can_confirm_rent');
         return view('owner.maintains.maintainer', $data);
+    }
+
+    /** Owner delegates (or revokes) cash rent-payment confirmation to their caretaker(s). */
+    public function updatePermissions(Request $request)
+    {
+        Owner::where('user_id', auth()->id())
+            ->update(['caretaker_can_confirm_rent' => $request->boolean('caretaker_can_confirm_rent')]);
+
+        return $this->success([], $request->boolean('caretaker_can_confirm_rent')
+            ? __('Your caretaker can now confirm cash rent payments. You’ll be notified each time.')
+            : __('Cash rent confirmation is now off — only you can mark rent paid.'));
     }
 
     public function store(MaintainerRequest $request)

@@ -27,7 +27,9 @@ class LanguageController extends Controller
     {
         $request->validate([
             'name' => 'required|unique:languages,name',
-            'code' => 'required|unique:languages,code',
+            // Strict format — the code is used to build lang/<code>.json file paths,
+            // so anything but plain letters/underscore/hyphen would allow path traversal.
+            'code' => ['required', 'unique:languages,code', 'regex:/^[A-Za-z_-]{2,10}$/'],
         ]);
         DB::beginTransaction();
         try {

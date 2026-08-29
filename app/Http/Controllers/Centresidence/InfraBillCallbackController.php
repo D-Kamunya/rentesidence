@@ -22,6 +22,24 @@ class InfraBillCallbackController extends Controller
         $resultCode = $callback['ResultCode'] ?? -1;
 
         if ((int) $resultCode === 0) {
+            // Authenticity: only settle against a push WE initiated. A forged/replayed
+            // callback finds no matching pending row → clears nothing (debt stays, gate
+            // stays down).
+            $pending = \App\Centresidence\Models\StkPending::claim(
+                'infra_bill',
+                $callback['CheckoutRequestID'] ?? null,
+                ['owner_user_id' => $owner]
+            );
+
+            if (! $pending) {
+                Log::warning('Centresidence infra-bill STK callback rejected: no matching pending push', [
+                    'owner_user_id' => $owner,
+                    'checkout_request_id' => $callback['CheckoutRequestID'] ?? null,
+                ]);
+
+                return $this->ack();
+            }
+
             $bills->markPaid($owner, $this->receipt($callback));
         } else {
             Log::info('Centresidence infra-bill STK declined/failed', [

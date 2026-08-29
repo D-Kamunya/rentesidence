@@ -1,3 +1,4 @@
+@include('common.layouts._kb-nav-style')
 <div class="vertical-menu">
     <div data-simplebar class="h-100">
         <!--- Sidemenu -->
@@ -27,10 +28,24 @@
                 </li>
 
                 <li>
-                    <a href="{{ route('owner.financing.index') }}">
+                    <a href="javascript: void(0);" class="has-arrow">
                         <i class="ri-funds-line"></i>
                         <span>{{ __('Financing') }}</span>
                     </a>
+                    <ul class="sub-menu {{ @$navFinancingMMShowClass }}" aria-expanded="false">
+                        <li class="{{ @$subNavBrowseOffersMMActiveClass }}">
+                            <a href="{{ route('owner.financing.index') }}"
+                                class="{{ @$subNavBrowseOffersActiveClass }}">{{ __('Browse offers') }}</a>
+                        </li>
+                        <li class="{{ @$subNavMyFinancingMMActiveClass }}">
+                            <a href="{{ route('owner.financing.mine') }}"
+                                class="{{ @$subNavMyFinancingActiveClass }}">{{ __('My financing') }}</a>
+                        </li>
+                        <li class="{{ @$subNavRentDeductionsMMActiveClass }}">
+                            <a href="{{ route('owner.financing.deductions') }}"
+                                class="{{ @$subNavRentDeductionsActiveClass }}">{{ __('Rent & deductions') }}</a>
+                        </li>
+                    </ul>
                 </li>
 
                 <li>
@@ -75,6 +90,10 @@
                         <li class="{{ @$subNavTenantHistoryMMActiveClass }}">
                             <a href="{{ route('owner.tenant.applications.index') }}"
                                 class="{{ @$subNavTenantHistoryActiveClass }}">{{ __('Tenant Applications') }}</a>
+                        </li>
+                        <li class="{{ @$subNavScreeningMMActiveClass }}">
+                            <a href="{{ route('owner.screening.index') }}"
+                                class="{{ @$subNavScreeningActiveClass }}">{{ __('Screen a Tenant') }}</a>
                         </li>
                     </ul>
                 </li>
@@ -148,7 +167,7 @@
                 <li>
                     <a href="javascript: void(0);" class="has-arrow">
                         <i class="ri-account-circle-line"></i>
-                        <span>{{ __('Maintains') }}</span>
+                        <span>{{ __('Maintenance') }}</span>
                     </a>
                     <ul class="sub-menu" aria-expanded="false">
                         <li><a href="{{ route('owner.maintainer.index') }}">{{ __('Maintainers') }}</a></li>
@@ -267,7 +286,7 @@
                     </a>
                 </li>
                 <li>
-                    <a href="{{ route('owner.kb.index') }}">
+                    <a href="{{ route('owner.kb.index') }}" class="kb-nav-highlight">
                         <i class="fa fa-book"></i>
                         <span>{{ __('Knowledge Base') }}</span>
                     </a>

@@ -33,7 +33,7 @@ class TenantRequest extends FormRequest
                 'last_name' => 'required',
                 'email' => 'required|unique:users,email,' . $userId,
                 'contact_number' => 'required|unique:users,contact_number,' . $userId,
-                'password' => (is_null($userId)) ? 'required' : 'nullable',
+                'password' => 'nullable', // auto-generated for new tenants; sent + changed on first login
                 'permanent_address' => 'required',
                 'permanent_country_id' => 'required',
                 'permanent_state_id' => 'required',

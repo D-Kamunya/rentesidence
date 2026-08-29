@@ -5,6 +5,8 @@
     <div class="page-content">
         <div class="container-fluid">
             <div class="page-content-wrapper bg-white p-30 radius-20">
+                    @include('centresidence._design')
+
 
                 {{-- Page Header --}}
                 <div class="row">
@@ -33,7 +35,7 @@
                         @include('admin.setting.sidebar')
 
                         <div class="col-md-12 col-lg-12 col-xl-8 col-xxl-9">
-                            <div class="account-settings-rightside bg-off-white theme-border radius-4 p-25">
+                            <div class="account-settings-rightside cs-card cs-card--pad cs-controls">
 
                                 {{-- Section header --}}
                                 <div class="account-settings-title border-bottom mb-20 pb-20">

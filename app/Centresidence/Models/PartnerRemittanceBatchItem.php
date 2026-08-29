@@ -28,4 +28,9 @@ class PartnerRemittanceBatchItem extends Model
     {
         return $this->belongsTo(SettlementTransaction::class, 'settlement_transaction_id');
     }
+
+    public function facility(): BelongsTo
+    {
+        return $this->belongsTo(FinanceFacility::class, 'facility_id');
+    }
 }

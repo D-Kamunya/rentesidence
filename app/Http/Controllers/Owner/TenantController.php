@@ -9,7 +9,6 @@ use App\Http\Requests\TenantRequest;
 use App\Http\Requests\TenantEditRequest;
 use App\Models\Property;
 use App\Services\InvoiceTypeService;
-use App\Services\SmsMail\AdvantaSmsService;
 use App\Services\LocationService;
 use App\Services\PropertyService;
 use App\Services\TenantService;
@@ -58,22 +57,37 @@ class TenantController extends Controller
         }
     }
 
-    public function sendLoginDets(Request $request)
+    /** Reset one tenant's password and re-send their login details over email + SMS. */
+    public function resendLogin(Request $request)
     {
-        $data['tenants'] = $this->tenantService->getAllTenantsLogins();
-           // Loop through tenants and send SMS
-        foreach ($data['tenants'] as $tenant) {
-            $message = "Dear {$tenant->first_name}, Welcome to Centresidence Property Management Technologies! Here are your account details:";
-            $message .= " Email: {$tenant->email}";
-            $message .= " Password: 123456";
-            $message .= " Please use these to access your account on centresidence.com and update your information. For any questions, contact your agent Mr. Wanjohi at 0720847025. We will also be on your property tomorrow for any assistance";
-            try {
-                AdvantaSmsService::sendSms([$tenant->contact_number], $message, auth()->id());
-            } catch (\Exception $e) {
-                \Log::error("SMS sending failed for {$tenant->contact_number}: " . $e->getMessage());
-            }
+        $request->validate(['id' => 'required|integer']);
+        $res = $this->tenantService->resendLogin($request->id);
+
+        $message = $res['message'];
+        // DEV ONLY: reveal the generated password in the owner UI so the flow can be tested
+        // locally before go-live. config('app.debug') is false in production, so this never leaks.
+        if ($res['ok'] && config('app.debug') && ! empty($res['password'])) {
+            $message .= ' — [DEV] ' . __('Password') . ': ' . $res['password'];
         }
-        return response()->json(['message' => 'SMS sent to all tenants.']);
+
+        return back()->with($res['ok'] ? 'success' : 'error', $message);
+    }
+
+    /** Send login details to every tenant who hasn't signed in yet (e.g. a bulk import that
+     *  wasn't notified at import time). Regenerates each password since the original is hashed. */
+    public function bulkResendLogins(Request $request)
+    {
+        $res = $this->tenantService->bulkResendLogins();
+
+        if (($res['count'] ?? 0) === 0) {
+            return back()->with('info', __('No tenants are waiting for login details — everyone has already signed in.'));
+        }
+
+        return back()->with('success', trans_choice(
+            '{1}Login details queued for 1 tenant.|[2,*]Login details queued for :count tenants.',
+            $res['count'],
+            ['count' => $res['count']]
+        ));
     }
 
     public function create()
@@ -173,6 +187,7 @@ class TenantController extends Controller
             $data['pageTitle'] = __('Document');
             $data['navTenantDocumentActiveClass'] = 'active';
             $data['tenant'] = $this->tenantService->getById($id);
+            $data['requests'] = app(\App\Services\KycConfigService::class)->getTenantRequests($id);
             return view('owner.tenants.details.document', $data);
         } elseif ($request->tab == 'closing-history') {
             $data['pageTitle'] = __('Closing History');
@@ -195,5 +210,15 @@ class TenantController extends Controller
     public function delete(TenantDeleteRequest $request)
     {
         return $this->tenantService->delete($request);
+    }
+
+    /** Discard a half-built draft (owner decided not to proceed, e.g. after screening). */
+    public function discardDraft(Request $request)
+    {
+        $request->validate(['id' => 'required|integer']);
+        $this->tenantService->discardDraft($request->id);
+
+        return redirect()->route('owner.tenant.index', ['type' => 'all'])
+            ->with('success', __('Tenant discarded. You can start again whenever you\'re ready.'));
     }
 }

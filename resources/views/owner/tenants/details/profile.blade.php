@@ -1,511 +1,274 @@
 @extends('owner.layouts.app')
 
 @section('content')
-    <div class="main-content">
-        <div class="page-content">
-            <div class="container-fluid">
-                <!-- Page Content Wrapper Start -->
-                <div class="page-content-wrapper bg-white p-30 radius-20">
-                    <!-- start page title -->
-                    <div class="row">
-                        <div class="col-12">
-                            <div
-                                class="page-title-box d-sm-flex align-items-center justify-content-between border-bottom mb-20">
-                                <div class="page-title-left">
-                                    <h3 class="mb-sm-0">{{ $pageTitle }}</h3>
-                                </div>
-                                <div class="page-title-right">
-                                    <ol class="breadcrumb mb-0">
-                                        <li class="breadcrumb-item"><a href="{{ route('owner.dashboard') }}"
-                                                title="{{ __('Dashboard') }}">{{ __('Dashboard') }}</a></li>
-                                        <li class="breadcrumb-item"><a href="{{ route('owner.tenant.index') }}"
-                                                title="{{ __('Tenants') }}">{{ __('Tenants') }}</a></li>
-                                        <li class="breadcrumb-item active" aria-current="page">{{ $pageTitle }}</li>
-                                    </ol>
-                                </div>
+<div class="main-content">
+    <div class="page-content">
+        <div class="container-fluid">
+            <div class="page-content-wrapper bg-white p-30 radius-20">
 
-                            </div>
-                        </div>
-                    </div>
-                    <!-- end page title -->
-
-                    <!-- Tenants Details Layout Wrap Area row Start -->
-                    <div class="tenants-details-layout-wrap position-relative">
-                        <div class="row">
-                            <!-- Account settings Left Side Start-->
-                            <div class="col-md-12 col-lg-12 col-xl-4 col-xxl-3">
-                                <div class="account-settings-leftside bg-white theme-border radius-4 p-20 mb-25">
-                                    <div class="tenants-details-leftsidebar-wrap d-flex">
-                                        @include('owner.tenants.details.sidenav')
-                                        <div class="remove-tenants-item">
-                                            @if ($tenant->status != TENANT_STATUS_CLOSE)
-                                                <button type="button" class="account-settings-menu-item red-color"
-                                                    data-bs-toggle="modal" data-bs-target="#tenantCloseModal"
-                                                    title="{{ __('Close Tenant') }}">
-                                                    <span class="bg-red-transparent radius-4 overflow-hidden px-2 me-2"><i
-                                                            class="ri-delete-back-2-line"></i></span>{{ __('Close Tenant') }}
-                                                </button>
-                                            @endif
-                                            <!-- <button type="button" class="account-settings-menu-item red-color"
-                                                data-bs-toggle="modal" data-bs-target="#tenantDeleteModal"
-                                                title="{{ __('Delete Tenant') }}">
-                                                <span class="bg-red-transparent radius-4 overflow-hidden px-2 me-2"><i
-                                                        class="ri-delete-bin-2-line"></i></span>{{ __('Delete Tenant') }}
-                                            </button> -->
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                            <!-- Account settings Left Side End-->
-
-                            <!-- Account settings Area Right Side Start-->
-                            <div class="col-md-12 col-lg-12 col-xl-8 col-xxl-9">
-                                <div class="account-settings-rightside bg-off-white theme-border radius-4 p-25">
-
-                                    <!-- Tenants Profile Information Start -->
-                                    <div class="tenants-profile-information">
-
-                                        <!-- Upload Profile Photo Box Start -->
-                                        <div class="upload-profile-photo-box upload-profile-photo-with-delete-btn mb-25">
-                                            <div class="profile-user position-relative d-inline-block">
-                                                <img src="{{ $tenant->image }}"
-                                                    class="rounded-circle avatar-xl user-profile-image"
-                                                    alt="user-profile-image">
-                                            </div>
-                                        </div>
-                                        <!-- Upload Profile Photo Box End -->
-
-                                        <!-- Account Settings Content Box Start -->
-                                        <div class="account-settings-content-box bg-white theme-border radius-4 mb-25 p-20">
-
-                                            <div class="account-settings-title border-bottom mb-20 pb-20">
-                                                <div class="row align-items-center">
-                                                    <div class="col-md-6">
-                                                        <h4>{{ __('Personal Information') }}</h4>
-                                                    </div>
-                                                    <div class="col-md-6">
-                                                        <div class="property-details-right text-end">
-                                                            <a href="{{ route('owner.tenant.edit', $tenant->id) }}"
-                                                                class="edit-btn"
-                                                                title="{{ __('Edit Info') }}">{{ __('Edit Info') }}<i
-                                                                    class="ri-arrow-right-line ms-2"></i></a>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </div>
-
-                                            <div class="account-settings-info-box">
-                                                <div class="row account-settings-info-item">
-                                                    <div class="col-md-6 col-lg-4 col-xl-4 col-xxl-2">
-                                                        <p class="color-heading">{{ __('Name') }}:</p>
-                                                    </div>
-                                                    <div class="col-md-6 col-lg-8 col-xl-8 col-xxl-10">
-                                                        <p>{{ $tenant->first_name }} {{ $tenant->last_name }}</p>
-                                                    </div>
-                                                </div>
-                                                <div class="row account-settings-info-item">
-                                                    <div class="col-md-6 col-lg-4 col-xl-4 col-xxl-2">
-                                                        <p class="color-heading">{{ __('Contact Number') }}:</p>
-                                                    </div>
-                                                    <div class="col-md-6 col-lg-8 col-xl-8 col-xxl-10">
-                                                        <p>{{ $tenant->contact_number }}</p>
-                                                    </div>
-                                                </div>
-                                                <div class="row account-settings-info-item">
-                                                    <div class="col-md-6 col-lg-4 col-xl-4 col-xxl-2">
-                                                        <p class="color-heading">{{ __('Email') }}:</p>
-                                                    </div>
-                                                    <div class="col-md-6 col-lg-8 col-xl-8 col-xxl-10">
-                                                        <p>{{ $tenant->email }}</p>
-                                                    </div>
-                                                </div>
-                                                <div class="row account-settings-info-item">
-                                                    <div class="col-md-6 col-lg-4 col-xl-4 col-xxl-2">
-                                                        <p class="color-heading">{{ __('Age') }}:</p>
-                                                    </div>
-                                                    <div class="col-md-6 col-lg-8 col-xl-8 col-xxl-10">
-                                                        <p>{{ $tenant->age }}</p>
-                                                    </div>
-                                                </div>
-                                                <div class="row account-settings-info-item">
-                                                    <div class="col-md-6 col-lg-4 col-xl-4 col-xxl-2">
-                                                        <p class="color-heading">{{ __('Family Members') }}:</p>
-                                                    </div>
-                                                    <div class="col-md-6 col-lg-8 col-xl-8 col-xxl-10">
-                                                        <p>{{ $tenant->family_member }}</p>
-                                                    </div>
-                                                </div>
-                                                <div class="row account-settings-info-item">
-                                                    <div class="col-md-6 col-lg-4 col-xl-4 col-xxl-2">
-                                                        <p class="color-heading">{{ __('Job') }}:</p>
-                                                    </div>
-                                                    <div class="col-md-6 col-lg-8 col-xl-8 col-xxl-10">
-                                                        <p>{{ $tenant->job }}</p>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <!-- Account Settings Content Box End -->
-
-                                        <!-- Account Settings Content Box Start -->
-                                        <div class="account-settings-content-box bg-white theme-border radius-4 mb-25 p-20">
-
-                                            <div class="account-settings-title border-bottom mb-20 pb-20">
-                                                <div class="row align-items-center">
-                                                    <div class="col-md-6">
-                                                        <h4>{{ __('Previous Address') }}</h4>
-                                                    </div>
-                                                </div>
-                                            </div>
-
-                                            <div class="account-settings-info-box">
-                                                <div class="row account-settings-info-item">
-                                                    <div class="col-md-6 col-lg-4 col-xl-4 col-xxl-2">
-                                                        <p class="color-heading">{{ __('Address') }}:</p>
-                                                    </div>
-                                                    <div class="col-md-6 col-lg-8 col-xl-8 col-xxl-10">
-                                                        <p>{{ $tenant->previous_address }}</p>
-                                                    </div>
-                                                </div>
-                                                <div class="row account-settings-info-item">
-                                                    <div class="col-md-6 col-lg-4 col-xl-4 col-xxl-2">
-                                                        <p class="color-heading">{{ __('City') }}:</p>
-                                                    </div>
-                                                    <div class="col-md-6 col-lg-8 col-xl-8 col-xxl-10">
-                                                        <p>{{ $tenant->previous_city_id }}</p>
-                                                    </div>
-                                                </div>
-                                                <div class="row account-settings-info-item">
-                                                    <div class="col-md-6 col-lg-4 col-xl-4 col-xxl-2">
-                                                        <p class="color-heading">{{ __('State') }}:</p>
-                                                    </div>
-                                                    <div class="col-md-6 col-lg-8 col-xl-8 col-xxl-10">
-                                                        <p>{{ $tenant->previous_state_id }}
-                                                        </p>
-                                                    </div>
-                                                </div>
-                                                <div class="row account-settings-info-item">
-                                                    <div class="col-md-6 col-lg-4 col-xl-4 col-xxl-2">
-                                                        <p class="color-heading">{{ __('Zip Code') }}:</p>
-                                                    </div>
-                                                    <div class="col-md-6 col-lg-8 col-xl-8 col-xxl-10">
-                                                        <p>{{ $tenant->previous_zip_code }}</p>
-                                                    </div>
-                                                </div>
-                                                <div class="row account-settings-info-item">
-                                                    <div class="col-md-6 col-lg-4 col-xl-4 col-xxl-2">
-                                                        <p class="color-heading">{{ __('Country') }}:</p>
-                                                    </div>
-                                                    <div class="col-md-6 col-lg-8 col-xl-8 col-xxl-10">
-                                                        <p>{{ $tenant->previous_country_id }}
-                                                        </p>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <!-- Account Settings Content Box End -->
-
-                                        <!-- Account Settings Content Box Start -->
-                                        <div class="account-settings-content-box bg-white theme-border radius-4 p-20">
-                                            <div class="account-settings-title border-bottom mb-20 pb-20">
-                                                <div class="row align-items-center">
-                                                    <div class="col-md-6">
-                                                        <h4>{{ __('Permanent Address') }}</h4>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                            <div class="account-settings-info-box">
-                                                <div class="row account-settings-info-item">
-                                                    <div class="col-md-6 col-lg-4 col-xl-4 col-xxl-2">
-                                                        <p class="color-heading">{{ __('Address') }}:</p>
-                                                    </div>
-                                                    <div class="col-md-6 col-lg-8 col-xl-8 col-xxl-10">
-                                                        <p>{{ $tenant->permanent_address }}</p>
-                                                    </div>
-                                                </div>
-                                                <div class="row account-settings-info-item">
-                                                    <div class="col-md-6 col-lg-4 col-xl-4 col-xxl-2">
-                                                        <p class="color-heading">{{ __('City') }}:</p>
-                                                    </div>
-                                                    <div class="col-md-6 col-lg-8 col-xl-8 col-xxl-10">
-                                                        <p>{{ $tenant->permanent_city_id }}</p>
-                                                    </div>
-                                                </div>
-                                                <div class="row account-settings-info-item">
-                                                    <div class="col-md-6 col-lg-4 col-xl-4 col-xxl-2">
-                                                        <p class="color-heading">{{ __('State') }}:</p>
-                                                    </div>
-                                                    <div class="col-md-6 col-lg-8 col-xl-8 col-xxl-10">
-                                                        <p>{{ $tenant->permanent_state_id }}
-                                                        </p>
-                                                    </div>
-                                                </div>
-                                                <div class="row account-settings-info-item">
-                                                    <div class="col-md-6 col-lg-4 col-xl-4 col-xxl-2">
-                                                        <p class="color-heading">{{ __('Zip Code') }}:</p>
-                                                    </div>
-                                                    <div class="col-md-6 col-lg-8 col-xl-8 col-xxl-10">
-                                                        <p>{{ $tenant->permanent_zip_code }}</p>
-                                                    </div>
-                                                </div>
-                                                <div class="row account-settings-info-item">
-                                                    <div class="col-md-6 col-lg-4 col-xl-4 col-xxl-2">
-                                                        <p class="color-heading">{{ __('Country') }}:</p>
-                                                    </div>
-                                                    <div class="col-md-6 col-lg-8 col-xl-8 col-xxl-10">
-                                                        <p>{{ $tenant->permanent_country_id }}
-                                                        </p>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <!-- Account Settings Content Box End -->
-                                    </div>
-                                    <!-- Tenants Profile Information End -->
-                                </div>
-                            </div>
-                            <!-- Account settings Area Right Side End-->
-                        </div>
-                    </div>
-                    <!-- Tenants Details Layout Wrap Area row End -->
-                </div>
-                <!-- Page Content Wrapper End -->
-            </div>
-        </div>
-        <!-- End Page-content -->
-    </div>
-    <!-- Add Currency Modal Start -->
-    <div class="modal fade" id="tenantCloseModal" tabindex="-1" aria-labelledby="tenantCloseModalLabel"
-        aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h4 class="modal-title" id="tenantCloseModalLabel">{{ __('Tenant Close') }}</h4>
-                    <div class="account-settings-menu-item "
-                        title="{{ __('This Tenant have') }} {{ $paymentDueInvoiceCount }} {{ __('Invoice Due') }}">
-                        {{ __('This Tenant has') }} <a href=""><span
-                                class="bg-red-transparent red-color radius-4 overflow-hidden px-2 mx-2">{{ $paymentDueInvoiceCount }}</span></a>
-                        {{ __('Due Invoice') }}
+                <div class="td-header">
+                    <div>
+                        <h2 class="td-title">{{ $pageTitle }}</h2>
+                        <ol class="td-crumb">
+                            <li><a href="{{ route('owner.dashboard') }}">{{ __('Dashboard') }}</a></li>
+                            <li>›</li>
+                            <li><a href="{{ route('owner.tenant.index') }}">{{ __('Tenants') }}</a></li>
+                            <li>›</li>
+                            <li>{{ __('Profile') }}</li>
+                        </ol>
                     </div>
                 </div>
-                <form class="ajax" action="{{ route('owner.tenant.close.history.store', $tenant->id) }}"
-                    method="POST" data-handler="closeStatusChange">
-                    @csrf
-                    <div class="modal-body">
-                        <!-- Modal Inner Form Box Start -->
-                        <div class="modal-inner-form-box">
-                            <div class="row">
-                                <div class="col-md-12 mb-25">
-                                    <div class="table-responsive">
-                                        <table id="datatableBilling1" class="table theme-border p-20 dt-responsive">
-                                            <tbody>
-                                                <tr>
-                                                    <td colspan="2">
-                                                        <div class="tenants-tbl-info-object d-flex align-items-center">
-                                                            <div class="flex-shrink-0">
-                                                                <img src="{{ $tenant->image }}"
-                                                                    class="rounded-circle avatar-md tbl-user-image"
-                                                                    alt="">
-                                                            </div>
-                                                            <div class="flex-grow-1 ms-3">
-                                                                <h6>{{ $tenant->first_name }} {{ $tenant->last_name }}
-                                                                </h6>
-                                                                <p class="font-13">{{ $tenant->email }}</p>
-                                                            </div>
-                                                        </div>
-                                                    </td>
-                                                    <td colspan="2">
-                                                        <h6>{{ $tenant->property_name }}</h6>
-                                                        <p class="font-13">{{ $tenant->unit_name }}</p>
-                                                    </td>
-                                                </tr>
-                                                <tr>
-                                                    <td>
-                                                        <h6>{{ __('General Rent') }}</h6>
-                                                        <p class="font-13">{{ $tenant->general_rent }}</p>
-                                                    </td>
-                                                    <td>
-                                                        <h6>{{ __('Security Deposit') }}</h6>
-                                                        <p class="font-13">{{ $tenant->security_deposit }}</p>
-                                                    </td>
-                                                    <td>
-                                                        <h6>{{ __('Late fee') }}</h6>
-                                                        <p class="font-13">{{ $tenant->late_fee }}</p>
-                                                    </td>
-                                                    <td>
-                                                        <h6>{{ __('Incident Receipt') }}</h6>
-                                                        <p class="font-13">{{ $tenant->incident_receipt }}</p>
-                                                    </td>
-                                                </tr>
-                                            </tbody>
-                                        </table>
-                                    </div>
-                                </div>
+
+                <div class="td-layout">
+                    {{-- Left rail --}}
+                    <aside class="td-rail">
+                        @include('owner.tenants.details._hero')
+                        @include('owner.tenants.details.sidenav')
+
+                        @if ($tenant->status != TENANT_STATUS_CLOSE)
+                            <button type="button" class="td-nav__item td-nav__item--danger" data-bs-toggle="modal"
+                                data-bs-target="#tenantCloseModal" title="{{ __('Close Tenant') }}">
+                                <i class="ri-logout-box-r-line"></i><span>{{ __('Close Tenant') }}</span>
+                            </button>
+                        @endif
+                    </aside>
+
+                    {{-- Content --}}
+                    <div class="td-content">
+                        <div class="td-hero">
+                            <img src="{{ $tenant->image }}" class="td-hero__img" alt="">
+                            <div>
+                                <h3 class="td-hero__name">{{ $tenant->first_name }} {{ $tenant->last_name }}</h3>
+                                <p class="td-hero__sub">{{ $tenant->email }}@if($tenant->contact_number) · {{ $tenant->contact_number }}@endif</p>
                             </div>
-                            <div class="row">
-                                <div class="col-md-6 mb-25">
-                                    <label
-                                        class="label-text-title color-heading font-medium mb-2">{{ __('Refund Amount') }}</label>
-                                    <input type="number" step="any" value="0" min="0"
-                                        name="close_refund_amount" class="form-control"
-                                        placeholder="{{ __('Refund Amount') }}">
+                            <div class="td-hero__spacer"></div>
+                            <form action="{{ route('owner.tenant.resend-login') }}" method="POST" class="d-inline"
+                                  data-cs-confirm="{{ __('Reset this tenant\'s password and send new login details by email & SMS? They\'ll set their own on first login. SMS uses your SMS credits.') }}"
+                                  data-cs-confirm-title="{{ __('Resend login details') }}"
+                                  data-cs-confirm-ok="{{ __('Reset & send') }}">
+                                @csrf
+                                <input type="hidden" name="id" value="{{ $tenant->id }}">
+                                <button type="submit" class="td-hero__edit" title="{{ __('Reset & resend login details') }}">
+                                    <i class="ri-mail-send-line"></i> {{ __('Resend Login') }}
+                                </button>
+                            </form>
+                            @if (config('app.debug') && session('dev_pw_' . $tenant->id))
+                                <div class="td-devpw" title="{{ __('Development only — never shown in production') }}">
+                                    <span class="td-devpw__tag">{{ __('DEV PW') }}</span>
+                                    <code id="devpw-{{ $tenant->id }}">{{ session('dev_pw_' . $tenant->id) }}</code>
+                                    <button type="button" class="td-devpw__copy" onclick="(function(b){navigator.clipboard.writeText(document.getElementById('devpw-{{ $tenant->id }}').textContent).then(function(){b.textContent='{{ __('Copied') }}';setTimeout(function(){b.textContent='{{ __('Copy') }}';},1500);});})(this)">{{ __('Copy') }}</button>
                                 </div>
-                                <div class="col-md-6 mb-25">
-                                    <label
-                                        class="label-text-title color-heading font-medium mb-2">{{ __('Closing Charge') }}</label>
-                                    <input type="number" step="any" value="0" min="0"
-                                        name="close_charge" class="form-control"
-                                        placeholder="{{ __('Closing Charge') }}">
-                                </div>
-                                <div class="col-md-6 mb-25">
-                                    <label
-                                        class="label-text-title color-heading font-medium mb-2">{{ __('Closing Date') }}</label>
-                                    <div class="custom-datepicker">
-                                        <div class="custom-datepicker-inner position-relative">
-                                            <input type="text" class="datepicker form-control" autocomplete="off"
-                                                placeholder="dd-mm-yy" name="close_date">
-                                            <i class="ri-calendar-2-line"></i>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="col-md-6 mb-25">
-                                    <label
-                                        class="label-text-title color-heading font-medium mb-2">{{ __('Lease End Date') }}</label>
-                                    <div class="custom-datepicker">
-                                        <div class="custom-datepicker-inner position-relative">
-                                            <input type="text" class="datepicker form-control" autocomplete="off"
-                                                placeholder="dd-mm-yy" value="{{ $tenant->lease_end_date }}" disabled>
-                                            <i class="ri-calendar-2-line"></i>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="col-md-12 mb-25">
-                                    <label
-                                        class="label-text-title color-heading font-medium mb-2">{{ __('Closing Reason') }}</label>
-                                    <textarea name="close_reason" id="close_reason" class="form-control" placeholder="{{ __('Reason') }}"></textarea>
-                                </div>
-                                <div>
-                                    <label
-                                    class="label-text-title color-heading font-medium mb-2">Tenant screening </label>
-                                    </br>
-                                    <div class="mb-3">
-                                        <label for="rent_payment_rating" class="form-label">Rent Payment Rating</label>
-                                        <select id="rent_payment_rating" name="rent_payment_rating" class="form-control" required>
-                                            <option value="">Select Rating</option>
-                                            <option value="1 - Worst">1 - Worst</option>
-                                            <option value="2 - Poor">2 - Poor</option>
-                                            <option value="3 - Average">3 - Average</option>
-                                            <option value="4 - Good">4 - Good</option>
-                                            <option value="5 - Excellent">5 - Excellent</option>
-                                        </select>
-                                    </div>
-                                    <div class="mb-3">
-                                        <label for="discipline_rating" class="form-label">Discipline Rating</label>
-                                        <select id="discipline_rating" name="discipline_rating" class="form-control" required>
-                                            <option value="">Select Rating</option>
-                                            <option value="1 - Worst">1 - Worst</option>
-                                            <option value="2 - Poor">2 - Poor</option>
-                                            <option value="3 - Average">3 - Average</option>
-                                            <option value="4 - Good">4 - Good</option>
-                                            <option value="5 - Excellent">5 - Excellent</option>
-                                        </select>
-                                    </div>
-                                    <div class="mb-3">
-                                        <label for="closingRemarks" class="form-label">Remarks (Optional)</label>
-                                        <textarea name="closing_remarks" id="closing_remarks" rows="3" class="form-control"></textarea>
-                                    </div>
-                                </div>
+                            @endif
+                            <a href="{{ route('owner.tenant.edit', $tenant->id) }}" class="td-hero__edit" title="{{ __('Edit Info') }}">
+                                <i class="ri-edit-line"></i> {{ __('Edit Info') }}
+                            </a>
+                        </div>
+                        @if (config('app.debug') && session('dev_pw_' . $tenant->id))
+                            <style>
+                                .td-devpw { display:inline-flex; align-items:center; gap:8px; background:#111827; color:#e5e7eb; border-radius:8px; padding:6px 8px 6px 10px; font-size:12px; }
+                                .td-devpw__tag { font-size:9.5px; font-weight:700; letter-spacing:.06em; color:#f6b64b; }
+                                .td-devpw code { font-family:ui-monospace,Menlo,monospace; font-size:12.5px; color:#fff; }
+                                .td-devpw__copy { background:#374151; color:#fff; border:none; border-radius:6px; font-size:11px; font-weight:600; padding:4px 9px; cursor:pointer; }
+                                .td-devpw__copy:hover { background:#4b5563; }
+                            </style>
+                        @endif
+
+                        {{-- Personal Information --}}
+                        <div class="td-card">
+                            <div class="td-card__head">
+                                <span class="td-card__ic"><i class="ri-user-3-line"></i></span>
+                                <h3 class="td-card__title">{{ __('Personal Information') }}</h3>
+                            </div>
+                            <div class="td-card__body">
+                                <dl class="td-info">
+                                    <dt>{{ __('Name') }}</dt><dd>{{ $tenant->first_name }} {{ $tenant->last_name }}</dd>
+                                    <dt>{{ __('Contact Number') }}</dt><dd>{{ $tenant->contact_number ?: '—' }}</dd>
+                                    <dt>{{ __('Email') }}</dt><dd>{{ $tenant->email ?: '—' }}</dd>
+                                    <dt>{{ __('Age') }}</dt><dd>{{ $tenant->age ?: '—' }}</dd>
+                                    <dt>{{ __('Family Members') }}</dt><dd>{{ $tenant->family_member ?: '—' }}</dd>
+                                    <dt>{{ __('Job') }}</dt><dd>{{ $tenant->job ?: '—' }}</dd>
+                                </dl>
                             </div>
                         </div>
-                        <!-- Modal Inner Form Box End -->
 
+                        {{-- Previous Address --}}
+                        <div class="td-card">
+                            <div class="td-card__head">
+                                <span class="td-card__ic"><i class="ri-map-pin-line"></i></span>
+                                <h3 class="td-card__title">{{ __('Previous Address') }}</h3>
+                            </div>
+                            <div class="td-card__body">
+                                <dl class="td-info">
+                                    <dt>{{ __('Address') }}</dt><dd>{{ $tenant->previous_address ?: '—' }}</dd>
+                                    <dt>{{ __('City') }}</dt><dd>{{ $tenant->previous_city_id ?: '—' }}</dd>
+                                    <dt>{{ __('State') }}</dt><dd>{{ $tenant->previous_state_id ?: '—' }}</dd>
+                                    <dt>{{ __('Zip Code') }}</dt><dd>{{ $tenant->previous_zip_code ?: '—' }}</dd>
+                                    <dt>{{ __('Country') }}</dt><dd>{{ $tenant->previous_country_id ?: '—' }}</dd>
+                                </dl>
+                            </div>
+                        </div>
+
+                        {{-- Permanent Address --}}
+                        <div class="td-card">
+                            <div class="td-card__head">
+                                <span class="td-card__ic"><i class="ri-home-4-line"></i></span>
+                                <h3 class="td-card__title">{{ __('Permanent Address') }}</h3>
+                            </div>
+                            <div class="td-card__body">
+                                <dl class="td-info">
+                                    <dt>{{ __('Address') }}</dt><dd>{{ $tenant->permanent_address ?: '—' }}</dd>
+                                    <dt>{{ __('City') }}</dt><dd>{{ $tenant->permanent_city_id ?: '—' }}</dd>
+                                    <dt>{{ __('State') }}</dt><dd>{{ $tenant->permanent_state_id ?: '—' }}</dd>
+                                    <dt>{{ __('Zip Code') }}</dt><dd>{{ $tenant->permanent_zip_code ?: '—' }}</dd>
+                                    <dt>{{ __('Country') }}</dt><dd>{{ $tenant->permanent_country_id ?: '—' }}</dd>
+                                </dl>
+                            </div>
+                        </div>
                     </div>
-                    <div class="modal-footer justify-content-start">
-                        <button type="button" class="theme-btn-back me-3" data-bs-dismiss="modal"
-                            title="{{ __('Back') }}">{{ __('Back') }}</button>
-                        <button type="submit" class="theme-btn me-3"
-                            title="{{ __('Submit') }}">{{ __('Submit') }}</button>
-                    </div>
-                </form>
+                </div>
+
             </div>
         </div>
     </div>
-    
-    <div class="modal fade" id="tenantDeleteModal" tabindex="-1" aria-labelledby="tenantDeleteModalLabel"
-        aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h4 class="modal-title" id="tenantDeleteModalLabel">{{ __('Tenant Delete') }}</h4>
-                    <div class="account-settings-menu-item "
-                        title="{{ __('This Tenant has') }} {{ $paymentDueInvoiceCount }} {{ __('Invoice Due') }}">
-                        {{ __('This Tenant have') }} <a href=""><span
-                                class="bg-red-transparent red-color radius-4 overflow-hidden px-2 mx-2">{{ $paymentDueInvoiceCount }}</span></a>
-                        {{ __('Due Invoice') }}
-                    </div>
-                </div>
-                <form class="ajax" action="{{ route('owner.tenant.delete') }}" method="POST"
-                    data-handler="deleteShowResponse">
-                    @csrf
-                    <input type="hidden" name="tenant_id" value="{{ $tenant->id }}">
-                    <div class="modal-body">
-                        <!-- Modal Inner Form Box Start -->
-                        <div class="modal-inner-form-box">
-                            <div class="row">
-                                <div class="col-md-12 mb-25">
-                                    <div class="table-responsive">
-                                        <table id="datatableBilling1" class="table theme-border p-20 dt-responsive">
-                                            <tbody>
-                                                <tr>
-                                                    <td colspan="2">
-                                                        <div class="tenants-tbl-info-object d-flex align-items-center">
-                                                            <div class="flex-shrink-0">
-                                                                <img src="{{ $tenant->image }}"
-                                                                    class="rounded-circle avatar-md tbl-user-image"
-                                                                    alt="">
-                                                            </div>
-                                                            <div class="flex-grow-1 ms-3">
-                                                                <h6>{{ $tenant->first_name }} {{ $tenant->last_name }}
-                                                                </h6>
-                                                                <p class="font-13">{{ $tenant->email }}</p>
-                                                            </div>
-                                                        </div>
-                                                    </td>
-                                                    <td colspan="2">
-                                                        <h6>{{ $tenant->property_name }}</h6>
-                                                        <p class="font-13">{{ $tenant->unit_name }}</p>
-                                                    </td>
-                                                </tr>
-                                            </tbody>
-                                        </table>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="row">
-                                <div class="col-md-12 mb-25">
-                                    <label
-                                        class="label-text-title color-heading font-medium mb-2">{{ __('Write your tenant\'s email which you want to delete') }}</label>
-                                    <input type="email" name="email" class="form-control"
-                                        placeholder="{{ __('Write your tenant\'s email which you want to delete') }}">
-                                </div>
+</div>
+
+{{-- Close Tenant modal (captures the tenant-screening ratings) --}}
+<div class="modal fade" id="tenantCloseModal" tabindex="-1" aria-labelledby="tenantCloseModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content pf-modal">
+            <div class="modal-header pf-modal__head">
+                <h4 class="modal-title" id="tenantCloseModalLabel">{{ __('Close Tenant') }}</h4>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form class="ajax" action="{{ route('owner.tenant.close.history.store', $tenant->id) }}" method="POST" data-handler="closeStatusChange">
+                @csrf
+                <div class="modal-body">
+                    <div class="td-close-summary">
+                        <div class="td-close-summary__who">
+                            <img src="{{ $tenant->image }}" class="rounded-circle" width="42" height="42" alt="">
+                            <div>
+                                <h6 class="mb-0">{{ $tenant->first_name }} {{ $tenant->last_name }}</h6>
+                                <p class="font-13 text-muted mb-0">{{ $tenant->email }}</p>
                             </div>
                         </div>
-                        <!-- Modal Inner Form Box End -->
+                        <div class="td-close-summary__facts">
+                            <span><b>{{ $tenant->property_name }}</b> · {{ $tenant->unit_name }}</span>
+                            <span class="{{ ($paymentDueInvoiceCount ?? 0) > 0 ? 'text-danger' : 'text-muted' }}">
+                                {{ $paymentDueInvoiceCount ?? 0 }} {{ __('due invoice(s)') }}
+                            </span>
+                        </div>
+                    </div>
 
+                    <div class="pf-grid" style="grid-template-columns:1fr 1fr;">
+                        <div class="pf-field">
+                            <label class="pf-label">{{ __('Refund Amount') }}</label>
+                            <input type="number" step="any" value="0" min="0" name="close_refund_amount" class="form-control pf-input" placeholder="{{ __('Refund Amount') }}">
+                        </div>
+                        <div class="pf-field">
+                            <label class="pf-label">{{ __('Closing Charge') }}</label>
+                            <input type="number" step="any" value="0" min="0" name="close_charge" class="form-control pf-input" placeholder="{{ __('Closing Charge') }}">
+                        </div>
+                        <div class="pf-field">
+                            <label class="pf-label">{{ __('Closing Date') }}</label>
+                            <div class="custom-datepicker"><div class="custom-datepicker-inner position-relative">
+                                <input type="text" class="datepicker form-control pf-input" autocomplete="off" placeholder="dd-mm-yy" name="close_date">
+                                <i class="ri-calendar-2-line"></i>
+                            </div></div>
+                        </div>
+                        <div class="pf-field">
+                            <label class="pf-label">{{ __('Lease End Date') }}</label>
+                            <div class="custom-datepicker"><div class="custom-datepicker-inner position-relative">
+                                <input type="text" class="datepicker form-control pf-input" autocomplete="off" placeholder="dd-mm-yy" value="{{ $tenant->lease_end_date }}" disabled>
+                                <i class="ri-calendar-2-line"></i>
+                            </div></div>
+                        </div>
+                        <div class="pf-field" style="grid-column:1 / -1;">
+                            <label class="pf-label">{{ __('Closing Reason') }}</label>
+                            <textarea name="close_reason" id="close_reason" class="form-control pf-input" placeholder="{{ __('Reason') }}"></textarea>
+                        </div>
                     </div>
-                    <div class="modal-footer justify-content-start">
-                        <button type="button" class="theme-btn-back me-3" data-bs-dismiss="modal"
-                            title="{{ __('Back') }}">{{ __('Back') }}</button>
-                        <button type="submit" class="theme-btn me-3"
-                            title="{{ __('Delete') }}">{{ __('Delete') }}</button>
+
+                    <div class="td-screen">
+                        <div class="td-screen__head"><i class="ri-shield-star-line"></i> {{ __('Tenant Screening') }}</div>
+                        <div class="pf-grid" style="grid-template-columns:1fr 1fr;">
+                            <div class="pf-field">
+                                <label class="pf-label">{{ __('Rent Payment Rating') }}</label>
+                                <select id="rent_payment_rating" name="rent_payment_rating" class="form-control pf-input" required>
+                                    <option value="">{{ __('Select Rating') }}</option>
+                                    <option value="1 - Worst">1 - {{ __('Worst') }}</option>
+                                    <option value="2 - Poor">2 - {{ __('Poor') }}</option>
+                                    <option value="3 - Average">3 - {{ __('Average') }}</option>
+                                    <option value="4 - Good">4 - {{ __('Good') }}</option>
+                                    <option value="5 - Excellent">5 - {{ __('Excellent') }}</option>
+                                </select>
+                            </div>
+                            <div class="pf-field">
+                                <label class="pf-label">{{ __('Discipline Rating') }}</label>
+                                <select id="discipline_rating" name="discipline_rating" class="form-control pf-input" required>
+                                    <option value="">{{ __('Select Rating') }}</option>
+                                    <option value="1 - Worst">1 - {{ __('Worst') }}</option>
+                                    <option value="2 - Poor">2 - {{ __('Poor') }}</option>
+                                    <option value="3 - Average">3 - {{ __('Average') }}</option>
+                                    <option value="4 - Good">4 - {{ __('Good') }}</option>
+                                    <option value="5 - Excellent">5 - {{ __('Excellent') }}</option>
+                                </select>
+                            </div>
+                            <div class="pf-field" style="grid-column:1 / -1;">
+                                <label class="pf-label">{{ __('Remarks (Optional)') }}</label>
+                                <textarea name="closing_remarks" id="closing_remarks" rows="3" class="form-control pf-input"></textarea>
+                            </div>
+                        </div>
                     </div>
-                </form>
-            </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="pf-btn pf-btn--ghost" data-bs-dismiss="modal">{{ __('Back') }}</button>
+                    <button type="submit" class="pf-btn pf-btn--primary">{{ __('Submit') }}</button>
+                </div>
+            </form>
         </div>
     </div>
-    <!-- Add Currency Modal End -->
-    <input type="hidden" id="tenantListRoute" value="{{ route('owner.tenant.index') }}">
+</div>
+
+{{-- Delete Tenant modal --}}
+<div class="modal fade" id="tenantDeleteModal" tabindex="-1" aria-labelledby="tenantDeleteModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content pf-modal">
+            <div class="modal-header pf-modal__head">
+                <h4 class="modal-title" id="tenantDeleteModalLabel">{{ __('Delete Tenant') }}</h4>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form class="ajax" action="{{ route('owner.tenant.delete') }}" method="POST" data-handler="deleteShowResponse">
+                @csrf
+                <input type="hidden" name="tenant_id" value="{{ $tenant->id }}">
+                <div class="modal-body">
+                    <p class="pf-modal__warn">{{ __('This Tenant has') }}
+                        <span class="fw-bold text-danger">{{ $paymentDueInvoiceCount ?? 0 }}</span> {{ __('due invoice(s)') }}.</p>
+                    <div class="pf-field">
+                        <label class="pf-label">{{ __("Type the tenant's email to confirm deletion") }}</label>
+                        <input type="email" name="email" class="form-control pf-input" placeholder="{{ __('Email') }}">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="pf-btn pf-btn--ghost" data-bs-dismiss="modal">{{ __('Back') }}</button>
+                    <button type="submit" class="pf-btn pf-btn--danger">{{ __('Delete') }}</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<input type="hidden" id="tenantListRoute" value="{{ route('owner.tenant.index') }}">
+
+<style>
+    .td-close-summary { display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap;
+        background:#fafafa; border:0.5px solid #e5e7eb; border-radius:10px; padding:12px 14px; margin-bottom:18px; }
+    .td-close-summary__who { display:flex; align-items:center; gap:10px; }
+    .td-close-summary__facts { display:flex; flex-direction:column; align-items:flex-end; gap:2px; font-size:12.5px; }
+    .td-screen { margin-top:18px; padding-top:16px; border-top:0.5px dashed #e5e7eb; }
+    .td-screen__head { display:flex; align-items:center; gap:8px; font-size:13px; font-weight:600; color:#854F0B; margin-bottom:12px; }
+</style>
 @endsection
+
 @push('script')
     <script src="{{ asset('assets/js/custom/tenant.js') }}"></script>
 @endpush

@@ -427,6 +427,18 @@
                     </span>
                     <span id="rdCommission" class="rd-breakdown__val rd-breakdown__val--deduct">—</span>
                 </div>
+                <div class="rd-breakdown__row rd-breakdown__row--commission" id="rdInfraRow" style="display:none;">
+                    <span>{{ __('Module costs') }}</span>
+                    <span id="rdInfra" class="rd-breakdown__val rd-breakdown__val--deduct">—</span>
+                </div>
+                <div class="rd-breakdown__row rd-breakdown__row--commission" id="rdFinancingRow" style="display:none;">
+                    <span>{{ __('Financing repayment') }}</span>
+                    <span id="rdFinancing" class="rd-breakdown__val rd-breakdown__val--deduct">—</span>
+                </div>
+                <div class="rd-breakdown__row rd-breakdown__row--commission" id="rdOverdueRow" style="display:none;">
+                    <span>{{ __('Overdue recovery') }}</span>
+                    <span id="rdOverdue" class="rd-breakdown__val rd-breakdown__val--deduct">—</span>
+                </div>
                 <div class="rd-breakdown__row rd-breakdown__row--net">
                     <span>{{ __('Your Net Earnings') }}</span>
                     <span id="rdNet" class="rd-breakdown__val rd-breakdown__val--net">—</span>
@@ -773,6 +785,22 @@ document.addEventListener('DOMContentLoaded', function () {
         document.getElementById('rdGross').textContent           = 'KSh ' + formatNum(d.gross_amount);
         document.getElementById('rdCommission').textContent      = 'KSh ' + formatNum(d.commission_amount);
         document.getElementById('rdNet').textContent             = 'KSh ' + formatNum(d.net_amount);
+        // Centresidence deduct-at-source — one payment event, every deduction here.
+        toggleDeductRow('rdInfraRow',     'rdInfra',     d.infra_amount);
+        toggleDeductRow('rdFinancingRow', 'rdFinancing', d.financing_amount);
+        toggleDeductRow('rdOverdueRow',   'rdOverdue',   d.overdue_amount);
+    }
+
+    function toggleDeductRow(rowId, valId, amount) {
+        var amt = parseFloat(amount || 0);
+        var row = document.getElementById(rowId);
+        if (!row) return;
+        if (amt > 0) {
+            document.getElementById(valId).textContent = 'KSh ' + formatNum(amt);
+            row.style.display = '';
+        } else {
+            row.style.display = 'none';
+        }
     }
 
     function formatNum(val) {

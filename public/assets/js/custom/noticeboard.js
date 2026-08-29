@@ -65,7 +65,15 @@ $(document).on('click', '.view', function () {
 });
 
 function getDataViewRes(response) {
-    $('.image').attr('href', response.data.image)
+    // Only show the Attachment block when a file was actually uploaded — otherwise the
+    // `image` accessor returns a no-image.jpg placeholder and the Download link would fetch it.
+    if (response.data.has_attachment && response.data.image) {
+        $('.image').attr('href', response.data.image)
+        $('#nbAttachmentField').show()
+    } else {
+        $('.image').attr('href', '')
+        $('#nbAttachmentField').hide()
+    }
     $('.viewtitle').html(response.data.title)
     $('.property').html(response.data.property_name)
     $('.unit').html(response.data.unit_name)

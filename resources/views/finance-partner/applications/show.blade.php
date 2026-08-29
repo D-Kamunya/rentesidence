@@ -29,6 +29,29 @@
                         <div class="col-6 cs-field"><div class="cs-label">{{ __('You finance') }}</div><span class="cs-amt">KES {{ number_format($application->financed_amount > 0 ? $application->financed_amount : $application->requested_amount, 2) }}</span></div>
                         <div class="col-6 cs-field"><div class="cs-label">{{ __('Est. monthly') }}</div>KES {{ number_format($application->estimated_monthly_repayment, 2) }}</div>
                         <div class="col-6 cs-field"><div class="cs-label">{{ __('Tenor') }}</div>{{ $application->repayment_months }} {{ __('months') }}</div>
+
+                        @php
+                            $pFinanced = $application->financed_amount > 0 ? $application->financed_amount : $application->requested_amount;
+                            $pTotal    = (float) $application->estimated_monthly_repayment * (int) $application->repayment_months;
+                            $pProfit   = $pTotal - $pFinanced;
+                            $pReturnPct = $pFinanced > 0 ? $pProfit / $pFinanced * 100 : 0;
+                        @endphp
+                        @if ($application->estimated_monthly_repayment > 0)
+                            <div class="col-12">
+                                <div style="display:flex;flex-wrap:wrap;gap:24px;align-items:center;justify-content:space-between;margin-top:8px;padding:14px 18px;background:#F0FBF6;border:0.5px solid #9FE1CB;border-radius:12px;">
+                                    <div>
+                                        <div class="cs-label">{{ __('Total you receive') }}</div>
+                                        <span class="cs-amt" style="font-size:18px;">KES {{ number_format($pTotal, 2) }}</span>
+                                        <span class="cs-muted" style="font-size:11px;">{{ __('over :n months', ['n' => $application->repayment_months]) }}</span>
+                                    </div>
+                                    <div>
+                                        <div class="cs-label">{{ __('Your interest (profit)') }}</div>
+                                        <span class="cs-amt" style="font-size:18px;color:#0B5940;">+KES {{ number_format($pProfit, 2) }}</span>
+                                        <span class="cs-muted" style="font-size:11px;">({{ number_format($pReturnPct, 1) }}% {{ __('on') }} KES {{ number_format($pFinanced, 0) }})</span>
+                                    </div>
+                                </div>
+                            </div>
+                        @endif
                     </div>
                 </div>
             </div>
@@ -101,6 +124,103 @@
                 </div></div>
             @endif
 
+            {{-- Disbursement — same pipeline as approval, no trip to Facilities --}}
+            @if ($facility)
+                <div class="cs-card" id="disburse-card">
+                    <div class="cs-card__head"><h2 class="cs-card__title">{{ __('Disbursement') }}</h2></div>
+                    <div class="cs-card__body">
+                        @php $pds = $facility->disbursement_status ?? 'disbursed'; @endphp
+                        @if ($pds === 'disbursed')
+                            <p><span class="cs-badge is-paid">{{ __('Disbursed') }}</span></p>
+                            <p class="cs-muted" style="font-size:12.5px;margin-top:6px;">
+                                {{ __('Released via') }} <strong>{{ $facility->disbursement_channel === 'mpesa' ? 'M-Pesa' : __('Bank / manual') }}</strong>
+                                @if ($facility->disbursed_at) · {{ optional($facility->disbursed_at)->format('d M Y H:i') }} @endif
+                                @if ($facility->disbursement_reference) · {{ __('Ref') }} {{ $facility->disbursement_reference }} @endif
+                            </p>
+                        @elseif ($pds === 'pending_confirmation')
+                            <p><span class="cs-badge is-pending">{{ __('Awaiting payee confirmation') }}</span></p>
+                            <p class="cs-muted" style="font-size:12.5px;margin-top:6px;">
+                                {{ __('Recorded via') }} <strong>{{ $facility->disbursement_channel === 'mpesa' ? 'M-Pesa' : __('Bank / manual') }}</strong>
+                                @if ($facility->disbursement_reference) · {{ __('Ref') }} {{ $facility->disbursement_reference }} @endif.
+                                {{ __('The payee confirms receipt to release the facility for repayment.') }}
+                            </p>
+                        @else
+                            <p class="cs-muted" style="font-size:12.5px;margin-bottom:12px;">
+                                {{ __('You send the facility funds to the payee yourself (M-Pesa or bank) — this just records that you did, and how. The payee then confirms receipt to release the facility for repayment.') }}
+                            </p>
+
+                            @if ($payee)
+                                @php $hasMpesa = (bool) $payee['mpesa']; $hasBank = (bool) $payee['bank']; @endphp
+                                <div style="background:#F0F7FD;border:0.5px solid #B3D5F5;border-radius:11px;padding:14px 16px;margin-bottom:14px;">
+                                    <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:#0F3C7A;opacity:.8;margin-bottom:10px;">{{ __('Where to send this disbursal') }}</div>
+                                    <div style="display:flex;justify-content:space-between;gap:12px;margin-bottom:6px;">
+                                        <span style="font-size:12.5px;color:#374151;">{{ __('Payee') }}</span>
+                                        <strong style="font-size:12.5px;color:#0F3C7A;">{{ $payee['name'] }}</strong>
+                                    </div>
+                                    <div style="display:flex;justify-content:space-between;gap:12px;margin-bottom:12px;">
+                                        <span style="font-size:12.5px;color:#374151;">{{ __('Amount to send') }}</span>
+                                        <strong style="font-size:15px;color:#0B5940;">KES {{ number_format($payee['amount'], 2) }}</strong>
+                                    </div>
+
+                                    <div style="display:flex;flex-direction:column;gap:0;">
+                                        @if ($hasMpesa)
+                                            <div style="background:#fff;border:0.5px solid #CFE3F7;border-radius:9px;padding:11px 13px;">
+                                                <div style="font-size:10.5px;font-weight:700;letter-spacing:.08em;color:#185FA5;margin-bottom:7px;">{{ __('PAY BY M-PESA') }}</div>
+                                                <div style="display:flex;justify-content:space-between;gap:12px;margin-bottom:4px;">
+                                                    <span style="font-size:12px;color:#6b7280;">{{ $payee['mpesa']->account_type === 'PAYBILL' ? __('Paybill') : __('Till number') }}</span>
+                                                    <strong style="font-size:13px;color:#0F3C7A;font-family:monospace;">{{ $payee['mpesa']->account_type === 'PAYBILL' ? $payee['mpesa']->paybill : $payee['mpesa']->till_number }}</strong>
+                                                </div>
+                                                @if ($payee['mpesa']->account_type === 'PAYBILL')
+                                                    <div style="display:flex;justify-content:space-between;gap:12px;">
+                                                        <span style="font-size:12px;color:#6b7280;">{{ __('Account / Reference') }}</span>
+                                                        <strong style="font-size:13px;color:#0F3C7A;font-family:monospace;">{{ $payee['reference'] }}</strong>
+                                                    </div>
+                                                @endif
+                                            </div>
+                                        @endif
+
+                                        @if ($hasMpesa && $hasBank)
+                                            <div style="display:flex;align-items:center;gap:10px;margin:8px 2px;">
+                                                <span style="flex:1;height:1px;background:#CFE3F7;"></span>
+                                                <span style="font-size:10.5px;font-weight:700;letter-spacing:.08em;color:#8aa6c4;">{{ __('OR') }}</span>
+                                                <span style="flex:1;height:1px;background:#CFE3F7;"></span>
+                                            </div>
+                                        @endif
+
+                                        @if ($hasBank)
+                                            <div style="background:#fff;border:0.5px solid #CFE3F7;border-radius:9px;padding:11px 13px;">
+                                                <div style="font-size:10.5px;font-weight:700;letter-spacing:.08em;color:#185FA5;margin-bottom:7px;">{{ __('PAY BY BANK') }}</div>
+                                                <div style="font-size:13px;font-weight:600;color:#0F3C7A;white-space:pre-line;line-height:1.55;">{{ $payee['bank'] }}</div>
+                                                <div style="font-size:11.5px;color:#6b7280;margin-top:6px;">{{ __('Reference') }}: <strong style="font-family:monospace;color:#0F3C7A;">{{ $payee['reference'] }}</strong></div>
+                                            </div>
+                                        @endif
+                                    </div>
+
+                                    <div class="cs-muted" style="font-size:11px;margin-top:10px;line-height:1.5;">{{ __('Send the exact amount and quote the reference so we can match your payment. Disbursements are always paid to Centresidence as the installer.') }}</div>
+                                </div>
+                            @endif
+                            <form method="POST" action="{{ route('finance-partner.facilities.record-disbursement', $facility->id) }}"
+                                  data-cs-confirm="{{ __('Record that you have released these funds to the payee? They confirm receipt to release the facility for repayment.') }}" data-cs-confirm-title="{{ __('Record disbursement?') }}" data-cs-confirm-ok="{{ __('Yes, record') }}">
+                                @csrf
+                                <div class="cs-field">
+                                    <label class="cs-label">{{ __('How you sent it') }}</label>
+                                    <select name="disbursement_channel" class="cs-input">
+                                        <option value="mpesa">{{ __('M-Pesa') }}</option>
+                                        <option value="bank">{{ __('Bank / manual') }}</option>
+                                    </select>
+                                </div>
+                                <div class="cs-field">
+                                    <label class="cs-label">{{ __('Reference') }} <span class="cs-muted">({{ __('optional') }})</span></label>
+                                    <input name="disbursement_reference" class="cs-input" placeholder="DISB-{{ $facility->facility_number }}">
+                                    <div class="cs-muted" style="font-size:11px;margin-top:4px;">{{ __('Leave blank to auto-number from the facility. Enter the real M-Pesa / bank code if you have it.') }}</div>
+                                </div>
+                                <button type="submit" class="cs-btn cs-btn--primary" style="width:100%;justify-content:center;">{{ __('Record disbursement') }}</button>
+                            </form>
+                        @endif
+                    </div>
+                </div>
+            @endif
+
             <div class="cs-card">
                 <div class="cs-card__head"><h2 class="cs-card__title">{{ __('History') }}</h2></div>
                 <div class="cs-card__body">
@@ -113,8 +233,40 @@
                     @empty
                         <p class="cs-muted">{{ __('No history.') }}</p>
                     @endforelse
+
+                    {{-- Disbursement is a separate status line from approval — surface it here too --}}
+                    @if ($facility)
+                        @php $dch = $facility->disbursement_channel === 'mpesa' ? 'M-Pesa' : __('Bank / manual'); @endphp
+                        @if (($facility->disbursement_status ?? null) === 'pending_confirmation')
+                            <div style="font-size:12.5px;color:var(--gray-700);padding:6px 0;border-bottom:0.5px solid var(--gray-100);">
+                                <strong>{{ __('Disbursement recorded') }}</strong>
+                                <span class="cs-muted">— {{ optional($facility->updated_at)->format('d M Y H:i') }}</span>
+                                <div class="cs-muted">{{ $dch }} · {{ __('awaiting payee confirmation') }}@if ($facility->disbursement_reference) · {{ __('Ref') }} {{ $facility->disbursement_reference }}@endif</div>
+                            </div>
+                        @elseif (($facility->disbursement_status ?? null) === 'disbursed')
+                            <div style="font-size:12.5px;color:var(--gray-700);padding:6px 0;border-bottom:0.5px solid var(--gray-100);">
+                                <strong>{{ __('Disbursed') }}</strong>
+                                <span class="cs-muted">— {{ optional($facility->disbursed_at)->format('d M Y H:i') }}</span>
+                                <div class="cs-muted">{{ $dch }}@if ($facility->disbursement_reference) · {{ __('Ref') }} {{ $facility->disbursement_reference }}@endif</div>
+                            </div>
+                        @endif
+                    @endif
                 </div>
             </div>
         </div>
     </div>
+
+    @if (session('scroll_to_disburse'))
+        <script>
+            document.addEventListener('DOMContentLoaded', function () {
+                var el = document.getElementById('disburse-card');
+                if (el) {
+                    el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    el.style.transition = 'box-shadow .3s';
+                    el.style.boxShadow = '0 0 0 3px rgba(29,158,117,.35)';
+                    setTimeout(function () { el.style.boxShadow = ''; }, 1800);
+                }
+            });
+        </script>
+    @endif
 @endsection

@@ -1,3 +1,4 @@
+@include('common.layouts._kb-nav-style')
 <div class="vertical-menu">
     <div data-simplebar class="h-100">
         <div id="sidebar-menu">
@@ -40,9 +41,21 @@
                         </a>
                     </li>
                     <li>
+                        <a href="{{ route('admin.agreement.settings.index') }}">
+                            <i class="ri-file-text-line"></i>
+                            <span>{{ __('Agreement Settings') }}</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="{{ route('admin.screening.index') }}">
+                            <i class="ri-shield-user-line"></i>
+                            <span>{{ __('Tenant Screening') }}</span>
+                        </a>
+                    </li>
+                    <li>
                         <a href="{{ route('admin.message.index') }}">
                             <i class="ri-message-fill"></i>
-                            <span>{{ __('Message') }}</span>
+                            <span>{{ __('Messages') }}</span>
                         </a>
                     </li>
                     <li>
@@ -75,6 +88,7 @@
                         <li><a href="{{ route('admin.centresidence.applications') }}">{{ __('Applications') }}</a></li>
                         <li><a href="{{ route('admin.centresidence.facilities') }}">{{ __('Facilities') }}</a></li>
                         <li><a href="{{ route('admin.centresidence.defaults') }}">{{ __('Defaults') }}</a></li>
+                        <li><a href="{{ route('admin.centresidence.remittances') }}">{{ __('Remittances') }}</a></li>
                         <li><a href="{{ route('admin.centresidence.revenue') }}">{{ __('Commission & Revenue') }}</a></li>
                         <li><a href="{{ route('admin.centresidence.modules') }}">{{ __('Modules & Costs') }}</a></li>
                         <li><a href="{{ route('admin.centresidence.self-financed') }}">{{ __('Self-financed') }}</a></li>
@@ -128,8 +142,8 @@
                 </li>
                 <li>
                     <a class="{{ @$navCommissionsAddMMShowClass }}" href="{{ route('admin.wallet.commissions') }}">
-                        <i class="fa fa-shopping-basket" aria-hidden="true"></i>
-                        <span>{{ __('Vault') }}</span>
+                        <i class="ri-wallet-3-line"></i>
+                        <span>{{ __('Wallet') }}</span>
                     </a>
                 </li>
                 <li>
@@ -171,7 +185,7 @@
                     </ul>
                 </li>
                 <li>
-                    <a href="javascript: void(0);" class="has-arrow">
+                    <a href="javascript: void(0);" class="has-arrow kb-nav-highlight">
                         <i class="fa fa-book" aria-hidden="true"></i>
                         <span>{{ __('Knowledge Base') }}</span>
                     </a>

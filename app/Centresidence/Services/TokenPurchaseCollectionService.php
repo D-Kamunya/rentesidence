@@ -148,13 +148,27 @@ class TokenPurchaseCollectionService
             return ['success' => false, 'message' => __('We could not start the payment — please contact support.'), 'reference' => null];
         }
 
-        return app(MpesaStkService::class)->push(
+        $result = app(MpesaStkService::class)->push(
             $phone,
             $amount,
             $account,
             'Utility tokens',
             route('centresidence.token.callback', ['propertyModule' => $module->id, 'tenant' => $tenantUserId])
         );
+
+        // Bind this push to its callback so a crafted callback can't credit a wallet that
+        // was never paid for — and so the callback settles the amount WE pushed, not a
+        // payload-supplied figure. Only on a real STK push (log driver returns earlier).
+        if (($result['success'] ?? false) && ! empty($result['reference'])) {
+            \App\Centresidence\Models\StkPending::record(
+                'token',
+                $result['reference'],
+                ['property_module_id' => $module->id, 'tenant_user_id' => $tenantUserId],
+                $amount
+            );
+        }
+
+        return $result;
     }
 
     /**

@@ -5,52 +5,44 @@
         <div class="page-content">
             <div class="container-fluid">
                 <div class="page-content-wrapper bg-white p-30 radius-20">
-                    <div class="row">
-                        <div class="col-12">
-                            <div
-                                class="page-title-box d-sm-flex align-items-center justify-content-between border-bottom mb-20">
-                                <div class="page-title-left">
-                                    <h3 class="mb-sm-0">{{ $pageTitle }}</h3>
-                                </div>
-                                <div class="page-title-right">
-                                    <ol class="breadcrumb mb-0">
-                                        <li class="breadcrumb-item"><a href="{{ route('owner.dashboard') }}"
-                                                title="Dashboard">{{ __('Dashboard') }}</a></li>
-                                        <li class="breadcrumb-item" aria-current="page">{{ __('Report') }}</li>
-                                        <li class="breadcrumb-item active" aria-current="page">{{ $pageTitle }}</li>
-                                    </ol>
-                                </div>
-                            </div>
+                    @include('centresidence._design')
+
+                    <div class="cs-titlebar">
+                        <div>
+                            <h1 class="cs-title">{{ $pageTitle }}</h1>
+                            <ol class="cs-crumb"><li><a href="{{ route('owner.dashboard') }}">{{ __('Dashboard') }}</a></li><li>›</li><li>{{ __('Report') }}</li><li>›</li><li>{{ $pageTitle }}</li></ol>
                         </div>
                     </div>
-                    <div class="row">
-                        <div class="notice-board-table-area">
-                            <div class="bg-off-white theme-border radius-4 p-25">
-                                <table class="table bg-off-white theme-border p-20 dt-responsive">
-                                    <thead>
-                                        <tr>
-                                            <th>{{ __('SL') }}</th>
-                                            <th data-priority="1">{{ __('Month') }}</th>
-                                            <th>{{ __('Income') }}</th>
-                                            <th>{{ __('Expense') }}</th>
-                                            <th>{{ __('Profit/Loss') }}</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        @foreach ($lossProfits as $lossProfit)
-                                            <tr>
-                                                <td>{{ $loop->iteration }}</td>
-                                                <td>{{ $lossProfit['month'] }}</td>
-                                                <td>{{ currencyPrice($lossProfit['income']) }}</td>
-                                                <td>{{ currencyPrice($lossProfit['expense']) }}</td>
-                                                <td>{{ $lossProfit['income'] - $lossProfit['expense'] }}</td>
-                                            </tr>
-                                        @endforeach
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
-                    </div>
+
+                    <div class="cs-card"><div class="cs-tablewrap">
+                        <table class="cs-table">
+                            <thead>
+                                <tr>
+                                    <th>{{ __('SL') }}</th>
+                                    <th>{{ __('Month') }}</th>
+                                    <th style="text-align:right;">{{ __('Income') }}</th>
+                                    <th style="text-align:right;">{{ __('Expense') }}</th>
+                                    <th style="text-align:right;">{{ __('Profit/Loss') }}</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @forelse ($lossProfits as $lossProfit)
+                                    @php $net = $lossProfit['income'] - $lossProfit['expense']; @endphp
+                                    <tr>
+                                        <td>{{ $loop->iteration }}</td>
+                                        <td>{{ $lossProfit['month'] }}</td>
+                                        <td style="text-align:right;">{{ currencyPrice($lossProfit['income']) }}</td>
+                                        <td style="text-align:right;">{{ currencyPrice($lossProfit['expense']) }}</td>
+                                        <td style="text-align:right;color:{{ $net < 0 ? 'var(--red)' : 'var(--green-dark)' }};font-weight:600;">
+                                            {{ currencyPrice($net) }}
+                                        </td>
+                                    </tr>
+                                @empty
+                                    <tr><td colspan="5" class="cs-empty">{{ __('No data yet') }}</td></tr>
+                                @endforelse
+                            </tbody>
+                        </table>
+                    </div></div>
                 </div>
             </div>
         </div>

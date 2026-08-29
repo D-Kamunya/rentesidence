@@ -42,7 +42,26 @@ class FinanceFacility extends Model
         'completed_at'          => 'datetime',
         'suspended_at'          => 'datetime',
         'resumed_at'            => 'datetime',
+        'disbursed_at'          => 'datetime',
+        'early_settlement_at'   => 'datetime',
+        'origination_fee_amount'    => 'decimal:2',
+        'origination_fee_collected' => 'decimal:2',
     ];
+
+    /** Origination fee still owed by the partner (only collected once disbursed). */
+    public function originationOutstanding(): float
+    {
+        return max(0.0, (float) $this->origination_fee_amount - (float) $this->origination_fee_collected);
+    }
+
+    // Disbursement lifecycle — a facility is only REPAYABLE once disbursed.
+    public const DISBURSE_AWAITING = 'awaiting';           // approved, funds not yet released
+    public const DISBURSE_PENDING  = 'pending_confirmation'; // recorded, awaiting the payee's confirmation
+    public const DISBURSE_DONE     = 'disbursed';           // money confirmed released
+
+    // Early-settlement lifecycle — completed only once the payoff is confirmed paid.
+    public const EARLY_PENDING = 'pending';   // payoff initiated, awaiting confirmation
+    public const EARLY_SETTLED = 'settled';   // payoff confirmed → facility completed
 
     public const STATUS_ACTIVE       = 'active';
     public const STATUS_COMPLETED    = 'completed';
@@ -55,6 +74,12 @@ class FinanceFacility extends Model
     public function scopeActive($query)
     {
         return $query->where('status', self::STATUS_ACTIVE);
+    }
+
+    /** Only facilities whose money has actually been released — the ones rent may repay. */
+    public function scopeDisbursed($query)
+    {
+        return $query->where('disbursement_status', self::DISBURSE_DONE);
     }
 
     public function application(): BelongsTo
@@ -96,6 +121,8 @@ class FinanceFacility extends Model
 
     public function isDisbursed(): bool
     {
-        return $this->disbursement_date !== null;
+        // Authoritative gate = the disbursement lifecycle status (a facility can be
+        // created active before funds are released; disbursement_date alone is stale).
+        return $this->disbursement_status === self::DISBURSE_DONE;
     }
 }

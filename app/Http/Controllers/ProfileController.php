@@ -26,11 +26,27 @@ class ProfileController extends Controller
                 ->where('user_id', auth()->id())
                 ->select(['owners.print_name', 'owners.print_address', 'owners.print_contact', 'file_managers.folder_name', 'file_managers.file_name'])
                 ->first();
+
+            // Plug-and-play: pre-fill the Print Details form with the owner's own profile
+            // (name + phone) when they haven't customised it, so invoices never default to the
+            // platform with a blank contact. Saving persists these; the owner can edit anytime.
+            if ($data['owner']) {
+                [$data['owner']->print_name, $data['owner']->print_address, $data['owner']->print_contact] =
+                    effectiveOwnerPrintDetails(
+                        $data['owner']->print_name,
+                        $data['owner']->print_address,
+                        $data['owner']->print_contact,
+                        auth()->user()
+                    );
+            }
         }
 
         if (auth()->user()->role == USER_ROLE_TENANT) {
             $data['tenant'] = Tenant::where('user_id', auth()->id())->first();
-            $data['details'] = TenantDetails::where('tenant_id', $data['tenant']->id)->first();
+            // A freshly-onboarded tenant may have no tenant_details row yet — hand the view an
+            // empty model so the profile fields render blank instead of throwing "…on null".
+            $data['details'] = TenantDetails::where('tenant_id', optional($data['tenant'])->id)->first()
+                ?? new TenantDetails();
         }
         return view('common.profile.my-profile', $data);
     }
@@ -106,7 +122,7 @@ class ProfileController extends Controller
                 $details->save();
             }
             /*File Manager Call upload*/
-            if ($request->image) {
+            if ($request->hasFile('image')) {
                 $new_file = FileManager::where('origin_type', 'App\Models\User')->where('origin_id', $user->id)->first();
 
                 if ($new_file) {
@@ -126,9 +142,10 @@ class ProfileController extends Controller
                 }
             }
             DB::commit();
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             DB::rollback();
-            return redirect()->back()->with('success', $e->getMessage());
+            // Was flashing errors as 'success' (green) — surface them as errors instead.
+            return redirect()->back()->with('error', $e->getMessage())->withInput();
         }
 
         return redirect()->back()->with('success', __('Updated Successfully'));
@@ -144,13 +161,17 @@ class ProfileController extends Controller
     {
         $request->validate([
             'current_password' => 'required',
-            'password' => 'required|confirmed|min:6'
+            // Force a genuinely new password — reusing the current one defeats the first-login change.
+            'password' => 'required|confirmed|min:6|different:current_password'
+        ], [
+            'password.different' => __('Your new password must be different from your current one.'),
         ]);
 
         $hashedPassword = Auth::user()->password;
         if (Hash::check($request->current_password, $hashedPassword)) {
             $user = User::find(Auth::id());
             $user->password = Hash::make($request->password);
+            $user->must_change_password = 0; // first-login requirement satisfied
             $user->save();
             return redirect()->back()->with('success', __('Updated Successfully'));
         } else {

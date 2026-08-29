@@ -20,7 +20,7 @@ class ContactMessageController extends Controller
         if ($request->ajax()) {
             return $this->contactMessageService->getAllData();
         } else {
-            $data['pageTitle'] = __('All Message');
+            $data['pageTitle'] = __('Messages');
             return view('saas.admin.message', $data);
         }
     }

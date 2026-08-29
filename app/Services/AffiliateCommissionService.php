@@ -293,6 +293,52 @@ class AffiliateCommissionService
     }
 
 
+    /**
+     * Reverse the affiliate's marketplace commission when a sale is refunded — a NEGATIVE ledger
+     * entry (not a deletion) in the current period, so it's auditable and idempotent. It reduces
+     * the affiliate's lifetime/available balance; if they already withdrew that commission, their
+     * available balance goes negative and is recovered from future earnings (carried-forward
+     * clawback). No-op if the affiliate never earned on this order or it was already reversed.
+     */
+    public function reverseMarketplaceCommission(ProductOrder $order): void
+    {
+        $firstProduct = $order->orderItems->first()?->product;
+        if (! $firstProduct) return;
+
+        $ownerRecord = Owner::find($firstProduct->owner_user_id);
+        if (! $ownerRecord || ! $ownerRecord->affiliate_id) return;
+        $affiliateId = $ownerRecord->affiliate_id;
+
+        $original = AffiliateCommission::where('affiliate_id', $affiliateId)
+            ->where('source', AFFILIATE_COMMISSION_SOURCE_MARKETPLACE)
+            ->where('external_ref', (string) $order->id)
+            ->first();
+        if (! $original) return; // affiliate never earned on this order
+
+        // Idempotency — reversal already booked.
+        $reversalRef = $order->id . '-reversal';
+        $alreadyReversed = AffiliateCommission::where('affiliate_id', $affiliateId)
+            ->where('source', AFFILIATE_COMMISSION_SOURCE_MARKETPLACE)
+            ->where('external_ref', $reversalRef)
+            ->exists();
+        if ($alreadyReversed) return;
+
+        $this->recordEvent([
+            'product'           => ProductRegistry::default(),
+            'affiliate_id'      => $affiliateId,
+            'owner_id'          => $ownerRecord->id,
+            'source'            => AFFILIATE_COMMISSION_SOURCE_MARKETPLACE,
+            'order_id'          => $order->id,
+            'external_ref'      => $reversalRef,
+            'commission_rate'   => $original->commission_rate,
+            'commission_amount' => -1 * abs((float) $original->commission_amount),
+            'currency'          => $original->currency,
+            'cadence'           => $original->cadence,
+            'period_month'      => (int) now()->format('n'),
+            'period_year'       => (int) now()->format('Y'),
+        ]);
+    }
+
     // ──────────────────────────────────────────────────────────
     // LEDGER WRITE (the §3.2 spoke contract)
     // ──────────────────────────────────────────────────────────
@@ -317,7 +363,7 @@ class AffiliateCommissionService
         $source  = $attrs['source'];
         $ref     = (string) $attrs['external_ref'];
 
-        return DB::transaction(function () use ($attrs, $product, $source, $ref) {
+        $commission = DB::transaction(function () use ($attrs, $product, $source, $ref) {
             // One commission per money event. The lock serialises a concurrent
             // same-ref insert; the unique index (ac_product_source_ref_unique) is
             // the ultimate guard.
@@ -354,6 +400,11 @@ class AffiliateCommissionService
 
             return $commission;
         });
+
+        // Commission-earned alerts are sent as a MONTHLY DIGEST (App\Console\Commands\
+        // AffiliateCommissionDigest), NOT per event — one email/month instead of one per rent
+        // payment × owner, which saves a lot of sending at scale.
+        return $commission;
     }
 
     // ──────────────────────────────────────────────────────────
@@ -483,11 +534,20 @@ class AffiliateCommissionService
             ->sum('total_commission_payout');
     }
 
-    /** Money already reserved against the balance: paid-out (APPROVED) + awaiting approval (PENDING). */
+    /**
+     * Money already reserved against the balance: paid-out (APPROVED), in-flight to
+     * M-Pesa (PROCESSING) and awaiting approval (PENDING). PROCESSING must be reserved
+     * so an in-flight B2C payout can't be double-withdrawn; a FAILED payout is NOT
+     * reserved, so the reservation is released and the balance restored automatically.
+     */
     public function getReservedWithdrawals(int $affiliateId): float
     {
         return (float) AffiliateWithdrawal::where('affiliate_id', $affiliateId)
-            ->whereIn('status', [AFFILIATE_WITHDRAWAL_APPROVED, AFFILIATE_WITHDRAWAL_PENDING])
+            ->whereIn('status', [
+                AFFILIATE_WITHDRAWAL_APPROVED,
+                AFFILIATE_WITHDRAWAL_PROCESSING,
+                AFFILIATE_WITHDRAWAL_PENDING,
+            ])
             ->sum('amount');
     }
 

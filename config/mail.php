@@ -17,6 +17,17 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Mail Sending Enabled
+    |--------------------------------------------------------------------------
+    | Master on/off switch for outbound mail (MAIL_STATUS). Read via config() —
+    | never env() at runtime — so `php artisan config:cache` in production can't
+    | silently disable email by making env() return null outside config files.
+    */
+
+    'status' => env('MAIL_STATUS', 0),
+
+    /*
+    |--------------------------------------------------------------------------
     | Mailer Configurations
     |--------------------------------------------------------------------------
     |

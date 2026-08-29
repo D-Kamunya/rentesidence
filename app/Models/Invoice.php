@@ -98,6 +98,20 @@ class Invoice extends Model
     }
 
     /**
+     * The rent portion of this invoice — the total of items whose invoice type is
+     * "Rent" (the system's per-owner rent type is named exactly "Rent"). Used to
+     * scope Centresidence deduct-at-source (facility + infrastructure repayment) to
+     * rent only, so late fees, deposits and other charges pass through to the owner
+     * untouched.
+     */
+    public function rentPortion(): float
+    {
+        return (float) $this->invoiceItems()
+            ->whereHas('invoiceType', fn ($q) => $q->whereRaw('LOWER(name) = ?', ['rent']))
+            ->sum('amount');
+    }
+
+    /**
      * The order associated with this invoice (any payment status).
      */
     public function order(): HasOne

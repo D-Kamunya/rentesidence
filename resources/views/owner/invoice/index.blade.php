@@ -662,6 +662,17 @@
                                     <label class="ow-label">{{ __('Message') }}</label>
                                     <textarea class="form-control ow-input" name="body" placeholder="{{ __('Write your reminder message…') }}" rows="4"></textarea>
                                 </div>
+                                <div class="col-md-12 mt-3">
+                                    <label style="display:flex;align-items:flex-start;gap:10px;cursor:pointer;margin:0;">
+                                        <input type="checkbox" name="send_sms" value="1" style="margin-top:3px;flex:none;">
+                                        <span>
+                                            <span style="font-weight:500;color:#111827;">{{ __('Also send an SMS reminder') }}</span>
+                                            <span style="display:block;font-size:12px;color:#6b7280;margin-top:2px;">
+                                                {{ __('A secure, system-written text with a pay link — you can\'t edit its wording. Uses 1 SMS credit, at most once every 24 hours per invoice.') }}
+                                            </span>
+                                        </span>
+                                    </label>
+                                </div>
                             </div>
                         </div>
                     </div>

@@ -5,79 +5,52 @@
         <div class="page-content">
             <div class="container-fluid">
                 <div class="page-content-wrapper bg-white p-30 radius-20">
-                    <div class="row">
-                        <div class="col-12">
-                            <div
-                                class="page-title-box d-sm-flex align-items-center justify-content-between border-bottom mb-20">
-                                <div class="page-title-left">
-                                    <h3 class="mb-sm-0">{{ $pageTitle }}</h3>
-                                </div>
-                                <div class="page-title-right">
-                                    <ol class="breadcrumb mb-0">
-                                        <li class="breadcrumb-item"><a href="{{ route('tenant.dashboard') }}"
-                                                title="{{ __('Dashboard') }}">{{ __('Dashboard') }}</a></li>
-                                        <li class="breadcrumb-item active" aria-current="page">{{ $pageTitle }}</li>
-                                    </ol>
-                                </div>
+                    @include('centresidence._design')
+
+                    <div class="cs-titlebar">
+                        <div>
+                            <h1 class="cs-title">{{ $pageTitle }}</h1>
+                            <ol class="cs-crumb"><li><a href="{{ route('owner.dashboard') }}">{{ __('Dashboard') }}</a></li><li>›</li><li>{{ $pageTitle }}</li></ol>
+                        </div>
+                    </div>
+
+                    <div class="cs-card cs-card--pad cs-controls" style="margin-bottom:16px;">
+                        <div class="row">
+                            <div class="col-md-6 col-lg-4 mb-2">
+                                <select class="form-select property_id" id="search_property">
+                                    <option value="" selected>{{ __('Select Property') }}</option>
+                                    @foreach ($properties as $property)
+                                        <option value="{{ $property->id }}">{{ $property->name }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                            <div class="col-md-6 col-lg-4 mb-2">
+                                <select class="form-select unit_id">
+                                    <option selected>--{{ __('Select Unit') }}--</option>
+                                </select>
                             </div>
                         </div>
                     </div>
-                    <div class="row">
-                        <div class="tenants-top-bar">
-                            <div class="property-search-inner-bg bg-off-white theme-border radius-4 p-25 pb-0 mb-25">
-                                <div class="row">
-                                    <div class="col-xl-12 col-xxl-6 tenants-top-bar-left">
-                                        <div class="row">
-                                            <div class="col-md-6 col-lg-6 col-xl-4 col-xxl-4 mb-25">
-                                                <select class="form-select flex-shrink-0 property_id" id="search_property">
-                                                    <option value="" selected>{{ __('Select Property') }}</option>
-                                                    @foreach ($properties as $property)
-                                                        <option value="{{ $property->id }}">{{ $property->name }}</option>
-                                                    @endforeach
-                                                </select>
-                                            </div>
-                                            <div class="col-md-6 col-lg-6 col-xl-4 col-xxl-4 mb-25">
-                                                <select class="form-select flex-shrink-0 unit_id">
-                                                    <option selected>--{{ __('Select Unit') }}--</option>
-                                                </select>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="documents-page-area">
-                            <div class="all-document-wrap bg-off-white theme-border radius-4 p-25 pb-0">
-                                <div class="tenants-top-bar border-bottom pb-25 mb-25">
-                                    <div class="row align-items-center">
-                                        <div class="col-xl-12 col-xxl-6 tenants-top-bar-left">
-                                            <h4>{{ __('All Document') }}</h4>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="documents-page-document-wrap">
-                                    <div class="row">
-                                        <div class="information-table-area">
-                                            <table id="allDataTableDoc" class="table responsive theme-border p-20">
-                                                <thead>
-                                                    <tr>
-                                                        <th>{{ __('SL') }}</th>
-                                                        <th>{{ __('Document Type') }}</th>
-                                                        <th data-priority="1">{{ __('Tenant Name') }}</th>
-                                                        <th>{{ __('Tenant Name') }}</th>
-                                                        <th>{{ __('Property') }}</th>
-                                                        <th>{{ __('Unit') }}</th>
-                                                        <th>{{ __('Front Side') }}</th>
-                                                        <th>{{ __('Back Side') }}</th>
-                                                        <th>{{ __('Status') }}</th>
-                                                        <th>{{ __('Action') }}</th>
-                                                    </tr>
-                                                </thead>
-                                            </table>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
+
+                    <div class="cs-card">
+                        <div class="cs-card__head"><h2 class="cs-card__title">{{ __('All Documents') }}</h2></div>
+                        <div class="cs-card__body">
+                            <table id="allDataTableDoc" class="table responsive" style="width:100%;">
+                                <thead>
+                                    <tr>
+                                        <th>{{ __('SL') }}</th>
+                                        <th>{{ __('Document Type') }}</th>
+                                        <th data-priority="1">{{ __('Tenant Name') }}</th>
+                                        <th>{{ __('Tenant Name') }}</th>
+                                        <th>{{ __('Property') }}</th>
+                                        <th>{{ __('Unit') }}</th>
+                                        <th>{{ __('Front Side') }}</th>
+                                        <th>{{ __('Back Side') }}</th>
+                                        <th>{{ __('Status') }}</th>
+                                        <th>{{ __('Action') }}</th>
+                                    </tr>
+                                </thead>
+                            </table>
                         </div>
                     </div>
                 </div>
@@ -86,7 +59,7 @@
     </div>
 
     {{-- Modal  --}}
-    <div class="modal fade" id="rejectModal" tabindex="-1" aria-labelledby="editFilesModalLabel" aria-hidden="true">
+    <div class="modal fade cs-modal" id="rejectModal" tabindex="-1" aria-labelledby="editFilesModalLabel" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content">
                 <div class="modal-header">
@@ -111,14 +84,14 @@
                                     <label
                                         class="label-text-title color-heading font-medium mb-2">{{ __('Front Side') }}</label>
                                     <div class="information-details-img radius-4 mb-25">
-                                        <img src="" alt="" class="fit-image radius-4 front-img">
+                                        <img src="" alt="{{ __('Front Side') }}" class="doc-preview front-img" onclick="if(this.getAttribute('src')) window.open(this.src,'_blank')">
                                     </div>
                                 </div>
                                 <div class="col-12 mb-25 pb-3 d-none isBoth">
                                     <label
                                         class="label-text-title color-heading font-medium mb-2">{{ __('Back Side') }}</label>
                                     <div class="information-details-img radius-4 mb-25">
-                                        <img src="" alt="" class="fit-image radius-4 back-img">
+                                        <img src="" alt="{{ __('Back Side') }}" class="doc-preview back-img" onclick="if(this.getAttribute('src')) window.open(this.src,'_blank')">
                                     </div>
                                 </div>
                                 <div class="view-information-page-box mb-25">
@@ -157,7 +130,7 @@
         </div>
     </div>
 
-    <div class="modal fade" id="viewModal" tabindex="-1" aria-labelledby="viewModalLabel" aria-hidden="true">
+    <div class="modal fade cs-modal" id="viewModal" tabindex="-1" aria-labelledby="viewModalLabel" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content">
                 <div class="modal-header">
@@ -170,13 +143,13 @@
                         <div class="view-information-page-box mb-25">
                             <label class="label-text-title color-heading font-medium mb-2">{{ __('Front Side') }}</label>
                             <div class="information-details-img radius-4 mb-25">
-                                <img src="" alt="" class="fit-image radius-4 front-img">
+                                <img src="" alt="{{ __('Front Side') }}" class="doc-preview front-img" onclick="if(this.getAttribute('src')) window.open(this.src,'_blank')">
                             </div>
                         </div>
                         <div class="view-information-page-box mb-25 d-none isBoth">
                             <label class="label-text-title color-heading font-medium mb-2">{{ __('Back Side') }}</label>
                             <div class="information-details-img radius-4 mb-25">
-                                <img src="" alt="" class="fit-image radius-4 back-img">
+                                <img src="" alt="{{ __('Back Side') }}" class="doc-preview back-img" onclick="if(this.getAttribute('src')) window.open(this.src,'_blank')">
                             </div>
                         </div>
                         <div class="view-information-page-box mb-25">
@@ -210,11 +183,9 @@
         </div>
     </div>
 
-    <div class="main-content">
-        <input type="hidden" id="route" value="{{ route('owner.documents.index') }}?property_id=0&unit_id=0">
-        <input type="hidden" id="getInfoRoute" value="{{ route('owner.documents.get.info') }}">
-        <input type="hidden" id="getPropertyUnitsRoute" value="{{ route('owner.property.getPropertyUnits') }}">
-    </div>
+    <input type="hidden" id="route" value="{{ route('owner.documents.index') }}?property_id=0&unit_id=0">
+    <input type="hidden" id="getInfoRoute" value="{{ route('owner.documents.get.info') }}">
+    <input type="hidden" id="getPropertyUnitsRoute" value="{{ route('owner.property.getPropertyUnits') }}">
 @endsection
 @push('style')
     @include('common.layouts.datatable-style')

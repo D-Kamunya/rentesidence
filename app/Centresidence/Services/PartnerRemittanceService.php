@@ -2,6 +2,7 @@
 
 namespace App\Centresidence\Services;
 
+use App\Centresidence\Models\FinanceFacility;
 use App\Centresidence\Models\FinancePartner;
 use App\Centresidence\Models\FinancePartnerModule;
 use App\Centresidence\Models\PartnerRemittanceBatch;
@@ -43,11 +44,47 @@ class PartnerRemittanceService
                 fn (Money $c, $t) => $c->plus(Money::fromDecimal($t->amount)),
                 Money::zero()
             );
+            $grossDec = $total->toDecimal();
+
+            // ── Centresidence earnings, NETTED from this remittance (never invoiced) ──
+            $partner = FinancePartner::find($partnerId);
+            $fees    = app(PartnerFeeService::class);
+
+            // Servicing — recurring % of the whole collected batch.
+            $servicing = $partner ? round($grossDec * $fees->servicingRate($partner) / 100, 2) : 0.0;
+
+            // Origination — one-time per facility, only from DISBURSED facilities, and
+            // capped per remittance so it amortises over cycles and never starves the payout.
+            $originationCollected = 0.0;
+            $budget = $partner ? round($grossDec * $fees->originationCollectionCap() / 100, 2) : 0.0;
+            if ($budget > 0) {
+                $facilities = FinanceFacility::whereIn('id', $transactions->pluck('finance_facility_id')->filter()->unique())
+                    ->where('disbursement_status', FinanceFacility::DISBURSE_DONE)
+                    ->orderBy('id')
+                    ->get();
+                foreach ($facilities as $facility) {
+                    if ($budget <= 0) { break; }
+                    $outstanding = $facility->originationOutstanding();
+                    if ($outstanding <= 0) { continue; }
+                    $take = round(min($outstanding, $budget), 2);
+                    if ($take <= 0) { continue; }
+                    $facility->increment('origination_fee_collected', $take);
+                    $originationCollected = round($originationCollected + $take, 2);
+                    $budget = round($budget - $take, 2);
+                }
+            }
+
+            // Net actually remitted to the partner (PartnerPayoutService pays total_amount).
+            $net = max(0.0, round($grossDec - $servicing - $originationCollected, 2));
 
             $batch = PartnerRemittanceBatch::create([
                 'finance_partner_id' => $partnerId,
                 'remittance_date' => Carbon::now()->toDateString(),
-                'total_amount' => $total->toDecimal(),
+                'total_amount' => $net,
+                'gross_amount' => $grossDec,
+                'servicing_fee' => $servicing,
+                'origination_fee' => $originationCollected,
+                'net_amount' => $net,
                 'facility_count' => $transactions->pluck('finance_facility_id')->unique()->count(),
                 'transaction_count' => $transactions->count(),
                 'settlement_method' => $method,
@@ -170,6 +207,7 @@ class PartnerRemittanceService
         $batch->update([
             'status' => PartnerRemittanceBatch::STATUS_SENT,
             'reference' => $reference,
+            'sent_at' => \Illuminate\Support\Carbon::now(),
         ]);
 
         return $batch;

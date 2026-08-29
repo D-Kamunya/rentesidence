@@ -60,6 +60,7 @@ class RentSettlementTest extends CentresidenceDatabaseTestCase
             'deduction_percentage' => $deductionPct, 'monthly_target' => 5000, 'repayment_months' => 12,
             'accelerated_repayment' => $accelerated,
             'status' => FinanceFacility::STATUS_ACTIVE,
+            'disbursement_status' => FinanceFacility::DISBURSE_DONE, // funded → repayable
         ]);
     }
 
@@ -113,7 +114,7 @@ class RentSettlementTest extends CentresidenceDatabaseTestCase
             'outstanding_principal' => '100000', 'outstanding_interest' => 0, 'outstanding_penalty' => 0,
             'total_repayable' => '100000', 'deduction_percentage' => 80, 'consented_deduction_cap' => 80,
             'monthly_target' => 5000, 'repayment_months' => 12, 'accelerated_repayment' => true,
-            'status' => FinanceFacility::STATUS_ACTIVE,
+            'status' => FinanceFacility::STATUS_ACTIVE, 'disbursement_status' => FinanceFacility::DISBURSE_DONE,
         ]);
 
         $result = app(RentSettlementService::class)->handleRentPayment(
@@ -140,6 +141,28 @@ class RentSettlementTest extends CentresidenceDatabaseTestCase
         $this->assertSame('60000.00', $result['total_deducted']);   // clipped from 70,000
         $this->assertSame('40000.00', $result['owner_net']);        // owner keeps ≥ 40%
         $this->assertSame('40000.00', $facility->fresh()->outstanding_principal); // only 10,000 taken
+    }
+
+    public function test_undisbursed_facility_is_not_repaid_until_disbursed(): void
+    {
+        $facility = $this->facility(20, '50000');
+        // Roll it back to awaiting — the funds were never actually released.
+        $facility->forceFill(['disbursement_status' => FinanceFacility::DISBURSE_AWAITING])->save();
+
+        // Rent arrives, but an undisbursed facility is not an obligation → nothing happens.
+        $result = app(RentSettlementService::class)->handleRentPayment(
+            1, 1, Money::fromDecimal('100000.00'), ['rent_transaction_id' => 7101]
+        );
+        $this->assertNull($result, 'an undisbursed facility must not be repaid');
+        $this->assertSame('50000.00', $facility->fresh()->outstanding_principal);
+
+        // Once the money is actually disbursed, rent repays it (20% of 100k).
+        app(\App\Centresidence\Services\FinanceFacilityService::class)->disburse($facility);
+        $result = app(RentSettlementService::class)->handleRentPayment(
+            1, 1, Money::fromDecimal('100000.00'), ['rent_transaction_id' => 7102]
+        );
+        $this->assertNotNull($result);
+        $this->assertSame('30000.00', $facility->fresh()->outstanding_principal);
     }
 
     public function test_deduction_priority_fallback_then_facilities_then_owner(): void
@@ -217,10 +240,49 @@ class RentSettlementTest extends CentresidenceDatabaseTestCase
 
         $this->assertNotNull($batch);
         $this->assertStringStartsWith('REM-', $batch->batch_number);
-        $this->assertSame('20000.00', $batch->total_amount); // 20% of 100k
+        // gross = 20% of 100k = 20,000; this facility carries no origination fee, so
+        // only the 1% servicing fee is netted → partner remitted 19,800.
+        $this->assertSame('20000.00', $batch->gross_amount);
+        $this->assertSame('200.00', $batch->servicing_fee);
+        $this->assertSame('0.00', $batch->origination_fee);
+        $this->assertSame('19800.00', $batch->net_amount);
+        $this->assertSame('19800.00', $batch->total_amount); // payout pays the NET
         $this->assertSame(1, $batch->items()->count());
 
         // Re-running finds nothing new (transactions now reconciled).
         $this->assertNull(app(PartnerRemittanceService::class)->prepareBatchForPartner($this->partnerId));
+    }
+
+    public function test_remittance_nets_servicing_and_origination(): void
+    {
+        $f = $this->facility(20, '50000');
+        // Booked origination owed (as createFromApplication would): 1,000.
+        $f->forceFill(['origination_fee_amount' => 1000, 'origination_fee_collected' => 0])->save();
+        app(RentSettlementService::class)->handleRentPayment(1, 1, Money::fromDecimal('100000.00'), ['rent_transaction_id' => 9006]);
+
+        $batch = app(PartnerRemittanceService::class)->prepareBatchForPartner($this->partnerId);
+
+        // gross 20,000; servicing 1% = 200; origination outstanding 1,000 ≤ cap (25% = 5,000) → collect 1,000.
+        $this->assertSame('20000.00', $batch->gross_amount);
+        $this->assertSame('200.00', $batch->servicing_fee);
+        $this->assertSame('1000.00', $batch->origination_fee);
+        $this->assertSame('18800.00', $batch->net_amount);
+        $this->assertSame('1000.00', $f->fresh()->origination_fee_collected);
+    }
+
+    public function test_origination_collection_is_capped_so_it_never_starves_the_payout(): void
+    {
+        $f = $this->facility(20, '50000');
+        // A large origination (10,000) must NOT be taken all at once from a 20,000 remittance.
+        $f->forceFill(['origination_fee_amount' => 10000, 'origination_fee_collected' => 0])->save();
+        app(RentSettlementService::class)->handleRentPayment(1, 1, Money::fromDecimal('100000.00'), ['rent_transaction_id' => 9007]);
+
+        $batch = app(PartnerRemittanceService::class)->prepareBatchForPartner($this->partnerId);
+
+        // origination capped at 25% of 20,000 = 5,000 (rest carries to next cycle).
+        $this->assertSame('5000.00', $batch->origination_fee);
+        $this->assertSame('5000.00', $f->fresh()->origination_fee_collected);
+        // partner still receives the majority: 20,000 − 200 servicing − 5,000 = 14,800 (74%).
+        $this->assertSame('14800.00', $batch->net_amount);
     }
 }

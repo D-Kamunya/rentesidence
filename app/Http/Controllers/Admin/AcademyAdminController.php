@@ -6,8 +6,8 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use App\Models\AcademyModule;
-use App\Models\Question;
-use App\Models\Option;
+use App\Models\AcademyQuestion;
+use App\Models\AcademyOption;
 use App\Models\Affiliate;
 use App\Models\AffiliateAcademyProgress;
 
@@ -48,7 +48,7 @@ class AcademyAdminController extends Controller
             'is_active'    => 'nullable|boolean',
         ]);
 
-        AcademyModule::create([
+        $module = AcademyModule::create([
             'title'        => $request->title,
             'youtube_url' => $request->youtube_url,
             'duration_minutes' => $request->duration_minutes,
@@ -56,6 +56,11 @@ class AcademyAdminController extends Controller
             'module_order' => $request->module_order,
             'is_active'    => $request->is_active ?? 0,
         ]);
+
+        // A new, active module → alert every affiliate so it shows in their dashboard.
+        if ($module->is_active) {
+            $this->notifyAffiliatesOfModule($module);
+        }
 
         return redirect()
             ->route('admin.academy.index')
@@ -82,6 +87,7 @@ class AcademyAdminController extends Controller
             'is_active'    => 'nullable|boolean',
         ]);
 
+        $wasActive = (bool) $academy->is_active;
         $academy->update([
             'title'        => $request->title,
             'youtube_url' => $request->youtube_url,
@@ -91,9 +97,43 @@ class AcademyAdminController extends Controller
             'is_active'    => $request->is_active ?? 0,
         ]);
 
+        // If a module was just published (draft → active), alert affiliates.
+        if (! $wasActive && $academy->is_active) {
+            $this->notifyAffiliatesOfModule($academy);
+        }
+
         return redirect()
             ->route('admin.academy.index')
             ->with('success', 'Module updated successfully.');
+    }
+
+    /**
+     * Alert every affiliate that a new training module is available (shows in their
+     * dashboard notification bell). Bulk insert — fail-safe, never blocks the save.
+     */
+    private function notifyAffiliatesOfModule(AcademyModule $module): void
+    {
+        try {
+            $affiliateUserIds = \App\Models\User::where('role', USER_ROLE_AFFILIATE)->pluck('id');
+            if ($affiliateUserIds->isEmpty() || ! \Illuminate\Support\Facades\Schema::hasTable('notifications')) {
+                return;
+            }
+            $now  = now();
+            $rows = $affiliateUserIds->map(fn ($uid) => [
+                'title'      => __('New Academy module'),
+                'body'       => __('A new training module “:t” is available. Complete it to stay certified.', ['t' => $module->title]),
+                'url'        => route('affiliate.academy.index'),
+                'image'      => null,
+                'user_id'    => $uid,
+                'sender_id'  => auth()->id(),
+                'is_seen'    => DEACTIVATE,
+                'created_at' => $now,
+                'updated_at' => $now,
+            ])->all();
+            \App\Models\Notification::insert($rows);
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::warning('Academy module affiliate notify failed', ['error' => $e->getMessage()]);
+        }
     }
 
     public function destroy(AcademyModule $academy)
@@ -157,10 +197,10 @@ class AcademyAdminController extends Controller
             ->with('success', 'Question and options created successfully.');
     }
 
-    public function destroyQuestion(Question $question)
+    public function destroyQuestion(AcademyQuestion $question)
     {
-        $moduleId = $question->academy_module_id;
-
+        $moduleId = $question->module_id;
+        $question->options()->delete();
         $question->delete();
 
         return redirect()
@@ -174,9 +214,9 @@ class AcademyAdminController extends Controller
     |--------------------------------------------------------------------------
     */
 
-    public function destroyOption(Option $option)
+    public function destroyOption(AcademyOption $option)
     {
-        $moduleId = $option->question->academy_module_id;
+        $moduleId = $option->questions->module_id;
 
         $option->delete();
 

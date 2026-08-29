@@ -123,6 +123,67 @@ class CommissionService
         return $walletTransaction;
     }
 
+    /**
+     * Reverse a marketplace sale's money when a refund is confirmed — the counter-entry to
+     * processOrderCommission. Debits the owner's wallet by the net they were credited and books a
+     * matching affiliate reversal. Idempotent (won't double-reverse). If the owner (or affiliate)
+     * has already WITHDRAWN those proceeds, the balance simply goes negative — a carried-forward
+     * clawback recovered from their future earnings; we never force-claw already-paid-out cash,
+     * but the books reconcile. Returns null if there was nothing to reverse.
+     */
+    public function reverseOrderCommission(ProductOrder $order): ?WalletTransaction
+    {
+        return DB::transaction(function () use ($order) {
+            $original = WalletTransaction::where('product_order_id', $order->id)
+                ->where('type', 'credit')
+                ->where('transaction_source', 'marketplace')
+                ->first();
+            if (! $original) {
+                return null; // never credited (e.g. unpaid) — nothing to reverse
+            }
+
+            // Idempotency: a reversal already exists for this order.
+            $alreadyReversed = WalletTransaction::where('product_order_id', $order->id)
+                ->where('type', 'refund')
+                ->exists();
+            if ($alreadyReversed) {
+                return null;
+            }
+
+            $wallet = OwnerWallet::find($original->owner_wallet_id);
+            if ($wallet) {
+                // May drive the balance negative if already withdrawn — recovered from future credits.
+                $wallet->decrement('balance', $original->net_amount);
+            }
+
+            // Store the counter-entry with NEGATIVE amounts so every report that SUMs
+            // wallet_transactions untyped (platform commission, GMV, per-owner commission) nets to
+            // zero for a refunded sale — otherwise a positive reversal row would DOUBLE-count our
+            // commission + GMV instead of reversing them.
+            $reversal = WalletTransaction::create([
+                'owner_wallet_id'    => $original->owner_wallet_id,
+                'product_order_id'   => $order->id,
+                'invoice_order_id'   => null,
+                'transaction_source' => 'marketplace',
+                'gross_amount'       => -1 * abs((float) $original->gross_amount),
+                'commission_rate'    => $original->commission_rate,
+                'commission_amount'  => -1 * abs((float) $original->commission_amount),
+                'net_amount'         => -1 * abs((float) $original->net_amount),
+                'type'               => 'refund',
+                'description'        => "Refund reversal — Order #{$order->order_id}",
+            ]);
+
+            // Reverse the affiliate's cut too (secondary — never block the owner reversal on it).
+            try {
+                app(\App\Services\AffiliateCommissionService::class)->reverseMarketplaceCommission($order);
+            } catch (\Throwable $e) {
+                Log::error('Affiliate marketplace reversal failed', ['order_id' => $order->id, 'error' => $e->getMessage()]);
+            }
+
+            return $reversal;
+        });
+    }
+
     // ──────────────────────────────────────────────────────────
     // RENT
     // ──────────────────────────────────────────────────────────
@@ -159,7 +220,12 @@ class CommissionService
         // has already landed in the company account.
         $grossAmount      = (float) $order->transaction_amount;
         $rate             = self::RENT_COMMISSION_RATE;
-        $commissionAmount = round($grossAmount * ($rate / 100), 2);
+        // The 1% applies to the RENT portion only. In transaction mode every tenant
+        // payment routes to the company account, but late fees, deposits and other
+        // charges are not commissionable — only rent is. A pure non-rent payment
+        // therefore carries zero commission and is credited to the owner in full.
+        $rentPortion      = min((float) $invoice->rentPortion(), $grossAmount);
+        $commissionAmount = round($rentPortion * ($rate / 100), 2);
         $netAmount        = round($grossAmount - $commissionAmount, 2);
 
         // Get or create wallet

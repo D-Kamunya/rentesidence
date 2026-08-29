@@ -83,6 +83,30 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Partner finance fees (how Centresidence earns on facilities it originates
+    | & services for a finance partner)
+    |--------------------------------------------------------------------------
+    | BOTH are collected by NETTING from the partner's remittances — we already
+    | hold the repayments we collect, so there is no separate invoice/friction.
+    | Per-partner overrides live on finance_partners.origination_fee_percentage /
+    | .servicing_fee_percentage; these are the platform-wide defaults (a partner
+    | is "reviewed" simply by setting/clearing their own %).
+    */
+    'partner_fees' => [
+        // One-time, % of facility principal. Booked at facility creation but only
+        // COLLECTED once the facility is DISBURSED — never demand before the partner
+        // has seen the value.
+        'origination_percentage' => 2.0,
+        // Recurring, % of each remittance batch (the repayments we collected that cycle).
+        'servicing_percentage' => 1.0,
+        // Cap on how much of a single remittance may go toward clearing origination,
+        // so it amortises over several cycles and never starves the partner's payout
+        // (origination is designed NOT to be a blocker).
+        'origination_collection_cap_percentage' => 25.0,
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
     | Owner billing model
     |--------------------------------------------------------------------------
     | How an owner is billed for module/infrastructure costs. See handbook §6.
@@ -138,7 +162,22 @@ return [
         'driver'         => env('CENTRESIDENCE_CHIRPSTACK_DRIVER', 'simulated'),
         'api_url'        => env('CHIRPSTACK_API_URL'),
         'api_token'      => env('CHIRPSTACK_API_TOKEN'),
+        'tenant_id'      => env('CHIRPSTACK_TENANT_ID'),
         'application_id' => env('CHIRPSTACK_APPLICATION_ID'),
         'device_profile' => env('CHIRPSTACK_DEVICE_PROFILE_ID'),
+        'timeout'        => (int) env('CHIRPSTACK_HTTP_TIMEOUT', 10),
+
+        // Shared secret ChirpStack sends on its HTTP integration so we can trust
+        // the inbound uplink/join webhook. Configure the same value as a custom
+        // header (Authorization: Bearer <secret>) on the ChirpStack integration.
+        'webhook_secret' => env('CHIRPSTACK_WEBHOOK_SECRET'),
+
+        // Device-specific payload codec (decode uplink → units, encode downlink
+        // command → bytes). This is the ONE piece that depends on the physical
+        // meter; swap in a meter-specific class once you have its datasheet.
+        'codec'          => env('CHIRPSTACK_CODEC', \App\Centresidence\Services\ChirpStack\Codec\GenericMeterCodec::class),
+
+        // Default downlink fPort for credit/actuate commands (meter-specific).
+        'downlink_fport' => (int) env('CHIRPSTACK_DOWNLINK_FPORT', 10),
     ],
 ];

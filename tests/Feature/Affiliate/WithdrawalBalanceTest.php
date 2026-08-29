@@ -78,6 +78,30 @@ class WithdrawalBalanceTest extends AffiliateDatabaseTestCase
         $this->assertSame(1000.0, $this->svc()->getAvailableBalance(1));
     }
 
+    public function test_processing_withdrawal_is_reserved(): void
+    {
+        // A B2C payout accepted by Daraja but not yet confirmed is in-flight — the
+        // money must stay reserved so it can't be double-withdrawn while awaiting
+        // the ResultURL callback.
+        $this->earn(1, 1000);
+        $this->withdrawal(1, 400, AFFILIATE_WITHDRAWAL_PROCESSING);
+
+        $this->assertSame(400.0, $this->svc()->getReservedWithdrawals(1));
+        $this->assertSame(600.0, $this->svc()->getAvailableBalance(1));
+    }
+
+    public function test_failed_withdrawal_releases_the_reservation(): void
+    {
+        // When the ResultURL reports the B2C failed, the money never left — the
+        // reservation must release so the affiliate's balance is restored, with no
+        // ledger reversal needed.
+        $this->earn(1, 1000);
+        $this->withdrawal(1, 400, AFFILIATE_WITHDRAWAL_FAILED);
+
+        $this->assertSame(0.0, $this->svc()->getReservedWithdrawals(1));
+        $this->assertSame(1000.0, $this->svc()->getAvailableBalance(1));
+    }
+
     public function test_gross_is_unaffected_by_reservations(): void
     {
         $this->earn(1, 1000);

@@ -199,9 +199,10 @@ class HouseHuntController extends Controller
 
     public function viewProperty($propertyId)
     {
-        // Eager-load images so the blade never triggers N+1
+        // Eager-load images + property.owner so the blade never triggers N+1
+        // (the unit card reads $unit->property?->owner?->profile_photo for the avatar).
         $units = PropertyUnit::query()
-            ->with('images') // ← eager load; eliminates N+1 per unit
+            ->with(['images', 'property.owner'])
             ->where('property_id', $propertyId)
             ->whereDoesntHave('activeTenant')
             ->orderBy('id')

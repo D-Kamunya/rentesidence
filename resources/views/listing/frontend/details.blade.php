@@ -1,455 +1,323 @@
 @extends('saas.frontend.layouts.app')
-<link href="https://fonts.googleapis.com/css2?family=Josefin+Sans:wght@400;500;600&display=swap" rel="stylesheet">
 @section('content')
-    <div class="property-details-area">
-        <div class="container">
-            <div class="row">
-                <div class="col-md-12">
-                    <div class="property-slider-area owl-carousel">
-                        @foreach ($images as $image)
-                            <div class="single-property-slider">
-                                <img src="{{ assetUrl($image->folder_name . '/' . $image->file_name) }}"
-                                    alt="{{ $listing->name }}">
-                            </div>
-                        @endforeach
-                    </div>
-                </div>
-            </div>
-            {{-- QUICK HEADER (badge + title/price) --}}
-            <div class="d-flex align-items-center mb-3">
-                <!-- Sale badge -->
-                <span class="badge bg-success text-uppercase">For Sale</span>
-            </div>
+{{--
+    Sale listing detail. Restyled 2026-08 to CS dark-premium (matches house hunt).
+    Preserved: owl-carousel (.property-slider-area), the mapbox map (#map + mapData),
+    the contact modal (form .ajax → listing.contact.store, data-handler getShowMessage),
+    related-listing routes, and every $listing/$images/$information/$relatedListings field.
+--}}
+<style>
+  main{background:#0E1218}
+  .sd{
+    --paper:#0E1218; --paper-2:#141922; --card:#161C26; --card-2:#1B222E;
+    --stone-900:#EDEAE3; --stone-700:#C4C0B7; --stone-500:#9A958A; --stone-400:#7C776C;
+    --line:#242B36;
+    --cs-blue:#185FA5; --cs-blue-2:#1c72c2; --cs-blue-tint:#12283F;
+    --amber:#E7A339; --green:#1D9E75;
+    --shadow:0 20px 46px -22px rgba(0,0,0,.6); --shadow-sm:0 10px 26px -16px rgba(0,0,0,.55);
+    --serif:Georgia,'Iowan Old Style','Times New Roman',serif;
+    --sans:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;
+    color-scheme:dark;font-family:var(--sans);color:var(--stone-900)}
+  .sd *{box-sizing:border-box}
+  .sd a{text-decoration:none}
+  .sd-wrap{max-width:1200px;margin:0 auto;padding:0 24px}
+  .sd-top{padding-top:140px}
 
-            <div class="d-flex justify-content-between align-items-center mb-2 flex-wrap">
-                <!-- Property name -->
-                <span class="fw-semibold mb-0" 
-                    style="font-family: 'Josefin Sans', sans-serif; font-size: 1.75rem">
-                    {{ $listing->name }}
-                </span>
+  /* Carousel */
+  .sd .property-slider-area{margin-bottom:28px}
+  .sd .single-property-slider img{width:100%;height:420px;object-fit:cover;border-radius:16px;border:1px solid var(--line)}
+  .sd .owl-nav button{width:44px;height:44px;border-radius:50%!important;background:rgba(11,15,21,.75)!important;
+    border:1px solid var(--line)!important;color:#fff!important;font-size:16px!important}
+  .sd .owl-nav button:hover{background:var(--cs-blue)!important;border-color:var(--cs-blue)!important}
+  .sd .owl-dots .owl-dot span{background:var(--stone-400)!important}
+  .sd .owl-dots .owl-dot.active span{background:var(--cs-blue)!important}
 
-                <!-- Price -->
-                <span class="fw-bold text-success mb-0" 
-                    style="font-family: 'Josefin Sans', sans-serif; font-size: 1.5rem">
-                    {{ currencyPrice($listing->price) }}
-                </span>
-            </div>
-            <hr>
-            <!-- Meta section -->
-            <div class="property-meta mt-3 d-flex flex-wrap text-muted small">
-                <span class="me-3 d-flex align-items-center">
-                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24">
-                        <path fill="blue" d="M19 19H5V8h14m0-5h-1V1h-2v2H8V1H6v2H5a2 2 0 0 0-2 2v14a2 
-                        2 0 0 0 2 2h14a2 2 0 0 0 2-2V5a2 2 0 0 0-2-2m-2.47 8.06L15.47 
-                        10l-4.88 4.88l-2.12-2.12l-1.06 1.06L10.59 17z"/>
-                    </svg>
-                    {{ $listing->created_at->format('M d, Y') }}
-                </span>
-                <!-- Divider -->
-                <div class="d-none d-sm-block">
-                    <span class="mx-2">|</span>
-                </div>
-                <span class="me-3 d-flex align-items-center">
-                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24">
-                        <path fill="blue" d="M12 6.5A2.5 2.5 0 0 1 14.5 9a2.5 2.5 0 0 1-2.5 
-                        2.5A2.5 2.5 0 0 1 9.5 9A2.5 2.5 0 0 1 12 6.5M12 
-                        2a7 7 0 0 1 7 7c0 5.25-7 13-7 
-                        13S5 14.25 5 9a7 7 0 0 1 7-7m0 
-                        2a5 5 0 0 0-5 5c0 1 0 3 
-                        5 9.71C17 12 17 10 17 9a5 5 
-                        0 0 0-5-5"/>
-                    </svg>
-                    {{ $listing->city }} - {{ $listing->state }}, {{ $listing->country }}
-                </span>
-                <!-- Divider -->
-                <div class="d-none d-sm-block">
-                    <span class="mx-2">|</span>
-                </div>
-                <span class="me-3 d-flex align-items-center">
-                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><path fill="blue" d="m5 9.5l7-5.27l7 5.27zM5 20v-4.25h8.5V20zm9.5 0v-4.25H19V20zM5 14.75V10.5h4.5v4.25zm5.5 0V10.5H19v4.25z"/></svg>
-                    <span class="ms-1 small">{{ $listing->type }}</span>
-                </span>
-                <!-- Divider -->
-                <div class="d-none d-sm-block">
-                    <span class="mx-2">|</span>
-                </div>
-                <span class="d-flex align-items-center">
-                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><path fill="blue" d="M6 14h2q0-1.475 1.075-2.488T11.65 10.5q.9 0 1.675.413T14.6 12H13v2h5V9h-2v1.55q-.8-.95-1.912-1.5T11.65 8.5q-2.375 0-4.012 1.6T6 14m6 8q-2.075 0-3.9-.788t-3.175-2.137T2.788 15.9T2 12t.788-3.9t2.137-3.175T8.1 2.788T12 2t3.9.788t3.175 2.137T21.213 8.1T22 12t-.788 3.9t-2.137 3.175t-3.175 2.138T12 22"/></svg>
-                    <span class="ms-1 small">{{ $listing->interior }}</span>
-                </span>
-            </div>
-            <div class="row">
-                <div class="col-lg-7">
-                    <div class="property-description-area">
-                        <!-- Property Description -->
-                        <div class="mt-4">
-                            <h4 class="fw-bold mb-3" style="font-family: 'Josefin Sans', sans-serif;">Description</h4>
-                            <p class="text-muted" style="line-height: 1.7; font-size: 1rem;">
-                                {{ $listing->details }}
-                            </p>
-                        </div>
-                        <hr>
-                        <div class="single-property-overview mt-4" style="font-family: 'Josefin Sans', sans-serif;">
-                            <h4 class="fw-bold mb-3">{{ __('Overview') }}</h4>
-                            <div class="row g-3">
-                                @if ($listing->bed_room)
-                                    <div class="col-6 col-md-4">
-                                        <div class="d-flex align-items-center">
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><path fill="blue" d="M18.35 11.45V9c0-1.1-.9-2-2-2H13c-.37 0-.72.12-1 .32c-.28-.2-.63-.32-1-.32H7.65c-1.1 0-2 .9-2 2v2.45c-.4.46-.65 1.06-.65 1.72V17h1.5v-1.5h11V17H19v-3.83c0-.66-.25-1.26-.65-1.72m-1.6-.95h-4v-2h4zm-9.5-2h4v2h-4zM17.5 14h-11v-1c0-.55.45-1 1-1h9c.55 0 1 .45 1 1zM20 4v16H4V4zm0-2H4c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2"/></svg>
-                                            <span>{{ $listing->bed_room }} {{ __('Bedrooms') }}</span>
-                                        </div>
-                                    </div>
-                                @endif
+  /* Back */
+  .sd-back{display:inline-flex;align-items:center;gap:8px;color:var(--stone-500);font-size:14px;font-weight:600;margin-bottom:18px;transition:.15s}
+  .sd-back:hover{color:#fff}.sd-back svg{width:16px;height:16px}
 
-                                @if ($listing->bath_room)
-                                    <div class="col-6 col-md-4">
-                                        <div class="d-flex align-items-center">
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><path fill="blue" d="M21 14v1c0 1.91-1.07 3.57-2.65 4.41L19 22h-2l-.5-2h-9L7 22H5l.65-2.59A4.99 4.99 0 0 1 3 15v-1H2v-2h18V5a1 1 0 0 0-1-1c-.5 0-.88.34-1 .79c.63.54 1 1.34 1 2.21h-6a3 3 0 0 1 3-3h.17c.41-1.16 1.52-2 2.83-2a3 3 0 0 1 3 3v9zm-2 0H5v1a3 3 0 0 0 3 3h8a3 3 0 0 0 3-3z"/></svg>
-                                            <span>{{ $listing->bath_room }} {{ __('Bathrooms') }}</span>
-                                        </div>
-                                    </div>
-                                @endif
+  /* Header */
+  .sd-badge{display:inline-flex;background:rgba(29,158,117,.15);color:#4fd1a5;border:1px solid rgba(29,158,117,.4);
+    font-size:11.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;padding:6px 13px;border-radius:99px}
+  .sd-head{display:flex;justify-content:space-between;align-items:flex-end;gap:16px;flex-wrap:wrap;margin-top:14px}
+  .sd-head h1{font-family:var(--serif);font-weight:600;letter-spacing:-.015em;font-size:clamp(28px,4vw,44px);color:#F2EFEA;margin:0;text-wrap:balance}
+  .sd-price{color:var(--amber);font-weight:800;font-size:clamp(22px,3vw,32px);white-space:nowrap}
+  .sd-meta{display:flex;flex-wrap:wrap;gap:22px;margin-top:16px;padding-bottom:22px;border-bottom:1px solid var(--line);color:var(--stone-500);font-size:14px}
+  .sd-meta span{display:inline-flex;align-items:center;gap:8px}
+  .sd-meta svg{width:16px;height:16px;color:var(--cs-blue)}
 
-                                @if ($listing->kitchen_room)
-                                    <div class="col-6 col-md-4">
-                                        <div class="d-flex align-items-center">
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><path fill="blue" d="M22 10h-4V7c0-1.66-1.34-3-3-3s-3 1.34-3 3h2c0-.55.45-1 1-1s1 .45 1 1v3H8c1.1 0 2-.9 2-2V4H4v4c0 1.1.9 2 2 2H2v2h2v8h16v-8h2zM6 6h2v2H6zm0 12v-6h5v6zm12 0h-5v-6h5z"/></svg>
-                                            <span>{{ $listing->kitchen_room }} {{ __('Kitchen') }}</span>
-                                        </div>
-                                    </div>
-                                @endif
+  /* Layout */
+  .sd-grid{display:grid;grid-template-columns:1.6fr 1fr;gap:28px;margin-top:32px}
+  @media(max-width:900px){.sd-grid{grid-template-columns:1fr}}
+  .sd-block{margin-bottom:30px}
+  .sd-block h2{font-size:20px;font-weight:750;color:var(--stone-900);margin:0 0 14px}
+  .sd-desc{color:var(--stone-500);font-size:15.5px;line-height:1.75}
+  .sd-overview{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+  @media(max-width:560px){.sd-overview{grid-template-columns:1fr 1fr}}
+  .sd-ov{display:flex;align-items:center;gap:10px;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px;color:var(--stone-700);font-size:14px}
+  .sd-ov svg{width:20px;height:20px;color:var(--cs-blue);flex:0 0 auto}
+  .sd-amenities{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+  @media(max-width:560px){.sd-amenities{grid-template-columns:1fr 1fr}}
+  .sd-am{display:flex;align-items:center;gap:9px;color:var(--stone-700);font-size:14px}
+  .sd-am svg{width:16px;height:16px;color:var(--green);flex:0 0 auto}
 
-                                @if ($listing->dining_room)
-                                    <div class="col-6 col-md-4">
-                                        <div class="d-flex align-items-center">
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><path fill="blue" d="M8 19h1.5v-6.75q.65-.2 1.075-.712T11 10.3V6.5q0-.2-.15-.35T10.5 6t-.35.15t-.15.35V9h-.75V6.5q0-.2-.15-.35T8.75 6t-.35.15t-.15.35V9H7.5V6.5q0-.2-.15-.35T7 6t-.35.15t-.15.35v3.8q0 .725.425 1.238T8 12.25zm6 0h1.5v-6.35q.825-.4 1.288-1.275t.462-2.05q0-1.425-.712-2.375T14.75 6t-1.787.95t-.713 2.375q0 1.175.463 2.05T14 12.65zM4 22q-.825 0-1.412-.587T2 20V4q0-.825.588-1.412T4 2h16q.825 0 1.413.588T22 4v16q0 .825-.587 1.413T20 22z"/></svg>
-                                            <span>{{ $listing->dining_room }} {{ __('Dining Room') }}</span>
-                                        </div>
-                                    </div>
-                                @endif
+  /* Agent + map card */
+  .sd-side{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:22px;box-shadow:var(--shadow-sm);position:sticky;top:100px}
+  .sd-agent{display:flex;align-items:center;gap:14px}
+  .sd-agent img{width:64px;height:64px;border-radius:50%;object-fit:cover;border:1px solid var(--line)}
+  .sd-agent h3{font-size:17px;font-weight:750;color:var(--stone-900);margin:0}
+  .sd-agent a{display:flex;align-items:center;gap:7px;color:var(--stone-500);font-size:13.5px;margin-top:5px}
+  .sd-agent a:hover{color:var(--cs-blue)}
+  .sd-agent svg{width:14px;height:14px}
+  .sd-side hr{border:0;border-top:1px solid var(--line);margin:18px 0}
+  #map{width:100%;height:300px;border-radius:12px;border:1px solid var(--line)}
+  .sd-contact-btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;width:100%;margin-top:18px;
+    background:var(--cs-blue);color:#fff!important;font-weight:650;font-size:15px;padding:13px;border-radius:11px;border:none;cursor:pointer;transition:.18s}
+  .sd-contact-btn:hover{background:var(--cs-blue-2)}
 
-                                @if ($listing->living_room)
-                                    <div class="col-6 col-md-4">
-                                        <div class="d-flex align-items-center">
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><path fill="blue" d="M12.5 7c0-1.11.89-2 2-2H18c1.1 0 2 .9 2 2v2.16c-1.16.41-2 1.51-2 2.81V14h-5.5zM6 11.96V14h5.5V7c0-1.11-.89-2-2-2H6c-1.1 0-2 .9-2 2v2.15c1.16.41 2 1.52 2 2.81m14.66-1.93c-.98.16-1.66 1.09-1.66 2.09V15H5v-3a2 2 0 1 0-4 0v5c0 1.1.9 2 2 2v2h2v-2h14v2h2v-2c1.1 0 2-.9 2-2v-5c0-1.21-1.09-2.18-2.34-1.97"/></svg>
-                                            <span>{{ $listing->living_room }} {{ __('Living Room') }}</span>
-                                        </div>
-                                    </div>
-                                @endif
+  /* Nearby + related cards */
+  .sd-sec{padding:34px 0}
+  .sd-sec > h2{font-size:22px;font-weight:750;color:var(--stone-900);margin:0 0 22px}
+  .sd-cards{display:grid;grid-template-columns:repeat(3,1fr);gap:22px}
+  @media(max-width:900px){.sd-cards{grid-template-columns:repeat(2,1fr)}}
+  @media(max-width:600px){.sd-cards{grid-template-columns:1fr}}
+  .sd-card{background:var(--card);border:1px solid var(--line);border-radius:16px;overflow:hidden;box-shadow:var(--shadow-sm);transition:.2s;display:flex;flex-direction:column}
+  .sd-card:hover{transform:translateY(-4px);border-color:color-mix(in srgb,var(--cs-blue) 45%,var(--line))}
+  .sd-card__media{position:relative;aspect-ratio:16/10;overflow:hidden}
+  .sd-card__media img{width:100%;height:100%;object-fit:cover;transition:.35s}
+  .sd-card:hover .sd-card__media img{transform:scale(1.04)}
+  .sd-card__tag{position:absolute;top:10px;right:10px;background:rgba(231,163,57,.95);color:#20160A;font-weight:750;font-size:12.5px;padding:5px 11px;border-radius:99px}
+  .sd-card__body{padding:18px;display:flex;flex-direction:column;flex:1}
+  .sd-card__body h3{font-size:16.5px;font-weight:700;color:var(--stone-900);margin:0}
+  .sd-card__loc{display:flex;align-items:center;gap:7px;color:var(--stone-500);font-size:13.5px;margin-top:7px}
+  .sd-card__loc svg{width:14px;height:14px;color:var(--cs-blue)}
+  .sd-card__row{display:flex;justify-content:space-between;gap:8px;color:var(--stone-700);font-size:13px;margin-top:14px}
+  .sd-card__cta{margin-top:auto;padding-top:16px}
+  .sd-card__cta a{display:flex;align-items:center;justify-content:center;gap:7px;width:100%;background:var(--cs-blue);color:#fff!important;font-weight:650;font-size:14px;padding:11px;border-radius:10px;transition:.18s}
+  .sd-card__cta a:hover{background:var(--cs-blue-2)}
+  .sd-nearby__meta{color:var(--stone-500);font-size:13px;margin-top:8px;line-height:1.7}
+  .sd-nearby__meta b{color:var(--stone-900)}
+  .sd-advantages{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:6px}
+  @media(max-width:600px){.sd-advantages{grid-template-columns:1fr}}
+  .sd-adv{display:flex;align-items:center;gap:9px;color:var(--stone-700);font-size:14.5px}
+  .sd-adv svg{width:16px;height:16px;color:var(--amber);flex:0 0 auto}
 
-                                @if ($listing->storage_room)
-                                    <div class="col-6 col-md-4">
-                                        <div class="d-flex align-items-center">
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><path fill="blue" d="M5 21L3 9h18l-2 12zm5-6h4q.425 0 .713-.288T15 14t-.288-.712T14 13h-4q-.425 0-.712.288T9 14t.288.713T10 15M6 8q-.425 0-.712-.288T5 7t.288-.712T6 6h12q.425 0 .713.288T19 7t-.288.713T18 8zm2-3q-.425 0-.712-.288T7 4t.288-.712T8 3h8q.425 0 .713.288T17 4t-.288.713T16 5z"/></svg>
-                                            <span>{{ $listing->storage_room }} {{ __('Storage Room') }}</span>
-                                        </div>
-                                    </div>
-                                @endif
+  /* Contact modal (dark) */
+  .sd-modal .modal-content{background:var(--card);border:1px solid var(--line);border-radius:18px;color:var(--stone-900);box-shadow:var(--shadow)}
+  .sd-modal-head{padding:20px 24px;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between}
+  .sd-modal-head h5{margin:0;font-size:18px;font-weight:750;color:var(--stone-900)}
+  .sd-modal-head .btn-close{filter:invert(1) grayscale(1) brightness(2)}
+  .sd-modal-body{padding:22px 24px}
+  .sd-fgrid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  @media(max-width:560px){.sd-fgrid{grid-template-columns:1fr}}
+  .sd-f-full{grid-column:1/-1}
+  .sd-modal label{display:block;font-size:11.5px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--stone-500);margin-bottom:6px}
+  .sd-modal .form-control{width:100%;font-family:inherit;font-size:14.5px;padding:11px 13px;border-radius:10px;border:1px solid var(--line);background:var(--paper-2);color:var(--stone-900)}
+  .sd-modal .form-control:focus{outline:2px solid var(--cs-blue);outline-offset:1px;border-color:transparent;box-shadow:none}
+  .sd-modal-foot{padding:8px 24px 22px;display:flex;gap:12px}
+  .sd-submit{flex:1;background:var(--cs-blue);color:#fff!important;font-weight:650;font-size:15px;padding:12px;border:none;border-radius:11px;cursor:pointer;transition:.18s}
+  .sd-submit:hover{background:var(--cs-blue-2)}
+  .sd-cancel{background:transparent;color:var(--stone-500)!important;border:1px solid var(--line);border-radius:11px;padding:12px 22px;font-weight:600;cursor:pointer}
+  .sd-cancel:hover{border-color:var(--stone-400);color:var(--stone-900)!important}
+</style>
 
-                                @foreach (explode(',', $listing->other_room) as $room)
-                                    @if ($room)
-                                        <div class="col-6 col-md-4">
-                                            <div class="d-flex align-items-center">
-                                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><path fill="blue" d="M5.808 20q-.343 0-.576-.232T5 19.192v-2.634q0-.344.232-.576t.576-.232h6.884q.343 0 .576.232t.232.576v2.634q0 .343-.232.576t-.576.232zm9.5 0q-.343 0-.576-.232t-.232-.576v-2.634q0-.33.24-.569q.239-.239.568-.239h2.884q.344 0 .576.232t.232.576v2.634q0 .343-.232.576t-.576.232zm-9.5-5.25q-.343 0-.576-.232T5 13.942v-2.634q0-.343.232-.576t.576-.232h2.884q.343 0 .576.232t.232.576v2.634q0 .344-.232.576t-.576.232zm5.5 0q-.343 0-.576-.232t-.232-.576v-2.634q0-.343.232-.576t.576-.232h6.884q.344 0 .576.232t.232.576v2.634q0 .344-.232.576t-.576.232zM6.212 9.5q-.293 0-.376-.27t.133-.457l5.062-3.815q.223-.162.466-.243t.507-.08t.504.08t.461.243l5.062 3.815q.217.187.134.457q-.084.27-.377.27z"/></svg>
-                                                <span>{{ $room }}</span>
-                                            </div>
-                                        </div>
-                                    @endif
-                                @endforeach
-                            </div>
-                        </div>
-                        <hr>
+<div class="sd">
+  <div class="sd-wrap sd-top">
+    <a href="{{ route('house.hunt') }}" class="sd-back">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M11 18l-6-6 6-6"/></svg>
+      {{ __('Back to House Hunt') }}
+    </a>
 
-                        <div class="single-property-specie mt-4" style="font-family: 'Josefin Sans', sans-serif;">
-                            <h5 class="specie-catagories">{{ __('Amenities') }}</h5>
-                            <div class="row">
-                                @foreach (json_decode($listing->amenities) ?? [] as $amenity)
-                                    <div class="col-6 col-md-4 mb-2 d-flex align-items-center">
-                                        <i class="me-2 text-success">
-                                            <!-- You can swap this with Bootstrap icons -->
-                                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" 
-                                                class="bi bi-check-circle" viewBox="0 0 16 16">
-                                                <path d="M2.5 8a5.5 5.5 0 1111 0 5.5 5.5 0 01-11 0z"/>
-                                                <path d="M10.97 6.03a.75.75 0 00-1.08-1.04L7.477 7.417 6.384 6.323a.75.75 0 10-1.06 1.06l1.646 1.647a.75.75 0 001.06 0l3.94-3.94z"/>
-                                            </svg>
-                                        </i>
-                                        <span class="small">{{ getPropertyAmenities($amenity) }}</span>
-                                    </div>
-                                @endforeach
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-lg-5">
-                    <div class="card shadow-sm border-0 rounded-3">
-                        <div class="card-body">
-                            <!-- Owner Info -->
-                            <div class="d-flex align-items-center mb-3">
-                                <!-- Owner Image -->
-                                <div class="flex-shrink-0">
-                                    <img src="{{ assetUrl($listing->folder_name . '/' . $listing->file_name) }}"
-                                        alt="{{ $listing->first_name }} {{ $listing->last_name }}"
-                                        class="rounded-circle border"
-                                        style="width: 70px; height: 70px; object-fit: cover;">
-                                </div>
-                                
-                                <!-- Owner Details -->
-                                <div class="ms-3">
-                                    <h5 class="mb-1 fw-semibold">{{ $listing->first_name }} {{ $listing->last_name }}</h5>
-                                    
-                                    <p class="mb-1 small text-muted d-flex align-items-center">
-                                        <i class="fas fa-phone-alt me-2 text-success"></i>
-                                        <a href="tel:{{ $listing->contact_number }}" class="text-decoration-none">
-                                            {{ $listing->contact_number }}
-                                        </a>
-                                    </p>
-                                    
-                                    <p class="mb-0 small text-muted d-flex align-items-center">
-                                        <i class="far fa-envelope me-2 text-primary"></i>
-                                        <a href="mailto:{{ $listing->email }}" class="text-decoration-none">
-                                            {{ $listing->email }}
-                                        </a>
-                                    </p>
-                                </div>
-                            </div>
-
-                            <!-- Divider -->
-                            <hr>
-
-                            <!-- Map -->
-                            <div class="property-location-area">
-                                <div id="map" class="w-100 rounded-3" style="height: 300px;"></div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <div class="row" style="font-family: 'Josefin Sans', sans-serif;">
-                <div class="col-md-12">
-                    <h5 class="nearby-title fw-semibold mb-4">{{ __('Nearby Information') }}</h5>
-                </div>
-                @foreach ($information as $info)
-                    <div class="col-md-6 col-lg-6 col-xl-4">
-                        <div class="single-nearby-info card h-100 border-0 shadow-sm rounded-3 overflow-hidden">
-                            <div class="nearby-image">
-                                <img src="{{ assetUrl($info->folder_name . '/' . $info->file_name) }}" 
-                                    alt="{{ $info->name }}" 
-                                    class="img-fluid w-100" 
-                                    style="height: 180px; object-fit: cover;">
-                            </div>
-                            <div class="nearby-info p-3">
-                                <h6 class="nearby-name fw-semibold mb-2">{{ $info->name }}</h6>
-                                <p class="nearby-details text-muted small mb-2">
-                                    {!! Str::limit($info->details, 100, '...') !!}
-                                </p>
-                                <p class="distance-nearby mb-1">
-                                    <strong>{{ __('Distance') }}:</strong> <span>{{ $info->distance }}</span>
-                                </p>
-                                <p class="nearby-contact mb-0">
-                                    <strong>{{ __('Contact Number') }}:</strong> 
-                                    <a href="tel:{{ $info->contact_number }}" class="text-decoration-none theme-text">
-                                        {{ $info->contact_number }}
-                                    </a>
-                                </p>
-                            </div>
-                        </div>
-                    </div>
-                @endforeach
-                <div class="col-lg-12 mt-5">
-                <div class="single-property-specie">
-                    @if (count(json_decode($listing->advantage) ?? []))
-                        <h5 class="specie-catagories fw-semibold mb-3">{{ __('Advantages') }}</h5>
-                        <div class="specie-list row g-2">
-                            @foreach (json_decode($listing->advantage) ?? [] as $advantage)
-                                <div class="col-md-6">
-                                    <p class="specie-list-text d-flex align-items-center mb-2">
-                                        <i class="me-2">
-                                            <img src="{{ asset('assets/images/properties-img/arrow.png') }}" alt="">
-                                        </i>
-                                        {{ getPropertyAdvantages($advantage) }}
-                                    </p>
-                                </div>
-                            @endforeach
-                        </div>
-                    @endif
-                    <button class="btn rounded theme-btn px-4 mt-2" 
-                            data-bs-toggle="modal"
-                            data-bs-target="#contactModal"
-                            data-bs-whatever="@mdo">
-                        {{ __('Contact Agency') }}
-                    </button>
-                </div>
-            </div>
+    {{-- Carousel --}}
+    <div class="property-slider-area owl-carousel">
+      @foreach ($images as $image)
+        <div class="single-property-slider">
+          <img src="{{ assetUrl($image->folder_name . '/' . $image->file_name) }}" alt="{{ $listing->name }}">
         </div>
-    </div>
-    <div class="related-properties py-5" style="font-family: 'Josefin Sans', sans-serif;">
-        <div class="container">
-            <div class="row mb-4">
-                <div class="col-lg-12 text-center">
-                    <span class="fw-bold fs-5">{{ __('Related Properties') }}</span>
-                    <div class="divider mx-auto"></div>
-                </div>
-            </div>
-
-            <div class="row g-4">
-                @foreach ($relatedListings as $relatedListing)
-                    <div class="col-md-6 col-lg-6 col-xl-4">
-                        <div class="property-card h-100">
-                            <div class="property-image position-relative">
-                                <img src="{{ assetUrl($relatedListing->folder_name . '/' . $relatedListing->file_name) }}"
-                                    alt="{{ $relatedListing->name }}">
-                                <span class="price-tag">
-                                    {{ currencyPrice($relatedListing->price) }}
-                                    @if ($relatedListing->price_duration_type == DURATION_TYPE_MONTHLY)
-                                        /{{ __('Month') }}
-                                    @elseif($relatedListing->price_duration_type == DURATION_TYPE_YEARLY)
-                                        /{{ __('Year') }}
-                                    @endif
-                                </span>
-                            </div>
-
-                            <div class="property-info p-3">
-                                <h5 class="mb-2">{{ $relatedListing->name }}</h5>
-                                <p class="text-muted small mb-3">
-                                    <i class="fas fa-map-marker-alt me-2"></i>{{ $relatedListing->address }}
-                                </p>
-
-                                <div class="d-flex justify-content-between mb-3">
-                                    <div class="d-flex align-items-center">
-                                        <i class="fas fa-cube me-2 text-primary"></i>
-                                        <span>{{ $relatedListing->interior }} {{ __('Sqft') }}</span>
-                                    </div>
-                                    <div class="d-flex align-items-center">
-                                        <i class="ri-layout-2-fill me-2 text-primary"></i>
-                                        <span>{{ $relatedListing->bed_room }} {{ __('Rooms') }}</span>
-                                    </div>
-                                    <div class="d-flex align-items-center">
-                                        <i class="ri-user-2-fill me-2 text-primary"></i>
-                                        <span>{{ $relatedListing->type }}</span>
-                                    </div>
-                                </div>
-
-                                <a href="{{ route('listing.details', $relatedListing->slug) }}"
-                                    class="btn theme-btn w-100 rounded-pill">View Details</a>
-                            </div>
-                        </div>
-                    </div>
-                @endforeach
-            </div>
-        </div>
+      @endforeach
     </div>
 
-    {{-- contact modal  --}}
-    <div class="modal fade bd-example-modal-lg" id="contactModal" tabindex="-1" aria-labelledby="contactModalLabel"
-        aria-hidden="true" style="font-family: 'Josefin Sans', sans-serif;">
-        <div class="modal-dialog modal-dialog-centered modal-lg customs-model">
-            <div class="modal-content">
-                <div class="customs-model-content">
-                    <div class="contact-us">
-                        <p>{{ $listing->name }}</p>
-                    </div>
-                    <div class="contact-us-from-properties">
-                        <form class="ajax" action="{{ route('listing.contact.store') }}" method="POST"
-                            data-handler="getShowMessage">
-                            @csrf
-                            <input type="hidden" name="id" value="{{ $listing->id }}">
-                            <div class="row">
-                                <div class="col-lg-6">
-                                    <div class="single-contact-us-from">
-                                        <label for="name">{{ __('Full Name') }}</label>
-                                        <input class="form-control" type="text" placeholder="{{ __('Full Name') }}"
-                                            id="name" name="name">
-                                    </div>
-                                </div>
-                                <div class="col-lg-6">
-                                    <div class="single-contact-us-from">
-                                        <label for="email">{{ __('Email') }}</label>
-                                        <input class="form-control" type="email" placeholder="{{ __('Email') }}"
-                                            id="email" name="email">
-                                    </div>
-                                </div>
-                                <div class="col-lg-6">
-                                    <div class="single-contact-us-from">
-                                        <label for="phone">{{ __('Phone Number') }}</label>
-                                        <input class="form-control" type="text"
-                                            placeholder="{{ __('Phone Number') }}" id="phone" name="phone">
-                                    </div>
-                                </div>
-                                <div class="col-lg-6">
-                                    <div class="single-contact-us-from">
-                                        <label for="profession">{{ __('Profession') }}</label>
-                                        <input class="form-control" type="text" placeholder="{{ __('Profession') }}"
-                                            id="profession" name="profession">
-                                    </div>
-                                </div>
-                                <div class="col-lg-12">
-                                    <div class="single-contact-us-from">
-                                        <label for="details">{{ __('Details') }}</label>
-                                        <textarea name="details" id="details" class="form-control" rows="10" placeholder="{{ __('Details') }}"></textarea>
-                                    </div>
-                                </div>
-                                <div class="col-lg-6">
-                                    <div class="submit-box-text">
-                                        <button type="submit"
-                                            class="btn rounded theme-btn py-3 px-4 mt-3 me-4">{{ __('Submit') }}</button>
-                                        <button type="button" data-bs-dismiss="modal"
-                                            class="btn theme-btn-outline py-3 px-4 mt-3">{{ __('Cancel') }}</button>
-                                    </div>
-                                </div>
-                            </div>
-                        </form>
-                    </div>
-                </div>
-            </div>
-        </div>
+    {{-- Header --}}
+    <span class="sd-badge">{{ __('For Sale') }}</span>
+    <div class="sd-head">
+      <h1>{{ $listing->name }}</h1>
+      <span class="sd-price">{{ currencyPrice($listing->price) }}</span>
     </div>
+    <div class="sd-meta">
+      <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>{{ $listing->created_at->format('M d, Y') }}</span>
+      <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>{{ $listing->city }} - {{ $listing->state }}, {{ $listing->country }}</span>
+      <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-8 9 8"/><path d="M5 10v10h14V10"/></svg>{{ $listing->type }}</span>
+      @if($listing->interior)<span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 3v18M3 9h18"/></svg>{{ $listing->interior }}</span>@endif
+    </div>
+
+    <div class="sd-grid">
+      {{-- Left --}}
+      <div>
+        <div class="sd-block">
+          <h2>{{ __('Description') }}</h2>
+          <p class="sd-desc">{{ $listing->details }}</p>
+        </div>
+
+        <div class="sd-block">
+          <h2>{{ __('Overview') }}</h2>
+          <div class="sd-overview">
+            @if($listing->bed_room)<div class="sd-ov"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M2 20v-6a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v6"/><path d="M4 12V7a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v5"/><path d="M2 20h20"/></svg>{{ $listing->bed_room }} {{ __('Bedrooms') }}</div>@endif
+            @if($listing->bath_room)<div class="sd-ov"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12V6a2 2 0 0 1 4 0M2 12h20v3a5 5 0 0 1-5 5H7a5 5 0 0 1-5-5z"/></svg>{{ $listing->bath_room }} {{ __('Bathrooms') }}</div>@endif
+            @if($listing->kitchen_room)<div class="sd-ov"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3h12v18H6z"/><path d="M6 9h12M9 3v6"/></svg>{{ $listing->kitchen_room }} {{ __('Kitchen') }}</div>@endif
+            @if($listing->dining_room)<div class="sd-ov"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18M8 3v6a3 3 0 0 1-5 0M18 3c-1.5 0-3 2-3 5s1.5 4 3 4v9"/></svg>{{ $listing->dining_room }} {{ __('Dining Room') }}</div>@endif
+            @if($listing->living_room)<div class="sd-ov"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12v-2a2 2 0 0 1 4 0M4 12h16M4 12v5m16-7v-2a2 2 0 0 0-4 0m4 4v5M2 12a2 2 0 0 1 4 0v3h12v-3a2 2 0 0 1 4 0"/></svg>{{ $listing->living_room }} {{ __('Living Room') }}</div>@endif
+            @if($listing->storage_room)<div class="sd-ov"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8l8-5 8 5v12H4z"/><path d="M4 12h16M9 20v-6h6v6"/></svg>{{ $listing->storage_room }} {{ __('Storage Room') }}</div>@endif
+            @foreach (explode(',', $listing->other_room) as $room)
+              @if(trim($room) !== '')<div class="sd-ov"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/></svg>{{ trim($room) }}</div>@endif
+            @endforeach
+          </div>
+        </div>
+
+        @if(count(json_decode($listing->amenities) ?? []))
+          <div class="sd-block">
+            <h2>{{ __('Amenities') }}</h2>
+            <div class="sd-amenities">
+              @foreach (json_decode($listing->amenities) ?? [] as $amenity)
+                <div class="sd-am"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>{{ getPropertyAmenities($amenity) }}</div>
+              @endforeach
+            </div>
+          </div>
+        @endif
+      </div>
+
+      {{-- Right: agent + map --}}
+      <div>
+        <div class="sd-side">
+          <div class="sd-agent">
+            <img src="{{ assetUrl($listing->folder_name . '/' . $listing->file_name) }}" alt="{{ $listing->first_name }} {{ $listing->last_name }}"
+                 onerror="this.onerror=null;this.src='https://ui-avatars.com/api/?name={{ urlencode(trim($listing->first_name.' '.$listing->last_name)) }}&background=185FA5&color=fff';">
+            <div>
+              <h3>{{ trim($listing->first_name . ' ' . $listing->last_name) ?: __('Agent') }}</h3>
+              @if($listing->contact_number)<a href="tel:{{ $listing->contact_number }}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3 19.5 19.5 0 0 1-6-6 19.8 19.8 0 0 1-3-8.6A2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1.9.3 1.8.6 2.6a2 2 0 0 1-.5 2.1L8.1 9.9a16 16 0 0 0 6 6l1.5-1.1a2 2 0 0 1 2.1-.5c.8.3 1.7.5 2.6.6a2 2 0 0 1 1.7 2z"/></svg>{{ $listing->contact_number }}</a>@endif
+              @if($listing->email)<a href="mailto:{{ $listing->email }}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-10 6L2 7"/></svg>{{ $listing->email }}</a>@endif
+            </div>
+          </div>
+          <hr>
+          <div id="map"></div>
+          <button class="sd-contact-btn" data-bs-toggle="modal" data-bs-target="#contactModal" data-bs-whatever="@mdo">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="16" height="16"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+            {{ __('Contact Agency') }}
+          </button>
+        </div>
+      </div>
+    </div>
+
+    {{-- Advantages --}}
+    @if(count(json_decode($listing->advantage) ?? []))
+      <div class="sd-sec">
+        <h2>{{ __('Advantages') }}</h2>
+        <div class="sd-advantages">
+          @foreach (json_decode($listing->advantage) ?? [] as $advantage)
+            <div class="sd-adv"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>{{ getPropertyAdvantages($advantage) }}</div>
+          @endforeach
+        </div>
+      </div>
+    @endif
+
+    {{-- Nearby --}}
+    @if(count($information))
+      <div class="sd-sec">
+        <h2>{{ __('Nearby Information') }}</h2>
+        <div class="sd-cards">
+          @foreach ($information as $info)
+            <div class="sd-card">
+              <div class="sd-card__media"><img src="{{ assetUrl($info->folder_name . '/' . $info->file_name) }}" alt="{{ $info->name }}" loading="lazy"></div>
+              <div class="sd-card__body">
+                <h3>{{ $info->name }}</h3>
+                <p class="sd-nearby__meta">{!! Str::limit(strip_tags($info->details), 100, '…') !!}</p>
+                <p class="sd-nearby__meta"><b>{{ __('Distance') }}:</b> {{ $info->distance }}<br>
+                  <b>{{ __('Contact') }}:</b> <a href="tel:{{ $info->contact_number }}" style="color:var(--cs-blue)">{{ $info->contact_number }}</a></p>
+              </div>
+            </div>
+          @endforeach
+        </div>
+      </div>
+    @endif
+
+    {{-- Related --}}
+    @if(count($relatedListings))
+      <div class="sd-sec">
+        <h2>{{ __('Related Properties') }}</h2>
+        <div class="sd-cards">
+          @foreach ($relatedListings as $relatedListing)
+            <div class="sd-card">
+              <div class="sd-card__media">
+                <img src="{{ assetUrl($relatedListing->folder_name . '/' . $relatedListing->file_name) }}" alt="{{ $relatedListing->name }}" loading="lazy">
+                <span class="sd-card__tag">{{ currencyPrice($relatedListing->price) }}@if($relatedListing->price_duration_type == DURATION_TYPE_MONTHLY)/{{ __('Month') }}@elseif($relatedListing->price_duration_type == DURATION_TYPE_YEARLY)/{{ __('Year') }}@endif</span>
+              </div>
+              <div class="sd-card__body">
+                <h3>{{ $relatedListing->name }}</h3>
+                <div class="sd-card__loc"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>{{ $relatedListing->address }}</div>
+                <div class="sd-card__row">
+                  <span>{{ $relatedListing->interior }} {{ __('Sqft') }}</span>
+                  <span>{{ $relatedListing->bed_room }} {{ __('Rooms') }}</span>
+                  <span>{{ $relatedListing->type }}</span>
+                </div>
+                <div class="sd-card__cta"><a href="{{ route('listing.details', $relatedListing->slug) }}">{{ __('View details') }}<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a></div>
+              </div>
+            </div>
+          @endforeach
+        </div>
+      </div>
+    @endif
+  </div>
+
+  {{-- Contact modal --}}
+  <div class="modal fade sd-modal" id="contactModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+      <div class="modal-content">
+        <div class="sd-modal-head">
+          <h5>{{ __('Contact about') }} {{ $listing->name }}</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <form class="ajax" action="{{ route('listing.contact.store') }}" method="POST" data-handler="getShowMessage">
+          @csrf
+          <input type="hidden" name="id" value="{{ $listing->id }}">
+          <div class="sd-modal-body">
+            <div class="sd-fgrid">
+              <div><label>{{ __('Full Name') }}</label><input class="form-control" type="text" name="name" placeholder="{{ __('Full Name') }}"></div>
+              <div><label>{{ __('Email') }}</label><input class="form-control" type="email" name="email" placeholder="{{ __('Email') }}"></div>
+              <div><label>{{ __('Phone Number') }}</label><input class="form-control" type="text" name="phone" placeholder="{{ __('Phone Number') }}"></div>
+              <div><label>{{ __('Profession') }}</label><input class="form-control" type="text" name="profession" placeholder="{{ __('Profession') }}"></div>
+              <div class="sd-f-full"><label>{{ __('Details') }}</label><textarea name="details" class="form-control" rows="5" placeholder="{{ __('Details') }}"></textarea></div>
+            </div>
+          </div>
+          <div class="sd-modal-foot">
+            <button type="submit" class="sd-submit">{{ __('Submit') }}</button>
+            <button type="button" class="sd-cancel" data-bs-dismiss="modal">{{ __('Cancel') }}</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
 @endsection
+
 @push('style')
-    <link rel="stylesheet" href="{{ asset('assets/properties/css/properties.css') }}">
     <link href='https://api.mapbox.com/mapbox.js/v3.3.1/mapbox.css' rel='stylesheet' />
-    <link href='https://api.mapbox.com/mapbox.js/plugins/leaflet-markercluster/v1.0.0/MarkerCluster.css'
-        rel='stylesheet' />
-    <link href='https://api.mapbox.com/mapbox.js/plugins/leaflet-markercluster/v1.0.0/MarkerCluster.Default.css'
-        rel='stylesheet' />
-    <style>
-        #map {
-            width: 100%;
-            height: 454px;
-            border-radius: 5px;
-            border: 2px solid #75cff0;
-        }
-    </style>
+    <link href='https://api.mapbox.com/mapbox.js/plugins/leaflet-markercluster/v1.0.0/MarkerCluster.css' rel='stylesheet' />
+    <link href='https://api.mapbox.com/mapbox.js/plugins/leaflet-markercluster/v1.0.0/MarkerCluster.Default.css' rel='stylesheet' />
 @endpush
 @push('script')
     <script src='https://api.mapbox.com/mapbox.js/v3.3.1/mapbox.js'></script>
     <script src='https://api.mapbox.com/mapbox.js/plugins/leaflet-markercluster/v1.0.0/leaflet.markercluster.js'></script>
     <script>
         $('.property-slider-area').owlCarousel({
-            loop: true,
-            margin: 24,
-            nav: true,
+            loop: true, margin: 24, nav: true,
             navText: ['<i class="fas fa-chevron-left"></i>', '<i class="fas fa-chevron-right"></i>'],
-            responsive: {
-                0: {
-                    items: 1
-                },
-                600: {
-                    items: 2
-                },
-                1000: {
-                    items: 2
-                }
-            }
-        })
+            responsive: { 0: { items: 1 }, 600: { items: 2 }, 1000: { items: 2 } }
+        });
 
-        L.mapbox.accessToken =
-            "{{ getOption('map_api_key') }}";
-
+        L.mapbox.accessToken = "{{ getOption('map_api_key') }}";
         const mapData = @json($mapData);
-        //map data prepare
         window.map = L.mapbox.map('map')
             .setView([-37.82, 175.215], 14)
-            .addLayer(L.mapbox.styleLayer('mapbox://styles/mapbox/streets-v11'));
+            .addLayer(L.mapbox.styleLayer('mapbox://styles/mapbox/dark-v11'));
 
         window.markers = L.markerClusterGroup({
             iconCreateFunction: function(cluster) {
@@ -465,19 +333,14 @@
             mapData.forEach(feature => {
                 var popupContent = feature.properties.popup;
                 var marker = L.marker(new L.LatLng(feature.coordinates.lat, feature.coordinates.long), {
-                    icon: L.icon({
-                        iconUrl: feature.properties.image,
-                        iconSize: [40, 40],
-                        className: 'border border-3 border-light rounded-5',
-                    }),
+                    icon: L.icon({ iconUrl: feature.properties.image, iconSize: [40, 40], className: 'border border-3 border-light rounded-5' }),
                     title: feature.properties.name
                 });
                 marker.bindPopup(popupContent);
                 window.markers.addLayer(marker);
             });
-
             window.map.addLayer(window.markers);
-            window.map.fitBounds(window.markers.getBounds())
+            window.map.fitBounds(window.markers.getBounds());
         }
     </script>
 @endpush
