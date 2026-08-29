@@ -22,9 +22,6 @@ setInterval(function() {
 var thisStateSelector;
 var property_id = $("#property_id").val();
 var propertyUnitIds = [];
-var country_id;
-var state_id;
-var city_id;
 getPropertyInformation(property_id);
 
 // Response handler
@@ -317,80 +314,6 @@ function getRentCharge(property_id) {
 function getRentChargeRes(response) {
     $("#addHtmlForm").html(response.data.view);
     datePicker();
-}
-
-// ────────────────────────────────────────────────────────
-// STATE & CITY (kept for any future dropdown use)
-// ────────────────────────────────────────────────────────
-$(document).on("change", ".country_id", function () {
-    thisStateSelector = $(this);
-    getStateByCountryId($(thisStateSelector).val());
-});
-
-function getStateByCountryId(country_id) {
-    var getStateListRoute = $("#getStateListRoute").val();
-    commonAjax(
-        "GET",
-        getStateListRoute,
-        getStateByCountryRes,
-        getStateByCountryRes,
-        { country_id: country_id }
-    );
-}
-
-function getStateByCountryRes(response) {
-    var states = response.data.states;
-    var optionsHtml = states
-        .map(function (opt) {
-            return (
-                "<option " +
-                (state_id == opt.id ? "selected" : "") +
-                ' value="' +
-                opt.id +
-                '">' +
-                opt.name +
-                "</option>"
-            );
-        })
-        .join("");
-    var html = '<option value="">--Select State--</option>' + optionsHtml;
-    $("#stateHtmlOption").html(html);
-    $("#cityHtmlOption").html('<option value="">--Select City--</option>');
-}
-
-$(document).on("change", ".state_id", function () {
-    thisStateSelector = $(this);
-    getCitiesByState($(thisStateSelector).val());
-});
-
-function getCitiesByState(state_id) {
-    var getCityListRoute = $("#getCityListRoute").val();
-    commonAjax(
-        "GET",
-        getCityListRoute,
-        getCitiesByStateRes,
-        getCitiesByStateRes,
-        { state_id: state_id }
-    );
-}
-
-function getCitiesByStateRes(response) {
-    var cities = response.data.cities;
-    var optionsHtml = cities
-        .map(function (opt) {
-            return (
-                "<option " +
-                (city_id == opt.id ? "selected" : "") +
-                ' value="' +
-                opt.id +
-                '">' +
-                opt.name +
-                "</option>"
-            );
-        })
-        .join("");
-    var html = '<option value="">--Select City--</option>' + optionsHtml;
-    $("#cityHtmlOption").html(html);
 }
 
 // ────────────────────────────────────────────────────────
