@@ -29,6 +29,7 @@ class DatabaseSeeder extends Seeder
             BrandingSeeder::class,
             CentresidenceCatalogSeeder::class,
             KnowledgeBaseSeeder::class,
+            OwnerKnowledgeBaseSeeder::class,
             AffiliateKnowledgeBaseSeeder::class,
             AffiliateAcademySeeder::class,
         ]);
