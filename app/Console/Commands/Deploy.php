@@ -89,8 +89,8 @@ class Deploy extends Command
 
         // 1) Composer — must run at the shell BEFORE artisan (a missing dependency would
         //    stop artisan booting, so this command could never self-run it). composer.lock
-        //    is gitignored here, so each host resolves its own versions — always safe to run.
-        $this->line(' <fg=cyan>1. Dependencies</> — after a pull that changed <fg=yellow>composer.json</>, run this FIRST (before app:deploy):');
+        //    is tracked, so this installs the exact, tested versions the pull brought in.
+        $this->line(' <fg=cyan>1. Dependencies</> — after a pull that changed <fg=yellow>composer.json/lock</>, run this FIRST (before app:deploy):');
         $this->line('    <fg=yellow>composer install --no-dev --optimize-autoloader</>');
         $this->newLine();
 
