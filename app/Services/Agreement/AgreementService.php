@@ -530,6 +530,7 @@ class AgreementService
                     'app'   => getOption('app_name') ?: 'Centresidence',
                 ]);
                 SendSmsJob::dispatch([$tenantUser->contact_number], $message, $agreement->owner_user_id);
+                \App\Services\Sms\SmsCreditsService::warnIfExhausted($agreement->owner_user_id, true);
             }
 
             // Email (queued — AgreementSentMail is ShouldQueue), gated on the app's email toggle.

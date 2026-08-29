@@ -179,6 +179,7 @@ class TenantApplicationController extends Controller
             // application-assigned tenant onboards identically. See [[tenant-credentials-onboarding]].
             if ($autoPassword) {
                 \App\Jobs\SendTenantCredentialsJob::dispatch($user->id, $autoPassword, 'both');
+                \App\Services\Sms\SmsCreditsService::warnIfExhausted($ownerId, ! empty($user->contact_number));
             }
 
             // (b) Tenancy-assigned notice (nice-to-have) — fine behind the email toggle.

@@ -429,6 +429,7 @@ class TenantService
             // plaintext) and only when they actually have a channel to reach.
             if ($id == '' && $plainPassword && ($user->email || $user->contact_number)) {
                 SendTenantCredentialsJob::dispatch($user->id, $plainPassword, 'both');
+                SmsCreditsService::warnIfExhausted(auth()->id(), ! empty($user->contact_number));
             }
             // DEV ONLY: keep the generated password in the session so the owner can copy it from
             // the tenant's profile to test the login flow. Never stored in the DB; never in prod.

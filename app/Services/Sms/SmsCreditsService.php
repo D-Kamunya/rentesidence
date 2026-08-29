@@ -45,6 +45,37 @@ class SmsCreditsService
     }
 
     /**
+     * Flash a one-line "SMS not sent — out of credits" warning to the owner on their
+     * CURRENT page, for an owner-initiated action whose SMS goes out via a queued job and
+     * would otherwise fail silently. Call it right where the SMS is dispatched, passing
+     * whether a text was actually attempted (recipient has a phone).
+     *
+     * No-op unless it's an owner-facing HTTP request that's out of credit: queued jobs and
+     * the scheduler run in the console (no page to warn on), and it merges with any warning
+     * already flashed so it never clobbers another message. Surfaces via toastr.warning.
+     */
+    public static function warnIfExhausted(?int $ownerUserId, bool $smsAttempted, ?string $notice = null): void
+    {
+        if (! $smsAttempted || $ownerUserId === null || app()->runningInConsole()) {
+            return;
+        }
+        if (self::hasCredits($ownerUserId)) {
+            return;
+        }
+
+        $notice ??= __('Your SMS credit balance is 0, so the text message was not sent. Top up SMS credits to enable text delivery.');
+        $existing = trim((string) session()->get('warning'));
+
+        // De-dupe: a bulk action (e.g. invoicing every unit) calls this in a loop — flag once.
+        if ($existing !== '' && str_contains($existing, $notice)) {
+            session()->flash('warning', $existing); // keep it alive for this redirect
+            return;
+        }
+
+        session()->flash('warning', $existing !== '' ? $existing . ' ' . $notice : $notice);
+    }
+
+    /**
      * Deduct one credit atomically. Returns true on success, false if insufficient. Fires
      * low/zero-balance notifications against a consistent before/after, inside the lock.
      */

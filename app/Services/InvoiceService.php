@@ -562,6 +562,7 @@ class InvoiceService
             'url'   => route('instant.invoice.pay', ['token' => $invoice->payment_token]),
         ]);
         SendSmsJob::dispatch([$tenant->user->contact_number], $message, auth()->id());
+        \App\Services\Sms\SmsCreditsService::warnIfExhausted(auth()->id(), ! empty($tenant->user->contact_number));
     }
 
     private function storeInvoicesForAllProperties($request, $id)
