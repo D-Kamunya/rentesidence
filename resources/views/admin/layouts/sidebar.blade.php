@@ -47,6 +47,12 @@
                         </a>
                     </li>
                     <li>
+                        <a href="{{ route('admin.marketplace.refunds') }}">
+                            <i class="ri-refund-2-line"></i>
+                            <span>{{ __('Marketplace Refunds') }}</span>
+                        </a>
+                    </li>
+                    <li>
                         <a href="{{ route('admin.message.index') }}">
                             <i class="ri-message-fill"></i>
                             <span>{{ __('Messages') }}</span>

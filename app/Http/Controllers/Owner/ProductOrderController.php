@@ -120,14 +120,15 @@ class ProductOrderController extends Controller
             ->findOrFail($id);
         
         if ($order->payment_status === ORDER_PAYMENT_STATUS_PAID) {
-            // Money already moved — flag for refund
-            $order->payment_status = PRODUCT_ORDER_STATUS_REFUND_PENDING;
+            // Paid → the buyer is owed a refund. Queue it for admin green-light (no money moves
+            // yet); the actual B2C payout to the buyer happens on admin approval.
+            app(\App\Services\CommissionService::class)->requestRefund($order);
         } else {
-            // Unpaid — cancel cleanly
+            // Unpaid — cancel cleanly, nothing to refund.
             $order->payment_status = PRODUCT_ORDER_STATUS_CANCELLED;
         }
         $order->order_status = ORDER_STATUS_CANCELLED;
-        
+
         $order->save();
     
         $emailData = (object) [
@@ -154,34 +155,25 @@ class ProductOrderController extends Controller
             })
             ->where('payment_status', PRODUCT_ORDER_STATUS_REFUND_PENDING)
             ->findOrFail($id);
-    
-        $order->payment_status = PRODUCT_ORDER_STATUS_CANCELLED; // refund issued — close the loop
-        $order->order_status   = ORDER_STATUS_CANCELLED;
-        $order->save();
 
-        // Reverse the money the sale booked (owner wallet credit + platform + affiliate commission)
-        // so the books reconcile. Idempotent; already-withdrawn proceeds become a carried-forward
-        // clawback. Secondary to the status change — log but don't block the confirmation.
-        $order->load('orderItems.product');
-        try {
-            app(\App\Services\CommissionService::class)->reverseOrderCommission($order);
-        } catch (\Throwable $e) {
-            \Log::error('Order refund reversal failed', ['order_id' => $order->id, 'error' => $e->getMessage()]);
-        }
+        // The owner approves the refund → it enters the ADMIN queue for a green-lit B2C payout to
+        // the buyer. Money moves only on admin approval + M-Pesa confirmation (no more manual "3–5
+        // days", and the ledger is reversed at payout-confirm, not here). Idempotent.
+        app(\App\Services\CommissionService::class)->requestRefund($order);
 
         $emailData = (object) [
-            'subject' => __('Refund confirmed for order #:id', ['id' => $order->order_id]),
-            'title'   => __('Refund confirmed'),
-            'message' => __('The owner has confirmed your refund for order #:id. Please allow 3–5 business days for the funds to reflect.', ['id' => $order->order_id]),
+            'subject' => __('Refund approved for order #:id', ['id' => $order->order_id]),
+            'title'   => __('Refund approved'),
+            'message' => __('Your refund for order #:id has been approved and is being processed. You will receive the money on your M-Pesa shortly.', ['id' => $order->order_id]),
         ];
         $notificationData = (object) [
-            'title' => __('Refund confirmed'),
-            'body'  => __('Your refund for order #:id has been confirmed.', ['id' => $order->order_id]),
+            'title' => __('Refund approved'),
+            'body'  => __('Your refund for order #:id is being processed.', ['id' => $order->order_id]),
             'url'   => route('tenant.order.index'),
         ];
         SendOrderStatusNotificationJob::dispatch($order, $emailData, $notificationData);
-    
-        return $this->success([], __('Refund confirmed and tenant notified.'));
+
+        return $this->success([], __('Refund approved and queued for payout to the buyer.'));
     }
 
     // public function overDueInvoiceIndex(Request $request)

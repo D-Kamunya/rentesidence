@@ -16,7 +16,7 @@ class MpesaB2CService
         $this->consumer_secret = config('mpesa.mpesa_consumer_secret');
     }
 
-    public function send(string $phone, float $amount): array
+    public function send(string $phone, float $amount, string $remarks = 'Owner wallet withdrawal', string $occasion = 'OwnerWithdrawal'): array
     {
         $payload = [
             'InitiatorName'      => config('mpesa.initiator_name'),
@@ -25,10 +25,10 @@ class MpesaB2CService
             'Amount'             => (int) round($amount),
             'PartyA'             => config('mpesa.b2c_shortcode') ?: config('mpesa.shortcode'),
             'PartyB'             => $this->phoneValidator($phone),
-            'Remarks'            => 'Owner wallet withdrawal',
+            'Remarks'            => $remarks,
             'QueueTimeOutURL'    => config('mpesa.b2c_timeout_url'),
             'ResultURL'          => config('mpesa.b2c_result_url'),
-            'Occasion'           => 'OwnerWithdrawal',
+            'Occasion'           => $occasion,
         ];
 
         $response = $this->MpesaRequest($this->url . '/mpesa/b2c/v1/paymentrequest', $payload);

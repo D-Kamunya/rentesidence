@@ -199,6 +199,10 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'middleware' => ['auth', 'a
         Route::post('/disputes/{dispute}/notify-owners', [\App\Http\Controllers\Admin\ScreeningAdminController::class, 'notifyOwners'])->name('disputes.notify');
     });
 
+    // Marketplace refunds — admin green-lights the B2C payout to the buyer.
+    Route::get('marketplace-refunds', [\App\Http\Controllers\Admin\MarketplaceRefundController::class, 'index'])->name('marketplace.refunds');
+    Route::post('marketplace-refunds/{id}/approve', [\App\Http\Controllers\Admin\MarketplaceRefundController::class, 'approve'])->name('marketplace.refunds.approve');
+
     Route::group(['prefix' => 'owner', 'as' => 'owner.'], function () {
         Route::get('/', [OwnerController::class, 'index'])->name('index');
          // register owner

@@ -246,6 +246,121 @@ class CommissionService
     }
 
     // ──────────────────────────────────────────────────────────
+    // MARKETPLACE REFUNDS (escrow-aware, admin-green-lit B2C to the buyer)
+    // ──────────────────────────────────────────────────────────
+
+    /**
+     * A refund is requested (buyer wants their money back, or the owner can't fulfil). This only
+     * QUEUES it for admin approval — money never moves without an admin green-light. Idempotent.
+     */
+    public function requestRefund(ProductOrder $order): void
+    {
+        if (in_array($order->refund_status, [REFUND_STATUS_PROCESSING, REFUND_STATUS_REFUNDED], true)) {
+            return; // already in-flight or done
+        }
+        $order->forceFill([
+            'payment_status' => PRODUCT_ORDER_STATUS_REFUND_PENDING,
+            'refund_status'  => REFUND_STATUS_REQUESTED,
+        ])->save();
+    }
+
+    /**
+     * ADMIN green-lights the refund → send the buyer their money back via M-Pesa B2C. The send is
+     * fired OUTSIDE any transaction (an accepted request must survive) and the order is left in
+     * `processing` until the async B2C ResultURL confirms (handleRefundResult). Retryable from a
+     * previously FAILED state. Returns ['ok'=>bool, 'message'=>string].
+     */
+    public function approveAndSendRefund(ProductOrder $order): array
+    {
+        if (! in_array($order->refund_status, [REFUND_STATUS_REQUESTED, REFUND_STATUS_FAILED], true)) {
+            return ['ok' => false, 'message' => __('This refund is not awaiting approval.')];
+        }
+
+        $buyer = \App\Models\User::find($order->user_id);
+        $phone = $buyer?->contact_number;
+        if (empty($phone)) {
+            return ['ok' => false, 'message' => __('The buyer has no M-Pesa phone number on file to refund to.')];
+        }
+
+        $amount = (float) $order->transaction_amount; // full gross the buyer paid
+        if ($amount <= 0) {
+            return ['ok' => false, 'message' => __('Nothing to refund on this order.')];
+        }
+
+        $result = app(\App\Services\Payment\MpesaB2CService::class)
+            ->send($phone, $amount, 'Marketplace refund #' . $order->order_id, 'MarketplaceRefund');
+
+        if (! ($result['success'] ?? false)) {
+            $order->forceFill(['refund_status' => REFUND_STATUS_FAILED])->save();
+            return ['ok' => false, 'message' => $result['message'] ?? __('The refund payout could not be initiated.')];
+        }
+
+        $order->forceFill([
+            'refund_status'    => REFUND_STATUS_PROCESSING,
+            'refund_reference' => $result['reference'] ?? null,
+            'refund_amount'    => $amount,
+        ])->save();
+
+        return ['ok' => true, 'message' => __('Refund payout initiated — awaiting M-Pesa confirmation.')];
+    }
+
+    /**
+     * Async B2C ResultURL outcome for a refund. Idempotent — only a `processing` refund transitions,
+     * so a re-fired Safaricom callback is a no-op. On success we finalize (reverse the owner ledger
+     * only if the proceeds were already RELEASED — a held order was never credited, so nothing to
+     * claw back); on failure we mark FAILED for admin retry.
+     */
+    public function handleRefundResult(ProductOrder $order, bool $success, ?string $receipt = null): void
+    {
+        if ($order->refund_status !== REFUND_STATUS_PROCESSING) {
+            return;
+        }
+
+        if (! $success) {
+            $order->forceFill(['refund_status' => REFUND_STATUS_FAILED])->save();
+            return;
+        }
+
+        // Reverse the owner/platform/affiliate ledger ONLY if proceeds were released (or a legacy
+        // order was credited under the old immediate model). A held order was never credited.
+        if ($order->settlement_status === SETTLEMENT_STATUS_RELEASED || $this->alreadyCredited($order)) {
+            try {
+                $this->reverseOrderCommission($order);
+            } catch (\Throwable $e) {
+                Log::error('Refund ledger reversal failed', ['order_id' => $order->id, 'error' => $e->getMessage()]);
+            }
+        }
+
+        $order->forceFill([
+            'refund_status'     => REFUND_STATUS_REFUNDED,
+            'settlement_status' => SETTLEMENT_STATUS_REFUNDED,
+            'payment_status'    => PRODUCT_ORDER_STATUS_CANCELLED,
+            'order_status'      => ORDER_STATUS_CANCELLED,
+            'refund_reference'  => $receipt ?: $order->refund_reference,
+            'refunded_at'       => now(),
+        ])->save();
+
+        // Tell the buyer the money has actually landed.
+        try {
+            \App\Jobs\SendOrderStatusNotificationJob::dispatch(
+                $order,
+                (object) [
+                    'subject' => __('Refund completed for order #:id', ['id' => $order->order_id]),
+                    'title'   => __('Refund completed'),
+                    'message' => __('Your refund for order #:id has been sent to your M-Pesa. Thank you.', ['id' => $order->order_id]),
+                ],
+                (object) [
+                    'title' => __('Refund completed'),
+                    'body'  => __('Your refund for order #:id has been sent to your M-Pesa.', ['id' => $order->order_id]),
+                    'url'   => route('tenant.order.index'),
+                ],
+            );
+        } catch (\Throwable $e) {
+            Log::error('Refund completion notification failed', ['order_id' => $order->id, 'error' => $e->getMessage()]);
+        }
+    }
+
+    // ──────────────────────────────────────────────────────────
     // RENT
     // ──────────────────────────────────────────────────────────
 

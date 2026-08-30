@@ -472,7 +472,14 @@ class MpesaController extends Controller
                 return $this->b2cAck();
             }
 
-            Log::warning('B2C result matched no withdrawal', ['refs' => $refs, 'result_code' => $resultCode]);
+            // 3) Marketplace refund to a buyer?
+            $refundOrder = \App\Models\ProductOrder::whereIn('refund_reference', $refs)->first();
+            if ($refundOrder) {
+                app(\App\Services\CommissionService::class)->handleRefundResult($refundOrder, $isSuccess, $transactionId);
+                return $this->b2cAck();
+            }
+
+            Log::warning('B2C result matched no withdrawal or refund', ['refs' => $refs, 'result_code' => $resultCode]);
         } catch (\Throwable $e) {
             // Never let a reconciliation error bubble - Safaricom retries, and the
             // idempotency guards make a retry safe.
