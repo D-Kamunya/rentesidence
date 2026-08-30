@@ -87,19 +87,18 @@ class PeriodSummaryTest extends AffiliateDatabaseTestCase
         $this->assertSame(160.0, $this->svc()->getLifeTimeGrossCommissions(1));
     }
 
-    public function test_recalc_applies_subscription_rates(): void
+    public function test_recalc_sums_the_stored_subscription_commission(): void
     {
-        config([
-            'settings.FIRST_TIME_COMMISSION_RATE' => 10,
-            'settings.RECURRING_COMMISSION_RATE'  => 5,
-        ]);
-
+        // The payout sums the commission ACTUALLY recorded on each row (locked at creation),
+        // not a re-derivation from subscription_amount × the current rate — so it matches the
+        // raw affiliate_commissions the referrals page reads.
         AffiliateCommission::create([
             'affiliate_id'        => 1,
             'owner_id'            => 1,
             'source'              => AFFILIATE_COMMISSION_SOURCE_SUBSCRIPTION,
             'type'                => NEW_CLIENT,
             'subscription_amount' => 1000,
+            'commission_amount'   => 100, // recorded at creation (e.g. 10% of 1000)
             'period_month'        => 3,
             'period_year'         => 2026,
         ]);
@@ -107,7 +106,28 @@ class PeriodSummaryTest extends AffiliateDatabaseTestCase
         $row = $this->svc()->recalculatePeriodSummary(1, 3, 2026);
 
         $this->assertSame(1, $row->total_new_clients);
-        $this->assertSame(100.0, (float) $row->new_commission_payout); // 10% of 1000
+        $this->assertSame(100.0, (float) $row->new_commission_payout);
+        $this->assertSame(100.0, (float) $row->total_commission_payout);
+    }
+
+    public function test_recalc_locks_historical_earnings_against_rate_changes(): void
+    {
+        AffiliateCommission::create([
+            'affiliate_id'        => 1,
+            'owner_id'            => 1,
+            'source'              => AFFILIATE_COMMISSION_SOURCE_SUBSCRIPTION,
+            'type'                => RECURRING_CLIENT,
+            'subscription_amount' => 1000,
+            'commission_amount'   => 100, // what the affiliate actually earned
+            'period_month'        => 3,
+            'period_year'         => 2026,
+        ]);
+
+        // A later change to the global rate must NOT retroactively rewrite the payout.
+        config(['settings.RECURRING_COMMISSION_RATE' => 99]);
+        $row = $this->svc()->recalculatePeriodSummary(1, 3, 2026);
+
+        $this->assertSame(100.0, (float) $row->recurring_commission_payout); // stays earned, not 990
         $this->assertSame(100.0, (float) $row->total_commission_payout);
     }
 }

@@ -441,11 +441,17 @@ class AffiliateCommissionService
 
         $newCount             = $newQuery->count();
         $newAmount            = (float) $newQuery->sum('subscription_amount');
-        $recurringClientsCount= (int) $recurringQuery->distinct('owner_id')->count('owner_id');
-        $recurringAmount      = (float) $recurringQuery->sum('subscription_amount');
 
-        $newPayout       = round($newAmount * ((float) getOption('FIRST_TIME_COMMISSION_RATE', 0) / 100), 2);
-        $recurringPayout = round($recurringAmount * ((float) getOption('RECURRING_COMMISSION_RATE', 0) / 100), 2);
+        // Payout = the commission ACTUALLY recorded on each row (locked at the rate in force when it
+        // was earned), NOT a re-derivation at the CURRENT global rate. Re-deriving would let a later
+        // rate change retroactively rewrite historical earnings, and make this rollup disagree with
+        // the raw affiliate_commissions the referrals page sums. Mirrors rent/marketplace below.
+        $newPayout            = round((float) $newQuery->sum('commission_amount'), 2);
+
+        $recurringAmount      = (float) $recurringQuery->sum('subscription_amount');
+        $recurringPayout      = round((float) $recurringQuery->sum('commission_amount'), 2);
+        // distinct() mutates the builder, so count DISTINCT owners LAST (after the sums above).
+        $recurringClientsCount= (int) $recurringQuery->distinct('owner_id')->count('owner_id');
 
         // ── Rent ─────────────────────────────────────────────
         $rentAmount  = (float) AffiliateCommission::where('affiliate_id', $affiliateId)
