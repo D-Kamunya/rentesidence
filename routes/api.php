@@ -56,6 +56,7 @@ Route::group(['middleware' => ['auth:api']], function () {
 
 Route::post('payment/confirm', [MpesaController::class, 'MpesaPaymentConfirm'])->name('mpesa.payment.confirm');
 Route::post('v1/b2c/result',   [MpesaController::class, 'B2CResult'])->name('mpesa.b2c.result');
+Route::post('v1/b2c/timeout',  [MpesaController::class, 'B2CTimeout'])->name('mpesa.b2c.timeout');
 
 // Centresidence owner down-payment (partial financing) STK callback.
 Route::post('centresidence/down-payment/{facility}/callback', \App\Http\Controllers\Centresidence\DownPaymentCallbackController::class)

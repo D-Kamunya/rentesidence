@@ -489,6 +489,56 @@ class MpesaController extends Controller
         return $this->b2cAck();
     }
 
+    /**
+     * B2C QueueTimeOutURL — Safaricom could not process the payout within its queue window, so it
+     * was NOT completed. Mirror B2CResult's correlation but treat it as a FAILURE, so an in-flight
+     * payout (owner withdrawal / affiliate withdrawal / marketplace refund) never sits stuck in
+     * PROCESSING: the reconcilers mark it failed and restore the balance / allow a retry. Idempotent
+     * (only in-flight rows transition) and fail-safe; always ACKs so Safaricom stops retrying.
+     */
+    public function B2CTimeout(Request $request)
+    {
+        try {
+            $body   = json_decode($request->getContent(), true) ?: [];
+            $result = $body['Result'] ?? $body;
+            $refs   = array_values(array_filter([
+                $result['ConversationID'] ?? ($body['ConversationID'] ?? null),
+                $result['OriginatorConversationID'] ?? ($body['OriginatorConversationID'] ?? null),
+            ]));
+
+            if (empty($refs)) {
+                Log::warning('B2C timeout with no correlation reference', ['body' => $body]);
+                return $this->b2cAck();
+            }
+
+            $timeoutDesc = __('M-Pesa queue timeout — payout not processed');
+
+            $affiliate = AffiliateWithdrawal::whereIn('mpesa_reference', $refs)->first();
+            if ($affiliate) {
+                $this->reconcileAffiliateB2C($affiliate, false, null, $timeoutDesc, 'timeout');
+                return $this->b2cAck();
+            }
+
+            $owner = WithdrawalRequest::whereIn('mpesa_reference', $refs)->first();
+            if ($owner) {
+                $this->reconcileOwnerB2C($owner, false, $timeoutDesc, 'timeout');
+                return $this->b2cAck();
+            }
+
+            $refundOrder = \App\Models\ProductOrder::whereIn('refund_reference', $refs)->first();
+            if ($refundOrder) {
+                app(\App\Services\CommissionService::class)->handleRefundResult($refundOrder, false);
+                return $this->b2cAck();
+            }
+
+            Log::warning('B2C timeout matched no in-flight payout', ['refs' => $refs]);
+        } catch (\Throwable $e) {
+            Log::error('B2CTimeout handling failed: ' . $e->getMessage());
+        }
+
+        return $this->b2cAck();
+    }
+
     /** Standard 200 ACK body Safaricom expects for a B2C result. */
     private function b2cAck()
     {
