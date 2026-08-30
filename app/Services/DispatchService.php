@@ -53,12 +53,9 @@ class DispatchService
         $order->order_status      = ORDER_STATUS_COMPLETED; // delivery completes the order
         $order->save();
 
-        // Escrow: delivery releases the held proceeds to the owner (credit + commission).
-        try {
-            app(\App\Services\CommissionService::class)->releaseOnDelivery($order);
-        } catch (\Throwable $e) {
-            \Illuminate\Support\Facades\Log::error('Marketplace release on delivery failed', ['order_id' => $order->id, 'error' => $e->getMessage()]);
-        }
+        // Escrow: delivery STARTS the return window (delivered_at above); it does NOT release yet.
+        // The owner is paid out when the buyer confirms receipt (fast-path) or the window closes
+        // (auto-release), so held funds cover an in-window refund with no clawback.
 
         $this->notifyTenant(
             $order,

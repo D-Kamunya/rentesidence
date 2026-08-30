@@ -149,7 +149,7 @@ class ProductOrderController extends Controller
 
         app(\App\Services\CommissionService::class)->requestRefund($order);
 
-        // Let the owner know a buyer wants a refund.
+        // Let the OWNER know a buyer wants a refund (overrideUserId — the job defaults to the buyer).
         SendOrderStatusNotificationJob::dispatch(
             $order,
             (object) [
@@ -162,11 +162,64 @@ class ProductOrderController extends Controller
                 'body'  => __('A refund was requested for order #:id.', ['id' => $order->order_id]),
                 'url'   => route('owner.order.index'),
             ],
+            $this->ownerUserId($order),
         );
 
         $message = __('Your refund request has been submitted and is being reviewed.');
         return $request->wantsJson()
             ? response()->json(['success' => true, 'message' => $message])
             : redirect()->back()->with('success', $message);
+    }
+
+    /**
+     * ESCROW FAST-PATH — buyer confirms they received the order in good order, so the held proceeds
+     * release to the owner IMMEDIATELY instead of waiting for the return window to close. Only a
+     * delivered, still-held order with no refund in play qualifies.
+     */
+    public function confirmReceipt(Request $request, $id)
+    {
+        $order = ProductOrder::where('user_id', auth()->id())->with('orderItems.product')->findOrFail($id);
+
+        $confirmable = (int) $order->fulfilment_status >= FULFILMENT_DELIVERED
+            && $order->settlement_status === SETTLEMENT_STATUS_HELD
+            && ! in_array($order->refund_status, [REFUND_STATUS_REQUESTED, REFUND_STATUS_PROCESSING, REFUND_STATUS_REFUNDED], true);
+
+        if (! $confirmable) {
+            $message = __('This order can\'t be confirmed right now.');
+            return $request->wantsJson()
+                ? response()->json(['success' => false, 'message' => $message], 422)
+                : redirect()->back()->with('error', $message);
+        }
+
+        app(\App\Services\CommissionService::class)->releaseSettlement($order);
+
+        // Tell the OWNER their payment was released (overrideUserId).
+        SendOrderStatusNotificationJob::dispatch(
+            $order,
+            (object) [
+                'subject' => __('Payment released for order #:id', ['id' => $order->order_id]),
+                'title'   => __('Payment released'),
+                'message' => __('The buyer confirmed receipt of order #:id, so its payment has been released to your wallet.', ['id' => $order->order_id]),
+            ],
+            (object) [
+                'title' => __('Payment released'),
+                'body'  => __('Order #:id — the buyer confirmed receipt; payment released to your wallet.', ['id' => $order->order_id]),
+                'url'   => route('owner.order.index'),
+            ],
+            $this->ownerUserId($order),
+        );
+
+        $message = __('Thank you for confirming receipt.');
+        return $request->wantsJson()
+            ? response()->json(['success' => true, 'message' => $message])
+            : redirect()->back()->with('success', $message);
+    }
+
+    /** Resolve the owner's USER id for an order (products.owner_user_id = owners.id → users.id). */
+    private function ownerUserId(ProductOrder $order): ?int
+    {
+        $order->loadMissing('orderItems.product');
+        $ownerRecord = \App\Models\Owner::find($order->orderItems->first()?->product?->owner_user_id);
+        return $ownerRecord?->user_id;
     }
 }

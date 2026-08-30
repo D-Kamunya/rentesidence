@@ -270,6 +270,18 @@
                                                         </button>
                                                     @endif
                                                     @php $refundInPlay = in_array($order->refund_status, [REFUND_STATUS_REQUESTED, REFUND_STATUS_PROCESSING, REFUND_STATUS_REFUNDED], true); @endphp
+                                                    {{-- Confirm receipt — the escrow fast-path: releases the seller's payment immediately --}}
+                                                    @if ($order->settlement_status === SETTLEMENT_STATUS_HELD && (int) $order->fulfilment_status >= FULFILMENT_DELIVERED && ! $refundInPlay)
+                                                        <form method="POST" action="{{ route('tenant.product_order.confirm-receipt', $order->id) }}" style="display:inline;">
+                                                            @csrf
+                                                            <button type="submit" class="inv-btn inv-btn--complete"
+                                                                    data-cs-confirm="{{ __('Confirm you received order #:id in good order? This releases the payment to the seller.', ['id' => $order->order_id]) }}"
+                                                                    title="{{ __('Confirm Receipt') }}">
+                                                                <svg width="11" height="11" viewBox="0 0 24 24" fill="none"><path d="M20 6L9 17l-5-5" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                                                                {{ __('Confirm receipt') }}
+                                                            </button>
+                                                        </form>
+                                                    @endif
                                                     @if ($order->payment_status === PRODUCT_ORDER_STATUS_PAID && $order->order_status != ORDER_STATUS_CANCELLED && ! $refundInPlay && ($isDispatched || ($isCompleted && $order->withinReturnWindow())))
                                                         <form method="POST" action="{{ route('tenant.product_order.request-refund', $order->id) }}" style="display:inline;">
                                                             @csrf

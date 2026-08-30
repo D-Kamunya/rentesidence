@@ -202,7 +202,7 @@
                                                         {{ __('Paid') }}
                                                     </span>
                                                     @if ($order->settlement_status === SETTLEMENT_STATUS_HELD)
-                                                        <span style="display:block;font-size:10px;color:#9ca3af;margin-top:3px;" title="{{ __('The platform holds the funds until you mark the order delivered, then it settles to your wallet.') }}">{{ __('Held · pays out on delivery') }}</span>
+                                                        <span style="display:block;font-size:10px;color:#9ca3af;margin-top:3px;" title="{{ __('The platform holds the funds until the buyer confirms receipt or the short return window closes, then it settles to your wallet.') }}">{{ __('Held · pays out after buyer confirms') }}</span>
                                                     @elseif ($order->settlement_status === SETTLEMENT_STATUS_RELEASED)
                                                         <span style="display:block;font-size:10px;color:#0F6E56;margin-top:3px;">{{ __('Settled to wallet') }}</span>
                                                     @endif
@@ -1023,7 +1023,7 @@
                     settleEl.textContent = '{{ __("Refunded to the buyer") }}';
                     settleEl.style.color = '#B42318';
                 } else if (data.settlement === 'held' || (payStat === PAY_PAID)) {
-                    settleEl.textContent = '{{ __("Held by the platform — released to your wallet when the order is delivered/completed") }}';
+                    settleEl.textContent = '{{ __("Held by the platform — released to your wallet when the buyer confirms receipt or the return window closes") }}';
                     settleEl.style.color = '#9ca3af';
                 } else {
                     settleEl.textContent = '{{ __("No payment received yet") }}';

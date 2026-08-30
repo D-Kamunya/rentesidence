@@ -64,7 +64,7 @@ class CommissionService
     /**
      * ESCROW — hold a paid order's proceeds with the platform. Called when the order is PAID:
      * the owner is NOT credited yet (best-practice marketplace escrow), so a refund before
-     * delivery is trivial. Release happens on delivery via releaseOnDelivery(). Idempotent;
+     * delivery is trivial. Release happens on buyer-confirm or window-close via releaseSettlement().
      * leaves legacy pre-escrow orders (already credited under the old immediate model) alone.
      */
     public function holdOnPayment(ProductOrder $order): void
@@ -75,12 +75,13 @@ class CommissionService
     }
 
     /**
-     * ESCROW — release held proceeds to the owner on DELIVERY: credit the wallet + book the
-     * platform/affiliate commission, exactly once, then stamp the order released. A refunded or
-     * already-released order is a no-op. Legacy orders (settlement_status null) also release
-     * cleanly (processOrderCommission is idempotent), so nothing regresses.
+     * ESCROW — release held proceeds to the owner: credit the wallet + book the platform/affiliate
+     * commission, exactly once, then stamp the order released. Delivery no longer releases directly;
+     * release happens when the buyer CONFIRMS receipt (fast-path) or the return window CLOSES
+     * (auto-release), so held funds cover an in-window refund with no clawback. A refunded or
+     * already-released order is a no-op. Legacy orders (settlement_status null) also release cleanly.
      */
-    public function releaseOnDelivery(ProductOrder $order): ?WalletTransaction
+    public function releaseSettlement(ProductOrder $order): ?WalletTransaction
     {
         if (in_array($order->settlement_status, [SETTLEMENT_STATUS_RELEASED, SETTLEMENT_STATUS_REFUNDED], true)) {
             return null;
@@ -107,7 +108,7 @@ class CommissionService
 
     /**
      * Process commission for a completed product order — the RELEASE step (credit owner wallet
-     * net + book platform/affiliate commission). Called from releaseOnDelivery() on DELIVERY.
+     * net + book platform/affiliate commission). Called from releaseSettlement() on buyer-confirm / window-close.
      *
      * Owner resolution: products.owner_user_id = owners.id (primary key)
      * So we must do Owner::find() first to get the actual users.id.

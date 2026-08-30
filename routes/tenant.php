@@ -81,6 +81,7 @@ Route::group(['prefix' => 'tenant', 'as' => 'tenant.', 'middleware' => ['auth', 
     
     Route::post('orders/{id}/cancel', [ProductOrderController::class, 'cancel'])->name('product_order.cancel');
     Route::post('orders/{id}/request-refund', [ProductOrderController::class, 'requestRefund'])->name('product_order.request-refund');
+    Route::post('orders/{id}/confirm-receipt', [ProductOrderController::class, 'confirmReceipt'])->name('product_order.confirm-receipt');
 
     Route::group(['prefix' => 'utilities', 'as' => 'utilities.'], function () {
         Route::get('/', [UtilityTokenController::class, 'index'])->name('index');

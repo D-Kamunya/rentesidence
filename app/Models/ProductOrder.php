@@ -56,8 +56,9 @@ class ProductOrder extends Model
      */
     public function withinReturnWindow(): bool
     {
-        $days = (int) getOption('marketplace_return_window_days', 7);
-        $ref  = $this->settlement_released_at ?: $this->delivered_at ?: $this->updated_at;
+        $days = (int) getOption('marketplace_return_window_days', 2);
+        // The window runs from DELIVERY (falling back to release time, then updated_at).
+        $ref  = $this->delivered_at ?: $this->settlement_released_at ?: $this->updated_at;
 
         return $ref && \Illuminate\Support\Carbon::parse($ref)->addDays(max(0, $days))->gte(now());
     }

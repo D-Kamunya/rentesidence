@@ -81,14 +81,12 @@ class ProductOrderController extends Controller
         $order->order_status = ORDER_STATUS_COMPLETED;
         $order->payment_status = ORDER_PAYMENT_STATUS_PAID;
         $order->fulfilment_status = FULFILMENT_DELIVERED; // completing = delivered; keeps it out of the caretaker dispatch queue
+        $order->delivered_at      = $order->delivered_at ?: now(); // starts the return window
         $order->save();
 
-        // Escrow: completing the order (delivered) releases held proceeds to the owner.
-        try {
-            app(\App\Services\CommissionService::class)->releaseOnDelivery($order);
-        } catch (\Throwable $e) {
-            \Log::error('Marketplace release on complete failed', ['order_id' => $order->id, 'error' => $e->getMessage()]);
-        }
+        // Escrow: completing (delivered) STARTS the return window — it does NOT release the money.
+        // Payout happens when the buyer confirms receipt or the window closes (held funds cover an
+        // in-window refund with no clawback).
 
         // ── Dispatch notification to tenant ──────────────────────────
         $emailData = (object) [
