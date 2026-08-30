@@ -30,8 +30,14 @@
                             $maxListings = $package?->max_marketplace_listings ?? 0;
                             $currentListings = \App\Models\Product::where('owner_user_id', $owner->id)->count();
 
-                            $hasReachedLimit = $maxListings > 0 && $currentListings >= $maxListings;
-                            $isNearLimit     = $maxListings > 0 && ($maxListings - $currentListings) <= 3 && !$hasReachedLimit;
+                            // Marketplace listings are NOT capped: we monetise each SALE (a commission
+                            // markup on every order), so more listings = more revenue for us — throttling
+                            // them would cap our own income and paywall a feature that should be generous
+                            // on free. Neutralised in code (like the unit-only-gating decision), not via
+                            // per-package data; max_marketplace_listings stays dormant for a future
+                            // deliberate cap. Server-side never enforced this anyway.
+                            $hasReachedLimit = false;
+                            $isNearLimit     = false;
                         @endphp
 
                         @if($hasReachedLimit)
