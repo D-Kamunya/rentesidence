@@ -250,22 +250,55 @@ class AgreementService
             throw new \RuntimeException(__('This agreement is already signed.'));
         }
 
+        $tenant = $agreement->tenant;
+        $phone  = $tenant?->contact_number;
+
+        // The signing code goes by SMS, funded by the OWNER's credits. Pre-flight it so we never
+        // generate a code the tenant can't receive, and never claim "sent" when it wasn't. The
+        // tenant sees a neutral retry message — we don't leak the owner's credit situation to them.
+        if (empty($phone)) {
+            throw new \RuntimeException(__('We can\'t send a signing code because there\'s no phone number on your account. Please contact your property manager.'));
+        }
+        if (! \App\Services\Sms\SmsCreditsService::hasCredits($agreement->owner_user_id)) {
+            $this->nudgeOwnerOtpBlocked($agreement);
+            throw new \RuntimeException(__('We couldn\'t send your signing code right now. Please try again shortly, or contact your property manager.'));
+        }
+
         $otp = (string) random_int(100000, 999999);
         $agreement->sign_otp            = $otp;
         $agreement->sign_otp_expires_at = now()->addMinutes(5);
         $agreement->save();
 
-        $tenant = $agreement->tenant;
-        $phone  = $tenant?->contact_number;
-        if ($phone) {
-            $message = __('Your signing code for the agreement ":title" is :otp. It expires in 5 minutes.', [
-                'title' => Str::limit($agreement->title, 40),
-                'otp'   => $otp,
-            ]);
-            SendSmsJob::dispatch([$phone], $message, $agreement->owner_user_id);
-        }
+        $message = __('Your signing code for the agreement ":title" is :otp. It expires in 5 minutes.', [
+            'title' => Str::limit($agreement->title, 40),
+            'otp'   => $otp,
+        ]);
+        SendSmsJob::dispatch([$phone], $message, $agreement->owner_user_id);
 
         $agreement->logEvent(AgreementSignatureEvent::EVENT_OTP_SENT, ['phone' => maskPhone($phone)]);
+    }
+
+    /**
+     * Nudge the owner (in-app) that a tenant couldn't receive their signing code because SMS credits
+     * are out — their action funds it. Throttled to once per 6h per owner so a retrying tenant can't
+     * spam them. (The standard zero-credit notice only fires at the crossing, which may be long past.)
+     */
+    private function nudgeOwnerOtpBlocked(Agreement $agreement): void
+    {
+        if (! \Illuminate\Support\Facades\Cache::add('otp_block_nudge_' . $agreement->owner_user_id, 1, now()->addHours(6))) {
+            return;
+        }
+        try {
+            addNotification(
+                __('A tenant couldn\'t receive their signing code'),
+                __('Your SMS credits are exhausted, so a tenant\'s agreement signing code could not be sent. Top up SMS credits so they can sign.'),
+                route('owner.sms.credits.index'),
+                null,
+                $agreement->owner_user_id,
+            );
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::error('OTP-blocked owner nudge failed', ['agreement_id' => $agreement->id, 'error' => $e->getMessage()]);
+        }
     }
 
     /**
