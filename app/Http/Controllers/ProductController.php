@@ -115,6 +115,8 @@ class ProductController extends Controller
     // Edit existing product/service
     public function edit(Product $product, SubscriptionService $subscriptionService)
     {
+        $this->authorizeOwner($product);
+
         $currentPlan     = $subscriptionService->getCurrentPlan();
         $packageMarkup   = $currentPlan?->commission_markup   ?? 3.0;
         $packageDiscount = $currentPlan?->commission_discount ?? 0.0;
@@ -125,6 +127,8 @@ class ProductController extends Controller
     // Update product/service
     public function update(Request $request, Product $product)
     {
+        $this->authorizeOwner($product);
+
         $request->validate([
             'name'                => 'required|string|max:255',
             'description'         => 'nullable|string',
@@ -166,8 +170,17 @@ class ProductController extends Controller
 
      // Delete product/service
     public function destroy(Product $product) {
+        $this->authorizeOwner($product);
         $product->delete();
         return redirect()->route('owner.products.index')->with('success', 'Product deleted successfully.');
+    }
+
+    /** Guard against IDOR: a product may only be touched by the owner who owns it.
+     *  products.owner_user_id stores owners.id (see store()), so resolve that and compare. */
+    private function authorizeOwner(Product $product): void
+    {
+        $ownerId = Owner::where('user_id', Auth::id())->value('id');
+        abort_if(! $ownerId || (int) $product->owner_user_id !== (int) $ownerId, 403);
     }
 
     // For tenants to view products/services
