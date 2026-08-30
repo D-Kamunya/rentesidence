@@ -48,6 +48,20 @@ class ProductOrder extends Model
     }
 
     // product_orders.order_status
+    /**
+     * Is a delivered/completed order still inside its buyer return window? Measured from the
+     * release (delivery) time, falling back to delivered_at then updated_at. Days are configurable
+     * (getOption('marketplace_return_window_days', 7)). Only relevant once completed — before that
+     * a paid order is always refund-requestable.
+     */
+    public function withinReturnWindow(): bool
+    {
+        $days = (int) getOption('marketplace_return_window_days', 7);
+        $ref  = $this->settlement_released_at ?: $this->delivered_at ?: $this->updated_at;
+
+        return $ref && \Illuminate\Support\Carbon::parse($ref)->addDays(max(0, $days))->gte(now());
+    }
+
     public function scopeOrderPending($query)
     {
         return $query->where('order_status', ORDER_STATUS_PENDING);

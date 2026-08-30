@@ -131,11 +131,17 @@ class ProductOrderController extends Controller
     {
         $order = ProductOrder::where('user_id', auth()->id())->findOrFail($id);
 
+        $completed  = (int) $order->order_status === ORDER_STATUS_COMPLETED;
         $refundable = $order->payment_status === ORDER_PAYMENT_STATUS_PAID
-            && ! in_array($order->refund_status, [REFUND_STATUS_PROCESSING, REFUND_STATUS_REFUNDED], true);
+            && (int) $order->order_status !== ORDER_STATUS_CANCELLED
+            && ! in_array($order->refund_status, [REFUND_STATUS_REQUESTED, REFUND_STATUS_PROCESSING, REFUND_STATUS_REFUNDED], true)
+            && (! $completed || $order->withinReturnWindow());
 
         if (! $refundable) {
-            $message = __('This order can\'t be refunded right now.');
+            // Distinguish "the return window has closed" from a generic block.
+            $message = ($completed && ! $order->withinReturnWindow())
+                ? __('The return window for this order has closed, so it can no longer be refunded.')
+                : __('This order can\'t be refunded right now.');
             return $request->wantsJson()
                 ? response()->json(['success' => false, 'message' => $message], 422)
                 : redirect()->back()->with('error', $message);

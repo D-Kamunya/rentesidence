@@ -270,7 +270,7 @@
                                                         </button>
                                                     @endif
                                                     @php $refundInPlay = in_array($order->refund_status, [REFUND_STATUS_REQUESTED, REFUND_STATUS_PROCESSING, REFUND_STATUS_REFUNDED], true); @endphp
-                                                    @if ($order->payment_status === PRODUCT_ORDER_STATUS_PAID && $order->order_status != ORDER_STATUS_CANCELLED && ($isDispatched || $isCompleted) && ! $refundInPlay)
+                                                    @if ($order->payment_status === PRODUCT_ORDER_STATUS_PAID && $order->order_status != ORDER_STATUS_CANCELLED && ! $refundInPlay && ($isDispatched || ($isCompleted && $order->withinReturnWindow())))
                                                         <form method="POST" action="{{ route('tenant.product_order.request-refund', $order->id) }}" style="display:inline;">
                                                             @csrf
                                                             <button type="submit" class="inv-btn inv-btn--ghost"
