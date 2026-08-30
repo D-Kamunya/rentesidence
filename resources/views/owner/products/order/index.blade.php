@@ -252,6 +252,7 @@
                                                             data-date="{{ $order->created_at->format('d M Y') }}"
                                                             data-status="{{ $order->payment_status }}"
                                                             data-order-status="{{ $order->order_status }}"
+                                                            data-settlement="{{ $order->settlement_status ?? '' }}"
                                                             data-gateway="{{ $order->gateway?->title ?? '—' }}"
                                                             data-tenant-name="{{ $order->user?->name ?? '—' }}"
                                                             data-dispatch="{{ $dispatchStr }}"
@@ -402,6 +403,10 @@
                 <div class="po-modal__field"><span class="po-modal__label">{{ __('Total Amount') }}</span><span class="po-modal__value po-modal__value--amount" id="poModalAmount">—</span></div>
                 <div class="po-modal__field"><span class="po-modal__label">{{ __('Payment Method') }}</span><span class="po-modal__value" id="poModalGateway">—</span></div>
                 <div class="po-modal__field po-modal__field--full">
+                    <span class="po-modal__label">{{ __('Payout to you') }}</span>
+                    <span class="po-modal__value" id="poModalSettlement" style="font-size:12.5px;">—</span>
+                </div>
+                <div class="po-modal__field po-modal__field--full">
                     <span class="po-modal__label">{{ __('Dispatch To') }}</span>
                     <span class="po-modal__value" id="poModalTenantName" style="font-weight:600;color:#111827;">—</span>
                     <span class="po-modal__value" id="poModalDispatch" style="font-size:12px;color:#6b7280;margin-top:2px;">—</span>
@@ -412,9 +417,9 @@
                     <svg width="15" height="15" viewBox="0 0 24 24" fill="none">
                         <path d="M20 6L9 17l-5-5" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
                     </svg>
-                    {{ __('Mark as Completed') }}
+                    {{ __('Mark as Delivered / Complete') }}
                 </button>
-                <p class="po-modal__action-hint">{{ __('Tenant will be notified that their order is ready.') }}</p>
+                <p class="po-modal__action-hint">{{ __('Marks the order delivered, notifies the buyer, and releases the held payment to your wallet.') }}</p>
             </div>
  
             {{-- Owner-initiated cancel --}}
@@ -445,9 +450,9 @@
                     <svg width="13" height="13" viewBox="0 0 24 24" fill="none">
                         <path d="M3 10h10a8 8 0 018 8v2M3 10l6 6M3 10l6-6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
                     </svg>
-                    {{ __('Confirm Refund Issued') }}
+                    {{ __('Approve Refund') }}
                 </button>
-                <p class="po-modal__action-hint">{{ __('Confirm that you have returned the payment to the tenant.') }}</p>
+                <p class="po-modal__action-hint">{{ __('Approves the refund and queues it for admin, who releases the M-Pesa payout to the buyer. No money leaves until an admin approves.') }}</p>
             </div>
         </div>
 
@@ -1006,6 +1011,7 @@
             const closeBtn  = document.getElementById('poModalClose');
             const closeBtn2 = document.getElementById('poModalCloseBtn');
         
+            const PAY_PAID        = {{ PRODUCT_ORDER_STATUS_PAID }};
             const PAY_CANCELLED   = {{ PRODUCT_ORDER_STATUS_CANCELLED }};
             const PAY_REFUND      = {{ PRODUCT_ORDER_STATUS_REFUND_PENDING }};
             const ORDER_COMPLETED = {{ ORDER_STATUS_COMPLETED }};
@@ -1020,6 +1026,23 @@
                 document.getElementById('poModalGateway').textContent    = data.gateway     || '—';
                 document.getElementById('poModalTenantName').textContent = data.tenantName  || '—';
                 document.getElementById('poModalDispatch').textContent   = data.dispatch    || '—';
+
+                // Escrow / settlement — explain where the buyer's payment currently sits.
+                const settleEl = document.getElementById('poModalSettlement');
+                const payStat  = parseInt(data.status);
+                if (data.settlement === 'released') {
+                    settleEl.textContent = '{{ __("Settled — released to your wallet") }}';
+                    settleEl.style.color = '#0F6E56';
+                } else if (data.settlement === 'refunded') {
+                    settleEl.textContent = '{{ __("Refunded to the buyer") }}';
+                    settleEl.style.color = '#B42318';
+                } else if (data.settlement === 'held' || (payStat === PAY_PAID)) {
+                    settleEl.textContent = '{{ __("Held by the platform — released to your wallet when the order is delivered/completed") }}';
+                    settleEl.style.color = '#9ca3af';
+                } else {
+                    settleEl.textContent = '{{ __("No payment received yet") }}';
+                    settleEl.style.color = '#9ca3af';
+                }
         
                 const imageEl = document.getElementById('poModalProductImage');
                 if (data.image && data.image.trim()) { imageEl.src = data.image; imageEl.style.display = 'block'; }
@@ -1094,6 +1117,7 @@
                     date             : btn.dataset.date,
                     status           : btn.dataset.status,
                     orderStatus      : btn.dataset.orderStatus,
+                    settlement       : btn.dataset.settlement || '',
                     image            : btn.dataset.image || '',
                     gateway          : btn.dataset.gateway || '—',
                     tenantName       : btn.dataset.tenantName || '—',
