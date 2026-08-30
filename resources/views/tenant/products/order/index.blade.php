@@ -269,6 +269,19 @@
                                                             {{ __('Cancel') }}
                                                         </button>
                                                     @endif
+                                                    @php $refundInPlay = in_array($order->refund_status, [REFUND_STATUS_REQUESTED, REFUND_STATUS_PROCESSING, REFUND_STATUS_REFUNDED], true); @endphp
+                                                    @if ($order->payment_status === PRODUCT_ORDER_STATUS_PAID && $order->order_status != ORDER_STATUS_CANCELLED && ($isDispatched || $isCompleted) && ! $refundInPlay)
+                                                        <form method="POST" action="{{ route('tenant.product_order.request-refund', $order->id) }}" style="display:inline;">
+                                                            @csrf
+                                                            <button type="submit" class="inv-btn inv-btn--ghost"
+                                                                    data-cs-confirm="{{ __('Request a refund for order #:id? An admin will review it and, if approved, send the money to your M-Pesa.', ['id' => $order->order_id]) }}"
+                                                                    title="{{ __('Request Refund') }}">
+                                                                {{ __('Request refund') }}
+                                                            </button>
+                                                        </form>
+                                                    @elseif ($refundInPlay)
+                                                        <span class="inv-btn inv-btn--ghost" style="opacity:.7;cursor:default;">{{ __('Refund requested') }}</span>
+                                                    @endif
                                                 </div>
                                             </td>
 

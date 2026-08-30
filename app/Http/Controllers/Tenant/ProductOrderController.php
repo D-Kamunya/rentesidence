@@ -75,13 +75,13 @@ class ProductOrderController extends Controller
         }
 
         if ($order->payment_status === ORDER_PAYMENT_STATUS_PAID) {
-            // Money already moved — flag for refund
-            $order->payment_status = PRODUCT_ORDER_STATUS_REFUND_PENDING;
+            // Paid → queue a refund for admin green-light (the B2C payout moves on approval).
+            app(\App\Services\CommissionService::class)->requestRefund($order);
         } else {
-            // Unpaid — cancel cleanly
+            // Unpaid — cancel cleanly, nothing to refund.
             $order->payment_status = PRODUCT_ORDER_STATUS_CANCELLED;
         }
-    
+
         $order->save();
     
         // Notify owner that tenant has cancelled
@@ -120,5 +120,47 @@ class ProductOrderController extends Controller
         }
     
         return redirect()->back()->with('success', __('Order cancelled.'));
+    }
+
+    /**
+     * Buyer-initiated refund request — for a PAID order that's already on its way or delivered (so
+     * self-cancel no longer applies). Queues it for admin green-light; the owner is notified. Does
+     * NOT move money — an admin approves the B2C payout.
+     */
+    public function requestRefund(Request $request, $id)
+    {
+        $order = ProductOrder::where('user_id', auth()->id())->findOrFail($id);
+
+        $refundable = $order->payment_status === ORDER_PAYMENT_STATUS_PAID
+            && ! in_array($order->refund_status, [REFUND_STATUS_PROCESSING, REFUND_STATUS_REFUNDED], true);
+
+        if (! $refundable) {
+            $message = __('This order can\'t be refunded right now.');
+            return $request->wantsJson()
+                ? response()->json(['success' => false, 'message' => $message], 422)
+                : redirect()->back()->with('error', $message);
+        }
+
+        app(\App\Services\CommissionService::class)->requestRefund($order);
+
+        // Let the owner know a buyer wants a refund.
+        SendOrderStatusNotificationJob::dispatch(
+            $order,
+            (object) [
+                'subject' => __('Refund requested for order #:id', ['id' => $order->order_id]),
+                'title'   => __('Refund requested'),
+                'message' => __('The buyer has requested a refund for order #:id. It is queued for review.', ['id' => $order->order_id]),
+            ],
+            (object) [
+                'title' => __('Refund requested'),
+                'body'  => __('A refund was requested for order #:id.', ['id' => $order->order_id]),
+                'url'   => route('owner.order.index'),
+            ],
+        );
+
+        $message = __('Your refund request has been submitted and is being reviewed.');
+        return $request->wantsJson()
+            ? response()->json(['success' => true, 'message' => $message])
+            : redirect()->back()->with('success', $message);
     }
 }

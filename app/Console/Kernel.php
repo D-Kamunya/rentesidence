@@ -49,6 +49,9 @@ class Kernel extends ConsoleKernel
         $schedule->command('screening:recompute')->dailyAt('03:00')->withoutOverlapping()
         ->appendOutputTo(storage_path('logs/screening_recompute_scheduler.log'));
 
+        // Escrow safety net: release held marketplace proceeds after the acceptance window.
+        $schedule->command('marketplace:auto-release-settlements')->dailyAt('03:30')->withoutOverlapping();
+
     }
 
     /**

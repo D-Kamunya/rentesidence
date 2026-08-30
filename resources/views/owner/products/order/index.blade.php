@@ -201,6 +201,11 @@
                                                         </svg>
                                                         {{ __('Paid') }}
                                                     </span>
+                                                    @if ($order->settlement_status === SETTLEMENT_STATUS_HELD)
+                                                        <span style="display:block;font-size:10px;color:#9ca3af;margin-top:3px;" title="{{ __('The platform holds the funds until you mark the order delivered, then it settles to your wallet.') }}">{{ __('Held · pays out on delivery') }}</span>
+                                                    @elseif ($order->settlement_status === SETTLEMENT_STATUS_RELEASED)
+                                                        <span style="display:block;font-size:10px;color:#0F6E56;margin-top:3px;">{{ __('Settled to wallet') }}</span>
+                                                    @endif
                                                 @elseif ($isCancelled)
                                                     <span class="inv-badge inv-badge--cancelled">
                                                         <svg width="10" height="10" viewBox="0 0 16 16" fill="none">
