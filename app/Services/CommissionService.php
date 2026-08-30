@@ -323,9 +323,11 @@ class CommissionService
 
         // Reverse the owner/platform/affiliate ledger ONLY if proceeds were released (or a legacy
         // order was credited under the old immediate model). A held order was never credited.
+        $reversed = false;
         if ($order->settlement_status === SETTLEMENT_STATUS_RELEASED || $this->alreadyCredited($order)) {
             try {
                 $this->reverseOrderCommission($order);
+                $reversed = true;
             } catch (\Throwable $e) {
                 Log::error('Refund ledger reversal failed', ['order_id' => $order->id, 'error' => $e->getMessage()]);
             }
@@ -357,6 +359,25 @@ class CommissionService
             );
         } catch (\Throwable $e) {
             Log::error('Refund completion notification failed', ['order_id' => $order->id, 'error' => $e->getMessage()]);
+        }
+
+        // If the owner had already been paid, their wallet was just clawed back — tell them, since
+        // it's a debit they didn't initiate at this moment (a held/unreleased order needs no notice).
+        if ($reversed) {
+            try {
+                $ownerRecord = \App\Models\Owner::find($order->orderItems->first()?->product?->owner_user_id);
+                if ($ownerRecord && $ownerRecord->user_id) {
+                    addNotification(
+                        __('Marketplace refund reversed'),
+                        __('A refund on order #:id was issued to the buyer, so its proceeds were reversed from your wallet.', ['id' => $order->order_id]),
+                        route('owner.order.index'),
+                        null,
+                        $ownerRecord->user_id,
+                    );
+                }
+            } catch (\Throwable $e) {
+                Log::error('Refund owner notification failed', ['order_id' => $order->id, 'error' => $e->getMessage()]);
+            }
         }
     }
 
