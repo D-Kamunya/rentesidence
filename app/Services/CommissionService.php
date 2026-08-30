@@ -71,6 +71,21 @@ class CommissionService
      */
     public function processOrderCommission(ProductOrder $order): WalletTransaction
     {
+        return DB::transaction(function () use ($order) {
+        // Serialize per-order so concurrent payment callbacks (an M-Pesa webhook retry racing
+        // the verify fallback / another caller) can't both credit: the second waits for the
+        // first, then finds the existing credit row and returns it. Makes the method genuinely
+        // idempotent regardless of caller — the counterpart to reverseOrderCommission().
+        \App\Models\ProductOrder::whereKey($order->id)->lockForUpdate()->first();
+
+        $existingCredit = WalletTransaction::where('product_order_id', $order->id)
+            ->where('type', 'credit')
+            ->where('transaction_source', 'marketplace')
+            ->first();
+        if ($existingCredit) {
+            return $existingCredit; // already processed — never double-credit
+        }
+
         // Resolve owner from the first order item's product
         $firstProduct = $order->orderItems->first()?->product;
         if (!$firstProduct) {
@@ -121,6 +136,7 @@ class CommissionService
             ]);
         }
         return $walletTransaction;
+        });
     }
 
     /**
