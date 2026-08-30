@@ -138,9 +138,9 @@ class ProductPaymentController extends Controller
                         $order->transaction_id = str_replace('-', '', uuid_create());
                         $order->save();
 
-                        // ── Process commission on successful payment ─────
+                        // ── Escrow: hold proceeds on payment; released on delivery ─────
                         $order->load('orderItems.product');
-                        $this->commissionService->processOrderCommission($order);
+                        $this->commissionService->holdOnPayment($order);
 
                         DB::commit();
                     } catch (\Exception $e) {

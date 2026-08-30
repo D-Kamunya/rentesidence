@@ -48,6 +48,18 @@ const FULFILMENT_NONE = 0;       // paid, awaiting dispatch
 const FULFILMENT_DISPATCHED = 1; // out for delivery / with the caretaker
 const FULFILMENT_DELIVERED = 2;  // handed to the tenant
 
+// Marketplace escrow (settlement) — product_orders.settlement_status. The platform HOLDS
+// a paid order's proceeds until DELIVERED, then RELEASES the net to the owner's wallet.
+const SETTLEMENT_STATUS_HELD     = 'held';     // paid, platform holds; owner not yet credited
+const SETTLEMENT_STATUS_RELEASED = 'released'; // delivered, owner credited
+const SETTLEMENT_STATUS_REFUNDED = 'refunded'; // buyer refunded; no owner credit stands
+
+// Marketplace refund — product_orders.refund_status. Money only leaves on ADMIN green-light.
+const REFUND_STATUS_REQUESTED  = 'requested';  // awaiting admin approval
+const REFUND_STATUS_PROCESSING = 'processing'; // B2C to the buyer in flight
+const REFUND_STATUS_REFUNDED   = 'refunded';   // buyer paid back (B2C confirmed)
+const REFUND_STATUS_FAILED     = 'failed';     // B2C failed — admin can retry
+
 const DURATION_TYPE_MONTHLY = 1;
 const DURATION_TYPE_YEARLY = 2;
 

@@ -53,6 +53,13 @@ class DispatchService
         $order->order_status      = ORDER_STATUS_COMPLETED; // delivery completes the order
         $order->save();
 
+        // Escrow: delivery releases the held proceeds to the owner (credit + commission).
+        try {
+            app(\App\Services\CommissionService::class)->releaseOnDelivery($order);
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::error('Marketplace release on delivery failed', ['order_id' => $order->id, 'error' => $e->getMessage()]);
+        }
+
         $this->notifyTenant(
             $order,
             __('Order #:id delivered', ['id' => $order->order_id]),

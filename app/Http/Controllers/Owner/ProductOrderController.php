@@ -82,7 +82,14 @@ class ProductOrderController extends Controller
         $order->payment_status = ORDER_PAYMENT_STATUS_PAID;
         $order->fulfilment_status = FULFILMENT_DELIVERED; // completing = delivered; keeps it out of the caretaker dispatch queue
         $order->save();
-    
+
+        // Escrow: completing the order (delivered) releases held proceeds to the owner.
+        try {
+            app(\App\Services\CommissionService::class)->releaseOnDelivery($order);
+        } catch (\Throwable $e) {
+            \Log::error('Marketplace release on complete failed', ['order_id' => $order->id, 'error' => $e->getMessage()]);
+        }
+
         // ── Dispatch notification to tenant ──────────────────────────
         $emailData = (object) [
             'subject' => __('Your order #:id is complete', ['id' => $order->order_id]),

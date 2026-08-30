@@ -1073,7 +1073,7 @@ if (!function_exists('handleProductPaymentConfirmation')) {
                     try {
                         $order->load('orderItems.product');
                         $commissionService = new \App\Services\CommissionService();
-                        $commissionService->processOrderCommission($order);
+                        $commissionService->holdOnPayment($order); // escrow: hold until delivered
                     } catch (\Exception $commissionException) {
                         \Illuminate\Support\Facades\Log::error('Commission processing failed in handleProductPaymentConfirmation', [
                             'order_id' => $order->id,

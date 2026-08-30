@@ -62,7 +62,52 @@ class CommissionService
     }
 
     /**
-     * Process commission for a completed product order.
+     * ESCROW — hold a paid order's proceeds with the platform. Called when the order is PAID:
+     * the owner is NOT credited yet (best-practice marketplace escrow), so a refund before
+     * delivery is trivial. Release happens on delivery via releaseOnDelivery(). Idempotent;
+     * leaves legacy pre-escrow orders (already credited under the old immediate model) alone.
+     */
+    public function holdOnPayment(ProductOrder $order): void
+    {
+        if ($order->settlement_status === null && ! $this->alreadyCredited($order)) {
+            $order->forceFill(['settlement_status' => SETTLEMENT_STATUS_HELD])->save();
+        }
+    }
+
+    /**
+     * ESCROW — release held proceeds to the owner on DELIVERY: credit the wallet + book the
+     * platform/affiliate commission, exactly once, then stamp the order released. A refunded or
+     * already-released order is a no-op. Legacy orders (settlement_status null) also release
+     * cleanly (processOrderCommission is idempotent), so nothing regresses.
+     */
+    public function releaseOnDelivery(ProductOrder $order): ?WalletTransaction
+    {
+        if (in_array($order->settlement_status, [SETTLEMENT_STATUS_RELEASED, SETTLEMENT_STATUS_REFUNDED], true)) {
+            return null;
+        }
+
+        $wt = $this->processOrderCommission($order);
+
+        $order->forceFill([
+            'settlement_status'      => SETTLEMENT_STATUS_RELEASED,
+            'settlement_released_at' => now(),
+        ])->save();
+
+        return $wt;
+    }
+
+    /** Has this order already been credited to the owner's wallet? */
+    public function alreadyCredited(ProductOrder $order): bool
+    {
+        return WalletTransaction::where('product_order_id', $order->id)
+            ->where('type', 'credit')
+            ->where('transaction_source', 'marketplace')
+            ->exists();
+    }
+
+    /**
+     * Process commission for a completed product order — the RELEASE step (credit owner wallet
+     * net + book platform/affiliate commission). Called from releaseOnDelivery() on DELIVERY.
      *
      * Owner resolution: products.owner_user_id = owners.id (primary key)
      * So we must do Owner::find() first to get the actual users.id.

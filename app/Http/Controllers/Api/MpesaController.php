@@ -267,7 +267,7 @@ class MpesaController extends Controller
                         try {
                             $order->load('orderItems.product');
                             $commissionService = new \App\Services\CommissionService();
-                            $commissionService->processOrderCommission($order);
+                            $commissionService->holdOnPayment($order); // escrow: hold until delivered
                         } catch (\Exception $e) {
                             Log::error('Product commission failed in webhook', [
                                 'order_id' => $order->id,
