@@ -201,7 +201,7 @@
                                                 <th>{{ __('Date') }}</th>
                                                 <th>{{ __('Description') }}</th>
                                                 <th>{{ __('Gross') }}</th>
-                                                <th>{{ __('Platform Fee (1%)') }}</th>
+                                                <th>{{ __('Deductions') }}</th>
                                                 <th>{{ __('Net') }}</th>
                                                 <th>{{ __('Type') }}</th>
                                                 <th>{{ __('Detail') }}</th>
@@ -218,9 +218,9 @@
                                                     @endif
                                                 </td>
                                                 <td class="wl-td-amount wl-td-amount--commission">
-                                                    @if($txn->commission_amount)
-                                                        <span class="wl-rate-pill">1%</span>
-                                                        KSh {{ number_format($txn->commission_amount, 2) }}
+                                                    @php $deductions = round((float) $txn->gross_amount - (float) $txn->net_amount, 2); @endphp
+                                                    @if($txn->gross_amount && $deductions > 0)
+                                                        <span title="{{ __('Platform fee plus any financing / infrastructure recovery. Open the detail for the full breakdown.') }}">KSh {{ number_format($deductions, 2) }}</span>
                                                     @else <span class="wl-na">—</span>
                                                     @endif
                                                 </td>

@@ -264,8 +264,8 @@
                                                             @endphp"
                                                             data-complete-url="{{ !$isOrderCompleted && !$isCancelledByTenant && !$isOrderCancelled ? route('owner.productOrder.markComplete', $order->id) : '' }}"
                                                             data-cancel-url="{{ !$isOrderCompleted && !$isOrderCancelled && !$isPayCancelled && !$isRefundPending ? route('owner.productOrder.cancel', $order->id) : '' }}"
-                                                            data-confirm-cancel-url="{{ $isCancelledByTenant && !$isOrderCancelled ? route('owner.productOrder.cancel', $order->id) : '' }}"
-                                                            data-refund-url="{{ $isRefundPending && $isOrderCancelled ? route('owner.productOrder.confirmRefund', $order->id) : '' }}">
+                                                            data-confirm-cancel-url=""
+                                                            data-refund-url="">{{-- old owner refund/cancel gate removed — refunds are admin-gated now --}}
                                                         <svg width="13" height="13" viewBox="0 0 24 24" fill="none">
                                                             <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" stroke="currentColor" stroke-width="1.8"/>
                                                             <circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="1.8"/>
@@ -293,28 +293,13 @@
                                                         @endif
                                                     @endif
                                             
-                                                    {{-- Confirm Cancellation — tenant cancelled, owner hasn't confirmed yet --}}
-                                                    @if ($isCancelledByTenant && !$isOrderCancelled)
-                                                        <button type="button" class="inv-btn inv-btn--warn po-confirm-cancel-btn"
-                                                                data-confirm-cancel-url="{{ route('owner.productOrder.cancel', $order->id) }}"
-                                                                title="{{ __('Confirm this cancellation') }}">
-                                                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none">
-                                                                <path d="M18 6L6 18M6 6l12 12" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/>
-                                                            </svg>
-                                                            {{ __('Confirm Cancel') }}
-                                                        </button>
-                                                    @endif
-                                            
-                                                    {{-- Confirm Refund — order cancelled and refund is pending --}}
-                                                    @if ($isRefundPending && $isOrderCancelled)
-                                                        <button type="button" class="inv-btn inv-btn--refund po-confirm-refund-btn"
-                                                                data-refund-url="{{ route('owner.productOrder.confirmRefund', $order->id) }}"
-                                                                title="{{ __('Mark refund as issued') }}">
-                                                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none">
-                                                                <path d="M3 10h10a8 8 0 018 8v2M3 10l6 6M3 10l6-6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
-                                                            </svg>
-                                                            {{ __('Refund Issued') }}
-                                                        </button>
+                                                    {{-- Refund in play — admin-gated now; the owner just sees the status, no action.
+                                                         (Replaces the old owner "Confirm Cancel" / "Refund Issued" gate.) --}}
+                                                    @if ($isRefundPending)
+                                                        <span class="inv-badge inv-badge--refund" title="{{ __('A refund is pending admin approval. The buyer is paid via M-Pesa once an admin approves.') }}">
+                                                            <svg width="10" height="10" viewBox="0 0 16 16" fill="none"><path d="M8 4.5V8l2.2 1.3M8 14.5A6.5 6.5 0 108 1.5a6.5 6.5 0 000 13z" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                                                            {{ __('Refund pending — admin') }}
+                                                        </span>
                                                     @endif
                                             
                                                     {{-- Final states --}}
