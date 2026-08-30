@@ -389,6 +389,7 @@
 
         <div class="po-modal__body">
             <div class="po-modal__status-wrap" id="poModalStatusWrap">
+                <span style="font-size:10px;font-weight:500;text-transform:uppercase;letter-spacing:.07em;color:#9ca3af;display:block;margin-bottom:5px;">{{ __('Order status') }}</span>
                 <span class="po-modal__status-badge" id="poModalStatusBadge"></span>
             </div>
             <div class="po-modal__product-preview mb-4">
@@ -624,11 +625,11 @@
         /* ── Modal shell ─────────────────────────────────────────── */
         .po-modal-backdrop { position:fixed; inset:0; background:rgba(17,24,39,.45); backdrop-filter:blur(2px); -webkit-backdrop-filter:blur(2px); z-index:1050; display:flex; align-items:center; justify-content:center; padding:1rem; opacity:0; pointer-events:none; transition:opacity .2s ease; }
         .po-modal-backdrop.is-open { opacity:1; pointer-events:all; }
-        .po-modal { background:#fff; border-radius:14px; width:100%; max-width:480px; box-shadow:0 20px 60px rgba(17,24,39,.18),0 4px 16px rgba(17,24,39,.08); transform:translateY(12px) scale(.98); transition:transform .22s ease,opacity .22s ease; opacity:0; overflow:hidden; }
+        .po-modal { background:#fff; border-radius:14px; width:100%; max-width:480px; box-shadow:0 20px 60px rgba(17,24,39,.18),0 4px 16px rgba(17,24,39,.08); transform:translateY(12px) scale(.98); transition:transform .22s ease,opacity .22s ease; opacity:0; overflow:hidden; max-height:calc(100vh - 3rem); display:flex; flex-direction:column; }
         .po-modal-backdrop.is-open .po-modal { transform:translateY(0) scale(1); opacity:1; }
     
         /* ── Modal header ────────────────────────────────────────── */
-        .po-modal__header { display:flex; align-items:flex-start; justify-content:space-between; padding:1.1rem 1.35rem 1rem; border-bottom:0.5px solid #e5e7eb; background:#fafafa; }
+        .po-modal__header { display:flex; align-items:flex-start; justify-content:space-between; padding:1.1rem 1.35rem 1rem; border-bottom:0.5px solid #e5e7eb; background:#fafafa; flex:none; }
         .po-modal__eyebrow { font-size:10px; font-weight:500; text-transform:uppercase; letter-spacing:.07em; color:#9ca3af; margin:0 0 4px; }
         .po-modal__title { font-size:15px; font-weight:600; color:#111827; margin:0; font-family:monospace; letter-spacing:.04em; }
         .po-modal__close { background:#f3f4f6; border:none; border-radius:7px; width:30px; height:30px; display:flex; align-items:center; justify-content:center; cursor:pointer; color:#6b7280; flex-shrink:0; transition:background .15s,color .15s; }
@@ -636,7 +637,7 @@
     
         /* ── Modal body ──────────────────────────────────────────── */
         .po-modal__status-wrap { padding:.85rem 1.35rem; border-bottom:0.5px solid #f3f4f6; }
-        .po-modal__body { padding:1.1rem 1.35rem; }
+        .po-modal__body { padding:1.1rem 1.35rem; overflow-y:auto; flex:1 1 auto; }
         .po-modal__grid { display:grid; grid-template-columns:1fr 1fr; gap:1rem .75rem; }
         .po-modal__field { display:flex; flex-direction:column; gap:4px; }
         .po-modal__field--full { grid-column:1 / -1; }
@@ -659,7 +660,7 @@
         }
     
         /* ── Modal footer ────────────────────────────────────────── */
-        .po-modal__footer { padding:.85rem 1.35rem; border-top:0.5px solid #e5e7eb; display:flex; justify-content:space-between; align-items:center; gap:8px; background:#fafafa; }
+        .po-modal__footer { padding:.85rem 1.35rem; border-top:0.5px solid #e5e7eb; display:flex; justify-content:space-between; align-items:center; gap:8px; background:#fafafa; flex:none; }
     
         /* ── Modal action blocks (complete / cancel / warn / refund) */
         .po-modal__footer-actions { padding:.6rem 1.35rem; border-top:0.5px solid #f3f4f6; }
