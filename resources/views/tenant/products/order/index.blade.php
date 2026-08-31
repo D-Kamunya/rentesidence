@@ -522,7 +522,7 @@
         .inv-btn--ghost:hover { background:#e5e7eb; color:#111827; text-decoration:none; }
         .inv-actions .inv-btn { width: 100%; justify-content: flex-start;}
         .inv-btn--receipt {background: #E6F1FB; color: #185FA5; border: 0.5px solid #B8D4F0; margin-left:15px; }
-        .inv-btn--receipt:hover { background: #185FA5; color: #fff;border-color: #185FA5; text-decoration: none;}
+        .inv-btn--receipt:hover { background: #185FA5; color: #fff !important;border-color: #185FA5; text-decoration: none;}
 
         .inv-empty { text-align:center; padding:3rem 1rem; color:#9ca3af; }
 

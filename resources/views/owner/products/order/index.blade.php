@@ -585,7 +585,7 @@
         .inv-btn--refund:hover { background:#4338CA; color:#fff; border-color:#4338CA; }
     
         .inv-btn--receipt  { background:#E6F1FB; color:#185FA5; border:0.5px solid #B8D4F0; }
-        .inv-btn--receipt:hover { background:#185FA5; color:#fff; border-color:#185FA5; text-decoration:none; }
+        .inv-btn--receipt:hover { background:#185FA5; color:#fff !important; border-color:#185FA5; text-decoration:none; }
     
         .inv-btn--disabled { background:#f3f4f6 !important; color:#d1d5db !important; border-color:#e5e7eb !important; cursor:not-allowed !important; opacity:0.6; }
     
