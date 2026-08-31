@@ -405,7 +405,8 @@
                     </svg>
                     {{ __('Mark as Delivered / Complete') }}
                 </button>
-                <p class="po-modal__action-hint">{{ __('Marks the order delivered, notifies the buyer, and releases the held payment to your wallet.') }}</p>
+                <p class="po-modal__action-hint">{{ __('Marks the order delivered and notifies the buyer. Your payment is released once the buyer confirms receipt or the short return window closes.') }}</p>
+                <p class="po-modal__action-hint" style="color:#0C447C;">{{ __('Tip: ask your buyer to tap "Confirm receipt" once they have their goods — that releases your money right away, no waiting for the window.') }}</p>
             </div>
  
             {{-- Owner-initiated cancel --}}

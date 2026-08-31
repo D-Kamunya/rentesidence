@@ -51,7 +51,7 @@ class ProductOrder extends Model
     /**
      * Is a delivered/completed order still inside its buyer return window? Measured from the
      * release (delivery) time, falling back to delivered_at then updated_at. Days are configurable
-     * (getOption('marketplace_return_window_days', 7)). Only relevant once completed — before that
+     * (getOption('marketplace_return_window_days', 2)). Only relevant once completed — before that
      * a paid order is always refund-requestable.
      */
     public function withinReturnWindow(): bool

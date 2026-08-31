@@ -32,6 +32,11 @@
         <a href="{{ route('admin.agreement.settings.index') }}" class="stg-nav__item {{ @$subAgreementSettingActiveClass ? 'is-active' : '' }}">
             <span class="iconify" data-icon="mdi:file-sign"></span><span>{{ __('Agreement Settings') }}</span>
         </a>
+        @if (isAddonInstalled('PROTYSAAS') > 1)
+            <a href="{{ route('admin.marketplace.settings.index') }}" class="stg-nav__item {{ @$subMarketplaceSettingActiveClass ? 'is-active' : '' }}">
+                <span class="iconify" data-icon="mdi:storefront-outline"></span><span>{{ __('Marketplace Settings') }}</span>
+            </a>
+        @endif
         <a href="{{ route('admin.setting.smtp.setting') }}" class="stg-nav__item {{ @$subSmtpSettingActiveClass ? 'is-active' : '' }}">
             <span class="iconify" data-icon="mdi:git-issue"></span><span>{{ __('SMTP Setting') }}</span>
         </a>

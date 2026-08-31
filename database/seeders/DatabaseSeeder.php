@@ -27,6 +27,7 @@ class DatabaseSeeder extends Seeder
             // Idempotent and demo-data-free, so `php artisan db:seed` ships the
             // configured environment to live without manual setup.
             BrandingSeeder::class,
+            SystemDefaultsSeeder::class,
             CentresidenceCatalogSeeder::class,
             KnowledgeBaseSeeder::class,
             OwnerKnowledgeBaseSeeder::class,

@@ -191,6 +191,11 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'middleware' => ['auth', 'a
         Route::put('/',  [\App\Http\Controllers\Admin\AgreementSettingsController::class, 'update'])->name('update');
     });
 
+    Route::prefix('marketplace-settings')->name('marketplace.settings.')->group(function () {
+        Route::get('/',  [\App\Http\Controllers\Admin\MarketplaceSettingsController::class, 'index'])->name('index');
+        Route::put('/',  [\App\Http\Controllers\Admin\MarketplaceSettingsController::class, 'update'])->name('update');
+    });
+
     Route::prefix('screening')->name('screening.')->group(function () {
         Route::get('/',                       [\App\Http\Controllers\Admin\ScreeningAdminController::class, 'index'])->name('index');
         Route::put('/settings',               [\App\Http\Controllers\Admin\ScreeningAdminController::class, 'updateSettings'])->name('settings');

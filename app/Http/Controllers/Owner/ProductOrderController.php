@@ -90,14 +90,14 @@ class ProductOrderController extends Controller
 
         // ── Dispatch notification to tenant ──────────────────────────
         $emailData = (object) [
-            'subject' => __('Your order #:id is complete', ['id' => $order->order_id]),
+            'subject' => __('Your order #:id is complete — please confirm receipt', ['id' => $order->order_id]),
             'title'   => __('Order complete'),
-            'message' => __('Your order #:id has been completed. Your product is on its way or ready for collection.', ['id' => $order->order_id]),
+            'message' => __('Your order #:id has been completed. Once you have your product in good order, please tap "Confirm receipt" so the seller can be paid.', ['id' => $order->order_id]),
         ];
 
         $notificationData = (object) [
             'title' => __('Order complete'),
-            'body'  => __('Order #:id has been completed.', ['id' => $order->order_id]),
+            'body'  => __('Order #:id complete — tap Confirm receipt to close it out.', ['id' => $order->order_id]),
             'url'   => route('tenant.order.index'),
         ];
     

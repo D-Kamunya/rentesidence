@@ -59,10 +59,10 @@ class DispatchService
 
         $this->notifyTenant(
             $order,
-            __('Order #:id delivered', ['id' => $order->order_id]),
+            __('Order #:id delivered — please confirm receipt', ['id' => $order->order_id]),
             __('Order delivered'),
-            __('Your order #:id has been delivered. Thank you!', ['id' => $order->order_id]),
-            __('Order #:id delivered.', ['id' => $order->order_id])
+            __('Your order #:id has been delivered. Once you have it in good order, please tap "Confirm receipt" so the seller can be paid. Thank you!', ['id' => $order->order_id]),
+            __('Order #:id delivered — tap Confirm receipt to close it out.', ['id' => $order->order_id])
         );
 
         return ['ok' => true, 'message' => __('Order marked as delivered.')];
