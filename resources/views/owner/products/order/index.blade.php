@@ -202,7 +202,11 @@
                                                         {{ __('Paid') }}
                                                     </span>
                                                     @if ($order->settlement_status === SETTLEMENT_STATUS_HELD)
-                                                        <span style="display:block;font-size:10px;color:#9ca3af;margin-top:3px;" title="{{ __('The platform holds the funds until the buyer confirms receipt or the short return window closes, then it settles to your wallet.') }}">{{ __('Held · pays out after buyer confirms') }}</span>
+                                                        <span style="display:inline-flex;align-items:center;gap:3px;margin-top:4px;padding:2px 8px;border-radius:999px;font-size:10px;font-weight:600;background:#FFF4E5;color:#B54708;"
+                                                              title="{{ __('The platform holds the funds until the buyer confirms receipt or the return window closes, then it settles to your wallet.') }}">
+                                                            <svg width="9" height="9" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="5.5" stroke="currentColor" stroke-width="1.6"/><path d="M8 5v3.5l2 1.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+                                                            {{ __('Held · not released yet') }}
+                                                        </span>
                                                     @elseif ($order->settlement_status === SETTLEMENT_STATUS_RELEASED)
                                                         <span style="display:block;font-size:10px;color:#0F6E56;margin-top:3px;">{{ __('Settled to wallet') }}</span>
                                                     @endif
@@ -405,7 +409,8 @@
                     </svg>
                     {{ __('Mark as Delivered / Complete') }}
                 </button>
-                <p class="po-modal__action-hint">{{ __('Marks the order delivered and notifies the buyer. Your payment is released once the buyer confirms receipt or the short return window closes.') }}</p>
+                @php $returnWindowDays = (int) getOption('marketplace_return_window_days', 2); @endphp
+                <p class="po-modal__action-hint">{{ __('Marks the order delivered and notifies the buyer. Your payment is released once the buyer confirms receipt, or automatically after :days :unit.', ['days' => $returnWindowDays, 'unit' => $returnWindowDays === 1 ? __('day') : __('days')]) }}</p>
                 <p class="po-modal__action-hint" style="color:#0C447C;">{{ __('Tip: ask your buyer to tap "Confirm receipt" once they have their goods — that releases your money right away, no waiting for the window.') }}</p>
             </div>
  
@@ -1003,7 +1008,8 @@
             const PAY_REFUND      = {{ PRODUCT_ORDER_STATUS_REFUND_PENDING }};
             const ORDER_COMPLETED = {{ ORDER_STATUS_COMPLETED }};
             const ORDER_CANCELLED = {{ ORDER_STATUS_CANCELLED }};
-        
+            const RETURN_WINDOW_DAYS = {{ (int) getOption('marketplace_return_window_days', 2) }};
+
             function openModal(data) {
                 document.getElementById('poModalTitle').textContent      = data.orderNo     || '—';
                 document.getElementById('poModalProduct').textContent    = data.product     || '—';
@@ -1023,8 +1029,17 @@
                 } else if (data.settlement === 'refunded') {
                     settleEl.textContent = '{{ __("Refunded to the buyer") }}';
                     settleEl.style.color = '#B42318';
-                } else if (data.settlement === 'held' || (payStat === PAY_PAID)) {
-                    settleEl.textContent = '{{ __("Held by the platform — released to your wallet when the buyer confirms receipt or the return window closes") }}';
+                } else if (data.settlement === 'held') {
+                    // Surface the actual return-window length so owners aren't left guessing.
+                    const days = RETURN_WINDOW_DAYS;
+                    const dayWord = days === 1 ? '{{ __("day") }}' : '{{ __("days") }}';
+                    settleEl.textContent =
+                        '{{ __("Held by the platform — released to your wallet when the buyer confirms receipt, or automatically after") }} '
+                        + days + ' ' + dayWord + '.';
+                    settleEl.style.color = '#B54708';
+                } else if (payStat === PAY_PAID) {
+                    // Paid but not in escrow (recorded manually / legacy) — no platform-held funds to release.
+                    settleEl.textContent = '{{ __("Payment recorded — not held in escrow by the platform") }}';
                     settleEl.style.color = '#9ca3af';
                 } else {
                     settleEl.textContent = '{{ __("No payment received yet") }}';
