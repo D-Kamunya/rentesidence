@@ -38,7 +38,12 @@
     #mainNav .theme-btn-outline:hover{border-color:#f0af49!important;background:#f0af49!important;color:#20160A!important;transform:translateY(-1px)}
     #mainNav .navbar-nav-right{justify-content:flex-end;overflow:visible}
     #mainNav .container{overflow:visible}
-    #mainNav .nav-dash-link{color:#FFFFFF!important;font-weight:600;text-shadow:0 1px 6px rgba(0,0,0,.6)}
+    /* Logged-in "Dashboard" occupies the same slot as "Sign In" (they're never shown together),
+       so give it the same CS amber CTA treatment for a consistent, on-brand nav. */
+    #mainNav .nav-dash-link{color:#20160A!important;border:1px solid #E7A339!important;background:#E7A339!important;
+        border-radius:10px;padding:9px 22px;font-weight:650;white-space:nowrap;display:inline-block;
+        text-shadow:none;transition:.18s;box-shadow:0 8px 20px -8px rgba(231,163,57,.6)}
+    #mainNav .nav-dash-link:hover{border-color:#f0af49!important;background:#f0af49!important;color:#20160A!important;transform:translateY(-1px)}
     #mainNav .navbar-toggler{color:#EDE7DC;border-color:rgba(255,255,255,.25)}
 
     /* Offcanvas (mobile drawer) dark */
