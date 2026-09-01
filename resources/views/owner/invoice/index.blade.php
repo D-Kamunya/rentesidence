@@ -948,6 +948,9 @@
 
     /* ── Row action buttons ──────────────────────────────────── */
     .ow-row-actions { display:flex; align-items:center; justify-content:flex-end; gap:6px; flex-wrap:nowrap; }
+    /* Give the (last) actions cell extra left breathing room so the leftmost button never
+       crowds the status/Overdue pill in the previous column. */
+    .ow-table td:last-child { padding-left:1.75rem; }
 
     .ow-act {
         display:inline-flex; align-items:center; gap:4px;
