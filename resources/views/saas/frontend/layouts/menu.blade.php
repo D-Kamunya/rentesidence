@@ -149,3 +149,42 @@
     </nav>
     <!-- Navigation -->
 </section>
+
+<script>
+    /* Mobile menu (Bootstrap offcanvas) hardening — fixes two reported phone bugs:
+       1) Same-page anchor links (#features/#contact-us/#howitworks) left the drawer OPEN,
+          blocking the content as it scrolled. → close the drawer after tapping ANY link.
+       2) After navigating away and returning via the back/forward cache, Bootstrap could
+          restore the offcanvas half-open with a stale backdrop, so the hamburger no longer
+          revealed a usable menu. → on bfcache restore, force a clean state so it re-opens. */
+    (function () {
+        var oc = document.getElementById('offcanvasNavbarDark');
+        if (!oc) return;
+
+        function hideDrawer() {
+            try {
+                if (window.bootstrap && bootstrap.Offcanvas) {
+                    bootstrap.Offcanvas.getOrCreateInstance(oc).hide();
+                }
+            } catch (e) {}
+        }
+
+        // (1) Auto-close on any link tap. For same-page #anchors we let the drawer's hide
+        //     animation and the scroll run together — the drawer clears the view immediately.
+        oc.querySelectorAll('a.nav-link, a.nav-dash-link, a.theme-btn-outline').forEach(function (a) {
+            a.addEventListener('click', function () { hideDrawer(); });
+        });
+
+        // (2) Clean up any stale offcanvas state when restored from the back/forward cache.
+        window.addEventListener('pageshow', function (e) {
+            if (!e.persisted) return;
+            hideDrawer();
+            document.querySelectorAll('.offcanvas-backdrop').forEach(function (b) { b.remove(); });
+            document.body.classList.remove('offcanvas-backdrop', 'modal-open');
+            document.body.style.removeProperty('overflow');
+            document.body.style.removeProperty('padding-right');
+            oc.classList.remove('show');
+            oc.style.removeProperty('visibility');
+        });
+    })();
+</script>
