@@ -576,11 +576,24 @@
                                                     </div>
                                                 @endif
                                             </div>
-                                            <div class="flex-grow-1 ms-3">
+                                            <div class="flex-grow-1 ms-3" style="min-width:0;">
                                                 <p class="ticket-title">{{ Str::limit($ticket->title, 38, '...') }}</p>
+                                                {{-- Where + who the ticket is from (single expression — avoids
+                                                     adjacent @endif@if which Blade mis-compiles). --}}
+                                                <p class="ticket-src">{{ trim(($ticket->property->name ?? '—') . ($ticket->unit ? ' · '.$ticket->unit->unit_name : '') . ($ticket->user ? ' · '.$ticket->user->name : '')) }}</p>
                                                 <div class="d-flex gap-2 mt-1">
                                                     <span class="ticket-badge ticket-badge--cat">{{ $ticket->topic->name ?? 'General' }}</span>
-                                                    <span class="ticket-badge ticket-badge--open">Open</span>
+                                                    @php
+                                                        $tkMap = [
+                                                            TICKET_STATUS_OPEN       => [__('Open'), 'open'],
+                                                            TICKET_STATUS_INPROGRESS => [__('In progress'), 'inprogress'],
+                                                            TICKET_STATUS_REOPEN     => [__('Reopened'), 'reopen'],
+                                                            TICKET_STATUS_RESOLVED   => [__('Resolved'), 'resolved'],
+                                                            TICKET_STATUS_CLOSE      => [__('Closed'), 'closed'],
+                                                        ];
+                                                        $tk = $tkMap[$ticket->status] ?? [__('Open'), 'open'];
+                                                    @endphp
+                                                    <span class="ticket-badge ticket-badge--{{ $tk[1] }}">{{ $tk[0] }}</span>
                                                 </div>
                                             </div>
                                             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" style="color:#d1d5db;flex-shrink:0;margin-left:8px;">
@@ -1176,6 +1189,12 @@
     }
     .ticket-badge--cat  { background: #f3f4f6; color: #6b7280; }
     .ticket-badge--open { background: #FAEEDA; color: #854F0B; }
+    .ticket-badge--inprogress { background:#E6F1FB; color:#0C447C; }
+    .ticket-badge--resolved   { background:#E1F5EE; color:#0F6E56; }
+    .ticket-badge--reopen     { background:#FAECE7; color:#993C1D; }
+    .ticket-badge--closed     { background:#f3f4f6; color:#6b7280; }
+    .ticket-src { font-size:11px; color:#9ca3af; margin:2px 0 0; line-height:1.4;
+        white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
 
     /* ── Responsive ───────────────────────────────────────── */
     @media (max-width: 768px) {
