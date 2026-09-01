@@ -948,9 +948,12 @@
 
     /* ── Row action buttons ──────────────────────────────────── */
     .ow-row-actions { display:flex; align-items:center; justify-content:flex-end; gap:6px; flex-wrap:nowrap; }
-    /* Give the (last) actions cell extra left breathing room so the leftmost button never
-       crowds the status/Overdue pill in the previous column. */
-    .ow-table td:last-child { padding-left:1.75rem; }
+    /* Fix: the actions group was overflowing LEFT onto the status/Overdue pill because the roomy
+       invoice column hogged width. Make the invoice (first) AND actions (last) columns shrink to
+       their content (width:1% + nowrap) so the flexible middle columns absorb the slack — the
+       actions cell then claims exactly its width and can't spill onto the previous column. */
+    .ow-table th:first-child, .ow-table td:first-child { width:1%; white-space:nowrap; }
+    .ow-table th:last-child,  .ow-table td:last-child  { width:1%; white-space:nowrap; }
 
     .ow-act {
         display:inline-flex; align-items:center; gap:4px;
