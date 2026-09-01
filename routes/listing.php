@@ -20,7 +20,9 @@ Route::group(['prefix' => 'owner', 'as' => 'owner.', 'middleware' => ['auth', 'o
 });
 
 Route::group(['middleware' => ['version.update', 'addon.update']], function () {
-    Route::get('properties', [FrontendListingController::class, 'list'])->name('listings');
+    // /properties consolidated into House Hunt (the primary browse experience — shows rentals
+    // + sales). Redirect keeps the `listings` route name + any old bookmarks/inbound links alive.
+    Route::get('properties', fn () => redirect()->route('house.hunt'))->name('listings');
     Route::get('properties/{slug}', [FrontendListingController::class, 'details'])->name('listing.details');
     Route::post('property-contact-store', [FrontendListingController::class, 'contactStore'])->name('listing.contact.store');
 });
