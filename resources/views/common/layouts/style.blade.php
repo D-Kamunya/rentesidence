@@ -17,16 +17,19 @@
 <link href="{{ asset('assets/libs/dropzone/dropzone.css') }}" rel="stylesheet">
 <style>
     :root {
+        {{-- Brand blue = CS blue (#185FA5 / hover #0F4A84). Admin color-mode can still override
+             via the options; the fallbacks below default to CS blue so the whole app's primary
+             buttons + link hovers conform (replaced the legacy #3686FC). --}}
         @if (getOption('website_color_mode', 0) == ACTIVE)
-            --primary-color: {{ getOption('website_primary_color', '#3686FC') }};
+            --primary-color: {{ getOption('website_primary_color', '#185FA5') }};
             --secondary-color: {{ getOption('website_secondary_color', '#8253FB') }};
-            --button-primary-color: {{ getOption('button_primary_color', '#3686FC') }};
-            --button-hover-color: {{ getOption('button_hover_color', '#0063E6') }};
+            --button-primary-color: {{ getOption('button_primary_color', '#185FA5') }};
+            --button-hover-color: {{ getOption('button_hover_color', '#0F4A84') }};
         @else
-            --primary-color: #3686FC;
+            --primary-color: #185FA5;
             --secondary-color: #8253FB;
-            --button-primary-color: #3686FC;
-            --button-hover-color: #0063E6;
+            --button-primary-color: #185FA5;
+            --button-hover-color: #0F4A84;
         @endif
     }
 </style>
