@@ -127,21 +127,14 @@
 
                                 {{-- Footer CTA --}}
                                 <div class="tk-card__footer">
-                                    @if (in_array($ticket->status, [TICKET_STATUS_OPEN, TICKET_STATUS_INPROGRESS, TICKET_STATUS_RESOLVED]))
-                                        <a href="{{ route('owner.ticket.details', $ticket->id) }}"
-                                           class="tk-card__cta"
-                                           title="{{ __('Details') }}">
-                                            {{ __('View Details') }}
-                                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none"><polyline points="9 18 15 12 9 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                                        </a>
-                                    @else
-                                        <a href="{{ route('owner.ticket.details', $ticket->id) }}"
-                                           class="tk-card__cta tk-card__cta--closed"
-                                           title="{{ __('Close') }}">
-                                            {{ __('View Details') }}
-                                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none"><polyline points="9 18 15 12 9 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                                        </a>
-                                    @endif
+                                    {{-- "View Details" is a neutral action (status is shown by the badge above),
+                                         so it's always the on-brand blue CTA — no status-based red variant. --}}
+                                    <a href="{{ route('owner.ticket.details', $ticket->id) }}"
+                                       class="tk-card__cta"
+                                       title="{{ __('View Details') }}">
+                                        {{ __('View Details') }}
+                                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none"><polyline points="9 18 15 12 9 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                                    </a>
                                 </div>
 
                             </div>
@@ -327,9 +320,7 @@
     color:var(--blue); text-decoration:none;
     transition:background .15s, color .15s;
 }
-.tk-card__cta:hover { background:var(--blue); color:var(--white); }
-.tk-card__cta--closed { color:var(--red); }
-.tk-card__cta--closed:hover { background:var(--red); color:var(--white); }
+.tk-card__cta:hover { background:var(--blue); color:var(--white) !important; }
 
 /* ── Badges ───────────────────────────────────────────────────── */
 .ow-badge {

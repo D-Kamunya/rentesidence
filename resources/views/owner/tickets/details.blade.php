@@ -17,7 +17,7 @@
                                     <svg width="8" height="8" viewBox="0 0 24 24" fill="none" aria-hidden="true"><polyline points="9 18 15 12 9 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
                                 </li>
                                 <li>
-                                    <a href="javascript:history.back()">{{ __('Tickets') }}</a>
+                                    <a href="{{ route('owner.ticket.index') }}">{{ __('Tickets') }}</a>
                                     <svg width="8" height="8" viewBox="0 0 24 24" fill="none" aria-hidden="true"><polyline points="9 18 15 12 9 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
                                 </li>
                                 <li aria-current="page">{{ $pageTitle }}</li>
