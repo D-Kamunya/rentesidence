@@ -947,13 +947,11 @@
     .ow-badge--bank    { background:#EEEDFE; color:#534AB7; border:0.5px solid #CECBF6; }
 
     /* ── Row action buttons ──────────────────────────────────── */
-    .ow-row-actions { display:flex; align-items:center; justify-content:flex-end; gap:6px; flex-wrap:nowrap; }
-    /* Fix: the actions group was overflowing LEFT onto the status/Overdue pill because the roomy
-       invoice column hogged width. Make the invoice (first) AND actions (last) columns shrink to
-       their content (width:1% + nowrap) so the flexible middle columns absorb the slack — the
-       actions cell then claims exactly its width and can't spill onto the previous column. */
-    .ow-table th:first-child, .ow-table td:first-child { width:1%; white-space:nowrap; }
-    .ow-table th:last-child,  .ow-table td:last-child  { width:1%; white-space:nowrap; }
+    /* Allow the button group to WRAP when the row is tight (it did on mobile only). With nowrap the
+       group forced a min-width of all-5-buttons; when the table couldn't fit that, the right-pinned
+       group overflowed LEFT onto the status/date column. Wrapping lets it drop to a second line
+       inside its own cell instead — no overlap at any width / invoice-label length. */
+    .ow-row-actions { display:flex; align-items:center; justify-content:flex-end; gap:6px; flex-wrap:wrap; }
 
     .ow-act {
         display:inline-flex; align-items:center; gap:4px;
