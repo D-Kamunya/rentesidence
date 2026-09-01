@@ -231,7 +231,7 @@
         <h1>Real Estate. Simplified.<br><span class="csh-con">Connected.</span></h1>
         <p class="csh-hero__sub">{{ __('Run every property from one place. Automated rent, happier tenants, fewer empty units, and every shilling accounted for. Built for how Kenya rents.') }}</p>
         <div class="csh-hero__cta">
-          <a href="#contact-us" class="csh-btn csh-btn--amber">{{ __('Get started free') }}
+          <a href="#contact-us" data-intent="trial" class="csh-btn csh-btn--amber">{{ __('Get started free') }}
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
           <a href="{{ route('house.hunt') }}" class="csh-btn csh-btn--ghost-light">{{ __('Browse vacant homes') }}</a>
         </div>
@@ -255,7 +255,7 @@
           <p>{{ __('Most platforms charge from the very first day. Centresidence does not. Create your account, add your properties, and run the essentials at no cost. You only pay when you choose to do more.') }}</p>
         </div>
         <div class="csh-cta">
-          <a href="#contact-us" class="csh-btn csh-btn--blue">{{ __('Create your free account') }}
+          <a href="#contact-us" data-intent="trial" class="csh-btn csh-btn--blue">{{ __('Create your free account') }}
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
         </div>
       </div>
@@ -402,14 +402,14 @@
           <div class="csh-picon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18M4 21V10l8-5 8 5v11M9 21v-6h6v6"/><path d="M4 10h16"/></svg></div>
           <h3>{{ __('Financial institutions') }}</h3>
           <p>{{ __('Reach and serve property owners through a platform they use every day. Let us build products that move the market together.') }}</p>
-          <a href="#contact-us" class="csh-lnk">{{ __('Partner with us') }}
+          <a href="#contact-us" data-intent="partner" class="csh-lnk">{{ __('Partner with us') }}
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
         </div>
         <div class="csh-pcard csh-p-amber">
           <div class="csh-picon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3"/><path d="M2 21c0-3.5 3-6 7-6s7 2.5 7 6"/><path d="M17 8h5M19.5 5.5v5"/></svg></div>
           <h3>{{ __('Affiliates and agents') }}</h3>
           <p>{{ __('Earn by bringing property owners onboard. Simple tools, real training, and commissions you can count on.') }}</p>
-          <a href="#contact-us" class="csh-lnk">{{ __('Join the program') }}
+          <a href="#contact-us" data-intent="partner" class="csh-lnk">{{ __('Join the program') }}
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
         </div>
         <div class="csh-pcard csh-p-soft">
@@ -475,6 +475,7 @@
       </div>
       <form class="csh-form ajax" action="{{ route('contact.message.store') }}" method="POST" data-handler="getShowMessage">
         @csrf
+        <input type="hidden" name="intent" id="cshIntent" value="general">
         <h3>{{ __('Talk to us') }}</h3>
         <p>{{ __('We will get back to you shortly.') }}</p>
         <div class="csh-frow">
@@ -494,11 +495,34 @@
   <section class="csh-wrap csh-cta-final">
     <h2>{{ __('Real estate, simplified.') }}</h2>
     <p>{{ __('Join the landlords running calmer, more profitable properties on Centresidence.') }}</p>
-    <div style="margin-top:26px"><a href="#contact-us" class="csh-btn csh-btn--amber">{{ __('Get started free') }}</a></div>
+    <div style="margin-top:26px"><a href="#contact-us" data-intent="trial" class="csh-btn csh-btn--amber">{{ __('Get started free') }}</a></div>
   </section>
 
 </div>
 @endsection
 @push('script')
     <script src="{{ asset('assets/js/custom/frontend-index.js') }}"></script>
+    <script>
+        /* Tag the contact form with the visitor's intent based on which CTA they clicked, so a
+           genuine free-trial/signup enquiry is distinguishable from a general contact (the admin
+           gets a flagged notification). Also pre-fills the subject so the lead is self-describing. */
+        (function () {
+            var intentEl = document.getElementById('cshIntent');
+            var subjectEl = document.querySelector('.csh-form input[name="subject"]');
+            var labels = {
+                trial:   '{{ __('Free trial / Get started') }}',
+                partner: '{{ __('Partnership enquiry') }}'
+            };
+            document.querySelectorAll('a[href="#contact-us"][data-intent]').forEach(function (a) {
+                a.addEventListener('click', function () {
+                    var intent = a.getAttribute('data-intent') || 'general';
+                    if (intentEl) intentEl.value = intent;
+                    // Only pre-fill the subject if the visitor hasn't typed one.
+                    if (subjectEl && !subjectEl.value.trim() && labels[intent]) {
+                        subjectEl.value = labels[intent];
+                    }
+                });
+            });
+        })();
+    </script>
 @endpush
