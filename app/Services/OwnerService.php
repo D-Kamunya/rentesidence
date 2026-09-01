@@ -50,7 +50,11 @@ class OwnerService
             ->addColumn('status', function ($owner) {
                 if ($owner->status == ACTIVE) {
                     return '
-                        <form action="' . route('admin.owner.deactivate', $owner->owner_id) . '" method="POST" style="display:inline;">
+                        <form action="' . route('admin.owner.deactivate', $owner->owner_id) . '" method="POST" style="display:inline;"
+                            data-cs-confirm="' . __('Deactivate this owner? They will immediately lose access to their account until you reactivate them.') . '"
+                            data-cs-confirm-title="' . __('Deactivate owner?') . '"
+                            data-cs-confirm-ok="' . __('Yes, deactivate') . '"
+                            data-cs-confirm-tone="danger">
                             ' . csrf_field() . '
                             <button type="submit" class="btn deactivate"
                                 style="
@@ -70,7 +74,10 @@ class OwnerService
                 }
 
                 return '
-                    <form action="' . route('admin.owner.activate', $owner->owner_id) . '" method="POST" style="display:inline;">
+                    <form action="' . route('admin.owner.activate', $owner->owner_id) . '" method="POST" style="display:inline;"
+                        data-cs-confirm="' . __('Activate this owner and restore their access to the platform?') . '"
+                        data-cs-confirm-title="' . __('Activate owner?') . '"
+                        data-cs-confirm-ok="' . __('Yes, activate') . '">
                         ' . csrf_field() . '
                         <button type="submit" class="btn activate"
                             style="
