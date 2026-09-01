@@ -120,23 +120,9 @@
         font-size:12.5px; font-weight:600; padding:8px 14px; border-radius:8px; cursor:pointer; white-space:nowrap; }
     .doc-request__btn:hover { background:#6f4109; }
 
-    /* style.css sets a blanket `a:hover { color: primary !important }`, which clobbers the
-       LABEL colour of every button-styled <a> (View Details, cs-btn links, card CTAs…) →
-       blue text on a blue hover fill, i.e. an invisible label. Restore white on the filled
-       button classes across every design scheme. (<button> variants aren't affected by the
-       a:hover rule; ghost/back variants that stay light on hover are deliberately excluded.) */
-    a.cs-btn:hover,
-    a.prop-btn--primary:hover, a.prop-btn--upgrade:hover, a.prop-card__cta:hover,
-    a.tk-card__cta:hover, a.tk-card__more:hover,
-    a.td-btn:hover, a.td-btn--primary:hover,
-    a.ta-btn-primary:hover, a.ta-btn-danger:hover,
-    a.ul-btn--primary:hover,
-    a.ow-btn--primary:hover, a.ow-btn--purple:hover,
-    a.theme-btn:hover, a.theme-btn-primary:hover, a.theme-btn-purple:hover,
-    a.theme-btn-green:hover, a.theme-btn-red:hover, a.upgrade-btn:hover, a.near-limit-btn:hover,
-    div.dt-buttons a.dt-button:hover, div.dt-buttons a.theme-btn:hover {
-        color: #fff !important;
-    }
+    /* (Retired 2026-09-01) The per-class button-hover override list that used to live here was
+       replaced by a scoped `a:hover:not([class*="btn"])…` rule in style.css — button-styled
+       anchors now keep their own hover color automatically, with no per-class list to maintain. */
 
     /* Uniform header: give the legacy `.page-title-box` breadcrumb header the cs- look
        app-wide (title weight/size, muted crumb, blue links, no divider) so pages not yet
