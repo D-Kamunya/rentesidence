@@ -47,6 +47,18 @@
        box over the transparent nav — that was the "black bar". Scope it to mobile. */
     @media (max-width:991.98px){
         #offcanvasNavbarDark{background:#0E1218!important;color:#EDE7DC}
+        /* CRITICAL BUGFIX: the nav's glassy `backdrop-filter:blur()` establishes a CONTAINING
+           BLOCK for fixed-position descendants, which traps THIS offcanvas — its top:0/bottom:0
+           resolve against the ~59px nav bar instead of the viewport, collapsing the drawer and
+           clipping the menu to a sliver (the "3 dots" bug on csnav--solid pages like House Hunt
+           / Blog, and on Home once scrolled). On mobile the offcanvas is a real fixed drawer, so
+           drop the blur here; the nav keeps its solid/tinted background. Desktop keeps the glass
+           (there the offcanvas renders INLINE, not as a fixed drawer, so no trap). */
+        #mainNav.csnav--solid,
+        #mainNav.csnav--transparent,
+        #mainNav.csnav--transparent.sticky{
+            backdrop-filter:none!important; -webkit-backdrop-filter:none!important;
+        }
     }
     @media (min-width:992px){
         #offcanvasNavbarDark,
