@@ -122,8 +122,15 @@ a {
 }
 
 a:hover {
-    color: var(--primary-color) !important;
     text-decoration: none;
+}
+
+/* Only PLAIN TEXT links get the primary-blue hover. Button-styled anchors keep their OWN
+   hover color (the previous blanket `a:hover{color:primary !important}` was turning every
+   <a>-styled button's text blue on hover — white, grey, whatever the button intended). The
+   :not() list excludes our button class families so each button's own :hover color wins. */
+a:hover:not([class*="btn"]):not([class*="button"]):not([class*="__more"]):not([class*="__cta"]):not([class*="__act"]):not([class*="__edit"]):not([class*="-back"]):not(.contact-tile) {
+    color: var(--primary-color) !important;
 }
 
 img::selection {
