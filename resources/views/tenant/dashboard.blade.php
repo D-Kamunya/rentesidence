@@ -24,6 +24,52 @@
                         </a>
                     </div>
 
+                    {{-- Move-out status — surfaced up top; links to the actual thing on Invoices --}}
+                    @if (!empty($pendingSettlement))
+                        <a href="{{ route('tenant.invoice.index') }}" class="tmo-nudge tmo-nudge--action">
+                            <span class="tmo-nudge__ic"><i class="ri-hand-coin-line"></i></span>
+                            <span class="tmo-nudge__body">
+                                <strong>{{ __('Confirm your deposit refund') }}</strong>
+                                <span>{{ __('Your landlord recorded a refund of') }} {{ currencyPrice($pendingSettlement->refund_amount) }} — {{ __('please confirm receipt or raise a concern.') }}</span>
+                            </span>
+                            <span class="tmo-nudge__go"><i class="ri-arrow-right-line"></i></span>
+                        </a>
+                    @elseif (!empty($reportedSettlement))
+                        <a href="{{ route('tenant.invoice.index') }}" class="tmo-nudge {{ $reportedSettlement->owner_responded_at ? 'tmo-nudge--action' : '' }}">
+                            <span class="tmo-nudge__ic"><i class="ri-feedback-line"></i></span>
+                            <span class="tmo-nudge__body">
+                                <strong>{{ $reportedSettlement->owner_responded_at ? __('Your landlord responded about your refund') : __('Your report is with your landlord') }}</strong>
+                                <span>{{ $reportedSettlement->owner_responded_at ? __('Confirm receipt once you have it, or follow up with them.') : __('They\'ll respond and put it right — you can confirm receipt once you have your refund.') }}</span>
+                            </span>
+                            <span class="tmo-nudge__go"><i class="ri-arrow-right-line"></i></span>
+                        </a>
+                    @elseif (!empty($activeNotice))
+                        @php $vnAck = $activeNotice->status === \App\Models\VacationNotice::STATUS_ACKNOWLEDGED; @endphp
+                        <a href="{{ route('tenant.invoice.index') }}" class="tmo-nudge {{ $vnAck ? 'tmo-nudge--ok' : '' }}">
+                            <span class="tmo-nudge__ic"><i class="ri-logout-box-r-line"></i></span>
+                            <span class="tmo-nudge__body">
+                                <strong>{{ $vnAck ? __('Notice to vacate — acknowledged') : __('Notice to vacate — sent') }}</strong>
+                                <span>
+                                    {{ __('Move-out') }} {{ \Carbon\Carbon::parse($activeNotice->intended_move_out_date)->format('d M Y') }} ·
+                                    {{ $vnAck ? __('your landlord has acknowledged it.') : __('awaiting your landlord\'s acknowledgement.') }}
+                                </span>
+                            </span>
+                            <span class="tmo-nudge__go"><i class="ri-arrow-right-line"></i></span>
+                        </a>
+                    @endif
+
+                    {{-- Documents your landlord requested — submit / re-submit (separate concern from move-out) --}}
+                    @if (!empty($outstandingDocs) && $outstandingDocs > 0)
+                        <a href="{{ route('tenant.document.index') }}" class="tmo-nudge tmo-nudge--action">
+                            <span class="tmo-nudge__ic"><i class="ri-file-upload-line"></i></span>
+                            <span class="tmo-nudge__body">
+                                <strong>{{ $outstandingDocs > 1 ? __(':n documents requested', ['n' => $outstandingDocs]) : __('A document is requested') }}</strong>
+                                <span>{{ __('Your landlord has asked you to provide documents. Tap to upload.') }}</span>
+                            </span>
+                            <span class="tmo-nudge__go"><i class="ri-arrow-right-line"></i></span>
+                        </a>
+                    @endif
+
                     {{-- Summary Cards --}}
                     <div class="row g-3 mb-4">
 
@@ -490,6 +536,21 @@
 </div>
 
 <style>
+    /* ── Move-out nudge ─────────────────────────────────────── */
+    .tmo-nudge { display:flex; align-items:center; gap:14px; text-decoration:none; margin-bottom:20px;
+        background:#E6F1FB; border:0.5px solid #B5D4F4; border-radius:12px; padding:15px 18px; transition:transform .12s; }
+    .tmo-nudge:hover { transform:translateY(-1px); }
+    .tmo-nudge--ok { background:#E1F5EE; border-color:#B6E3D3; }
+    .tmo-nudge--action { background:#FAEEDA; border-color:#F5D9A8; }
+    .tmo-nudge__ic { flex:none; width:40px; height:40px; border-radius:10px; background:#fff; display:flex; align-items:center; justify-content:center; color:#0C447C; }
+    .tmo-nudge--ok .tmo-nudge__ic { color:#0F6E56; }
+    .tmo-nudge--action .tmo-nudge__ic { color:#854F0B; }
+    .tmo-nudge__ic i { font-size:20px; }
+    .tmo-nudge__body { flex:1; min-width:0; display:flex; flex-direction:column; gap:2px; }
+    .tmo-nudge__body strong { font-size:14px; color:#111827; }
+    .tmo-nudge__body span { font-size:12.5px; color:#4b5563; }
+    .tmo-nudge__go { flex:none; color:#6b7280; font-size:18px; }
+
     /* ── Page header ─────────────────────────────────────────── */
     .dash-header {
         display: flex;

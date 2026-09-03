@@ -35,6 +35,14 @@ Route::group(['prefix' => 'tenant', 'as' => 'tenant.', 'middleware' => ['auth', 
         Route::get('get-currency-by-gateway', [InvoiceController::class, 'getCurrencyByGateway'])->name('get.currency');
     });
 
+    // Tenant responds to a recorded deposit settlement (confirm receipt / dispute).
+    Route::post('deposit-settlement/{id}/respond', [\App\Http\Controllers\Tenant\DepositSettlementController::class, 'respond'])->name('deposit-settlement.respond');
+
+    // Notice to vacate (move-out lifecycle).
+    Route::group(['prefix' => 'vacation-notice', 'as' => 'vacation-notice.'], function () {
+        Route::post('/', [\App\Http\Controllers\Tenant\VacationNoticeController::class, 'store'])->name('store');
+    });
+
     Route::group(['prefix' => 'order', 'as' => 'order.'], function () {
         Route::get('/', [ProductOrderController::class, 'index'])->name('index');
         // Route::get('print/{id}', [InvoiceController::class, 'details'])->name('print');

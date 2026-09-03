@@ -7,6 +7,20 @@
                     <div class="flex-grow-1 ms-3">
                         <h4 class="ow-tenant-name">{{ $tenant->first_name }} {{ $tenant->last_name }}</h4>
                         <p class="ow-tenant-email">{{ $tenant->email }}</p>
+                        @php $att = $attention[$tenant->id] ?? null; @endphp
+                        @if ($att)
+                            @php
+                                $attParts = [];
+                                if (!empty($att['notice']))     $attParts[] = __('notice to vacate');
+                                if (!empty($att['settlement'])) $attParts[] = __('reported settlement');
+                                if (!empty($att['documents']))  $attParts[] = __('documents to review');
+                                // Link to the tab that carries it — Documents only when that's the sole signal.
+                                $attTab = (!empty($att['documents']) && empty($att['notice']) && empty($att['settlement'])) ? 'document' : 'payment';
+                            @endphp
+                            <a href="{{ route('owner.tenant.details', [$tenant->id, 'tab' => $attTab]) }}" class="ow-attention" title="{{ implode(' · ', $attParts) }}">
+                                <span class="ow-attention__dot"></span>{{ __('Needs attention') }}
+                            </a>
+                        @endif
                     </div>
                     <a href="{{ route('owner.tenant.edit', $tenant->id) }}" class="ow-act ow-act--ghost" 
                         title="{{ __('Edit') }}">

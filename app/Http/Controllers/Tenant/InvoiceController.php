@@ -32,6 +32,24 @@ class InvoiceController extends Controller
     {
         $tenantId = auth()->user()->tenant->user_id;
         $data['pageTitle'] = __('Invoices');
+        // Security deposit the landlord is holding for this tenancy — surfaced as reassurance
+        // ("your money is recorded, refundable at move-out"), the tenant-facing half of Model A.
+        $tenantRecord = auth()->user()->tenant;
+        $data['depositHeld'] = $tenantRecord
+            ? app(\App\Services\DepositService::class)->totalHeldForTenant((int) $tenantRecord->id)
+            : 0;
+        // The latest deposit settlement (if any) — the tenant confirms receipt / disputes it here.
+        $data['depositSettlement'] = $tenantRecord
+            ? \App\Models\DepositSettlement::with('items')->where('tenant_id', $tenantRecord->id)->latest('id')->first()
+            : null;
+
+        // Notice-to-vacate context: required period, earliest valid move-out, and any live notice.
+        $vn = app(\App\Services\VacationNoticeService::class);
+        $ownerId = (int) ($tenantRecord->owner_user_id ?? 0);
+        $data['noticeDays']     = $tenantRecord ? $vn->noticePeriodDays($ownerId) : 30;
+        $data['noticeEarliest'] = $tenantRecord ? $vn->earliestMoveOut($ownerId)->toDateString() : null;
+        $data['activeNotice']   = $tenantRecord ? $vn->activeNotice((int) $tenantRecord->id) : null;
+        $data['canGiveNotice']  = $tenantRecord && (int) $tenantRecord->status === TENANT_STATUS_ACTIVE;
         // Retrieve records from the SubscriptionOrder model
         // $latestMpesaOrder = Order::whereNotNull('payment_id')
         //     ->where('user_id', $tenantId) // Filter by user_id

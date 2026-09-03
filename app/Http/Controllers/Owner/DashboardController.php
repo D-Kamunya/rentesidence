@@ -111,6 +111,21 @@ class DashboardController extends Controller
             ->where('status', HOUSE_HUNT_APPLICATION_PENDING)
             ->count();
 
+        // ── Notices to vacate (business-level — surfaced promptly) ──
+        $data['pendingVacationNotices'] = \App\Models\VacationNotice::with(['tenant.user', 'unit'])
+            ->where('owner_user_id', $ownerId)
+            ->where('status', \App\Models\VacationNotice::STATUS_PENDING)
+            ->orderBy('intended_move_out_date')
+            ->get();
+
+        // ── Reported deposit settlements awaiting the owner's response (outrank notices) ──
+        $data['disputedSettlements'] = \App\Models\DepositSettlement::with(['tenant.user'])
+            ->where('owner_user_id', $ownerId)
+            ->where('status', \App\Models\DepositSettlement::STATUS_DISPUTED)
+            ->whereNull('owner_responded_at')
+            ->latest('id')
+            ->get();
+
         return view('owner.dashboard')->with($data);
     }
     

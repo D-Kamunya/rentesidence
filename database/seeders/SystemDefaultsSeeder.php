@@ -56,6 +56,9 @@ class SystemDefaultsSeeder extends Seeder
 
             // ── Subscription / plan notices ──
             'plan_expiry_notice_days' => 3, // days before expiry to warn the owner
+
+            // ── Tenancy lifecycle ──
+            'vacation_notice_days' => 30, // required notice-to-vacate period (days) before move-out
         ];
 
         // Pull existing keys once so we only insert what's missing (never overwrite).

@@ -1,6 +1,7 @@
 {{-- Tenant-details left rail + shared td-* styles (included by every tab view, so
      the styles ride along once per page). $tenant + $navTenant*ActiveClass come from
      the controller. --}}
+@php $tdAtt = app(\App\Services\TenantAttentionService::class)->forTenant($tenant->id); @endphp
 <nav class="td-nav">
     <a href="{{ route('owner.tenant.details', [$tenant->id, 'tab' => 'profile']) }}"
        class="td-nav__item {{ @$navTenantProfileActiveClass ? 'is-active' : '' }}">
@@ -12,11 +13,13 @@
     </a>
     <a href="{{ route('owner.tenant.details', [$tenant->id, 'tab' => 'payment']) }}"
        class="td-nav__item {{ @$navTenantPaymentActiveClass ? 'is-active' : '' }}">
-        <i class="ri-bank-card-line"></i><span>{{ __('Payment History') }}</span>
+        <i class="ri-bank-card-line"></i><span>{{ __('Payments & Deposit') }}</span>
+        @if ($tdAtt['notice'] || $tdAtt['settlement'])<span class="td-nav__dot" title="{{ __('Needs attention') }}"></span>@endif
     </a>
     <a href="{{ route('owner.tenant.details', [$tenant->id, 'tab' => 'document']) }}"
        class="td-nav__item {{ @$navTenantDocumentActiveClass ? 'is-active' : '' }}">
         <i class="ri-file-text-line"></i><span>{{ __('Documents') }}</span>
+        @if ($tdAtt['documents'])<span class="td-nav__dot" title="{{ __('Documents to review') }}"></span>@endif
     </a>
     @if ($tenant->status == TENANT_STATUS_CLOSE)
         <a href="{{ route('owner.tenant.details', [$tenant->id, 'tab' => 'closing-history']) }}"
@@ -56,6 +59,8 @@
     .td-nav__item:hover { background:#f3f4f6; color:#111827; }
     .td-nav__item.is-active { background:#E6F1FB; color:#0C447C; font-weight:600; }
     .td-nav__item.is-active i { color:#185FA5; }
+    .td-nav__dot { margin-left:auto; width:8px; height:8px; border-radius:50%; background:#C2410C; flex:none; animation:tdDot 1.6s ease-in-out infinite; }
+    @keyframes tdDot { 0%,100%{opacity:1} 50%{opacity:.4} }
     .td-nav__item--danger { margin-top:8px; padding-top:12px; border-top:0.5px solid #e5e7eb; border-radius:0 0 9px 9px; color:#A32D2D; }
     .td-nav__item--danger i { color:#A32D2D; }
     .td-nav__item--danger:hover { background:#FAECE7; color:#A32D2D; }

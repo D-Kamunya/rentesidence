@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Owner\CurrencyController;
 use App\Http\Controllers\Owner\DashboardController;
+use App\Http\Controllers\Owner\DepositController;
 use App\Http\Controllers\Owner\DocumentController;
 use App\Http\Controllers\Owner\ExpenseController;
 use App\Http\Controllers\Owner\ExpenseTypeController;
@@ -123,6 +124,22 @@ Route::group(['prefix' => 'owner', 'as' => 'owner.', 'middleware' => ['auth', 'o
         Route::get('details/{id}', [TenantController::class, 'details'])->name('details');
         Route::post('close-history-store/{id}', [TenantController::class, 'closeHistoryStore'])->name('close.history.store');
         Route::post('delete', [TenantController::class, 'delete'])->name('delete');
+
+        // Move-in first-invoice modal (invoice-at-assignment): preview amounts + persist the owner's choice.
+        Route::get('first-invoice/{id}', [TenantController::class, 'firstInvoicePreview'])->name('first-invoice.preview');
+        Route::post('first-invoice/{id}', [TenantController::class, 'firstInvoiceStore'])->name('first-invoice.store');
+
+        // Owner acknowledges a tenant's notice to vacate.
+        Route::post('vacation-notice/{id}/acknowledge', [\App\Http\Controllers\Owner\VacationNoticeController::class, 'acknowledge'])->name('vacation-notice.acknowledge');
+
+        // Generate the final pro-rated rent invoice at move-out.
+        Route::post('final-invoice/{id}', [TenantController::class, 'finalInvoiceStore'])->name('final-invoice.store');
+
+        // Move-out deposit settlement (statement + record).
+        Route::get('deposit-settlement/{id}', [\App\Http\Controllers\Owner\DepositSettlementController::class, 'context'])->name('deposit-settlement.context');
+        Route::post('deposit-settlement/{id}', [\App\Http\Controllers\Owner\DepositSettlementController::class, 'store'])->name('deposit-settlement.store');
+        // Owner responds to a reported (disputed) settlement.
+        Route::post('deposit-settlement/{id}/respond', [\App\Http\Controllers\Owner\DepositSettlementController::class, 'respond'])->name('deposit-settlement.respond');
         Route::post('draft/discard', [TenantController::class, 'discardDraft'])->name('draft.discard');
 
         // Bulk tenant/unit import (CSV) — upload → validated preview → queued import + progress.
@@ -143,6 +160,9 @@ Route::group(['prefix' => 'owner', 'as' => 'owner.', 'middleware' => ['auth', 'o
         Route::post('/assign', 'assign')  ->name('assign');
         Route::delete('/{id}', 'destroy') ->name('destroy');
     });
+
+    // Security deposits held (Model A held-liability register).
+    Route::get('deposits', [DepositController::class, 'index'])->name('deposit.index');
 
     Route::group(['prefix' => 'order', 'as' => 'order.'], function () {
         Route::get('/', [ProductOrderController::class, 'index'])->name('index');

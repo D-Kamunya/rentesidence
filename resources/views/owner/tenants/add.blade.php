@@ -285,17 +285,20 @@
     .ten-input-group {
         display: flex;
         gap: 0;
+        flex-wrap: nowrap; /* never let the number input wrap away / collapse to its spinners */
     }
     .ten-input-group .ten-select {
         border-radius: 7px 0 0 7px;
         border-right: none;
         width: auto;
-        min-width: 100px;
+        min-width: 88px;
         flex-shrink: 0;
     }
     .ten-input-group .ten-input {
         border-radius: 0 7px 7px 0;
-        flex: 1;
+        flex: 1 1 auto;
+        min-width: 56px; /* floor so the typed amount is always visible next to the type select */
+        width: auto;
     }
 
     /* Datepicker */
@@ -658,6 +661,10 @@
                         <form class="ajax" action="{{ route('owner.tenant.store') }}" method="POST" data-handler="stepChange">
                             @csrf
                             <input type="hidden" name="step" class="d-none" value="1">
+                            {{-- Carries the tenant id once step 1 has created the draft, so going Back → Next
+                                 re-submits step 1 as an UPDATE (not a fresh create) and its own email/phone
+                                 don't collide with themselves. stepChange sets every input[name=id]. --}}
+                            <input type="hidden" name="id" value="">
 
                             <div class="ten-section">
                                 <div class="ten-section-title">{{ __('Tenant Information') }}</div>
@@ -919,13 +926,13 @@
                                     <div class="ten-inner-card">
                                         <div class="ten-inner-title">{{ __('Rent Information') }}</div>
                                         <div class="row">
-                                            <div class="col-md-6 col-lg-4 col-xl-3 col-xxl-2">
+                                            <div class="col-md-6 col-lg-4 col-xl-3">
                                                 <div class="ten-field">
                                                     <label class="ten-label">{{ __('General Rent') }} <span class="req">*</span></label>
                                                     <input type="number" step="any" class="ten-input form-control" id="general_rent" placeholder="{{ __('General Rent') }}" value="" name="general_rent">
                                                 </div>
                                             </div>
-                                            <div class="col-md-6 col-lg-4 col-xl-3 col-xxl-2">
+                                            <div class="col-md-6 col-lg-4 col-xl-3">
                                                 <div class="ten-field">
                                                     <label class="ten-label">{{ __('Security Deposit') }} <span class="req">*</span></label>
                                                     <div class="ten-input-group input-group custom-input-group">
@@ -937,7 +944,7 @@
                                                     </div>
                                                 </div>
                                             </div>
-                                            <div class="col-md-6 col-lg-4 col-xl-3 col-xxl-2">
+                                            <div class="col-md-6 col-lg-4 col-xl-3">
                                                 <div class="ten-field">
                                                     <label class="ten-label">{{ __('Late Fee') }} <span class="req">*</span></label>
                                                     <div class="ten-input-group input-group custom-input-group">
@@ -949,7 +956,7 @@
                                                     </div>
                                                 </div>
                                             </div>
-                                            <div class="col-md-6 col-lg-4 col-xl-3 col-xxl-2">
+                                            <div class="col-md-6 col-lg-4 col-xl-3">
                                                 <div class="ten-field">
                                                     <label class="ten-label">{{ __('Incident Receipt') }} <span class="req">*</span></label>
                                                     <input type="number" step="any" class="ten-input form-control" id="incident_receipt" placeholder="{{ __('Incident Receipt') }}" value="" name="incident_receipt">

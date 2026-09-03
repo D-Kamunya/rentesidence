@@ -159,14 +159,20 @@
                         </div>
                     </div>
 
+                    @if (!empty($depositSettlement))
+                        <p class="pf-hint" style="font-size:12px;color:#0F6E56;margin:0 0 10px;">
+                            <i class="ri-checkbox-circle-line"></i>
+                            {{ __('Pre-filled from the recorded deposit settlement') }}{{ $depositSettlement->refund_date ? ' (' . \Carbon\Carbon::parse($depositSettlement->refund_date)->format('d M Y') . ')' : '' }}.
+                        </p>
+                    @endif
                     <div class="pf-grid" style="grid-template-columns:1fr 1fr;">
                         <div class="pf-field">
                             <label class="pf-label">{{ __('Refund Amount') }}</label>
-                            <input type="number" step="any" value="0" min="0" name="close_refund_amount" class="form-control pf-input" placeholder="{{ __('Refund Amount') }}">
+                            <input type="number" step="any" value="{{ !empty($depositSettlement) ? $depositSettlement->refund_amount : 0 }}" min="0" name="close_refund_amount" class="form-control pf-input" placeholder="{{ __('Refund Amount') }}">
                         </div>
                         <div class="pf-field">
                             <label class="pf-label">{{ __('Closing Charge') }}</label>
-                            <input type="number" step="any" value="0" min="0" name="close_charge" class="form-control pf-input" placeholder="{{ __('Closing Charge') }}">
+                            <input type="number" step="any" value="{{ !empty($depositSettlement) ? $depositSettlement->total_deductions : 0 }}" min="0" name="close_charge" class="form-control pf-input" placeholder="{{ __('Closing Charge') }}">
                         </div>
                         <div class="pf-field">
                             <label class="pf-label">{{ __('Closing Date') }}</label>

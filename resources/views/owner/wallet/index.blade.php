@@ -48,6 +48,9 @@
                                 <span class="wl-stat__label">{{ __('Total Earned (Net)') }}</span>
                             </div>
                             <p class="wl-stat__value">KSh {{ number_format($totalEarned, 2) }}</p>
+                            @if (($depositsHeld ?? 0) > 0)
+                                <span class="wl-stat__depnote">{{ __('incl.') }} KSh {{ number_format($depositsHeld, 2) }} {{ __('held deposits — not yet income') }}</span>
+                            @endif
                             <div class="wl-stat__bar wl-stat__bar--green"></div>
                         </div>
                         <div class="wl-stat wl-stat--amber">
@@ -71,6 +74,20 @@
                             <div class="wl-stat__bar wl-stat__bar--purple"></div>
                         </div>
                     </div>
+
+                    {{-- ── Deposits-held set-aside — this much of the balance is the tenants' money ── --}}
+                    @if (($depositsHeld ?? 0) > 0)
+                        <div class="wl-deposit-note">
+                            <span class="wl-deposit-note__icon">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><rect x="3" y="4" width="18" height="16" rx="2" stroke="currentColor" stroke-width="1.8"/><circle cx="12" cy="12" r="2.5" stroke="currentColor" stroke-width="1.8"/><path d="M7 4v16M17 4v16" stroke="currentColor" stroke-width="1.4"/></svg>
+                            </span>
+                            <span class="wl-deposit-note__text">
+                                <strong>KSh {{ number_format($depositsHeld, 2) }}</strong>
+                                {{ __('of your balance is security deposits held for tenants — returned at move-out, not income.') }}
+                                <a href="{{ route('owner.deposit.index') }}">{{ __('View deposits') }}</a>
+                            </span>
+                        </div>
+                    @endif
 
                     {{-- ── Withdraw Action Row ── --}}
                     <div class="wl-action-row">
@@ -427,6 +444,7 @@
                     </span>
                     <span id="rdCommission" class="rd-breakdown__val rd-breakdown__val--deduct">—</span>
                 </div>
+                <div class="rd-fee-note" id="rdFeeNote" style="display:none;"></div>
                 <div class="rd-breakdown__row rd-breakdown__row--commission" id="rdInfraRow" style="display:none;">
                     <span>{{ __('Module costs') }}</span>
                     <span id="rdInfra" class="rd-breakdown__val rd-breakdown__val--deduct">—</span>
@@ -468,6 +486,12 @@
 .wl-page-title{font-size:22px;font-weight:500;color:var(--gray-900);margin:0 0 4px}
 .wl-page-sub{font-size:13px;color:var(--gray-500);margin:0}
 .wl-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:20px}
+.wl-deposit-note{display:flex;align-items:flex-start;gap:10px;background:var(--amber-light);border:0.5px solid var(--amber-border);border-radius:12px;padding:13px 16px;margin-bottom:20px}
+.wl-deposit-note__icon{color:var(--amber);flex:none;margin-top:1px}
+.wl-deposit-note__text{font-size:12.5px;color:var(--amber);line-height:1.55}
+.wl-deposit-note__text strong{font-weight:700}
+.wl-deposit-note__text a{color:var(--blue);font-weight:600;text-decoration:none;white-space:nowrap;margin-left:4px}
+.wl-deposit-note__text a:hover{color:var(--blue-hover)}
 .wl-stat{background:var(--white);border:0.5px solid var(--blue-faint);border-radius:14px;padding:20px;display:flex;flex-direction:column;gap:12px;position:relative;overflow:hidden;transition:all .25s ease;box-shadow:0 4px 12px rgba(0,0,0,.04),0 0 0 1px rgba(24,95,165,.05),0 6px 18px rgba(24,95,165,.06)}
 .wl-stat:hover{border-color:var(--blue);transform:translateY(-3px);box-shadow:0 10px 25px rgba(0,0,0,.06),0 0 0 1px rgba(24,95,165,.12),0 12px 30px rgba(24,95,165,.18)}
 .wl-stat__top{display:flex;align-items:center;gap:12px}
@@ -475,6 +499,7 @@
 .wl-stat__icon--blue{background:var(--blue-light);color:var(--blue)}.wl-stat__icon--green{background:var(--green-light);color:var(--green)}.wl-stat__icon--amber{background:var(--amber-light);color:var(--amber)}.wl-stat__icon--purple{background:#EEEDF9;color:var(--purple)}
 .wl-stat__label{font-size:11px;font-weight:500;text-transform:uppercase;letter-spacing:.07em;color:var(--gray-400);margin:0}
 .wl-stat__value{font-size:24px;font-weight:700;color:var(--gray-900);margin:0;line-height:1}
+.wl-stat__depnote{display:block;font-size:10.5px;color:var(--amber);margin-top:6px;line-height:1.3}
 .wl-stat__bar{position:absolute;bottom:0;left:0;right:0;height:3px}
 .wl-stat__bar--blue{background:var(--blue)}.wl-stat__bar--green{background:var(--green)}.wl-stat__bar--amber{background:#F59E0B}.wl-stat__bar--purple{background:var(--purple)}
 .wl-action-row{display:flex;align-items:center;gap:14px;margin-bottom:20px;position:relative;z-index:1}
@@ -580,6 +605,8 @@
 .rd-breakdown__val--deduct::before{content:'− '}
 .rd-breakdown__val--net{font-weight:700;font-size:15px}
 .rd-rate-chip{display:inline-flex;align-items:center;padding:1px 6px;border-radius:99px;background:var(--amber-light);color:var(--amber);border:0.5px solid var(--amber-border);font-size:10px;font-weight:600;margin-left:6px}
+.rd-fee-note{padding:8px 14px;font-size:11px;line-height:1.5;color:var(--gray-500);background:var(--blue-light);border-bottom:0.5px solid var(--gray-100)}
+.rd-fee-note strong{color:var(--gray-700);font-weight:600}
 
 /* Withdraw modal — unchanged */
 .wd-overlay{position:fixed !important;top:0 !important;left:0 !important;right:0 !important;bottom:0 !important;width:100vw !important;height:100vh !important;background:rgba(17,24,39,.45) !important;backdrop-filter:blur(2px) !important;z-index:99999 !important;display:flex !important;align-items:center !important;justify-content:center !important;visibility:visible !important;opacity:1 !important;pointer-events:auto !important}
@@ -785,6 +812,17 @@ document.addEventListener('DOMContentLoaded', function () {
         document.getElementById('rdGross').textContent           = 'KSh ' + formatNum(d.gross_amount);
         document.getElementById('rdCommission').textContent      = 'KSh ' + formatNum(d.commission_amount);
         document.getElementById('rdNet').textContent             = 'KSh ' + formatNum(d.net_amount);
+
+        // Clarify the fee basis when a deposit was collected in the same payment — the fee is on
+        // the rent only; the deposit is never commissioned.
+        var feeNote = document.getElementById('rdFeeNote');
+        if (d.has_deposit) {
+            feeNote.innerHTML = '{{ __('Charged on rent') }} <strong>KSh ' + formatNum(d.rent_portion) + '</strong> {{ __('only') }} — '
+                + '{{ __('deposit') }} <strong>KSh ' + formatNum(d.deposit_portion) + '</strong> {{ __('is not commissioned.') }}';
+            feeNote.style.display = '';
+        } else {
+            feeNote.style.display = 'none';
+        }
         // Centresidence deduct-at-source — one payment event, every deduction here.
         toggleDeductRow('rdInfraRow',     'rdInfra',     d.infra_amount);
         toggleDeductRow('rdFinancingRow', 'rdFinancing', d.financing_amount);

@@ -59,7 +59,9 @@
 
         <div class="scm-foot">
             @if (($scmContext ?? 'add') === 'add')
-                <button type="button" class="scm-reject" onclick="scmDiscard()">
+                {{-- Hidden until a screening result is shown — so it never reads as the system pre-judging
+                     the tenant before the owner has even looked. Revealed in scmDoLookup on a real result. --}}
+                <button type="button" class="scm-reject" id="scmReject" onclick="scmDiscard()" hidden>
                     <i class="ri-close-circle-line"></i> {{ __('Don\'t proceed with this tenant') }}
                 </button>
             @endif
@@ -262,6 +264,8 @@
                 if (res.status === 200 && res.d.ok) {
                     out.innerHTML = res.d.html;
                     scmMarkDone(); // lock — result is shown; changing the number unlocks it
+                    var rej = document.getElementById('scmReject'); // now a real choice: proceed or not
+                    if (rej) rej.hidden = false;
                 } else if (res.status === 422 && res.d.topup) {
                     out.innerHTML = '<div class="scm-topup">' + (res.d.message || '{{ __("You\'re out of screening credits.") }}')
                         + '<br><a href="' + scmTopupUrl + '" target="_blank" rel="noopener">{{ __("Top up screening credits") }}</a></div>';

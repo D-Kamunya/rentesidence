@@ -392,7 +392,7 @@ select.ta-form-control {
                                     <form class="ajax"
                                           action="{{ route('owner.tenant.applications.assign') }}"
                                           method="POST"
-                                          data-handler="getShowMessage">
+                                          data-handler="applicationAssigned">
                                         @csrf
 
                                         {{-- Hidden: application id, property & unit pre-filled from the record --}}
@@ -627,6 +627,20 @@ select.ta-form-control {
     </div><!-- /.page-content -->
 </div><!-- /.main-content -->
 
+<script>
+    // Assign success → land on the tenants list with the move-in first-invoice modal primed
+    // for the freshly-created tenant (same modal the add-tenant wizard opens).
+    function applicationAssigned(response) {
+        if (response && response.status === true) {
+            toastr.success(response.message);
+            var base = @json(route('owner.tenant.index'));
+            var tid  = response.data && response.data.tenant_id ? response.data.tenant_id : null;
+            window.location.href = tid ? (base + '?first_invoice=' + tid) : base;
+        } else {
+            commonHandler(response);
+        }
+    }
+</script>
 <script>
 document.addEventListener('DOMContentLoaded', function () {
 

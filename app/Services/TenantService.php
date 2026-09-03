@@ -476,6 +476,24 @@ class TenantService
             $tenant->due_date = $request->due_date;
             $tenant->save();
 
+            // Keep the UNIT as the single source of truth for rent. The create form pre-fills rent
+            // from the unit but lets the owner set a move-in rate; if they changed it, push that back
+            // to the unit so All Units + the recurring setting agree from day one (no "rent reverts"
+            // divergence). Update the unit column DIRECTLY — never via updateUnitTenant(), which would
+            // also rewrite CLOSED tenants' historical rent on this unit. Only one active tenant per
+            // unit (enforced above), so this touches just this tenancy.
+            if (!empty($request->unit_id) && $request->filled('general_rent')) {
+                // Scope through the owner's properties (units have no owner_user_id) — this also
+                // ensures we never write rent onto a unit that isn't this owner's.
+                $unit = \App\Models\PropertyUnit::where('id', $request->unit_id)
+                    ->whereHas('property', fn ($q) => $q->where('owner_user_id', auth()->id()))
+                    ->first();
+                if ($unit && (float) $unit->general_rent !== (float) $request->general_rent) {
+                    $unit->general_rent = $request->general_rent;
+                    $unit->save();
+                }
+            }
+
             DB::commit();
             $data = $tenant;
             $data->step = 'nextStep2';

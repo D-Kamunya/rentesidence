@@ -1220,6 +1220,10 @@ if (!function_exists('handlePaymentConfirmation')) {
                     $invoice->status   = INVOICE_STATUS_PAID;
                     $invoice->order_id = $order->id;
                     $invoice->save();
+
+                    // Record any deposit line on this now-PAID invoice as a HELD liability
+                    // (held == collected). Idempotent per line; never disturbs the payment.
+                    app(\App\Services\DepositService::class)->recordFromPaidInvoice($invoice);
                 } else {
                     \Illuminate\Support\Facades\Log::warning('handlePaymentConfirmation: invoice not found', [
                         'order_id'   => $order->id,

@@ -27,7 +27,17 @@ class TenantRequest extends FormRequest
             'step' => 'required'
         ];
         if ($this->step == FORM_STEP_ONE) {
-            $userId = isset($this->user_id) ? $this->user_id : null;
+            // Which user to EXCLUDE from the unique email/phone checks. On a fresh add this is null.
+            // But step 1 also runs when EDITING or when the owner goes Back then Next again — and the
+            // wizard only carries the tenant `id` (not user_id), so the exclusion was silently lost
+            // and re-submitting threw "email/contact number has already been taken." Resolve the
+            // user from the tenant id (owner-scoped) so their OWN record never collides with itself.
+            $userId = $this->user_id ?: null;
+            if (!$userId && $this->id) {
+                $userId = \App\Models\Tenant::where('id', $this->id)
+                    ->where('owner_user_id', auth()->id())
+                    ->value('user_id');
+            }
             $rules = [
                 'first_name' => 'required',
                 'last_name' => 'required',

@@ -936,13 +936,13 @@
                                             {{ __('page — updates apply everywhere automatically.') }}</span>
                                     </div>
                                     <div class="row">
-                                        <div class="col-md-6 col-lg-4 col-xl-3 col-xxl-2">
+                                        <div class="col-md-6 col-lg-4 col-xl-3">
                                             <div class="ten-field">
                                                 <label class="ten-label">{{ __('General Rent') }}</label>
                                                 <input type="number" step="any" class="ten-input form-control" id="general_rent" placeholder="{{ __('General Rent') }}" value="{{ $tenant->general_rent }}" name="general_rent" readonly>
                                             </div>
                                         </div>
-                                        <div class="col-md-6 col-lg-4 col-xl-3 col-xxl-2">
+                                        <div class="col-md-6 col-lg-4 col-xl-3">
                                             <div class="ten-field">
                                                 <label class="ten-label">{{ __('Security Deposit') }}</label>
                                                 {{-- Hidden inputs preserve values for form submission --}}
@@ -956,7 +956,7 @@
                                                 </div>
                                             </div>
                                         </div>
-                                        <div class="col-md-6 col-lg-4 col-xl-3 col-xxl-2">
+                                        <div class="col-md-6 col-lg-4 col-xl-3">
                                             <div class="ten-field">
                                                 <label class="ten-label">{{ __('Late Fee') }}</label>
                                                 {{-- Hidden inputs preserve values for form submission --}}
@@ -970,13 +970,13 @@
                                                 </div>
                                             </div>
                                         </div>
-                                        <div class="col-md-6 col-lg-4 col-xl-3 col-xxl-2">
+                                        <div class="col-md-6 col-lg-4 col-xl-3">
                                             <div class="ten-field">
                                                 <label class="ten-label">{{ __('Incident Receipt') }}</label>
                                                 <input type="number" step="any" class="ten-input form-control" id="incident_receipt" placeholder="{{ __('Incident Receipt') }}" value="{{ $tenant->incident_receipt }}" name="incident_receipt" readonly>
                                             </div>
                                         </div>
-                                        <div class="col-md-6 col-lg-4 col-xl-3 col-xxl-2">
+                                        <div class="col-md-6 col-lg-4 col-xl-3">
                                             <div class="ten-field">
                                                 <label class="ten-label">{{ __('Payment Due On Date') }}</label>
                                                 <input type="number" class="ten-input form-control" autocomplete="off" id="payment_due_on_date" placeholder="{{ __('Due Date') }}" value="{{ $tenant->due_date }}" name="due_date" readonly>

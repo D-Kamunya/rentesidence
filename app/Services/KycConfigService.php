@@ -32,6 +32,23 @@ class KycConfigService
      * its fulfillment: verification_status = null (not uploaded), or the KYC_STATUS_* the
      * tenant's upload is at. Drives the "Requested documents" panel on the tenant page.
      */
+    /**
+     * How many per-tenant document REQUESTS the tenant still needs to act on — i.e. requested but
+     * not yet submitted (no verification), or rejected (must re-submit). Excludes pending (already
+     * submitted, awaiting the owner) + accepted. Drives the tenant dashboard nudge.
+     */
+    public function outstandingRequestCountForTenant($tenantId): int
+    {
+        $verifications = KycVerification::where('tenant_id', $tenantId)->get()->keyBy('kyc_config_id');
+
+        return KycConfig::where('tenant_id', $tenantId)->get()
+            ->filter(function ($cfg) use ($verifications) {
+                $v = $verifications->get($cfg->id);
+                $status = $v ? (int) $v->status : null;
+                return $status === null || $status === KYC_STATUS_REJECTED; // tenant must submit / re-submit
+            })->count();
+    }
+
     public function getTenantRequests($tenantId)
     {
         $verifications = KycVerification::where('tenant_id', $tenantId)->get()->keyBy('kyc_config_id');

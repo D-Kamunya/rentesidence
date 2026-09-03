@@ -8,6 +8,8 @@ use App\Http\Requests\TenantDeleteRequest;
 use App\Http\Requests\TenantRequest;
 use App\Http\Requests\TenantEditRequest;
 use App\Models\Property;
+use App\Models\Tenant;
+use App\Services\InvoiceRecurringService;
 use App\Services\InvoiceTypeService;
 use App\Services\LocationService;
 use App\Services\PropertyService;
@@ -47,6 +49,10 @@ class TenantController extends Controller
             if (getOption('app_card_data_show', 1) == 1) {
             $data['tenants'] = $this->tenantService->getActiveAll($request); // pass $request
             }
+            // "Needs attention" signals for the visible tenants — one batch (no N+1), for the cards.
+            $data['attention'] = isset($data['tenants'])
+                ? app(\App\Services\TenantAttentionService::class)->forTenants($data['tenants']->pluck('id')->all())
+                : [];
             if ($request->ajax()) {
             return response()->json([
                     'cards'      => view('owner.tenants.partials.cards', $data)->render(),
@@ -55,6 +61,92 @@ class TenantController extends Controller
             }
             return view('owner.tenants.index', $data);
         }
+    }
+
+    /**
+     * Move-in "first invoice" modal — the amounts to offer for a just-assigned tenant's current
+     * period (full / pro-rated / custom / skip). Owner-scoped; returns null context when move-in
+     * invoicing doesn't apply (no monthly/yearly auto-setting), so the UI stays silent.
+     */
+    public function firstInvoicePreview(Request $request, $id)
+    {
+        $tenant = Tenant::with(['user', 'unit'])
+            ->where('owner_user_id', auth()->id())
+            ->find($id);
+        if (!$tenant) {
+            return $this->error([], __('Tenant not found.'));
+        }
+
+        $context = app(InvoiceRecurringService::class)->firstInvoiceContext($tenant);
+        // Currency presentation so the modal renders amounts consistently with the rest of the app.
+        $data = [
+            'context'          => $context,        // null = not applicable → UI won't show the modal
+            'currency_symbol'  => getCurrencySymbol(),
+            'currency_placement' => getCurrencyPlacement(),
+        ];
+        return $this->success($data, '');
+    }
+
+    /**
+     * Persist the owner's move-in invoice choice. Idempotent by billing period (never double-bills).
+     * Interactive path only — bulk import keeps its own opening-balance flow.
+     */
+    public function firstInvoiceStore(Request $request, $id)
+    {
+        $request->validate([
+            'mode'            => 'required|in:full,prorate,custom,skip',
+            'custom_amount'   => 'nullable|numeric|min:1',
+            'include_deposit' => 'nullable|boolean',
+            'deposit_amount'  => 'nullable|numeric|min:1',
+        ]);
+
+        $tenant = Tenant::where('owner_user_id', auth()->id())->find($id);
+        if (!$tenant) {
+            return $this->error([], __('Tenant not found.'));
+        }
+
+        $depositAmount = $request->boolean('include_deposit') && $request->deposit_amount > 0
+            ? (float) $request->deposit_amount
+            : null;
+
+        $res = app(InvoiceRecurringService::class)->generateFirstInvoice(
+            $tenant,
+            $request->mode,
+            $request->mode === 'custom' ? (float) $request->custom_amount : null,
+            $depositAmount
+        );
+
+        return $res['ok']
+            ? $this->success(['invoice_id' => $res['invoice_id']], $res['message'])
+            : $this->error([], $res['message']);
+    }
+
+    /**
+     * Generate the FINAL pro-rated rent invoice at move-out, anchored to the tenant's active
+     * notice-to-vacate date. Owner-scoped; the service guards against double-billing.
+     */
+    public function finalInvoiceStore(Request $request, $id)
+    {
+        $tenant = Tenant::where('owner_user_id', auth()->id())->find($id);
+        if (!$tenant) {
+            return $this->error([], __('Tenant not found.'));
+        }
+        $notice = app(\App\Services\VacationNoticeService::class)->activeNotice((int) $id);
+        if (!$notice) {
+            return $this->error([], __('This tenant has no active notice to vacate.'));
+        }
+
+        $request->validate([
+            'mode'          => 'nullable|in:prorate,custom',
+            'custom_amount' => 'nullable|numeric|min:1',
+        ]);
+        $custom = ($request->mode === 'custom' && $request->custom_amount > 0) ? (float) $request->custom_amount : null;
+
+        $res = app(InvoiceRecurringService::class)->generateFinalInvoice($tenant, $notice->intended_move_out_date, $custom);
+
+        return $res['ok']
+            ? $this->success(['invoice_id' => $res['invoice_id'] ?? null], $res['message'])
+            : $this->error([], $res['message']);
     }
 
     /** Reset one tenant's password and re-send their login details over email + SMS. */
@@ -185,6 +277,10 @@ class TenantController extends Controller
             $data['navTenantProfileActiveClass'] = 'active';
             $data['tenant'] = $this->tenantService->getDetailsById($id);
             $data['paymentDueInvoiceCount'] = count($this->tenantService->paymentDue($id));
+            // Pre-fill the Close-Tenant modal's refund/charge from a recorded deposit settlement (if any),
+            // so closing reflects the real ledger-backed figures instead of hand-typed guesses.
+            $data['depositSettlement'] = \App\Models\DepositSettlement::where('tenant_id', (int) $id)
+                ->where('owner_user_id', auth()->id())->latest('id')->first();
             return view('owner.tenants.details.profile', $data);
         } elseif ($request->tab == 'home') {
             $data['pageTitle'] = __('Home Details');
@@ -192,10 +288,23 @@ class TenantController extends Controller
             $data['tenant'] = $this->tenantService->getDetailsById($id);
             return view('owner.tenants.details.home', $data);
         } elseif ($request->tab == 'payment') {
-            $data['pageTitle'] = __('Payment Details');
+            $data['pageTitle'] = __('Payments & Deposit');
             $data['navTenantPaymentActiveClass'] = 'active';
             $data['tenant'] = $this->tenantService->getById($id);
             $data['invoiceTypes'] = $this->invoiceTypeService->getAll();
+            // Security deposit currently held for THIS tenancy (refundable — surfaced, not income).
+            $data['depositHeld'] = app(\App\Services\DepositService::class)->totalHeldForTenant((int) $id);
+            // The latest recorded deposit settlement (if any), so a settled deposit shows its outcome.
+            $data['depositSettlement'] = \App\Models\DepositSettlement::with('items')
+                ->where('tenant_id', (int) $id)->where('owner_user_id', auth()->id())
+                ->latest('id')->first();
+            // Any live notice-to-vacate the tenant has filed (surfaced for the owner to acknowledge).
+            $data['activeNotice'] = app(\App\Services\VacationNoticeService::class)->activeNotice((int) $id);
+            // Final-invoice preview (pro-rated to the notice's move-out date) — drives the modal + the
+            // "generate final invoice first" nudge in the settle modal.
+            $data['finalCtx'] = ($data['activeNotice'] && $data['tenant'])
+                ? app(InvoiceRecurringService::class)->finalInvoiceContext($data['tenant'], $data['activeNotice']->intended_move_out_date)
+                : null;
             if ($request->ajax()) {
                 return $this->tenantService->payment($id);
             }

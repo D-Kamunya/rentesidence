@@ -25,7 +25,20 @@
                                 </ol>
                             </nav>
                         </div>
-                        <div>
+                        <div class="inv-header-actions">
+                            @if (!empty($activeNotice))
+                                @php $vnAck = $activeNotice->status === \App\Models\VacationNotice::STATUS_ACKNOWLEDGED; @endphp
+                                <span class="inv-notice-pill {{ $vnAck ? 'inv-notice-pill--ack' : '' }}"
+                                      title="{{ $vnAck ? __('Your landlord has acknowledged your notice to vacate') : __('You have given notice to vacate') }}">
+                                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M9 12l2 2 4-4M12 3l7 4v5c0 4-3 7-7 8-4-1-7-4-7-8V7l7-4z" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                                    {{ $vnAck ? __('Vacation notice acknowledged') : __('Vacation notice given') }} · {{ \Carbon\Carbon::parse($activeNotice->intended_move_out_date)->format('d M Y') }}
+                                </span>
+                            @elseif (!empty($canGiveNotice))
+                                <button type="button" class="inv-btn inv-btn--ghost" data-bs-toggle="modal" data-bs-target="#vacateModal">
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                                    {{ __('Give notice to vacate') }}
+                                </button>
+                            @endif
                             <button type="button" class="inv-btn inv-btn--pay" data-bs-toggle="modal" data-bs-target="#payUpcomingModal">
                                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
                                     <rect x="3" y="5" width="18" height="16" rx="2" stroke="currentColor" stroke-width="1.8"/>
@@ -35,6 +48,127 @@
                             </button>
                         </div>
                     </div>
+
+                    {{-- ── Notice-to-vacate modal ── --}}
+                    @if (!empty($canGiveNotice) && empty($activeNotice))
+                        <div class="modal fade" id="vacateModal" tabindex="-1" aria-labelledby="vacateModalLabel" aria-hidden="true">
+                            <div class="modal-dialog modal-dialog-centered">
+                                <div class="modal-content" style="border:none;border-radius:14px;overflow:hidden;">
+                                    <div class="modal-header" style="border-bottom:0.5px solid #e5e7eb;padding:18px 22px;">
+                                        <div>
+                                            <p style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:#185FA5;margin:0 0 3px;">{{ __('Move out') }}</p>
+                                            <h4 id="vacateModalLabel" style="font-size:16px;font-weight:600;color:#111827;margin:0;">{{ __('Give notice to vacate') }}</h4>
+                                        </div>
+                                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="{{ __('Close') }}"></button>
+                                    </div>
+                                    <div class="modal-body" style="padding:20px 22px;">
+                                        <p class="vac-lead">
+                                            {{ __('Your tenancy requires') }} <strong>{{ $noticeDays }} {{ __('days') }}</strong> {{ __('notice.') }}
+                                            {{ __('The earliest move-out date is') }}
+                                            <strong>{{ \Carbon\Carbon::parse($noticeEarliest)->format('d M Y') }}</strong>.
+                                        </p>
+                                        <label class="vac-label">{{ __('Intended move-out date') }}</label>
+                                        <input type="date" id="vacateDate" class="vac-input"
+                                               min="{{ \Carbon\Carbon::today()->toDateString() }}"
+                                               value="{{ $noticeEarliest }}"
+                                               data-earliest="{{ $noticeEarliest }}">
+                                        <div id="vacateWarn" class="vac-warn" style="display:none;">
+                                            {{ __('This is earlier than the required') }} {{ $noticeDays }} {{ __('days\' notice — your landlord may need to approve it, or charge rent through the notice period.') }}
+                                        </div>
+                                        <label class="vac-label" style="margin-top:14px;">{{ __('Message to your landlord (optional)') }}</label>
+                                        <textarea id="vacateMsg" class="vac-input" rows="3" maxlength="1000" placeholder="{{ __('e.g. reason for moving, preferred inspection time…') }}"></textarea>
+                                    </div>
+                                    <div class="modal-footer" style="border-top:0.5px solid #e5e7eb;padding:14px 22px;gap:8px;">
+                                        <button type="button" class="inv-btn inv-btn--ghost" data-bs-dismiss="modal">{{ __('Cancel') }}</button>
+                                        <button type="button" class="inv-btn inv-btn--pay" id="vacateSubmit">{{ __('Send notice') }}</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    @endif
+
+                    {{-- Deposit settlement — confirm receipt / dispute --}}
+                    @if (!empty($depositSettlement))
+                        @php $ds = $depositSettlement; @endphp
+                        <div class="inv-settle mb-4 {{ $ds->status === 'disputed' ? 'inv-settle--disputed' : ($ds->status === 'confirmed' ? 'inv-settle--confirmed' : '') }}">
+                            <div class="inv-settle__head">
+                                <span class="inv-settle__title">{{ __('Deposit settlement') }}</span>
+                                @if ($ds->status === 'confirmed')
+                                    <span class="inv-settle__badge inv-settle__badge--ok">{{ __('You confirmed receipt') }}</span>
+                                @elseif ($ds->status === 'disputed')
+                                    <span class="inv-settle__badge inv-settle__badge--warn">{{ $ds->owner_responded_at ? __('Landlord responded') : __('Issue reported') }}</span>
+                                @endif
+                            </div>
+                            <div class="inv-settle__rows">
+                                <div><span>{{ __('Deposit held') }}</span><span>{{ currencyPrice($ds->deposit_held) }}</span></div>
+                                @if ((float) $ds->total_deductions > 0)
+                                    <div><span>{{ __('Deductions') }}</span><span>− {{ currencyPrice($ds->total_deductions) }}</span></div>
+                                    @foreach ($ds->items as $it)
+                                        <div class="inv-settle__ded"><span>· {{ $it->description }}</span><span>{{ currencyPrice($it->amount) }}</span></div>
+                                    @endforeach
+                                @endif
+                                <div class="inv-settle__refund"><span>{{ __('Refunded to you') }}</span><strong>{{ currencyPrice($ds->refund_amount) }}</strong></div>
+                                @if ($ds->refund_method)
+                                    <div class="inv-settle__meta"><span>{{ __('Method') }}</span><span>{{ ucfirst($ds->refund_method) }}{{ $ds->refund_reference ? ' · ' . $ds->refund_reference : '' }}{{ $ds->refund_date ? ' · ' . \Carbon\Carbon::parse($ds->refund_date)->format('d M Y') : '' }}</span></div>
+                                @endif
+                            </div>
+                            @if (in_array($ds->status, ['recorded', 'disputed']))
+                                @if ($ds->status === 'disputed')
+                                    @if ($ds->tenant_response_note)
+                                        <p class="inv-settle__note">{{ __('You reported:') }} “{{ $ds->tenant_response_note }}”</p>
+                                    @endif
+                                    @if ($ds->owner_responded_at)
+                                        <p class="inv-settle__ownerresp">{{ __('Your landlord responded:') }} “{{ $ds->owner_response_note ?: __('(no message)') }}”</p>
+                                    @endif
+                                @endif
+                                <div class="inv-settle__actions" data-respond-url="{{ route('tenant.deposit-settlement.respond', $ds->id) }}">
+                                    <p class="inv-settle__prompt">
+                                        {{ $ds->status === 'recorded' ? __('Have you received this refund?') : __('Received it now? Confirm to close this.') }}
+                                    </p>
+                                    <button type="button" class="inv-btn inv-btn--pay" id="dsConfirm">{{ __('Confirm receipt') }}</button>
+                                    @if ($ds->status === 'recorded')
+                                        <button type="button" class="inv-btn inv-btn--ghost" data-bs-toggle="modal" data-bs-target="#disputeModal">{{ __('Report an issue') }}</button>
+                                    @endif
+                                </div>
+
+                                @if ($ds->status === 'recorded')
+                                    {{-- Report-an-issue modal (cs modal, no native prompt) --}}
+                                    <div class="modal fade" id="disputeModal" tabindex="-1" aria-labelledby="disputeModalLabel" aria-hidden="true">
+                                        <div class="modal-dialog modal-dialog-centered">
+                                            <div class="modal-content" style="border:none;border-radius:14px;overflow:hidden;">
+                                                <div class="modal-header" style="border-bottom:0.5px solid #e5e7eb;padding:18px 22px;">
+                                                    <h4 id="disputeModalLabel" style="font-size:16px;font-weight:600;color:#111827;margin:0;">{{ __('Report an issue') }}</h4>
+                                                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="{{ __('Close') }}"></button>
+                                                </div>
+                                                <div class="modal-body" style="padding:20px 22px;">
+                                                    <p style="font-size:13px;color:#4b5563;line-height:1.55;margin:0 0 12px;">{{ __('What\'s wrong? For example: you haven\'t received the refund yet, or the amount looks off. Your landlord will get this and can put it right.') }}</p>
+                                                    <textarea id="disputeNote" rows="4" maxlength="1000" class="vac-input" placeholder="{{ __('Describe the issue…') }}"></textarea>
+                                                </div>
+                                                <div class="modal-footer" style="border-top:0.5px solid #e5e7eb;padding:14px 22px;gap:8px;">
+                                                    <button type="button" class="inv-btn inv-btn--ghost" data-bs-dismiss="modal">{{ __('Cancel') }}</button>
+                                                    <button type="button" class="inv-btn inv-btn--pay" id="disputeSubmit">{{ __('Send report') }}</button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                @endif
+                            @endif
+                        </div>
+                    @endif
+
+                    {{-- Tenant-facing deposit reassurance (Model A: landlord holds it, we keep the record) --}}
+                    @if (($depositHeld ?? 0) > 0)
+                        <div class="inv-deposit-note mb-4">
+                            <span class="inv-deposit-note__ic">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><rect x="3" y="4" width="18" height="16" rx="2" stroke="currentColor" stroke-width="1.8"/><circle cx="12" cy="12" r="2.5" stroke="currentColor" stroke-width="1.8"/><path d="M7 4v16M17 4v16" stroke="currentColor" stroke-width="1.4"/></svg>
+                            </span>
+                            <span class="inv-deposit-note__text">
+                                {{ __('Your landlord is holding a refundable security deposit of') }}
+                                <strong>{{ currencyPrice($depositHeld) }}</strong>
+                                {{ __('for you — returned when you move out, less any agreed deductions. Centresidence keeps the record.') }}
+                            </span>
+                        </div>
+                    @endif
 
                     {{-- Invoice Summary Strip --}}
                     @php
@@ -312,6 +446,43 @@
     .inv-breadcrumb li { display: flex; align-items: center; gap: 6px; }
 
     /* ── Summary strip ───────────────────────────────────────── */
+    .inv-header-actions { display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
+    .inv-btn--ghost { background:#fff; color:#374151; border:0.5px solid #e5e7eb; }
+    .inv-btn--ghost:hover { background:#f3f4f6; color:#111827 !important; border-color:#d1d5db; }
+    .inv-notice-pill { display:inline-flex; align-items:center; gap:6px; font-size:12px; font-weight:600; padding:8px 14px; border-radius:99px;
+        background:#FAEEDA; color:#854F0B; border:0.5px solid #F5D9A8; white-space:nowrap; }
+    .inv-notice-pill--ack { background:#E1F5EE; color:#0F6E56; border-color:#B6E3D3; }
+    .vac-lead { font-size:13px; color:#374151; line-height:1.6; margin:0 0 16px; }
+    .vac-lead strong { color:#111827; }
+    .vac-label { display:block; font-size:11px; font-weight:600; text-transform:uppercase; letter-spacing:.05em; color:#6b7280; margin-bottom:6px; }
+    .vac-input { width:100%; border:0.5px solid #d1d5db; border-radius:8px; padding:10px 12px; font-size:14px; color:#111827; outline:none; }
+    .vac-input:focus { border-color:#185FA5; box-shadow:0 0 0 3px rgba(24,95,165,.1); }
+    .vac-warn { margin-top:8px; font-size:12px; line-height:1.5; color:#854F0B; background:#FAEEDA; border:0.5px solid #F5D9A8; border-radius:8px; padding:9px 12px; }
+    .inv-settle { background:#fff; border:0.5px solid #e5e7eb; border-radius:12px; padding:16px 18px; }
+    .inv-settle--confirmed { border-color:#B6E3D3; background:#F3FBF8; }
+    .inv-settle--disputed { border-color:#F3C4BC; background:#FDF6F4; }
+    .inv-settle__head { display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:12px; }
+    .inv-settle__title { font-size:14px; font-weight:600; color:#111827; }
+    .inv-settle__badge { font-size:11px; font-weight:600; padding:3px 10px; border-radius:99px; }
+    .inv-settle__badge--ok { background:#E1F5EE; color:#0F6E56; }
+    .inv-settle__badge--warn { background:#FAECE7; color:#993C1D; }
+    .inv-settle__rows { display:flex; flex-direction:column; gap:5px; }
+    .inv-settle__rows > div { display:flex; justify-content:space-between; font-size:13px; color:#4b5563; }
+    .inv-settle__ded { font-size:12px !important; color:#9ca3af !important; padding-left:6px; }
+    .inv-settle__refund { border-top:0.5px solid #eef2f6; margin-top:6px; padding-top:8px; font-size:15px !important; color:#111827 !important; }
+    .inv-settle__refund strong { color:#0F6E56; }
+    .inv-settle__meta { font-size:12px !important; color:#9ca3af !important; }
+    .inv-settle__actions { margin-top:14px; padding-top:12px; border-top:0.5px solid #eef2f6; display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
+    .inv-settle__prompt { font-size:13px; color:#374151; margin:0 auto 0 0; font-weight:500; }
+    .inv-settle__note { font-size:12.5px; color:#993C1D; font-style:italic; margin:12px 0 0; }
+    .inv-settle__ownerresp { font-size:12.5px; color:#0C447C; margin:6px 0 0; background:#E6F1FB; border:0.5px solid #B5D4F4; border-radius:8px; padding:8px 11px; }
+    .inv-deposit-note {
+        display: flex; align-items: flex-start; gap: 10px;
+        background: #E1F5EE; border: 0.5px solid #B6E3D3; border-radius: 12px; padding: 13px 16px;
+    }
+    .inv-deposit-note__ic { color: #0F6E56; flex: none; margin-top: 1px; }
+    .inv-deposit-note__text { font-size: 12.5px; color: #0F6E56; line-height: 1.55; }
+    .inv-deposit-note__text strong { font-weight: 700; }
     .inv-strip {
         display: flex;
         align-items: center;
@@ -819,6 +990,87 @@
             document.querySelectorAll('.pur-check').forEach(function (c) {
                 c.addEventListener('change', recalc);
             });
+        })();
+    </script>
+
+    {{-- Notice-to-vacate: flag an early date + submit --}}
+    <script>
+        (function () {
+            var dateEl = document.getElementById('vacateDate');
+            if (!dateEl) return;
+            var earliest = dateEl.getAttribute('data-earliest');
+            var warnEl   = document.getElementById('vacateWarn');
+            var submitEl = document.getElementById('vacateSubmit');
+            var storeUrl = @json(route('tenant.vacation-notice.store'));
+
+            function checkEarly() {
+                warnEl.style.display = (dateEl.value && earliest && dateEl.value < earliest) ? 'block' : 'none';
+            }
+            dateEl.addEventListener('change', checkEarly);
+            dateEl.addEventListener('input', checkEarly);
+
+            submitEl.addEventListener('click', function () {
+                var date = dateEl.value;
+                if (!date) { if (window.toastr) toastr.error('{{ __('Choose a move-out date.') }}'); return; }
+                submitEl.disabled = true;
+                $.ajax({
+                    url: storeUrl,
+                    type: 'POST',
+                    data: { intended_move_out_date: date, message: document.getElementById('vacateMsg').value || '' },
+                    success: function (res) {
+                        if (window.toastr) toastr.success(res.message || '{{ __('Notice sent.') }}');
+                        setTimeout(function () { window.location.reload(); }, 900);
+                    },
+                    error: function (xhr) {
+                        submitEl.disabled = false;
+                        var msg = (xhr.responseJSON && (xhr.responseJSON.message || xhr.responseJSON.error)) || '{{ __('Could not send your notice.') }}';
+                        if (window.toastr) toastr.error(msg);
+                    }
+                });
+            });
+        })();
+    </script>
+
+    {{-- Deposit settlement: confirm receipt / raise a concern --}}
+    <script>
+        (function () {
+            var actions = document.querySelector('.inv-settle__actions');
+            if (!actions) return;
+            var url = actions.getAttribute('data-respond-url');
+
+            function send(action, note) {
+                $.ajax({
+                    url: url, type: 'POST', data: { action: action, note: note || '' },
+                    success: function (res) {
+                        if (window.toastr) toastr.success(res.message || '{{ __('Done') }}');
+                        setTimeout(function () { window.location.reload(); }, 900);
+                    },
+                    error: function (xhr) {
+                        var m = (xhr.responseJSON && (xhr.responseJSON.message || xhr.responseJSON.error)) || '{{ __('Something went wrong.') }}';
+                        if (window.toastr) toastr.error(m);
+                    }
+                });
+            }
+
+            document.getElementById('dsConfirm').addEventListener('click', function () {
+                if (window.csConfirm) {
+                    csConfirm({
+                        title: '{{ __('Confirm receipt?') }}',
+                        message: '{{ __('Confirm you have received this deposit refund from your landlord.') }}',
+                        confirmText: '{{ __('Yes, I received it') }}', cancelText: '{{ __('Cancel') }}'
+                    }).then(function (ok) { if (ok) send('confirm'); });
+                } else if (confirm('{{ __('Confirm you received this refund?') }}')) { send('confirm'); }
+            });
+
+            var disputeSubmit = document.getElementById('disputeSubmit');
+            if (disputeSubmit) {
+                disputeSubmit.addEventListener('click', function () {
+                    var note = (document.getElementById('disputeNote').value || '').trim();
+                    if (!note) { if (window.toastr) toastr.error('{{ __('Please describe your concern.') }}'); return; }
+                    disputeSubmit.disabled = true;
+                    send('dispute', note);
+                });
+            }
         })();
     </script>
 @endpush

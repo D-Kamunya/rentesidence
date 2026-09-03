@@ -91,6 +91,10 @@
                             <a href="{{ route('owner.tenant.applications.index') }}"
                                 class="{{ @$subNavTenantHistoryActiveClass }}">{{ __('Tenant Applications') }}</a>
                         </li>
+                        <li class="{{ @$subNavDepositMMActiveClass }}">
+                            <a href="{{ route('owner.deposit.index') }}"
+                                class="{{ @$subNavDepositActiveClass }}">{{ __('Deposits Held') }}</a>
+                        </li>
                         <li class="{{ @$subNavScreeningMMActiveClass }}">
                             <a href="{{ route('owner.screening.index') }}"
                                 class="{{ @$subNavScreeningActiveClass }}">{{ __('Screen a Tenant') }}</a>

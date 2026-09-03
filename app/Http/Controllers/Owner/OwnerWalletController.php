@@ -52,6 +52,11 @@ class OwnerWalletController extends Controller
             ->where('type', 'debit')
             ->sum('net_amount');
 
+        // Deposits the owner is currently HOLDING. This money is INCLUDED in the wallet balance
+        // above (the owner received it) but it is the tenant's — refundable, not income. Surfaced
+        // as a labelled set-aside so the balance is never mistaken for spendable earnings.
+        $depositsHeld = app(\App\Services\DepositService::class)->totalHeldForOwner(auth()->id());
+
         $subscription = null;
         $isTransactionModel = false;
         
@@ -73,6 +78,7 @@ class OwnerWalletController extends Controller
             'totalEarned',
             'totalCommission',
             'totalWithdrawn',
+            'depositsHeld',
             'isTransactionModel'
         ));
     }
@@ -127,6 +133,13 @@ class OwnerWalletController extends Controller
                 ->values()
                 ->join(', ');
 
+            // The deposit portion of this payment (never commissioned).
+            $depositPortion = $invoice
+                ? round((float) $invoice->invoiceItems
+                    ->filter(fn ($it) => strtolower(optional($it->invoiceType)->name ?? '') === 'deposit')
+                    ->sum('amount'), 2)
+                : 0.0;
+
             return response()->json([
                 'success' => true,
                 'data'    => [
@@ -153,6 +166,13 @@ class OwnerWalletController extends Controller
                     'commission_rate'   => $transaction->commission_rate,
                     'commission_amount' => $transaction->commission_amount,
                     'net_amount'        => $transaction->net_amount,
+
+                    // Commission BASIS — the platform fee is charged on the RENT portion only;
+                    // any deposit collected in the same payment is NOT commissioned. Surfaced so
+                    // the % never looks "wrong" against the gross when rent + deposit are combined.
+                    'rent_portion'      => $invoice ? round((float) $invoice->rentPortion(), 2) : (float) $transaction->gross_amount,
+                    'deposit_portion'   => $depositPortion,
+                    'has_deposit'       => $depositPortion > 0,
 
                     // Centresidence deduct-at-source (folded into net) — itemised from
                     // the settlement so the modal shows every deduction for this one

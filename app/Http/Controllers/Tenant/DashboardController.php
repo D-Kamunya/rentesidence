@@ -36,6 +36,20 @@ class DashboardController extends Controller
             });
         $data['totalTickets'] = Ticket::query()->where('unit_id', $tenantUser->unit_id)->count();
         $data['today'] = date('Y-m-d');
+
+        // Move-out lifecycle status the tenant is likely waiting on — surfaced up top for visibility.
+        $data['activeNotice'] = app(\App\Services\VacationNoticeService::class)->activeNotice((int) $tenantUser->id);
+        $data['pendingSettlement'] = \App\Models\DepositSettlement::where('tenant_id', $tenantUser->id)
+            ->where('status', \App\Models\DepositSettlement::STATUS_RECORDED)
+            ->latest('id')->first();
+        // A settlement the tenant has reported an issue on (awaiting resolution).
+        $data['reportedSettlement'] = \App\Models\DepositSettlement::where('tenant_id', $tenantUser->id)
+            ->where('status', \App\Models\DepositSettlement::STATUS_DISPUTED)
+            ->latest('id')->first();
+        // Documents the landlord requested that the tenant must act on — requested-not-submitted
+        // OR rejected (re-submit). This is the tenant-facing half of the doc "request".
+        $data['outstandingDocs'] = app(\App\Services\KycConfigService::class)
+            ->outstandingRequestCountForTenant($tenantUser->id);
         $data['notices'] = NoticeBoard::with('userNotices')
             ->where(function ($q) use ($tenantUser) {
                 $q->where('unit_id', $tenantUser->unit_id)

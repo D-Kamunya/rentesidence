@@ -147,6 +147,10 @@ class MpesaController extends Controller
                         $invoice->save();
                         DB::commit();
 
+                        // Record any deposit line on this now-PAID invoice as a HELD liability
+                        // (held == collected). Idempotent per line; never disturbs the payment.
+                        app(\App\Services\DepositService::class)->recordFromPaidInvoice($invoice);
+
                         // ââ Rent commission âââââââââââââââââââââââââââââââââ
                         $isRentTransaction = $this->ownerIsTransactionModel($invoice);
                         if ($isRentTransaction) {

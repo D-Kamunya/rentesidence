@@ -71,6 +71,77 @@
                         @endif
                     </div>
 
+                    {{-- Reported deposit settlements — highest priority (money + relationship) --}}
+                    @if (!empty($disputedSettlements) && $disputedSettlements->count() > 0)
+                        <div class="notice-bar notice-bar--warning mb-4" style="background:#FAECE7;border-color:#F3C4BC;">
+                            <div class="notice-bar__left">
+                                <div class="notice-bar__icon" style="color:#993C1D;">
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M12 9v4M12 17h.01M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                                </div>
+                                <div>
+                                    <div class="notice-bar__text">
+                                        <strong>{{ $disputedSettlements->count() }} {{ Str::plural('deposit settlement', $disputedSettlements->count()) }} reported</strong>
+                                        — {{ __('a tenant hasn\'t received their refund or flagged an issue') }}
+                                    </div>
+                                    <div class="notice-bar__sub">
+                                        @foreach ($disputedSettlements->take(4) as $dss)
+                                            @php $dssName = trim(optional(optional($dss->tenant)->user)->first_name . ' ' . optional(optional($dss->tenant)->user)->last_name) ?: __('Tenant'); @endphp
+                                            <a href="{{ route('owner.tenant.details', [$dss->tenant_id, 'tab' => 'payment']) }}" style="color:inherit;text-decoration:underline;margin-right:14px;white-space:nowrap;display:inline-block;">
+                                                {{ $dssName }} — {{ currencyPrice($dss->refund_amount) }}
+                                            </a>
+                                        @endforeach
+                                        @if ($disputedSettlements->count() > 4)
+                                            <span>+{{ $disputedSettlements->count() - 4 }} {{ __('more') }}</span>
+                                        @endif
+                                    </div>
+                                </div>
+                            </div>
+                            @if ($disputedSettlements->count() === 1)
+                                <a href="{{ route('owner.tenant.details', [$disputedSettlements->first()->tenant_id, 'tab' => 'payment']) }}" class="notice-bar__action">
+                                    <svg width="10" height="10" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                                    {{ __('Respond') }}
+                                </a>
+                            @endif
+                        </div>
+                    @endif
+
+                    {{-- Notices to vacate — business-level, surfaced first --}}
+                    @if (!empty($pendingVacationNotices) && $pendingVacationNotices->count() > 0)
+                        <div class="notice-bar notice-bar--warning mb-4">
+                            <div class="notice-bar__left">
+                                <div class="notice-bar__icon">
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+                                        <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+                                    </svg>
+                                </div>
+                                <div>
+                                    <div class="notice-bar__text">
+                                        <strong>{{ $pendingVacationNotices->count() }} {{ Str::plural('notice', $pendingVacationNotices->count()) }} to vacate</strong>
+                                        {{ __('awaiting your acknowledgement') }}
+                                    </div>
+                                    <div class="notice-bar__sub">
+                                        @foreach ($pendingVacationNotices->take(4) as $vn)
+                                            @php $vnName = trim(optional(optional($vn->tenant)->user)->first_name . ' ' . optional(optional($vn->tenant)->user)->last_name) ?: __('Tenant'); @endphp
+                                            <a href="{{ route('owner.tenant.details', [$vn->tenant_id, 'tab' => 'payment']) }}"
+                                               style="color:inherit;text-decoration:underline;margin-right:14px;white-space:nowrap;display:inline-block;">
+                                                {{ $vnName }} — {{ \Carbon\Carbon::parse($vn->intended_move_out_date)->format('d M Y') }}@if (!$vn->meets_notice) ({{ __('short notice') }})@endif
+                                            </a>
+                                        @endforeach
+                                        @if ($pendingVacationNotices->count() > 4)
+                                            <span>+{{ $pendingVacationNotices->count() - 4 }} {{ __('more') }}</span>
+                                        @endif
+                                    </div>
+                                </div>
+                            </div>
+                            @if ($pendingVacationNotices->count() === 1)
+                                <a href="{{ route('owner.tenant.details', [$pendingVacationNotices->first()->tenant_id, 'tab' => 'payment']) }}" class="notice-bar__action">
+                                    <svg width="10" height="10" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                                    {{ __('Review') }}
+                                </a>
+                            @endif
+                        </div>
+                    @endif
+
                     {{-- Pending Tickets Nudge --}}
                     @if (isset($pendingTickets) && $pendingTickets > 0)
                         <div class="notice-bar notice-bar--warning mb-4">
