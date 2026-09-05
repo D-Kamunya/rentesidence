@@ -96,25 +96,14 @@ function getExtension(filename) {
 
 $(document).on("click", ".accept", function () {
     let url = this.dataset.url;
-    Swal.fire({
-        title: 'Sure! You want to accept?',
-        text: "You won't be able to revert this!",
-        icon: 'warning',
-        showCancelButton: true,
-        confirmButtonColor: '#3085d6',
-        cancelButtonColor: '#d33',
-        confirmButtonText: 'Yes, Accept It!'
-    }).then((result) => {
-        if (result.value) {
-            commonAjax('GET', url, getShowMessage, getShowMessage);
-        } else if (result.dismiss === "cancel") {
-            Swal.fire(
-                "Cancelled",
-                "Your data is safe :)",
-                "error"
-            )
-        }
-    })
+    csConfirm({
+        title: "Accept this document?",
+        message: "You won't be able to revert this.",
+        confirmText: "Yes, accept",
+    }).then(function (ok) {
+        if (!ok) return;
+        commonAjax('GET', url, getShowMessage, getShowMessage);
+    });
 });
 var dt;
 (function ($) {

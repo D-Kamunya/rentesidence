@@ -343,6 +343,15 @@
             selector.find(".orderTotal").text("—");
         }
 
+        // Audit: show who confirmed a caretaker cash payment (else hide the note).
+        var confirmedBy = response.data.confirmedBy;
+        if (confirmedBy) {
+            selector.find(".ipvConfirmedByName").text(" " + confirmedBy);
+            selector.find("#ipvConfirmedBy").show();
+        } else {
+            selector.find("#ipvConfirmedBy").hide();
+        }
+
         selector.modal("show");
     }
 

@@ -237,6 +237,25 @@ class InvoiceService
         return $data?->makeHidden(['created_at', 'updated_at', 'deleted_at']);
     }
 
+    /**
+     * A small "Caretaker" pill in the invoice-list gateway cell when a caretaker (maintainer)
+     * confirmed this cash payment — the at-a-glance audit stub; the full name is in the tooltip
+     * and the invoice detail view. Inline-styled because it's injected into a datatable cell.
+     */
+    private function caretakerStub($invoice): string
+    {
+        if (empty($invoice->confirmed_by_user_id)) {
+            return '';
+        }
+        $name  = trim($invoice->confirmed_by_name ?? '');
+        $title = $name !== ''
+            ? __('Cash confirmed by caretaker: :name', ['name' => $name])
+            : __('Cash confirmed by a caretaker');
+        return ' <span title="' . e($title) . '" style="display:inline-block;margin-left:6px;'
+             . 'font-size:10px;font-weight:600;color:#92400E;background:#FEF3E7;border:0.5px solid #F5D9A8;'
+             . 'border-radius:99px;padding:1px 8px;white-space:nowrap;">✓ ' . __('Caretaker') . '</span>';
+    }
+
     public function getAllInvoicesData($request)
     {
         $invoice = Invoice::query()
@@ -252,7 +271,7 @@ class InvoiceService
 
         $this->applyRequestFilters($invoice, $request);
 
-        $invoice->select(['invoices.*', 'gateways.title as gatewayTitle', 'gateways.slug as gatewaySlug', 'file_managers.file_name', 'file_managers.folder_name', 'properties.name as property_name', 'property_units.unit_name', 'users.contact_number', DB::raw("CONCAT(users.first_name, ' ', users.last_name) AS tenant_full_name, orders.updated_at as paidDate")]);
+        $invoice->select(['invoices.*', 'gateways.title as gatewayTitle', 'gateways.slug as gatewaySlug', 'file_managers.file_name', 'file_managers.folder_name', 'properties.name as property_name', 'property_units.unit_name', 'users.contact_number', DB::raw("CONCAT(users.first_name, ' ', users.last_name) AS tenant_full_name, orders.updated_at as paidDate, orders.confirmed_by_user_id, (SELECT CONCAT(cu.first_name, ' ', cu.last_name) FROM users cu WHERE cu.id = orders.confirmed_by_user_id) AS confirmed_by_name")]);
 
         return datatables($invoice)
             ->filterColumn('property', function ($query, $keyword) {
@@ -272,11 +291,13 @@ class InvoiceService
             ->addColumn('status',   fn($i) => $this->statusBadge($i, $i->paidDate))
             ->addColumn('gateway', function ($invoice) {
                 if ($invoice->gatewaySlug == 'bank') {
-                    return '<a href="' . getFileUrl($invoice->folder_name, $invoice->file_name) . '"'
-                         . ' class="ow-muted" title="' . __('Bank slip download') . '" download>'
-                         . e($invoice->gatewayTitle) . '</a>';
+                    $base = '<a href="' . getFileUrl($invoice->folder_name, $invoice->file_name) . '"'
+                          . ' class="ow-muted" title="' . __('Bank slip download') . '" download>'
+                          . e($invoice->gatewayTitle) . '</a>';
+                } else {
+                    $base = '<span class="ow-muted">' . e($invoice->gatewayTitle ?? '—') . '</span>';
                 }
-                return '<span class="ow-muted">' . e($invoice->gatewayTitle ?? '—') . '</span>';
+                return $base . $this->caretakerStub($invoice);
             })
             ->addColumn('action', function ($invoice) {
                 $html = $this->viewBtn($invoice);
@@ -321,7 +342,7 @@ class InvoiceService
 
         $this->applyRequestFilters($invoice, $request);
 
-        $invoice->select(['invoices.*', 'gateways.title as gatewayTitle', 'gateways.slug as gatewaySlug', 'file_managers.file_name', 'file_managers.folder_name', 'properties.name as property_name', 'property_units.unit_name', 'users.contact_number', DB::raw("CONCAT(users.first_name, ' ', users.last_name) AS tenant_full_name, orders.updated_at as paidDate")]);
+        $invoice->select(['invoices.*', 'gateways.title as gatewayTitle', 'gateways.slug as gatewaySlug', 'file_managers.file_name', 'file_managers.folder_name', 'properties.name as property_name', 'property_units.unit_name', 'users.contact_number', DB::raw("CONCAT(users.first_name, ' ', users.last_name) AS tenant_full_name, orders.updated_at as paidDate, orders.confirmed_by_user_id, (SELECT CONCAT(cu.first_name, ' ', cu.last_name) FROM users cu WHERE cu.id = orders.confirmed_by_user_id) AS confirmed_by_name")]);
 
         return datatables($invoice)
             ->filterColumn('property', function ($query, $keyword) {
@@ -343,11 +364,13 @@ class InvoiceService
             ->addColumn('status',  fn($i) => $this->statusBadge($i, $i->paidDate))
             ->addColumn('gateway', function ($invoice) {
                 if ($invoice->gatewaySlug == 'bank') {
-                    return '<a href="' . getFileUrl($invoice->folder_name, $invoice->file_name) . '"'
-                         . ' class="ow-muted" title="' . __('Bank slip download') . '" download>'
-                         . e($invoice->gatewayTitle) . '</a>';
+                    $base = '<a href="' . getFileUrl($invoice->folder_name, $invoice->file_name) . '"'
+                          . ' class="ow-muted" title="' . __('Bank slip download') . '" download>'
+                          . e($invoice->gatewayTitle) . '</a>';
+                } else {
+                    $base = '<span class="ow-muted">' . e($invoice->gatewayTitle ?? '—') . '</span>';
                 }
-                return '<span class="ow-muted">' . e($invoice->gatewayTitle ?? '—') . '</span>';
+                return $base . $this->caretakerStub($invoice);
             })
             ->addColumn('action', function ($invoice) {
                 $html = $this->viewBtn($invoice);

@@ -577,7 +577,7 @@ class MpesaController extends Controller
                 $notificationData = (object) [
                     'title' => __('Withdrawal completed'),
                     'body'  => __(':amount has been paid to your M-Pesa.', ['amount' => currencyPrice($withdrawal->amount)]),
-                    'url'   => route('affiliate.dashboard'),
+                    'url'   => route('affiliate.commissions.index', ['tab' => 'withdrawals']),
                 ];
                 SendWalletNotificationJob::dispatch($recipient, $emailData, $notificationData, $withdrawal, false);
             }
@@ -600,7 +600,7 @@ class MpesaController extends Controller
             $notificationData = (object) [
                 'title' => __('Withdrawal failed'),
                 'body'  => __(':amount was returned to your balance.', ['amount' => currencyPrice($withdrawal->amount)]),
-                'url'   => route('affiliate.dashboard'),
+                'url'   => route('affiliate.commissions.index', ['tab' => 'withdrawals']),
             ];
             SendWalletNotificationJob::dispatch($recipient, $emailData, $notificationData, $withdrawal, false);
         }

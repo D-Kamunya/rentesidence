@@ -93,28 +93,40 @@ class RentController extends Controller
         ]);
     }
 
-    /** Unpaid invoices for one scoped tenant — feeds the confirm modal. */
+    /**
+     * A scoped tenant's recent invoices for the modal. READ-ONLY for every maintainer (so they can
+     * verify a tenant's "I already paid" claim) — the per-row Confirm action is what's gated, NOT the
+     * visibility. Returns paid + unpaid with the billing month, newest first.
+     */
     public function invoices(Request $request)
     {
-        abort_unless($this->canConfirm(), 403);
-
         $tenant = Tenant::whereIn('property_id', $this->scopedPropertyIds())->findOrFail($request->tenant_id);
 
         $invoices = Invoice::where('tenant_id', $tenant->id)
-            ->where('status', INVOICE_STATUS_PENDING)
             ->whereNull('deleted_at')
-            ->orderBy('due_date')
-            ->get(['id', 'invoice_no', 'name', 'month', 'amount']);
+            ->orderByDesc('due_date')
+            ->limit(24)
+            ->get(['id', 'invoice_no', 'name', 'month', 'amount', 'status', 'due_date', 'billing_period']);
 
         return response()->json([
-            'success'  => true,
-            'invoices' => $invoices->map(fn ($i) => [
-                'id'         => $i->id,
-                'invoice_no' => $i->invoice_no,
-                'label'      => $i->name ?: $i->month,
-                'month'      => $i->month,
-                'amount'     => currencyPrice($i->amount),
-            ]),
+            'success'    => true,
+            'canConfirm' => $this->canConfirm(),
+            'invoices'   => $invoices->map(function ($i) {
+                // Rent MONTH is the handle the caretaker tracks by (invoice numbers are opaque).
+                // Show "Month YYYY" from billing_period, falling back to the due-date year.
+                $year = $i->billing_period
+                    ? \Illuminate\Support\Carbon::parse($i->billing_period)->format('Y')
+                    : ($i->due_date ? \Illuminate\Support\Carbon::parse($i->due_date)->format('Y') : '');
+                return [
+                    'id'         => $i->id,
+                    'invoice_no' => $i->invoice_no,
+                    'period'     => trim(($i->month ?: '') . ' ' . $year),
+                    'label'      => $i->name ?: $i->month,
+                    'month'      => $i->month,
+                    'amount'     => currencyPrice($i->amount),
+                    'paid'       => (int) $i->status === INVOICE_STATUS_PAID,
+                ];
+            }),
         ]);
     }
 

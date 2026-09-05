@@ -383,12 +383,15 @@
                                                             Pay Now
                                                         </a>
                                                     @else
-                                                        <span class="inv-badge inv-badge--paid">
-                                                            <svg width="10" height="10" viewBox="0 0 16 16" fill="none">
-                                                                <path d="M3 8l4 4 6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                                        <a href="{{ route('tenant.invoice.receipt', $invoice->id) }}"
+                                                           class="inv-btn inv-btn--receipt"
+                                                           title="{{ __('View payment receipt') }}">
+                                                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none">
+                                                                <path d="M9 11l3 3L22 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+                                                                <path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
                                                             </svg>
-                                                            Paid
-                                                        </span>
+                                                            Receipt
+                                                        </a>
                                                     @endif
 
                                                 </div>
@@ -710,6 +713,18 @@
     .inv-btn--ghost:hover {
         background: #e5e7eb;
         color: #111827;
+        text-decoration: none;
+    }
+
+    /* Receipt — proof of payment (paid rows) */
+    .inv-btn--receipt {
+        background: #E1F5EE;
+        color: #0F6E56;
+        border: 0.5px solid #A7DFC9;
+    }
+    .inv-btn--receipt:hover {
+        background: #CFEEE1;
+        color: #0B5A46 !important;
         text-decoration: none;
     }
 

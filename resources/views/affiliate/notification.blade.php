@@ -1,7 +1,9 @@
 @extends('affiliate.layouts.app')
 
 @section('content')
-    <div class="container-fluid">
+    <div class="main-content">
+        <div class="page-content">
+            <div class="container-fluid">
         <div class="row">
             <div class="col-12">
                 <div class="page-title-box d-flex align-items-center justify-content-between">
@@ -15,7 +17,8 @@
                 <div class="card">
                     <div class="card-body p-0">
                         @forelse ($notifications as $n)
-                            <a href="{{ $n->url ?? '#' }}" class="d-flex align-items-start gap-3 p-3 border-bottom text-decoration-none" style="color:inherit;">
+                            @php $target = $n->url ?? route('affiliate.notification'); @endphp
+                            <a href="{{ route('notification.status', ['id' => $n->id, 'role' => auth()->user()->role]) }}?url={{ urlencode($target) }}" class="d-flex align-items-start gap-3 p-3 border-bottom text-decoration-none" style="color:inherit;">
                                 <span class="flex-shrink-0 rounded-circle d-inline-flex align-items-center justify-content-center"
                                       style="width:40px;height:40px;background:#E6F1FB;color:#185FA5;">
                                     <i class="ri-notification-3-line" style="font-size:18px;"></i>
@@ -34,6 +37,8 @@
                         @endforelse
                     </div>
                 </div>
+            </div>
+        </div>
             </div>
         </div>
     </div>

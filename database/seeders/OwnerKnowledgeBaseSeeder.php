@@ -36,17 +36,18 @@ class OwnerKnowledgeBaseSeeder extends Seeder
             'ow-start'       => ['Getting started', 'Your dashboard, the two pricing modes, and a first-week checklist.', 'ri-rocket-line', 1],
             'ow-properties'  => ['Properties & units', 'Add, edit and remove properties and the units inside them.', 'ri-building-2-line', 2],
             'ow-tenants'     => ['Tenants', 'Add, onboard, edit, move out and import your tenants.', 'ri-group-line', 3],
-            'ow-billing'     => ['Rent, invoices & charges', 'How rent is billed, manual invoices, receipts and expenses.', 'ri-bill-line', 4],
-            'ow-payments'    => ['Getting paid', 'How tenants pay you, your wallet, and withdrawing to M-Pesa.', 'ri-wallet-3-line', 5],
-            'ow-shop'        => ['Marketplace (My Shop)', 'Sell products to your tenants and fulfil the orders.', 'ri-store-2-line', 6],
-            'ow-financing'   => ['Financing your property', 'Fund smart infrastructure and repay from rent, at source.', 'ri-coins-line', 7],
-            'ow-screening'   => ['Tenant screening', 'Check a tenant\'s objective rental payment record before you sign.', 'ri-shield-user-line', 8],
-            'ow-agreements'  => ['Agreements & e-signing', 'Send a lease and have the tenant sign it in-portal.', 'ri-quill-pen-line', 9],
-            'ow-listings'    => ['Listings (House Hunt)', 'Advertise a vacant unit for rent or sale and take enquiries.', 'ri-home-4-line', 10],
-            'ow-maintenance' => ['Maintenance & caretakers', 'Caretakers, maintenance requests, tickets and the notice board.', 'ri-tools-line', 11],
-            'ow-sms'         => ['SMS credits & notifications', 'Buy SMS credits and understand what sends a message.', 'ri-message-2-line', 12],
-            'ow-reports'     => ['Reports', 'Earnings, occupancy, lease and tenant reports — and exporting them.', 'ri-bar-chart-box-line', 13],
-            'ow-settings'    => ['Settings, profile & subscription', 'Your profile, currency, tax, email and your plan.', 'ri-settings-3-line', 14],
+            'ow-deposits'    => ['Deposits & moving out', 'Collect a deposit, take notice to vacate, and settle up at move-out.', 'ri-logout-box-r-line', 4],
+            'ow-billing'     => ['Rent, invoices & charges', 'How rent is billed, manual invoices, receipts and expenses.', 'ri-bill-line', 5],
+            'ow-payments'    => ['Getting paid', 'How tenants pay you, your wallet, and withdrawing to M-Pesa.', 'ri-wallet-3-line', 6],
+            'ow-shop'        => ['Marketplace (My Shop)', 'Sell products to your tenants and fulfil the orders.', 'ri-store-2-line', 7],
+            'ow-financing'   => ['Financing your property', 'Fund smart infrastructure and repay from rent, at source.', 'ri-coins-line', 8],
+            'ow-screening'   => ['Tenant screening', 'Check a tenant\'s objective rental payment record before you sign.', 'ri-shield-user-line', 9],
+            'ow-agreements'  => ['Agreements & e-signing', 'Send a lease and have the tenant sign it in-portal.', 'ri-quill-pen-line', 10],
+            'ow-listings'    => ['Listings (House Hunt)', 'Advertise a vacant unit for rent or sale and take enquiries.', 'ri-home-4-line', 11],
+            'ow-maintenance' => ['Maintenance & caretakers', 'Caretakers, maintenance requests, tickets and the notice board.', 'ri-tools-line', 12],
+            'ow-sms'         => ['SMS credits & notifications', 'Buy SMS credits and understand what sends a message.', 'ri-message-2-line', 13],
+            'ow-reports'     => ['Reports', 'Earnings, occupancy, lease and tenant reports — and exporting them.', 'ri-bar-chart-box-line', 14],
+            'ow-settings'    => ['Settings, profile & subscription', 'Your profile, currency, tax, email and your plan.', 'ri-settings-3-line', 15],
         ];
 
         $cat = [];
@@ -74,6 +75,7 @@ class OwnerKnowledgeBaseSeeder extends Seeder
             $this->gettingStarted(),
             $this->properties(),
             $this->tenants(),
+            $this->deposits(),
             $this->billing(),
             $this->payments(),
             $this->shop(),
@@ -181,7 +183,7 @@ class OwnerKnowledgeBaseSeeder extends Seeder
             $this->a('ow-tenants', 'ow-close-tenancy',
                 'Move a tenant out (close a tenancy)',
                 'End a tenancy cleanly and free up the unit.',
-                '<h3>Close a tenancy</h3><ol><li>Open the tenant from <strong>All Tenants</strong>.</li><li>Use the close/move-out action and record the move-out details.</li><li>Confirm.</li></ol><p>The unit becomes vacant and available for a new tenant, while the past tenancy is preserved.</p><h3>Tenant History</h3><p><strong>Tenants → Tenant History</strong> keeps every past tenancy and its closing details, so you always have the record for reports or reference even after the unit is re-let.</p>'),
+                '<h3>Settle up first</h3><p>Closing a tenancy is the <em>last</em> step of moving out. If the tenant gave notice, raise the <strong>final rent invoice</strong> and <strong>settle the deposit</strong> first — see the <em>Deposits &amp; moving out</em> guides. When you close, the move-out figures are pre-filled from the deposit settlement you recorded, so you don\'t retype them.</p><h3>Close a tenancy</h3><ol><li>Open the tenant from <strong>All Tenants</strong>.</li><li>Use the close/move-out action; the refund and any charges are pre-filled from the recorded settlement (adjust if needed).</li><li>Confirm.</li></ol><p>The unit becomes vacant and available for a new tenant, while the past tenancy is preserved.</p><h3>Tenant History</h3><p><strong>Tenants → Tenant History</strong> keeps every past tenancy and its closing details, so you always have the record for reports or reference even after the unit is re-let.</p>'),
             $this->a('ow-tenants', 'ow-bulk-import',
                 'Bulk import tenants from a spreadsheet',
                 'Onboard many tenants and units at once — preview first, then confirm.',
@@ -194,7 +196,36 @@ class OwnerKnowledgeBaseSeeder extends Seeder
     }
 
     // ══════════════════════════════════════════════════════════════════════
-    // 4 · RENT, INVOICES & CHARGES
+    // 4 · DEPOSITS & MOVING OUT
+    // ══════════════════════════════════════════════════════════════════════
+    private function deposits(): array
+    {
+        return [
+            $this->a('ow-deposits', 'ow-first-invoice',
+                'Charge the first invoice when a tenant moves in',
+                'Bill rent (and an optional deposit) right away instead of waiting for the 1st.',
+                '<h3>Bill at move-in</h3><p>When you add a tenant or assign an applicant to a unit, a <strong>first-invoice</strong> pop-up appears so you can bill straight away instead of waiting for the automatic monthly run. You choose how much:</p><ul><li><strong>Full month</strong> — the whole month\'s rent.</li><li><strong>Pro-rated to month-end</strong> — only the days left in the month (the system shows the working, e.g. 11 of 30 days).</li><li><strong>Custom amount</strong> — type any figure, for person-to-person cases (a tenant who transferred and already paid, a side agreement).</li><li><strong>No charge this period</strong> — skip it; the normal monthly invoice starts next cycle.</li></ul><h3>Add the deposit on the same invoice</h3><p>Tick <strong>Also collect security deposit</strong> to add a deposit line to this first invoice — the familiar "rent plus deposit" first payment. The amount is pre-filled from what you configured for the unit; you can change it. See <em>Security deposits: how held deposits work</em>.</p><h3>What the tenant sees</h3><p>The invoice appears in their portal immediately and they\'re notified by SMS (with a pay link), email and in-app. Don\'t worry about doubling up — if the monthly run has already billed this month, the pop-up says so and won\'t bill twice.</p>'),
+            $this->a('ow-deposits', 'ow-deposits-held',
+                'Security deposits: how held deposits work',
+                'The deposit is the tenant\'s money that you hold and return — recorded, never counted as income.',
+                '<h3>How deposits work here</h3><p><strong>You</strong> hold the deposit and <strong>you</strong> return it at move-out. Centresidence keeps the record — who paid what, when, and what\'s still held. We don\'t hold the money for you; we keep an honest ledger of it. That\'s the fair, simple model, and it\'s framed that way to your tenants too.</p><h3>Setting the amount</h3><p>You decide the deposit per unit — a fixed amount, or a percentage of the rent (for example one month). Nothing is forced: many owners use two months\' first payment (rent + deposit), but the choice is yours. It\'s collected as a line on the move-in invoice (see <em>Charge the first invoice</em>) and recorded as <strong>held</strong> only once the tenant actually pays it — not the moment it\'s invoiced.</p><h3>It is not income</h3><p>A held deposit is a <strong>liability</strong> — the tenant\'s money in your safekeeping — so it is never charged a fee/commission and never counted in your earnings or rental-income reports. Because in day-to-day money terms it did land in your account, your <strong>wallet balance still includes it</strong> (so your totals match your bank/M-Pesa), but it\'s clearly <strong>labelled</strong> as held — "includes KSh X held deposits — not income" — so you\'re never misled into treating it as profit.</p><h3>The Deposits Held register</h3><p><strong>Tenants → Deposits Held</strong> is the full list: each tenant, unit, amount and when it was collected, with a running "you are holding KSh X across N tenants" summary. When you settle a deposit at move-out it drops out of the held total. It\'s also shown as a pill on each tenant\'s <strong>Payments &amp; Deposit</strong> tab.</p>'),
+            $this->a('ow-deposits', 'ow-vacation-notice',
+                'When a tenant gives notice to vacate',
+                'The tenant files notice from their portal; you acknowledge it and plan the move-out.',
+                '<h3>The tenant files notice</h3><p>A tenant can give <strong>notice to vacate</strong> from their portal. Your account has a notice period (30 days by default); when they file, the system shows them the earliest valid move-out date. A shorter notice is allowed but is clearly <strong>flagged as short notice</strong> so you can decide how to handle it (for example, charging rent through the notice period from the deposit).</p><h3>You\'re told right away</h3><p>You\'re notified by in-app bell, email and SMS, and it surfaces in two places: a <strong>nudge on your dashboard</strong>, and a banner on the tenant\'s <strong>Payments &amp; Deposit</strong> tab showing the move-out date, when it was filed, the required period and any message they left.</p><h3>Acknowledge it</h3><p>Click <strong>Acknowledge</strong> on that banner to confirm you\'ve seen it — the tenant is told (bell, email and SMS) that you\'ve acknowledged their notice, closing the loop. Acknowledging doesn\'t end the tenancy; it just confirms receipt. The notice then anchors the rest of move-out: the <strong>final rent invoice</strong> and the <strong>deposit settlement</strong>.</p><p>Tenants with a pending notice show a red <strong>Needs attention</strong> marker in your tenants list so nothing slips.</p>'),
+            $this->a('ow-deposits', 'ow-final-invoice',
+                'Raise the final (pro-rated) rent invoice at move-out',
+                'Bill the last part-month — do this before you settle the deposit.',
+                '<h3>The final invoice</h3><p>When a tenant is moving out mid-month, use <strong>Final rent invoice</strong> on the notice banner (their <strong>Payments &amp; Deposit</strong> tab). A pop-up offers:</p><ul><li><strong>Pro-rated</strong> — rent for the days they actually occupied this month (the system shows the days and amount).</li><li><strong>Custom amount</strong> — an agreed final figure settled off-system.</li></ul><p>It won\'t double-bill: if this month\'s rent was already invoiced, it tells you and won\'t charge again.</p><h3>Do it before you settle</h3><p>Generate the final invoice <strong>first</strong>. Once it exists as an unpaid invoice, it shows up as a tick-able <strong>arrears line</strong> in the deposit-settlement screen, so the deposit can absorb it cleanly. The natural order is: <strong>final invoice → settle the deposit → close the tenancy</strong>.</p>'),
+            $this->a('ow-deposits', 'ow-deposit-settlement',
+                'Settle the deposit at move-out',
+                'Deduct what\'s owed, refund the rest, and let the tenant confirm they received it.',
+                '<h3>Settle up</h3><p>On the tenant\'s <strong>Payments &amp; Deposit</strong> tab, use <strong>Settle deposit</strong> (shown while a deposit is held). You\'ll see the amount held and build the statement:</p><ol><li><strong>Tick any arrears</strong> to clear from the deposit (including the final invoice you just raised).</li><li><strong>Add deduction lines</strong> for damage, agreed charges or other — each with a description and amount.</li><li>The <strong>refund updates live</strong> = held − deductions. You can\'t deduct more than you hold; if the damage exceeds the deposit, charge the excess separately.</li><li>Record how you refunded — method, reference and date.</li></ol><p>Arrears you tick are marked paid <em>from the deposit</em> (no fee, no double charge — it just reclassifies held money to the rent it settled). Manual damage/charge lines don\'t touch any invoice.</p><h3>The tenant confirms</h3><p>The tenant is prompted (bell, email, SMS) to <strong>Confirm receipt</strong> or <strong>Report an issue</strong>. This is a shared record and a paper trail, not a ruling — because the money doesn\'t pass through us, only the tenant can confirm it actually arrived. If they report an issue, <strong>you respond</strong> to it; your response doesn\'t close it — only the tenant confirming receipt does. Disputed settlements show on your dashboard until you\'ve responded.</p><h3>After settling</h3><p>The held deposit drops to zero, a "Deposit settled · refunded KSh X" pill replaces the settle button, and the tenant\'s notice is marked complete. You\'re now ready to <strong>close the tenancy</strong> — which pre-fills its figures from this settlement.</p>'),
+        ];
+    }
+
+    // ══════════════════════════════════════════════════════════════════════
+    // 5 · RENT, INVOICES & CHARGES
     // ══════════════════════════════════════════════════════════════════════
     private function billing(): array
     {

@@ -17,8 +17,20 @@ class NotificationController extends Controller
     {
         $data = $this->notificationService->status($id);
         if ($data->getData()->status == true) {
-            $url = urldecode($request->query('url'));
-            return redirect($url);
+            $url = urldecode((string) $request->query('url'));
+
+            // Redirect on the CURRENT host (localhost / ngrok tunnel / prod), never the
+            // host that happened to generate the link (a CLI/queue job or webhook falls
+            // back to APP_URL, a browser request uses its own host). Notification targets
+            // are always internal routes, so redirect by path only — this also prevents
+            // an ?url= open redirect to an external site.
+            $parts = parse_url($url) ?: [];
+            $path  = $parts['path'] ?? '/';
+            if (! empty($parts['query']))    { $path .= '?' . $parts['query']; }
+            if (! empty($parts['fragment'])) { $path .= '#' . $parts['fragment']; }
+            if ($path === '') { $path = '/'; }
+
+            return redirect($path);
         }else {
             return redirect()->back()->with('error', __(SOMETHING_WENT_WRONG));
         }

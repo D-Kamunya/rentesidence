@@ -1235,6 +1235,15 @@
             });
         });
 
+        /* Deep-link a tab via ?tab=withdrawals (e.g. from a withdrawal notification) */
+        (function () {
+            var wanted = new URLSearchParams(window.location.search).get('tab');
+            if (wanted && /^[\w-]+$/.test(wanted)) {
+                var btn = document.querySelector('.cmx-tab-btn[data-tab="' + wanted + '"]');
+                if (btn) btn.click();
+            }
+        })();
+
         /* ═════════════════════════════════════════════════════
            COMMISSION SOURCE FILTER
            ═════════════════════════════════════════════════════ */

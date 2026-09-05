@@ -280,7 +280,7 @@ class AffiliateWithdrawalController extends Controller
                 $notificationData = (object) [
                     'title' => __('Withdrawal processing'),
                     'body'  => __(':amount is being sent to your M-Pesa.', ['amount' => currencyPrice($withdrawal->amount)]),
-                    'url'   => route('affiliate.dashboard'),
+                    'url'   => route('affiliate.commissions.index', ['tab' => 'withdrawals']),
                 ];
                 SendWalletNotificationJob::dispatch($recipient, $emailData, $notificationData, $withdrawal, false);
             }
@@ -312,7 +312,7 @@ class AffiliateWithdrawalController extends Controller
                 $notificationData = (object) [
                     'title' => __('Withdrawal approved'),
                     'body'  => __(':amount approved via :method.', ['amount' => currencyPrice($withdrawal->amount), 'method' => __('manual transfer')]),
-                    'url'   => route('affiliate.dashboard'),
+                    'url'   => route('affiliate.commissions.index', ['tab' => 'withdrawals']),
                 ];
                 SendWalletNotificationJob::dispatch($recipient, $emailData, $notificationData, $withdrawal, false);
             }
@@ -358,7 +358,7 @@ class AffiliateWithdrawalController extends Controller
             $notificationData = (object) [
                 'title' => __('Withdrawal rejected'),
                 'body'  => __(':amount withdrawal was rejected.', ['amount' => currencyPrice($withdrawal->amount)]),
-                'url'   => route('affiliate.dashboard'),
+                'url'   => route('affiliate.commissions.index', ['tab' => 'withdrawals']),
             ];
             SendWalletNotificationJob::dispatch($recipient, $emailData, $notificationData, $withdrawal, false);
         }

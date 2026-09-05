@@ -71,6 +71,8 @@ class OwnerScreeningController extends Controller
             ->latest()
             ->paginate(10, ['*'], 'tx_page');
 
-        return compact('eligibility', 'unlimited', 'allowance', 'balance', 'price', 'history', 'transactions', 'result');
+        $pageTitle = __('Tenant Screening');
+
+        return compact('pageTitle', 'eligibility', 'unlimited', 'allowance', 'balance', 'price', 'history', 'transactions', 'result');
     }
 }

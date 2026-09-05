@@ -39,6 +39,19 @@
                             </div>
 
                             <div class="tk-body">
+                                {{-- Source: which property/unit + who raised it (mirrors the owner ticket card). --}}
+                                <div class="tk-source">
+                                    <span class="tk-src" title="{{ __('Property / Unit') }}">
+                                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none"><path d="M3 21h18M5 21V8l7-5 7 5v13M10 21v-6h4v6" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                                        {{ $ticket->property->name ?? __('—') }}@if($ticket->unit)<span class="tk-src__sep">·</span>{{ $ticket->unit->unit_name }}@endif
+                                    </span>
+                                    @if ($ticket->user)
+                                        <span class="tk-src tk-src--who" title="{{ __('Raised by') }}">
+                                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none"><path d="M20 21a8 8 0 0 0-16 0M12 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8z" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                                            {{ $ticket->user->name }}
+                                        </span>
+                                    @endif
+                                </div>
                                 <p class="tk-label">{{ __('Title') }}</p>
                                 <p class="tk-val">{{ Str::limit($ticket->title, 40, '…') }}</p>
                                 <p class="tk-label">{{ __('Details') }}</p>
@@ -95,6 +108,11 @@
     .tk-menu { margin-left:auto; }
     .tk-menu .dropdown-toggle { color:#9ca3af; font-size:18px; }
     .tk-body { flex:1; }
+    .tk-source { display:flex; flex-direction:column; gap:5px; padding-bottom:12px; margin-bottom:12px; border-bottom:0.5px solid #f1f5f9; }
+    .tk-src { display:inline-flex; align-items:center; gap:6px; font-size:12px; color:#475569; font-weight:500; }
+    .tk-src svg { color:#94a3b8; flex:none; }
+    .tk-src__sep { color:#cbd5e1; margin:0 3px; }
+    .tk-src--who { color:#6b7280; }
     .tk-label { font-size:10.5px; text-transform:uppercase; letter-spacing:.05em; color:#9ca3af; font-weight:600; margin:0 0 3px; }
     .tk-val { font-size:13px; color:#374151; margin:0 0 12px; }
     .tk-val--muted { color:#6b7280; line-height:1.5; }

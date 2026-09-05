@@ -68,7 +68,8 @@
                         {{-- Module Content Card --}}
                         <div class="mod-card mb-4">
                             <div class="mod-card__body">
-                                <div class="mod-content">
+                                @include('common.partials.kb-prose-style')
+                                <div class="kb-prose">
                                     {!! $module->content !!}
                                 </div>
                             </div>
@@ -235,11 +236,6 @@
         .mod-card__body { padding: 1.5rem; }
 
         /* ── Module content typography ───────────────────────── */
-        .mod-content { font-size: 15px; line-height: 1.75; color: #374151; }
-        .mod-content h1,.mod-content h2,.mod-content h3 { font-weight: 500; margin-top: 1.5rem; margin-bottom: .5rem; }
-        .mod-content p { margin-bottom: 1rem; }
-        .mod-content ul,.mod-content ol { padding-left: 1.25rem; margin-bottom: 1rem; }
-        .mod-content li { margin-bottom: .35rem; }
 
         /* ── Alerts ──────────────────────────────────────────── */
         .mod-alert {

@@ -77,6 +77,8 @@ class InvoiceController extends Controller
         // the whole details view (that left the loader hanging on such invoices).
         $data['tenant'] = $this->tenantDetailsSafe($data['invoice']->tenant_id);
         $data['order'] = $this->invoiceService->getOrderById($data['invoice']->order_id);
+        // Audit attribution: if a caretaker confirmed this cash payment, name them.
+        $data['confirmedBy'] = $this->caretakerConfirmerName($data['order']);
 
         // Effective print details (owner profile → platform fallback) are resolved centrally
         // in InvoiceService::ownerInfo(), so they're consistent across preview, print & orders.
@@ -90,6 +92,7 @@ class InvoiceController extends Controller
         $data['owner'] = $this->invoiceService->ownerInfo(auth()->id());
         $data['tenant'] = $this->tenantDetailsSafe($data['invoice']->tenant_id);
         $data['order'] = $this->invoiceService->getOrderById($data['invoice']->order_id);
+        $data['confirmedBy'] = $this->caretakerConfirmerName($data['order']);
         return view('tenant.invoices.print', $data);
     }
 
@@ -105,6 +108,16 @@ class InvoiceController extends Controller
         } catch (\Throwable $e) {
             return null;
         }
+    }
+
+    /** Name of the caretaker (maintainer) who confirmed this cash payment, or null. Audit attribution. */
+    private function caretakerConfirmerName($order): ?string
+    {
+        if (! $order || ! ($order->confirmed_by_user_id ?? null)) {
+            return null;
+        }
+        $u = \App\Models\User::find($order->confirmed_by_user_id);
+        return $u ? trim($u->first_name . ' ' . $u->last_name) : null;
     }
 
     public function store(InvoiceRequest $request)

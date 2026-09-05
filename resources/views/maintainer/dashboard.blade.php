@@ -35,10 +35,10 @@
 
                 {{-- Quick actions --}}
                 <div class="md-quick">
-                    <a href="{{ route('maintainer.rent.index') }}" class="md-qa"><i class="ri-money-dollar-circle-line"></i> {{ __('Rent & Payments') }}</a>
-                    <a href="{{ route('maintainer.dispatch.index') }}" class="md-qa"><i class="ri-truck-line"></i> {{ __('Dispatch') }}</a>
-                    <a href="{{ route('maintainer.maintenance-request.index') }}" class="md-qa"><i class="ri-tools-line"></i> {{ __('Maintenance') }}</a>
-                    <a href="{{ route('maintainer.ticket.index') }}" class="md-qa"><i class="ri-bookmark-line"></i> {{ __('Tickets') }}</a>
+                    <a href="{{ route('maintainer.rent.index') }}" class="md-qa-btn"><i class="ri-money-dollar-circle-line"></i> {{ __('Rent & Payments') }}</a>
+                    <a href="{{ route('maintainer.dispatch.index') }}" class="md-qa-btn"><i class="ri-truck-line"></i> {{ __('Dispatch') }}</a>
+                    <a href="{{ route('maintainer.maintenance-request.index') }}" class="md-qa-btn"><i class="ri-tools-line"></i> {{ __('Maintenance') }}</a>
+                    <a href="{{ route('maintainer.ticket.index') }}" class="md-qa-btn"><i class="ri-bookmark-line"></i> {{ __('Tickets') }}</a>
                 </div>
 
                 <div class="md-grid">
@@ -49,12 +49,29 @@
                             <a href="{{ route('maintainer.ticket.index') }}">{{ __('View all') }}</a>
                         </div>
                         @forelse ($tickets as $ticket)
-                            <a href="{{ route('maintainer.ticket.details', $ticket->id) }}" class="md-row">
-                                <span class="md-row__main">{{ \Illuminate\Support\Str::limit($ticket->title ?: ($ticket->ticket_no ?: __('Ticket #') . $ticket->id), 48) }}</span>
-                                @php $st = (int) $ticket->status; @endphp
-                                <span class="md-pill md-pill--{{ $st === TICKET_STATUS_OPEN ? 'open' : ($st === TICKET_STATUS_RESOLVED ? 'ok' : 'muted') }}">
-                                    {{ $st === TICKET_STATUS_OPEN ? __('Open') : ($st === TICKET_STATUS_RESOLVED ? __('Resolved') : __('Closed')) }}
-                                </span>
+                            @php
+                                $tkMap = [
+                                    TICKET_STATUS_OPEN       => [__('Open'), 'open'],
+                                    TICKET_STATUS_INPROGRESS => [__('In progress'), 'inprogress'],
+                                    TICKET_STATUS_REOPEN     => [__('Reopened'), 'reopen'],
+                                    TICKET_STATUS_RESOLVED   => [__('Resolved'), 'ok'],
+                                    TICKET_STATUS_CLOSE      => [__('Closed'), 'muted'],
+                                ];
+                                $tk  = $tkMap[(int) $ticket->status] ?? [__('Open'), 'open'];
+                                $src = trim(($ticket->property->name ?? '—')
+                                    . ($ticket->unit ? ' · ' . $ticket->unit->unit_name : '')
+                                    . ($ticket->user ? ' · ' . $ticket->user->name : ''));
+                            @endphp
+                            <a href="{{ route('maintainer.ticket.details', $ticket->id) }}" class="md-trow">
+                                <div class="md-trow__body">
+                                    <span class="md-trow__title">{{ \Illuminate\Support\Str::limit($ticket->title ?: ($ticket->ticket_no ?: __('Ticket #') . $ticket->id), 44) }}</span>
+                                    <span class="md-trow__src">{{ $src }}</span>
+                                    <div class="md-trow__badges">
+                                        <span class="md-pill md-pill--cat">{{ $ticket->topic->name ?? __('General') }}</span>
+                                        <span class="md-pill md-pill--{{ $tk[1] }}">{{ $tk[0] }}</span>
+                                    </div>
+                                </div>
+                                <i class="ri-arrow-right-s-line md-trow__chev"></i>
                             </a>
                         @empty
                             <p class="md-empty">{{ __('No tickets yet.') }}</p>
@@ -99,19 +116,26 @@
     .md-stat__n { display:block; font-size:24px; font-weight:800; color:#111827; line-height:1.1; }
     .md-stat__l { font-size:12px; color:#6b7280; }
     .md-quick { display:flex; gap:12px; flex-wrap:wrap; margin-bottom:24px; }
-    .md-qa { display:inline-flex; align-items:center; gap:8px; background:#F5F9FD; border:0.5px solid #d7e3f2; border-radius:10px; padding:11px 18px; font-size:13.5px; font-weight:600; color:#185FA5; text-decoration:none; }
-    .md-qa:hover { background:#185FA5; color:#fff !important; }
+    .md-qa-btn { display:inline-flex; align-items:center; gap:8px; background:#F5F9FD; border:0.5px solid #d7e3f2; border-radius:10px; padding:11px 18px; font-size:13.5px; font-weight:600; color:#185FA5; text-decoration:none; }
+    .md-qa-btn:hover { background:#185FA5; color:#fff !important; }
     .md-grid { display:grid; grid-template-columns:1fr 1fr; gap:20px; }
     @media (max-width:800px){ .md-grid { grid-template-columns:1fr; } }
     .md-panel { border:0.5px solid #e5e7eb; border-radius:16px; padding:20px; }
     .md-panel__head { display:flex; align-items:center; justify-content:space-between; margin-bottom:12px; }
     .md-panel__head h3 { font-size:15px; font-weight:600; color:#111827; margin:0; }
     .md-panel__head a { font-size:12.5px; color:#185FA5; text-decoration:none; font-weight:500; }
-    .md-row { display:flex; align-items:center; justify-content:space-between; gap:12px; padding:11px 0; border-bottom:0.5px solid #f1f5f9; text-decoration:none; }
-    .md-row:last-child { border-bottom:0; }
-    .md-row__main { font-size:13px; color:#374151; }
+    .md-trow { display:flex; align-items:center; justify-content:space-between; gap:12px; padding:12px 0; border-bottom:0.5px solid #f1f5f9; text-decoration:none; }
+    .md-trow:last-child { border-bottom:0; }
+    .md-trow__body { min-width:0; display:flex; flex-direction:column; gap:5px; }
+    .md-trow__title { font-size:13px; font-weight:600; color:#111827; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .md-trow__src { font-size:11.5px; color:#9ca3af; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .md-trow__badges { display:flex; gap:6px; flex-wrap:wrap; margin-top:1px; }
+    .md-trow__chev { color:#d1d5db; font-size:18px; flex:none; }
     .md-pill { font-size:11px; font-weight:600; padding:3px 10px; border-radius:99px; flex:none; }
+    .md-pill--cat { background:#EEF2F7; color:#475569; }
     .md-pill--open { background:#FEF3E7; color:#B45309; }
+    .md-pill--inprogress { background:#E6F1FB; color:#185FA5; }
+    .md-pill--reopen { background:#FBE9E6; color:#B42318; }
     .md-pill--ok { background:#E1F5EE; color:#0F6E56; }
     .md-pill--muted { background:#f3f4f6; color:#6b7280; }
     .md-notice { display:flex; gap:10px; align-items:flex-start; padding:11px 0; border-bottom:0.5px solid #f1f5f9; }

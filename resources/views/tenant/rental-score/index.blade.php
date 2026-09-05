@@ -90,7 +90,7 @@
                                         <div class="rs-bar">
                                             <span class="rs-bar__label">{{ $compLabels[$key] ?? ucfirst($key) }}</span>
                                             <span class="rs-bar__track"><span class="rs-bar__fill" style="width:{{ max(2, min(100, $val)) }}%;background:{{ $bandColor }};"></span></span>
-                                            <span class="rs-bar__val">{{ number_format($val, 0) }}</span>
+                                            <span class="rs-bar__val">{{ number_format($val, 0) }}%</span>
                                         </div>
                                     @endforeach
                                 </div>
@@ -124,8 +124,8 @@
                                 @endif
                                 <h4>{{ $profile->activated_at ? __('Your Rental ID is active') : __('Activate your Rental ID') }}</h4>
                                 <p>{{ $profile->activated_at
-                                    ? __('You can share your rental reputation with landlords when applying, and become eligible for loan offers.')
-                                    : __('Turn it on to share your reputation with landlords for faster approvals and to unlock loan offers.') }}</p>
+                                    ? __('The profile is yours to manage — see who has viewed your record, dispute anything that looks wrong, and you\'re eligible for loan offers.')
+                                    : __('Landlords can already see your objective payment record when you apply — activating doesn\'t gate that. It makes the profile yours: see who has viewed it, dispute anything that looks wrong, and unlock loan offers.') }}</p>
                             </div>
                             <form action="{{ route('tenant.rental-score.activate') }}" method="POST">
                                 @csrf

@@ -26,4 +26,10 @@ class Order extends Model
     {
         return $this->belongsTo(Gateway::class, 'gateway_id');
     }
+
+    /** The caretaker (maintainer) who confirmed this cash payment, if any — audit attribution. */
+    public function confirmedBy()
+    {
+        return $this->belongsTo(User::class, 'confirmed_by_user_id');
+    }
 }

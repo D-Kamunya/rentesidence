@@ -170,13 +170,37 @@ class ProfileController extends Controller
         $hashedPassword = Auth::user()->password;
         if (Hash::check($request->current_password, $hashedPassword)) {
             $user = User::find(Auth::id());
+            // Capture BEFORE saving: a forced first-login change lands the user on
+            // their dashboard; a voluntary change from Profile stays on the page.
+            $wasForced = (int) $user->must_change_password === 1;
             $user->password = Hash::make($request->password);
             $user->must_change_password = 0; // first-login requirement satisfied
             $user->save();
+
+            if ($wasForced) {
+                $dashboard = $this->dashboardRouteForRole($user->role);
+                if ($dashboard) {
+                    return redirect()->route($dashboard)->with('success', __('Updated Successfully'));
+                }
+            }
             return redirect()->back()->with('success', __('Updated Successfully'));
         } else {
             return redirect()->back()->with('error', 'Current password does not matched!');
         }
+    }
+
+    /** Map a user role to its dashboard route name (mirrors LoginController). */
+    private function dashboardRouteForRole($role): ?string
+    {
+        return match ((int) $role) {
+            USER_ROLE_OWNER           => 'owner.dashboard',
+            USER_ROLE_TENANT          => 'tenant.dashboard',
+            USER_ROLE_MAINTAINER      => 'maintainer.dashboard',
+            USER_ROLE_ADMIN           => 'admin.dashboard',
+            USER_ROLE_AFFILIATE       => 'affiliate.dashboard',
+            USER_ROLE_FINANCE_PARTNER => 'finance-partner.dashboard',
+            default                   => null,
+        };
     }
 
     public function deleteMyAccount(Request $request)

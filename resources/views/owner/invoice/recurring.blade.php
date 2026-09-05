@@ -17,18 +17,6 @@
                         </button>
                     </div>
 
-                    <div class="cs-card cs-card--pad cs-controls" style="margin-bottom:16px;">
-                        <label class="cs-label">{{ __('Filter by property') }}</label>
-                        <div style="max-width:320px;">
-                            <select class="form-select" id="search_property">
-                                <option value="" selected>{{ __('All properties') }}</option>
-                                @foreach ($properties as $property)
-                                    <option value="{{ $property->name }}">{{ $property->name }}</option>
-                                @endforeach
-                            </select>
-                        </div>
-                    </div>
-
                     <div class="cs-card"><div class="cs-card__body">
                         <table id="allInvoiceDataTable" class="table dt-responsive" style="width:100%;">
                             <thead>

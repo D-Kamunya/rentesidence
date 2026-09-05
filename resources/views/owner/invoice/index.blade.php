@@ -626,6 +626,11 @@
                                 </tbody>
                             </table>
                         </div>
+                        {{-- Audit: caretaker-confirmed cash payments are attributed so a wrong one is traceable. --}}
+                        <p id="ipvConfirmedBy" style="display:none;margin:10px 0 0;font-size:12px;color:#92400E;background:#FEF3E7;border:0.5px solid #F5D9A8;border-radius:8px;padding:8px 12px;">
+                            <span style="font-weight:600;">{{ __('Cash confirmed by caretaker:') }}</span>
+                            <span class="ipvConfirmedByName"></span>
+                        </p>
                     </div>
 
                     {{-- Footer --}}

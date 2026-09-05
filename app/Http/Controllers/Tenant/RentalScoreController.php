@@ -58,11 +58,11 @@ class RentalScoreController extends Controller
 
         if ($profile->activated_at) {
             $profile->update(['activated_at' => null, 'activated_by_user_id' => null]);
-            return back()->with('success', __('Your Rental ID sharing has been turned off.'));
+            return back()->with('success', __('Your Rental ID is no longer active. Your payment record still shows to landlords who check it when you apply.'));
         }
 
         $profile->update(['activated_at' => now(), 'activated_by_user_id' => $user->id]);
-        return back()->with('success', __('Your Rental ID is active — you can now share it with landlords and unlock loan offers.'));
+        return back()->with('success', __('Your Rental ID is active — it\'s now yours to manage: see who has viewed it, raise disputes, and unlock loan offers.'));
     }
 
     /** Raise a dispute against what the profile shows (fairness path — admin reviews). */

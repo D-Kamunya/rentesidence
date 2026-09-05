@@ -615,6 +615,13 @@ class InvoiceRecurringService
             ->select(['invoice_recurring_settings.*', 'properties.name as propertyName', 'property_units.unit_name']);
 
         return datatables($invoiceRecurring)
+            // 'property' is a computed addColumn, so yajra can't search it by default — teach the
+            // (global) search how to match it, mirroring the main invoice list. Without this the
+            // "Filter by property" select did nothing.
+            ->filterColumn('property', function ($query, $keyword) {
+                $query->whereRaw('properties.name LIKE ?', ["%{$keyword}%"])
+                    ->orWhereRaw('property_units.unit_name LIKE ?', ["%{$keyword}%"]);
+            })
             ->addColumn('prefix', function ($invoiceRecurring) {
                 return '<h6>' . $invoiceRecurring->invoice_prefix . '</h6>';
             })
