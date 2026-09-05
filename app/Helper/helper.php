@@ -96,19 +96,23 @@ function getSettingImage($option_key)
     try {
         $system_settings = config('settings');
         if ($option_key && isset($system_settings[$option_key])) {
+            // FileManager::find() can be null if the setting points at a deleted/missing record —
+            // guard it before reading file_name (a null property-read is an Error, not \Exception).
             $fileManager = FileManager::find($system_settings[$option_key]);
-            $destinationPath = 'files/Setting' . '/' . $fileManager->file_name;
-            if (Storage::disk(config('app.STORAGE_DRIVER'))->exists($destinationPath)) {
-                if (config('app.STORAGE_DRIVER') == "s3") {
-                    $s3 = Storage::disk(config('app.STORAGE_DRIVER'));
-                    return $s3->url($destinationPath);
+            if ($fileManager) {
+                $destinationPath = 'files/Setting' . '/' . $fileManager->file_name;
+                if (Storage::disk(config('app.STORAGE_DRIVER'))->exists($destinationPath)) {
+                    if (config('app.STORAGE_DRIVER') == "s3") {
+                        $s3 = Storage::disk(config('app.STORAGE_DRIVER'));
+                        return $s3->url($destinationPath);
+                    }
+                    return asset('storage/' . $destinationPath);
                 }
-                return asset('storage/' . $destinationPath);
             }
-        } else {
-            return asset('assets/images/users/empty-user.jpg');
         }
-    } catch (\Exception $e) {
+        // Every miss (no option, missing record, or file absent on disk) falls back here.
+        return asset('assets/images/users/empty-user.jpg');
+    } catch (\Throwable $e) {
         return asset('assets/images/users/empty-user.jpg');
     }
 }

@@ -248,6 +248,7 @@
                                                         data-image="{{ $imageUrl }}"
                                                         data-item-count="{{ $allItems->count() }}"
                                                         data-gateway="{{ $order->gateway?->title ?? '—' }}"
+                                                        data-mpesa-code="{{ $order->mpesa_transaction_code ?: '' }}"
                                                         data-cancel-url="{{ $order->payment_status == PRODUCT_ORDER_STATUS_PAID && $order->order_status != ORDER_STATUS_COMPLETED && $order->order_status != ORDER_STATUS_CANCELLED && ! $isDispatched ? route('tenant.product_order.cancel', $order->id) : '' }}"
                                                         data-receipt-url="{{ route('tenant.product.order.receipt', $order->id) }}"
                                                         title="{{ __('View Order') }}">
@@ -382,6 +383,10 @@
                 <div class="po-modal__field">
                     <span class="po-modal__label">{{ __('Payment Method') }}</span>
                     <span class="po-modal__value" id="poModalGateway">—</span>
+                </div>
+                <div class="po-modal__field" id="poModalMpesaCodeField" style="display:none;">
+                    <span class="po-modal__label">{{ __('M-Pesa Code') }}</span>
+                    <span class="po-modal__value" id="poModalMpesaCode" style="font-family:monospace;">—</span>
                 </div>
                 <div class="po-modal__field" id="poModalItemCountField" style="display:none;">
                     <span class="po-modal__label">{{ __('Line Items') }}</span>
@@ -827,7 +832,17 @@
             document.getElementById('poModalDate').textContent    = data.date    || '—';
             document.getElementById('poModalAmount').textContent  = data.amount  || '—';
             document.getElementById('poModalGateway').textContent = data.gateway || '—';
- 
+
+            // Surface the M-Pesa transaction code for STK-paid orders; hide the row when there's none
+            // (cash / non-M-Pesa, or older orders that never captured a code).
+            const mpesaField = document.getElementById('poModalMpesaCodeField');
+            if (data.mpesaCode) {
+                document.getElementById('poModalMpesaCode').textContent = data.mpesaCode;
+                mpesaField.style.display = '';
+            } else {
+                mpesaField.style.display = 'none';
+            }
+
             const itemCountField = document.getElementById('poModalItemCountField');
             const itemCount = parseInt(data.itemCount || 1);
             if (itemCount > 1) {
@@ -916,6 +931,7 @@
                 image         : btn.dataset.image || '',
                 itemCount     : btn.dataset.itemCount || 1,
                 gateway       : btn.dataset.gateway || '—',
+                mpesaCode     : btn.dataset.mpesaCode || '',
                 cancelUrl     : btn.dataset.cancelUrl || '',
                 receiptUrl    : btn.dataset.receiptUrl || '#',
             });
