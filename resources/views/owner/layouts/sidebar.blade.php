@@ -87,9 +87,9 @@
                             <a href="{{ route('owner.tenant.index', ['type' => 'history']) }}"
                                 class="{{ @$subNavTenantHistoryActiveClass }}">{{ __('Tenant History') }}</a>
                         </li>
-                        <li class="{{ @$subNavTenantHistoryMMActiveClass }}">
+                        <li class="{{ @$subNavTenantApplicationMMActiveClass }}">
                             <a href="{{ route('owner.tenant.applications.index') }}"
-                                class="{{ @$subNavTenantHistoryActiveClass }}">{{ __('Tenant Applications') }}</a>
+                                class="{{ @$subNavTenantApplicationActiveClass }}">{{ __('Tenant Applications') }}</a>
                         </li>
                         <li class="{{ @$subNavDepositMMActiveClass }}">
                             <a href="{{ route('owner.deposit.index') }}"

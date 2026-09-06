@@ -40,7 +40,12 @@ class TenantApplicationController extends Controller
             ->latest()
             ->get();
 
-        return view('owner.tenants.tenant-applications.index', compact('applications'));
+        return view('owner.tenants.tenant-applications.index', compact('applications'))
+            ->with([
+                // Its OWN active vars so it doesn't share Tenant History's (which lit both links up).
+                'subNavTenantApplicationMMActiveClass' => 'mm-active',
+                'subNavTenantApplicationActiveClass'   => 'active',
+            ]);
     }
 
     // ──────────────────────────────────────────────────────────────────────────

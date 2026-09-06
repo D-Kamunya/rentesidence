@@ -258,6 +258,7 @@
                                                             data-order-status="{{ $order->order_status }}"
                                                             data-settlement="{{ $order->settlement_status ?? '' }}"
                                                             data-gateway="{{ $order->gateway?->title ?? '—' }}"
+                                                            data-mpesa-code="{{ $order->mpesa_transaction_code ?: '' }}"
                                                             data-tenant-name="{{ $order->user?->name ?? '—' }}"
                                                             data-dispatch="{{ $dispatchStr }}"
                                                             data-fulfilment-status="{{ $order->fulfilment_status }}"
@@ -393,6 +394,7 @@
                 <div class="po-modal__field"><span class="po-modal__label">{{ __('Order Date') }}</span><span class="po-modal__value" id="poModalDate">—</span></div>
                 <div class="po-modal__field"><span class="po-modal__label">{{ __('Total Amount') }}</span><span class="po-modal__value po-modal__value--amount" id="poModalAmount">—</span></div>
                 <div class="po-modal__field"><span class="po-modal__label">{{ __('Payment Method') }}</span><span class="po-modal__value" id="poModalGateway">—</span></div>
+                <div class="po-modal__field" id="poModalMpesaCodeField" style="display:none;"><span class="po-modal__label">{{ __('M-Pesa Code') }}</span><span class="po-modal__value" id="poModalMpesaCode" style="font-family:monospace;">—</span></div>
                 <div class="po-modal__field po-modal__field--full">
                     <span class="po-modal__label">{{ __('Payout to you') }}</span>
                     <span class="po-modal__value" id="poModalSettlement" style="font-size:12.5px;">—</span>
@@ -1018,6 +1020,14 @@
                 document.getElementById('poModalDate').textContent       = data.date        || '—';
                 document.getElementById('poModalAmount').textContent     = data.amount      || '—';
                 document.getElementById('poModalGateway').textContent    = data.gateway     || '—';
+                // M-Pesa code for STK orders; hidden for cash/none.
+                const mpesaField = document.getElementById('poModalMpesaCodeField');
+                if (data.mpesaCode) {
+                    document.getElementById('poModalMpesaCode').textContent = data.mpesaCode;
+                    mpesaField.style.display = '';
+                } else {
+                    mpesaField.style.display = 'none';
+                }
                 document.getElementById('poModalTenantName').textContent = data.tenantName  || '—';
                 document.getElementById('poModalDispatch').textContent   = data.dispatch    || '—';
                 // Tense-aware label: once dispatched (or delivered), it already went out.
@@ -1127,6 +1137,7 @@
                     settlement       : btn.dataset.settlement || '',
                     image            : btn.dataset.image || '',
                     gateway          : btn.dataset.gateway || '—',
+                    mpesaCode        : btn.dataset.mpesaCode || '',
                     tenantName       : btn.dataset.tenantName || '—',
                     dispatch         : btn.dataset.dispatch || '—',
                     fulfilmentStatus : btn.dataset.fulfilmentStatus || '0',

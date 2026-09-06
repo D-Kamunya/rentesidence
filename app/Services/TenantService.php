@@ -208,7 +208,7 @@ class TenantService
             })
             ->addColumn('action', function ($tenant) {
                 return '
-                    <a href="' . route('owner.tenant.details', [$tenant->id, 'tab' => 'profile']) . '"
+                    <a class="th-view-btn" href="' . route('owner.tenant.details', [$tenant->id, 'tab' => 'profile']) . '"
                         title="' . __('View') . '"
                         style="display:inline-flex;align-items:center;justify-content:center;width:30px;height:30px;border-radius:7px;background:#f0f4fa;color:#185FA5;border:0.5px solid #e5e7eb;transition:all .13s;text-decoration:none;"
                         onmouseover="this.style.background=\'#185FA5\';this.style.color=\'#fff\';"
