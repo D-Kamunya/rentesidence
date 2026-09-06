@@ -142,6 +142,18 @@ class DashboardController extends Controller
         return view('owner.notification')->with($data);
     }
 
+    /** Bell "Mark all as read" — clears the unread badge without opening the full page. */
+    public function notificationReadAll()
+    {
+        Notification::query()
+            ->where(function ($q) {
+                $q->where('notifications.user_id', auth()->id())
+                    ->orWhere('notifications.user_id', null);
+            })
+            ->update(['is_seen' => ACTIVE]);
+        return response()->json(['success' => true]);
+    }
+
     public function topSearch(Request $request)
     {
         $data['status'] = false;

@@ -180,11 +180,12 @@
                 </div>
             </div>
 
+            @php $ownerNotifs = getNotificationLimit(auth()->id()); @endphp
             <div class="dropdown d-inline-block">
                 <button type="button" class="header-item noti-icon" id="page-header-notifications-dropdown"
                     data-bs-toggle="dropdown" aria-expanded="false">
                     <i class="ri-notification-2-fill"></i>
-                    @if (count(getNotificationLimit(auth()->id())) > 0)
+                    @if (count($ownerNotifs) > 0)
                         <span class="noti-dot pulse"></span>
                     @endif
                 </button>
@@ -196,11 +197,14 @@
                                 <h5 class="m-0 text-start">{{ __('Notifications') }}</h5>
                             </div>
                             <div class="col-auto">
+                                @if (count($ownerNotifs) > 0)
+                                    <a href="javascript:void(0)" id="ownerMarkAllRead" class="font-size-12 theme-link" style="text-decoration:none;">{{ __('Mark all as read') }}</a>
+                                @endif
                             </div>
                         </div>
                     </div>
-                    <div data-simplebar>
-                        @foreach (getNotificationLimit(auth()->id()) as $notification)
+                    <div data-simplebar id="ownerNotifList">
+                        @foreach ($ownerNotifs as $notification)
                             @php
                                 $url = $notification->url ?? route('owner.notification');
                             @endphp
@@ -232,6 +236,31 @@
                     </div>
                 </div>
             </div>
+
+            <script>
+                (function () {
+                    var btn = document.getElementById('ownerMarkAllRead');
+                    if (!btn) return;
+                    btn.addEventListener('click', function (e) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        var csrf = document.querySelector('meta[name="csrf-token"]');
+                        fetch('{{ route('owner.notification.readAll') }}', {
+                            method: 'POST',
+                            headers: { 'X-CSRF-TOKEN': csrf ? csrf.content : '', 'Accept': 'application/json' }
+                        }).then(function (r) { return r.json(); }).then(function (d) {
+                            if (d && d.success) {
+                                var dot = document.querySelector('#page-header-notifications-dropdown .noti-dot');
+                                if (dot) dot.remove();
+                                var list = document.getElementById('ownerNotifList');
+                                if (list) list.innerHTML = '<div class="text-center text-muted p-3" style="font-size:13px;">{{ __('No new notifications') }}</div>';
+                                btn.style.display = 'none';
+                                if (typeof toastr !== 'undefined') toastr.success('{{ __('All notifications marked as read') }}');
+                            }
+                        }).catch(function () {});
+                    });
+                })();
+            </script>
 
             <div class="dropdown d-inline-block user-dropdown">
                 <button type="button" class="header-item" id="page-header-user-dropdown" data-bs-toggle="dropdown"
