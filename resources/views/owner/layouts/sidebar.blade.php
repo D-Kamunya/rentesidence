@@ -45,6 +45,10 @@
                             <a href="{{ route('owner.financing.deductions') }}"
                                 class="{{ @$subNavRentDeductionsActiveClass }}">{{ __('Rent & deductions') }}</a>
                         </li>
+                        <li class="{{ @$subNavMyDevicesMMActiveClass }}">
+                            <a href="{{ route('owner.devices.index') }}"
+                                class="{{ @$subNavMyDevicesActiveClass }}">{{ __('My devices') }}</a>
+                        </li>
                     </ul>
                 </li>
 

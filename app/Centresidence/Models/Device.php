@@ -67,6 +67,43 @@ class Device extends Model
         return $this->status === self::STATUS_ACTIVE;
     }
 
+    /** The real unit this meter serves (e.g. "A1"), or null if unassigned. */
+    public function unitName(): ?string
+    {
+        return optional($this->propertyUnit)->unit_name;
+    }
+
+    /**
+     * The meter's name for display, with any stale sequential provisioning
+     * suffix ("… Unit 3") stripped once we can show the REAL unit alongside —
+     * so it reads "Smart Water Meter" + a "Unit A1" chip, not a redundant
+     * "Smart Water Meter Unit 3 · Unit A1".
+     */
+    public function cleanName(): string
+    {
+        $name = $this->name ?: __('Device');
+
+        if ($this->unitName()) {
+            $name = preg_replace('/\s*Unit\s+\d+\s*$/i', '', $name);
+        }
+
+        return trim($name) ?: __('Device');
+    }
+
+    /**
+     * A definitive, human label for the meter — its type plus the unit it
+     * serves, so an owner can identify a specific meter from the device itself
+     * ("Smart Water Meter · A1"). Falls back to the stored name when the device
+     * is not yet linked to a unit.
+     */
+    public function displayLabel(): string
+    {
+        $base = $this->name ?: __('Device');
+        $unit = $this->unitName();
+
+        return $unit ? ($base . ' · ' . $unit) : $base;
+    }
+
     /** Whether this device's cost is attributable to a gateway via topology. */
     public function hasGateway(): bool
     {

@@ -81,6 +81,12 @@ Route::group(['prefix' => 'owner', 'as' => 'owner.', 'middleware' => ['auth', 'o
         Route::post('self-finance', [\App\Http\Controllers\Owner\FinancingController::class, 'selfFinanceStore'])->name('self-finance.store');
     });
 
+    // Centresidence — installed devices & token economics (read-only infra visibility).
+    Route::prefix('devices')->name('devices.')->group(function () {
+        Route::get('/', [\App\Http\Controllers\Owner\DeviceController::class, 'index'])->name('index');
+        Route::get('{device}', [\App\Http\Controllers\Owner\DeviceController::class, 'show'])->name('show');
+    });
+
     // Pay the outstanding module-infrastructure bill (the way OUT of the readonly gate;
     // intentionally NOT in the gated action list).
     Route::post('infrastructure-bill/pay', [\App\Http\Controllers\Owner\InfraBillController::class, 'pay'])->name('infra-bill.pay');

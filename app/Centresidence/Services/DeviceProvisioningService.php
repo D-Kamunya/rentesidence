@@ -217,18 +217,26 @@ class DeviceProvisioningService
             }
         }
 
-        $unitIds = PropertyUnit::where('property_id', $propertyModule->property_id)
-            ->orderBy('id')->pluck('id')->all();
+        $units = PropertyUnit::where('property_id', $propertyModule->property_id)
+            ->orderBy('id')->get(['id', 'unit_name'])->values();
         $autoActivate = $this->chirpstack->autoActivates();
 
         for ($i = $existing; $i < $quantity; $i++) {
+            $unit = $units[$i] ?? null;
+            // Name the meter by the REAL unit it serves ("Smart Water Meter · A1")
+            // so it is identifiable from the device itself; fall back to a
+            // sequential label only when no unit can be resolved.
+            $name = $unit && $unit->unit_name
+                ? $module->name . ' · ' . $unit->unit_name
+                : $module->name . ' Unit ' . ($i + 1);
+
             $device = $propertyModule->devices()->create([
-                'name'             => $module->name . ' Unit ' . ($i + 1),
+                'name'             => $name,
                 'gateway_id'       => $gateway?->id,
                 'dev_eui'          => $this->placeholderEui('DEV'),
                 'status'           => Device::STATUS_PROVISIONING,
                 'is_simulated'     => $autoActivate,
-                'property_unit_id' => $unitIds[$i] ?? null, // authoritative device→unit link (drives wallet attribution)
+                'property_unit_id' => $unit->id ?? null, // authoritative device→unit link (drives wallet attribution)
             ]);
 
             $this->chirpstack->registerDevice($device);
