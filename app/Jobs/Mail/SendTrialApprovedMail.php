@@ -9,7 +9,7 @@ class SendTrialApprovedMail extends BaseMailJob
     public function __construct(
         public int    $leadId,
         public string $clientEmail,
-        public string $resetLink,
+        public string $tempPassword,
         public string $trialEndsAt,
         public string $affiliateEmail,
         public string $affiliateFirstName,
@@ -28,6 +28,8 @@ class SendTrialApprovedMail extends BaseMailJob
         $companyPhone = e($company->phone);
         $firstName    = e($this->affiliateFirstName);
         $clientEmail  = e($this->clientEmail);
+        $tempPw       = e($this->tempPassword);
+        $loginUrl     = route('login');
 
         // 1. Client — welcome + password setup
         $this->send(
@@ -43,18 +45,20 @@ class SendTrialApprovedMail extends BaseMailJob
                         <p style='margin:4px 0;'><strong>Start Date:</strong> " . now()->format('M d, Y') . "</p>
                         <p style='margin:4px 0;'><strong>End Date:</strong> {$this->trialEndsAt}</p>
                     </div>
-                    <p>To get started, please set your password by clicking the button below:</p>
+                    <p>Sign in with the temporary password below — for your security you'll be asked to set your own password right after you sign in:</p>
+                    <div style='background:#F4F6F8;border:1px solid #D8DEE6;border-radius:8px;padding:16px;margin:20px 0;'>
+                        <p style='margin:4px 0;'><strong>Login email:</strong> {$clientEmail}</p>
+                        <p style='margin:4px 0;'><strong>Temporary password:</strong> <code style='background:#fff;border:1px solid #D8DEE6;border-radius:5px;padding:3px 8px;font-family:monospace;'>{$tempPw}</code></p>
+                    </div>
                     <div style='text-align:center;margin:30px 0;'>
-                        <a href='{$this->resetLink}'
+                        <a href='{$loginUrl}'
                            style='background:#185FA5;color:#fff;padding:12px 28px;text-decoration:none;border-radius:8px;display:inline-block;font-weight:500;'>
-                           Set My Password & Get Started
+                           Sign In & Get Started
                         </a>
                     </div>
-                    <p><strong>Your login email:</strong> {$clientEmail}</p>
-                    <p style='color:#6b7280;font-size:13px;'>This link will expire in 60 minutes.</p>
+                    <p style='color:#6b7280;font-size:13px;'>Keep this password private. You'll choose your own the moment you sign in.</p>
                     <hr style='border:none;border-top:1px solid #e5e7eb;margin:30px 0;'>
                     <p>Your account manager is available to assist you throughout your trial period.</p>
-                    <p style='color:#9ca3af;font-size:12px;'>If the button doesn't work, copy and paste this link:<br>{$this->resetLink}</p>
                 </div>
             "
         );
@@ -81,8 +85,8 @@ class SendTrialApprovedMail extends BaseMailJob
                         <p style='margin:4px 0;'><strong>Phone:</strong> {$companyPhone}</p>
                     </div>
                     <p style='color:#6b7280;font-size:13px;'>
-                        The client has been sent a welcome email with instructions to set up their password.
-                        Now is a great time to follow up and guide them through the onboarding process!
+                        The client has been sent a welcome email with their login details; they'll set their own
+                        password on first sign-in. Now is a great time to follow up and guide them through onboarding!
                     </p>
                     <div style='text-align:center;margin:30px 0;'>
                         <a href='" . route('affiliate.leads.show', $this->leadId) . "'

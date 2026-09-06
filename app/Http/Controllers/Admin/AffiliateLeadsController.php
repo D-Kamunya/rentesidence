@@ -235,7 +235,13 @@ class AffiliateLeadsController extends Controller
             $user->last_name = $lastName;
             $user->contact_number = $company->phone;
             $user->email = $company->email;
-            $user->password = Hash::make(Str::random(32));
+            // System-generated TEMP password → the trial owner signs in with it and
+            // is forced to set their own on first login (same onboarding lifecycle as
+            // owner-created tenants + registered affiliates; enforced by
+            // ForcePasswordChange, cleared in ProfileController::changePasswordUpdate).
+            $plainPassword = Str::random(10);
+            $user->password = Hash::make($plainPassword);
+            $user->must_change_password = 1;
             $user->status = USER_STATUS_ACTIVE;
             $user->email_verified_at = Carbon::now()->format("Y-m-d H:i:s");
             $user->role = USER_ROLE_OWNER;
@@ -287,23 +293,13 @@ class AffiliateLeadsController extends Controller
 
             DB::commit();
 
-            // 🔐 Password reset setup (only for new users)
-            $passwordResetToken = Str::random(64);
-            $resetLink     = url('/password/reset/' . $passwordResetToken . '?email=' . urlencode($user->email));
-
-            DB::table('password_resets')->updateOrInsert(
-                ['email' => $user->email],
-                [
-                    'token' => Hash::make($passwordResetToken),
-                    'created_at' => now()
-                ]
-            );
-
-            // 📧 Send email (Acount created and Trial approved only for new users)
+            // 📧 Trial-approved mail — delivers the temporary login credentials
+            // (the owner sets their own password on first login via
+            // must_change_password above), plus the affiliate notification copy.
             SendTrialApprovedMail::dispatch(
                 $lead->id,
                 $user->email,
-                $resetLink,
+                $plainPassword,
                 $trialEndsAt,
                 $affiliate->user->email,
                 $affiliate->user->first_name,
