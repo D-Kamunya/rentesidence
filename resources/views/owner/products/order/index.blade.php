@@ -260,6 +260,7 @@
                                                             data-gateway="{{ $order->gateway?->title ?? '—' }}"
                                                             data-tenant-name="{{ $order->user?->name ?? '—' }}"
                                                             data-dispatch="{{ $dispatchStr }}"
+                                                            data-fulfilment-status="{{ $order->fulfilment_status }}"
                                                             data-image="@php
                                                                 $imgs = $product?->images ?? null;
                                                                 $imgs = is_string($imgs) ? json_decode($imgs, true) : $imgs;
@@ -397,7 +398,7 @@
                     <span class="po-modal__value" id="poModalSettlement" style="font-size:12.5px;">—</span>
                 </div>
                 <div class="po-modal__field po-modal__field--full">
-                    <span class="po-modal__label">{{ __('Dispatch To') }}</span>
+                    <span class="po-modal__label" id="poModalDispatchLabel">{{ __('Dispatch To') }}</span>
                     <span class="po-modal__value" id="poModalTenantName" style="font-weight:600;color:#111827;">—</span>
                     <span class="po-modal__value" id="poModalDispatch" style="font-size:12px;color:#6b7280;margin-top:2px;">—</span>
                 </div>
@@ -1019,6 +1020,10 @@
                 document.getElementById('poModalGateway').textContent    = data.gateway     || '—';
                 document.getElementById('poModalTenantName').textContent = data.tenantName  || '—';
                 document.getElementById('poModalDispatch').textContent   = data.dispatch    || '—';
+                // Tense-aware label: once dispatched (or delivered), it already went out.
+                document.getElementById('poModalDispatchLabel').textContent =
+                    (parseInt(data.fulfilmentStatus) >= {{ FULFILMENT_DISPATCHED }})
+                        ? '{{ __('Dispatched To') }}' : '{{ __('Dispatch To') }}';
 
                 // Escrow / settlement — explain where the buyer's payment currently sits.
                 const settleEl = document.getElementById('poModalSettlement');
@@ -1124,6 +1129,7 @@
                     gateway          : btn.dataset.gateway || '—',
                     tenantName       : btn.dataset.tenantName || '—',
                     dispatch         : btn.dataset.dispatch || '—',
+                    fulfilmentStatus : btn.dataset.fulfilmentStatus || '0',
                     completeUrl      : btn.dataset.completeUrl || '',
                     cancelUrl        : btn.dataset.cancelUrl || '',
                     confirmCancelUrl : btn.dataset.confirmCancelUrl || '',
