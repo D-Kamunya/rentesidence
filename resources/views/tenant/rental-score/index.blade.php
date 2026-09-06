@@ -256,7 +256,7 @@
     .rs-bar__val { text-align:right; color:#6b7280; font-variant-numeric:tabular-nums; }
     .rs-notes { margin:0; padding-left:18px; font-size:12.5px; color:#6b7280; line-height:1.8; }
 
-    .rs-actions { display:grid; grid-template-columns:1fr 1fr; gap:20px; }
+    .rs-actions { display:grid; grid-template-columns:1fr 1fr; gap:20px; align-items:start; }
     @media (max-width:800px){ .rs-actions { grid-template-columns:1fr; } }
     .rs-activate { border:0.5px solid #e5e7eb; border-radius:14px; padding:20px; display:flex; align-items:center; justify-content:space-between; gap:16px; }
     .rs-activate.is-on { background:#F2FCF8; border-color:#A7DFC9; }

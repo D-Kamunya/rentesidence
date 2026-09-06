@@ -95,6 +95,10 @@
                                             <input type="text" name="admin_note" class="asc-input asc-input--sm" placeholder="{{ __('Internal note (not shown to tenant)') }}" value="{{ $d->admin_note }}">
                                         </div>
                                         <textarea name="resolution" class="asc-input" rows="2" placeholder="{{ __('Reply to the tenant (shown on their Rental Score page)…') }}">{{ $d->resolution }}</textarea>
+                                        @if (!empty($d->resolution))
+                                            <span style="display:inline-flex;align-items:center;gap:6px;font-size:12px;color:#0F6E56;margin:4px 0 2px;">
+                                                <i class="ri-check-double-line"></i>{{ __('This reply has been sent to the tenant — edit and Save to update it.') }}</span>
+                                        @endif
                                         <div class="asc-dispute__actions">
                                             <button type="submit" class="asc-btn asc-btn--primary">{{ __('Save & reply') }}</button>
                                         </div>
