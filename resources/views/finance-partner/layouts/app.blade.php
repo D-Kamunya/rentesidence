@@ -105,7 +105,10 @@
                             @if (count($fpNotifs) > 0)<span class="fp-badge">{{ count($fpNotifs) > 9 ? '9+' : count($fpNotifs) }}</span>@endif
                         </button>
                         <div class="fp-dd__menu" id="fpNotifMenu">
-                            <div class="fp-dd__head">{{ __('Notifications') }}</div>
+                            <div class="fp-dd__head" style="display:flex;align-items:center;justify-content:space-between;gap:10px;">
+                                <span>{{ __('Notifications') }}</span>
+                                @include('common.partials.notification-mark-all')
+                            </div>
                             <div class="fp-dd__scroll">
                                 @forelse ($fpNotifs as $n)
                                     <a href="{{ route('notification.status', ['id' => $n->id, 'role' => auth()->user()->role]) }}?url={{ urlencode($n->url ?? route('finance-partner.notification')) }}" class="fp-noti">

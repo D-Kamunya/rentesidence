@@ -40,7 +40,6 @@ Route::group(['prefix' => 'owner', 'as' => 'owner.', 'middleware' => ['auth', 'o
     Route::get('/', [DashboardController::class, 'dashboard'])->name('dashboard');
     Route::get('top-search', [DashboardController::class, 'topSearch'])->name('top.search');
     Route::get('notification', [DashboardController::class, 'notification'])->name('notification');
-    Route::post('notification/read-all', [DashboardController::class, 'notificationReadAll'])->name('notification.readAll');
     Route::post('tenant/resend-login', [TenantController::class, 'resendLogin'])->name('tenant.resend-login');
     Route::post('tenant/bulk-resend-logins', [TenantController::class, 'bulkResendLogins'])->name('tenant.bulk-resend-logins');
     Route::delete('unit-image/{id}', [PropertyController::class, 'deleteUnitImage'])->name('unit.image.delete');

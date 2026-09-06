@@ -52,6 +52,7 @@
                                 <h5 class="m-0 text-start">{{ __('Notifications') }}</h5>
                             </div>
                             <div class="col-auto">
+                                @include('common.partials.notification-mark-all')
                             </div>
                         </div>
                     </div>

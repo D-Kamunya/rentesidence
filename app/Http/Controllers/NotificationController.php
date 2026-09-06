@@ -13,6 +13,13 @@ class NotificationController extends Controller
     {
         $this->notificationService = new NotificationService;
     }
+    /** Bell "Mark all as read" — shared by every account; marks the signed-in user's notices seen. */
+    public function readAll()
+    {
+        \App\Models\Notification::where('user_id', auth()->id())->update(['is_seen' => ACTIVE]);
+        return response()->json(['success' => true]);
+    }
+
     public function status($id,$role,Request $request)
     {
         $data = $this->notificationService->status($id);

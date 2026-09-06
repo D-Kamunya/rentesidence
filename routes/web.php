@@ -58,6 +58,7 @@ Route::group(['middleware' => ['auth', 'version.update']], function () {
         Route::post('delete-my-account', [ProfileController::class, 'deleteMyAccount'])->name('delete-my-account');
 
         Route::get('notification-status/{id}/{role}', [NotificationController::class, 'status'])->name('notification.status');
+        Route::post('notification/read-all', [NotificationController::class, 'readAll'])->name('notification.readAll');
     });
 });
 
