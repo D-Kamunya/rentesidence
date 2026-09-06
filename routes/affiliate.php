@@ -35,6 +35,9 @@ Route::group([
         // e.g. "new module" alerts).
         Route::get('notifications', [DashboardController::class, 'notification'])->name('notification');
 
+        // Suspended landing — reachable while suspended (excluded in the affiliate middleware).
+        Route::get('account/suspended', fn() => view('affiliate.suspended'))->name('suspended');
+
         // -------------------------------
         // Locked Affiliate Routes (requires academy completion)
         // -------------------------------

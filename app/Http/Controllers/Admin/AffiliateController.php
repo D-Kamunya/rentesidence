@@ -52,4 +52,30 @@ class AffiliateController extends Controller
             return back()->with('error', $e->getMessage());
         }
     }
+
+    /**
+     * Suspend an affiliate (breach of operational rules). Reversible.
+     * Blocks their access at the affiliate middleware; earned commissions,
+     * referrals and history are preserved.
+     */
+    public function suspend($id)
+    {
+        $affiliate = Affiliate::findOrFail($id);
+        $affiliate->status = AFFILIATE_STATUS_INACTIVE;
+        $affiliate->save();
+
+        return back()->with('success', __('Affiliate suspended successfully.'));
+    }
+
+    /**
+     * Reinstate a suspended affiliate — restores platform access.
+     */
+    public function reinstate($id)
+    {
+        $affiliate = Affiliate::findOrFail($id);
+        $affiliate->status = AFFILIATE_STATUS_ACTIVE;
+        $affiliate->save();
+
+        return back()->with('success', __('Affiliate reinstated successfully.'));
+    }
 }
