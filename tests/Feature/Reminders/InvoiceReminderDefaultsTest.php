@@ -35,7 +35,7 @@ class InvoiceReminderDefaultsTest extends TestCase
     }
 
     /** @test */
-    public function it_seeds_a_bounded_default_cadence_when_nothing_is_configured(): void
+    public function it_seeds_a_bounded_default_cadence_on_first_run(): void
     {
         $this->runEnsureDefaults();
 
@@ -45,19 +45,33 @@ class InvoiceReminderDefaultsTest extends TestCase
         // "Everyday" must default OFF — that is the unbounded-spam vector.
         $this->assertSame((string) REMAINDER_EVERYDAY_STATUS_DEACTIVATE, (string) getOption('OVERDUE_REMAINDER_EVERYDAY_STATUS'));
         $this->assertSame((string) REMAINDER_EVERYDAY_STATUS_DEACTIVATE, (string) getOption('remainder_everyday_status'));
+        $this->assertSame('1', getOption('reminder_defaults_v1'));                 // sentinel set
     }
 
     /** @test */
-    public function it_never_overwrites_an_admin_configured_value(): void
+    public function first_run_is_authoritative_over_existing_stale_values(): void
     {
-        // Admin deliberately chose a custom overdue schedule AND turned pre-due reminders off.
-        config(['settings.OVERDUE_REMAINDER_DAYS' => '2,5', 'settings.remainder_status' => (string) REMAINDER_STATUS_DEACTIVATE]);
+        // A live install already holds stale/unconsidered values and no sentinel yet.
+        config([
+            'settings.OVERDUE_REMAINDER_DAYS'            => '5',
+            'settings.OVERDUE_REMAINDER_EVERYDAY_STATUS' => (string) REMAINDER_EVERYDAY_STATUS_ACTIVE, // the spam vector
+        ]);
 
         $this->runEnsureDefaults();
 
-        $this->assertSame('2,5', getOption('OVERDUE_REMAINDER_DAYS'));                       // preserved
-        $this->assertSame((string) REMAINDER_STATUS_DEACTIVATE, (string) getOption('remainder_status')); // preserved (deliberate off)
-        // A key the admin never touched still gets its sensible default.
-        $this->assertSame((string) REMAINDER_STATUS_ACTIVE, (string) getOption('OVERDUE_REMAINDER_STATUS'));
+        // Our considered baseline WINS on first run (that's the point of "authoritative").
+        $this->assertSame('1,3,7', getOption('OVERDUE_REMAINDER_DAYS'));
+        $this->assertSame((string) REMAINDER_EVERYDAY_STATUS_DEACTIVATE, (string) getOption('OVERDUE_REMAINDER_EVERYDAY_STATUS'));
+    }
+
+    /** @test */
+    public function once_the_baseline_is_locked_a_later_admin_change_is_respected(): void
+    {
+        $this->runEnsureDefaults();                                   // first run establishes + locks
+        setOption('OVERDUE_REMAINDER_DAYS', '2,5,10');                // admin later customises
+
+        $this->runEnsureDefaults();                                   // subsequent tick
+
+        $this->assertSame('2,5,10', getOption('OVERDUE_REMAINDER_DAYS')); // NOT re-clobbered
     }
 }

@@ -58,19 +58,25 @@ class ReminderInvoice extends Command
     }
 
     /**
-     * Self-healing defaults for the tenant payment-reminder cadence. Seeds a sensible platform
-     * schedule ONLY for keys an admin hasn't set (checked by presence in config('settings'), so a
-     * deliberate admin "off"/custom value is never clobbered). Runs on every scheduler tick so a
-     * fresh/updated install reminds out-of-box without a manual deploy step ([[plug-and-play-defaults]]).
+     * Establish the platform's tenant payment-reminder cadence ONCE, authoritatively.
      *
-     * Cadence is intentionally BOUNDED (fixed days, not "everyday"): a gentle nudge 3 days before
-     * due, then three overdue nudges at 1/3/7 days, then it stops. Reminder cadence is a PLATFORM
-     * decision, not an owner one — an owner set to "remind every day" would spam tenants (harassment
-     * risk + shared-shortcode/domain deliverability damage) and the reputational cost lands on us.
+     * Reminder cadence is a business-critical PLATFORM decision, not an owner one — an owner (or a
+     * stale admin setting) on "remind every day" would spam tenants (harassment risk + shared
+     * shortcode/domain deliverability damage) and the reputational cost lands on us. So on the FIRST
+     * scheduler tick after this ships, we force our considered baseline even on installs that ALREADY
+     * hold (stale/unconsidered) values — no manual "delete the old rows" deploy step. A version
+     * sentinel then locks it: we never touch these keys again, so any LATER admin change sticks.
+     * Bump the sentinel (v2, …) only to intentionally re-baseline in a future release.
+     *
+     * Cadence is intentionally BOUNDED (fixed days, never "everyday"): one gentle nudge 3 days
+     * before due, three overdue nudges at 1/3/7 days, then it stops. ([[plug-and-play-defaults]])
      */
     private function ensureDefaults(): void
     {
-        $settings = config('settings', []);
+        if (getOption('reminder_defaults_v1')) {
+            return; // baseline already established once — respect whatever the admin has since set
+        }
+
         $defaults = [
             // Pre-due: one gentle nudge, 3 days before the due date.
             'remainder_status'                  => REMAINDER_STATUS_ACTIVE,
@@ -83,10 +89,10 @@ class ReminderInvoice extends Command
         ];
 
         foreach ($defaults as $key => $value) {
-            if (! array_key_exists($key, $settings)) {
-                setOption($key, (string) $value);
-            }
+            setOption($key, (string) $value); // authoritative — overwrites any stale value, once
         }
+
+        setOption('reminder_defaults_v1', '1'); // lock: don't re-apply on subsequent runs
     }
 
     private function sendReminder($mailService, $invoice, $overDue=false)
