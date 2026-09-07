@@ -1340,7 +1340,10 @@ if (!function_exists('handlePaymentConfirmation')) {
                             'no'  => $invoice->invoice_no ?? $order->invoice_id,
                             'app' => getOption('app_name') ?: 'Centresidence',
                         ]);
-                        SendSmsJob::dispatch([$ownerNumber], $message, $order->user_id);
+                        // Platform→owner notice ("your tenant paid") → platform-paid (null), not the
+                        // owner's credit pool. (Previously passed the tenant id, which only happened
+                        // to be ungated because a tenant fails the owner role-check.)
+                        SendSmsJob::dispatch([$ownerNumber], $message, null);
                     }
                 } catch (\Exception $notifyException) {
                     \Illuminate\Support\Facades\Log::warning(

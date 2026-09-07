@@ -107,6 +107,9 @@ class ReminderSubscription extends Command
         $message = $expired
             ? __('Your :name subscription expired :when. Renew: :url', ['name' => $subscription->name, 'when' => $when, 'url' => $renewUrl])
             : __('Your :name subscription expires :when. Renew: :url', ['name' => $subscription->name, 'when' => $when, 'url' => $renewUrl]);
-        SendSmsJob::dispatch([$subscription->owner->contact_number], $message, $subscription->user_id);
+        // Platform-paid (null), NOT the owner's credits: this is our dunning to get them to renew.
+        // Charging their pool would silently drop the reminder exactly when they're out of credits
+        // near expiry — the worst moment to lose the nudge. Mirrors the Centresidence platform notices.
+        SendSmsJob::dispatch([$subscription->owner->contact_number], $message, null);
     }
 }

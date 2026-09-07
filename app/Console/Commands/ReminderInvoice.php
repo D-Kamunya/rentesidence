@@ -20,6 +20,8 @@ class ReminderInvoice extends Command
     public function handle()
     {
         try {
+            $this->ensureDefaults();
+
             if (getOption('remainder_status', 0) != REMAINDER_STATUS_ACTIVE && getOption('OVERDUE_REMAINDER_STATUS', 0) != REMAINDER_STATUS_ACTIVE) {
                 throw new Exception('Remainder status inactive');
             }
@@ -52,6 +54,38 @@ class ReminderInvoice extends Command
             }
         } catch (Exception $e) {
             Log::info('Auto remainder error: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Self-healing defaults for the tenant payment-reminder cadence. Seeds a sensible platform
+     * schedule ONLY for keys an admin hasn't set (checked by presence in config('settings'), so a
+     * deliberate admin "off"/custom value is never clobbered). Runs on every scheduler tick so a
+     * fresh/updated install reminds out-of-box without a manual deploy step ([[plug-and-play-defaults]]).
+     *
+     * Cadence is intentionally BOUNDED (fixed days, not "everyday"): a gentle nudge 3 days before
+     * due, then three overdue nudges at 1/3/7 days, then it stops. Reminder cadence is a PLATFORM
+     * decision, not an owner one — an owner set to "remind every day" would spam tenants (harassment
+     * risk + shared-shortcode/domain deliverability damage) and the reputational cost lands on us.
+     */
+    private function ensureDefaults(): void
+    {
+        $settings = config('settings', []);
+        $defaults = [
+            // Pre-due: one gentle nudge, 3 days before the due date.
+            'remainder_status'                  => REMAINDER_STATUS_ACTIVE,
+            'reminder_days'                     => '3',
+            'remainder_everyday_status'         => REMAINDER_EVERYDAY_STATUS_DEACTIVATE,
+            // Overdue: three nudges (1, 3, 7 days past due), then stop — NOT everyday.
+            'OVERDUE_REMAINDER_STATUS'          => REMAINDER_STATUS_ACTIVE,
+            'OVERDUE_REMAINDER_DAYS'            => '1,3,7',
+            'OVERDUE_REMAINDER_EVERYDAY_STATUS' => REMAINDER_EVERYDAY_STATUS_DEACTIVATE,
+        ];
+
+        foreach ($defaults as $key => $value) {
+            if (! array_key_exists($key, $settings)) {
+                setOption($key, (string) $value);
+            }
         }
     }
 
