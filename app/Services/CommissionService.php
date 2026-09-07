@@ -71,6 +71,15 @@ class CommissionService
     {
         if ($order->settlement_status === null && ! $this->alreadyCredited($order)) {
             $order->forceFill(['settlement_status' => SETTLEMENT_STATUS_HELD])->save();
+
+            // Seller-side dispatch alert — fires exactly once here (the null→HELD transition is the
+            // single authoritative "paid & awaiting fulfilment" point across every payment path).
+            // Queued + self-contained; never let a notification failure disturb the money hold.
+            try {
+                \App\Jobs\SendSellerDispatchAlertJob::dispatch($order->id);
+            } catch (\Throwable $e) {
+                Log::error('Seller dispatch alert dispatch failed', ['order_id' => $order->id, 'error' => $e->getMessage()]);
+            }
         }
     }
 
