@@ -280,7 +280,7 @@ class MailService
         }
     }
 
-    public static function sendRentPaymentSuccessMail($tenantUserId, $emails = [], $subject = null, $message = null, $title = null, $method = null, $status = null, $amount = 0, $invoiceNo = null, $month = null, $code = null)
+    public static function sendRentPaymentSuccessMail($tenantUserId, $emails = [], $subject = null, $message = null, $title = null, $method = null, $status = null, $amount = 0, $invoiceNo = null, $month = null, $code = null, $invoiceId = null)
     {
         if (config('mail.status') == 1 && config('mail.mailers.smtp.username')) {
             if (count($emails)) {
@@ -296,6 +296,7 @@ class MailService
                             $details['invoiceNo'] = $invoiceNo;
                             $details['month']     = $month;
                             $details['code']      = $code;
+                            $details['invoiceId'] = $invoiceId;
                             // send mail
                             Mail::to($email)->send(new RentPaymentSuccessMail($details));
                             // log generate

@@ -16,7 +16,9 @@
         ['k' => __('Status'),      'v' => !empty($content['status']) ? Str::ucfirst($content['status']) : ''],
     ]])
 
-    @include('mail.parts.button', ['url' => route('login'), 'label' => __('View my invoices'), 'color' => '#0F6E56'])
+    @include('mail.parts.button', ['url' => $content['receiptUrl'] ?? route('login'), 'label' => __('View my receipt'), 'color' => '#0F6E56'])
+
+    <p style="font-size:13px;color:#6b7280;margin:14px 0 0;">{{ __('Your receipt is also attached to this email as a PDF for your records.') }}</p>
 @endsection
 
 @section('footnote', __('This receipt confirms a payment on your :app account. Keep it for your records.', ['app' => getOption('app_name') ?: 'Centresidence']))

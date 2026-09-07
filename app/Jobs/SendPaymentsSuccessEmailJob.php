@@ -81,7 +81,8 @@ class SendPaymentsSuccessEmailJob implements ShouldQueue
                     $this->status, $this->amount,
                     $invoice?->invoice_no,
                     $invoice?->month,
-                    $this->order->mpesa_transaction_code
+                    $this->order->mpesa_transaction_code,
+                    $invoice?->id
                 );
             }
     }
