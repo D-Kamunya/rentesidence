@@ -235,18 +235,31 @@ class OwnerWalletController extends Controller
         $wallet = OwnerWallet::forUser(auth()->id());
         $amount = (float) $request->amount;
  
+        // Fast, friendly pre-check (non-authoritative — the atomic reserve below is the guard).
         if ($amount > $wallet->balance) {
             return response()->json([
                 'success' => false,
                 'error'   => __('Amount exceeds your available balance.'),
             ]);
         }
- 
+
         DB::beginTransaction();
         try {
-            // Reserve the balance immediately so it can't be double-spent
-            $wallet->decrement('balance', $amount);
- 
+            // Reserve the balance ATOMICALLY: the decrement only applies while the balance
+            // still covers it, so two concurrent withdrawals can't both pass the check and
+            // over-draw the wallet (TOCTOU). 0 rows affected → insufficient funds now.
+            $reserved = OwnerWallet::whereKey($wallet->id)
+                ->where('balance', '>=', $amount)
+                ->decrement('balance', $amount);
+
+            if (! $reserved) {
+                DB::rollBack();
+                return response()->json([
+                    'success' => false,
+                    'error'   => __('Amount exceeds your available balance.'),
+                ]);
+            }
+
             // Create a pending withdrawal request
             $withdrawal = WithdrawalRequest::create([
                 'owner_wallet_id' => $wallet->id,
