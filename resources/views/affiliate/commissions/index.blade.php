@@ -293,10 +293,14 @@
                                                     {{ $withdrawal->processed_at ? \Carbon\Carbon::parse($withdrawal->processed_at)->format('M d, Y H:i') : '—' }}
                                                 </td>
                                                 <td>
-                                                    @if($withdrawal->mpesa_reference)
-                                                        <span class="cmx-ref-badge" title="{{ $withdrawal->mpesa_reference }}">
+                                                    {{-- Show the M-Pesa RECEIPT (transaction_id), never the ConversationID
+                                                         (mpesa_reference): that reference authenticates the B2C result
+                                                         callback, so surfacing it to the beneficiary would let them forge
+                                                         a payout failure and reclaim their reserved balance. --}}
+                                                    @if($withdrawal->transaction_id)
+                                                        <span class="cmx-ref-badge" title="{{ $withdrawal->transaction_id }}">
                                                             <svg width="10" height="10" viewBox="0 0 24 24" fill="none" style="flex-shrink:0"><rect x="3" y="3" width="18" height="18" rx="3" stroke="currentColor" stroke-width="1.8"/><path d="M9 12l2 2 4-4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                                                            {{ Str::limit($withdrawal->mpesa_reference, 16) }}
+                                                            {{ Str::limit($withdrawal->transaction_id, 16) }}
                                                         </span>
                                                     @else
                                                         <span class="cmx-na">—</span>

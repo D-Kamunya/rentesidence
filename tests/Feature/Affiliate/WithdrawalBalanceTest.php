@@ -109,4 +109,41 @@ class WithdrawalBalanceTest extends AffiliateDatabaseTestCase
 
         $this->assertSame(1000.0, $this->svc()->getLifeTimeGrossCommissions(1));
     }
+
+    /**
+     * SECURITY REGRESSION (pentest finding #1, 2026-09-06): the public B2C
+     * result/timeout callbacks must authenticate via the server-only token
+     * embedded in the ResultURL. A forged timeout (no token) must NOT be able to
+     * fail an in-flight payout and release its reservation — otherwise a
+     * beneficiary who can see their withdrawal's correlation ref could fake a
+     * failure, get their balance restored, and double-spend after the real payout
+     * lands. Only a callback carrying the correct token may reconcile.
+     */
+    public function test_forged_b2c_timeout_without_token_cannot_release_a_processing_payout(): void
+    {
+        $this->earn(1, 1000);
+        $wd = AffiliateWithdrawal::create([
+            'affiliate_id'      => 1,
+            'amount'            => 400,
+            'status'            => AFFILIATE_WITHDRAWAL_PROCESSING,
+            'settlement_method' => 'b2c',
+            'mpesa_reference'   => 'AG_TEST_CONVERSATION_123',
+        ]);
+
+        $body = ['Result' => [
+            'ConversationID' => 'AG_TEST_CONVERSATION_123',
+            'ResultCode'     => 1,
+            'ResultDesc'     => 'forged failure',
+        ]];
+
+        // Forged (no token) → rejected → payout stays PROCESSING (still reserved).
+        $this->postJson('/api/v1/b2c/timeout', $body)->assertOk();
+        $this->assertSame(AFFILIATE_WITHDRAWAL_PROCESSING, (int) $wd->fresh()->status);
+        $this->assertSame(600.0, $this->svc()->getAvailableBalance(1));
+
+        // Genuine (correct token) → reconciled to FAILED, reservation released.
+        $this->postJson('/api/v1/b2c/timeout?token=' . b2cCallbackSecret(), $body)->assertOk();
+        $this->assertSame(AFFILIATE_WITHDRAWAL_FAILED, (int) $wd->fresh()->status);
+        $this->assertSame(1000.0, $this->svc()->getAvailableBalance(1));
+    }
 }

@@ -104,9 +104,21 @@ abstract class AffiliateDatabaseTestCase extends TestCase
             $t->integer('status');
             $t->string('phone')->nullable();
             $t->string('settlement_method')->nullable();
+            $t->string('mpesa_reference')->nullable();
+            $t->string('transaction_id')->nullable();
             $t->timestamp('processed_at')->nullable();
             $t->text('notes')->nullable();
             $t->timestamps();
         });
+
+        // Options table — used by setOption/b2cCallbackSecret (B2C callback auth).
+        if (! Schema::hasTable('settings')) {
+            Schema::create('settings', function ($t) {
+                $t->id();
+                $t->string('option_key')->unique();
+                $t->text('option_value')->nullable();
+                $t->timestamps();
+            });
+        }
     }
 }

@@ -55,9 +55,33 @@ if (!function_exists('setOption')) {
             ['option_key' => $key],
             ['option_value' => $value]
         );
- 
+
         // Keep config in sync for the remainder of this request
         config(['settings.' . $key => $value]);
+    }
+}
+
+if (!function_exists('b2cCallbackSecret')) {
+    /**
+     * Server-only shared secret embedded in the M-Pesa B2C Result/Timeout URLs we
+     * hand Safaricom, and required back on the callback. Because it lives ONLY in
+     * the URL given to Safaricom (never shown to any user), a forged B2C callback
+     * cannot carry it — this is what stops a beneficiary from faking a payout
+     * failure to get their reserved balance restored (double-spend). Read straight
+     * from the Setting table (authoritative — never a stale cached config), and
+     * self-heal on first use so there is no manual go-live step.
+     */
+    function b2cCallbackSecret(): string
+    {
+        $row = \App\Models\Setting::where('option_key', 'b2c_callback_secret')->first();
+        if ($row && ! empty($row->option_value)) {
+            return $row->option_value;
+        }
+
+        $secret = \Illuminate\Support\Str::random(48);
+        setOption('b2c_callback_secret', $secret);
+
+        return $secret;
     }
 }
 

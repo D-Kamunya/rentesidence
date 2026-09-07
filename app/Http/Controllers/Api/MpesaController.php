@@ -444,6 +444,15 @@ class MpesaController extends Controller
      */
     public function B2CResult(Request $request)
     {
+        // Authenticity gate: a genuine Safaricom result carries the server-only token
+        // embedded in the ResultURL at send time. A forged callback can't (the token is
+        // never exposed to any user), so it's rejected before touching any payout —
+        // closes the forged-failure double-spend on withdrawals/refunds.
+        if (! hash_equals(b2cCallbackSecret(), (string) $request->query('token'))) {
+            Log::warning('B2C result callback rejected: missing/invalid authenticity token', ['ip' => $request->ip()]);
+            return $this->b2cAck();
+        }
+
         $response = json_decode($request->getContent(), true);
         $result   = $response['Result'] ?? [];
 
@@ -502,6 +511,13 @@ class MpesaController extends Controller
      */
     public function B2CTimeout(Request $request)
     {
+        // Same authenticity gate as B2CResult — a forged timeout must not be able to
+        // fail an in-flight payout and restore the reserved balance.
+        if (! hash_equals(b2cCallbackSecret(), (string) $request->query('token'))) {
+            Log::warning('B2C timeout callback rejected: missing/invalid authenticity token', ['ip' => $request->ip()]);
+            return $this->b2cAck();
+        }
+
         try {
             $body   = json_decode($request->getContent(), true) ?: [];
             $result = $body['Result'] ?? $body;

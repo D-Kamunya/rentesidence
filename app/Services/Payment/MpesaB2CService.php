@@ -18,6 +18,12 @@ class MpesaB2CService
 
     public function send(string $phone, float $amount, string $remarks = 'Owner wallet withdrawal', string $occasion = 'OwnerWithdrawal'): array
     {
+        // Embed a server-only secret in the callback URLs so B2CResult/B2CTimeout can
+        // authenticate that a result genuinely came from Safaricom (only Safaricom is
+        // given these URLs) — a forged callback can't carry the token. Prevents a
+        // beneficiary from faking a payout failure to restore their reserved balance.
+        $token = b2cCallbackSecret();
+
         $payload = [
             'InitiatorName'      => config('mpesa.initiator_name'),
             'SecurityCredential' => $this->encryptInitiatorPassword(config('mpesa.initiator_password')),
@@ -26,8 +32,8 @@ class MpesaB2CService
             'PartyA'             => config('mpesa.b2c_shortcode') ?: config('mpesa.shortcode'),
             'PartyB'             => $this->phoneValidator($phone),
             'Remarks'            => $remarks,
-            'QueueTimeOutURL'    => config('mpesa.b2c_timeout_url'),
-            'ResultURL'          => config('mpesa.b2c_result_url'),
+            'QueueTimeOutURL'    => $this->withCallbackToken(config('mpesa.b2c_timeout_url'), $token),
+            'ResultURL'          => $this->withCallbackToken(config('mpesa.b2c_result_url'), $token),
             'Occasion'           => $occasion,
         ];
 
@@ -48,6 +54,16 @@ class MpesaB2CService
                 ?? null,
             'response'  => $result,
         ];
+    }
+
+    /** Append the callback authenticity token to a B2C Result/Timeout URL. */
+    private function withCallbackToken(?string $url, string $token): ?string
+    {
+        if (empty($url)) {
+            return $url;
+        }
+
+        return $url . (str_contains($url, '?') ? '&' : '?') . 'token=' . urlencode($token);
     }
 
     private function encryptInitiatorPassword(string $plainPassword): string
