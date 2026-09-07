@@ -664,7 +664,7 @@ if (!function_exists('setOwnerGateway')) {
 }
 
 if (!function_exists('setUserPackage')) {
-    function setUserPackage($userId, $package, $duration, $quantity = 1, $orderId = NULL)
+    function setUserPackage($userId, $package, $duration, $quantity = 1, $orderId = NULL, $grantSms = true)
     {
         OwnerPackage::where(['user_id' => $userId])->whereIn('status', [ACTIVE])->update(['status' => DEACTIVATE]);
 
@@ -697,7 +697,11 @@ if (!function_exists('setUserPackage')) {
         // ââ Grant monthly SMS credits for this package ââââââââââââââââ
         // Wrapped in try/catch so a credit failure never breaks activation
         try {
-            PackageSmsCreditsService::grantOnActivation($userId, $package->id);
+            // Skip on a trial EXTENSION ($grantSms=false) — extend the window, don't
+            // refill the SMS pool (else extensions stack free credits indefinitely).
+            if ($grantSms) {
+                PackageSmsCreditsService::grantOnActivation($userId, $package->id);
+            }
         } catch (\Exception $e) {
             Log::error(
                 "setUserPackage: SMS credit grant failed for user_id={$userId}, package_id={$package->id} â " . $e->getMessage()

@@ -170,11 +170,13 @@ class AffiliateLeadsController extends Controller
 
                     // 🟡 Active trial → block (can't renew active trial)
                     if ($trialEndsAt->isFuture()) {
+                        DB::rollBack();
                         return back()->with('error', 'This user already has an active trial that expires on ' . $trialEndsAt->format('M d, Y') . '. Cannot approve another trial.');
                     }
 
                     // 🔁 Expired trial → require confirmation
                     if (!$request->has('confirm_renewal')) {
+                        DB::rollBack();
                         $expiredDate = $trialEndsAt->format('M d, Y');
                         return back()
                             ->with('warning_message', 'This user\'s trial expired on ' . $expiredDate . '. Do you want to extend their trial?')
@@ -184,15 +186,33 @@ class AffiliateLeadsController extends Controller
                             ]);
                     }
 
+                    // 🧢 Cap the number of extensions (config-tunable; interlocks with the
+                    // trial cost-guardrail decision D8). Prior extensions are logged as
+                    // LeadActivity with an "extended" description.
+                    $maxExtensions = (int) getOption('trial_max_extensions', 2);
+                    $priorExtensions = LeadActivity::where('lead_id', $lead->id)
+                        ->where('description', 'like', '%extended%')
+                        ->count();
+                    if ($priorExtensions >= $maxExtensions) {
+                        DB::rollBack();
+                        return back()->with('error', 'This lead has reached the maximum of ' . $maxExtensions . ' trial extension(s). Convert them to a paid plan to continue.');
+                    }
+
                     // Confirmed renewal
                     $isExtension = true;
                 }
 
                 // ✅ Renew/Extend trial for existing user
                 $defaultPackage = Package::where(['is_trail' => ACTIVE])->first();
+                $trialDurationDays = (int) getOption('trail_duration', 1);
+                // The NEW end date (setUserPackage sets end_date = now + duration). Used for
+                // the email — the old code passed the stale EXPIRED date (and a Carbon into a
+                // string param, which threw at dispatch).
+                $newTrialEndsAt = Carbon::now()->addDays($trialDurationDays)->format('M d, Y');
 
                 if ($defaultPackage) {
-                    setUserPackage($existingUser->id, $defaultPackage, (int) getOption('trail_duration', 1), 1);
+                    // grantSms=false → extend the window without refilling the SMS pool.
+                    setUserPackage($existingUser->id, $defaultPackage, $trialDurationDays, 1, null, false);
                 }
 
                 // Update lead status
@@ -221,7 +241,7 @@ class AffiliateLeadsController extends Controller
                 SendTrialExtendedMail::dispatch(
                     $lead->id,
                     $company->email,
-                    $trialEndsAt,
+                    $newTrialEndsAt,
                     $affiliate->user->email,
                     $affiliate->user->first_name,
                 );
