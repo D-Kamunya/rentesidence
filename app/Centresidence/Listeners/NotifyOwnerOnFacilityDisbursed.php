@@ -47,9 +47,10 @@ class NotifyOwnerOnFacilityDisbursed
         }
 
         if (! empty($owner->contact_number)) {
+            $app = getOption('app_name') ?: 'Centresidence';
             SendSmsJob::dispatch(
                 [$owner->contact_number],
-                __('Centresidence: facility :ref has been disbursed and is now live. Repayment begins from your next rent.', ['ref' => $ref]),
+                __(':app: facility :ref has been disbursed and is now live. Repayment begins from your next rent.', ['app' => $app, 'ref' => $ref]),
                 null // platform SMS — ungated
             );
         }

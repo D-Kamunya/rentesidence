@@ -47,9 +47,10 @@ class NotifyOwnerOnApplicationApproved
         }
 
         if (! empty($owner->contact_number)) {
+            $app = getOption('app_name') ?: 'Centresidence';
             SendSmsJob::dispatch(
                 [$owner->contact_number],
-                __('Centresidence: your financing application :ref has been approved. Your infrastructure will be deployed shortly.', ['ref' => $ref]),
+                __(':app: your financing application :ref has been approved. Your infrastructure will be deployed shortly.', ['app' => $app, 'ref' => $ref]),
                 null // platform SMS — ungated, no owner-credit deduction
             );
         }

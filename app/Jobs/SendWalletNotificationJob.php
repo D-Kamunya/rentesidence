@@ -57,12 +57,12 @@ class SendWalletNotificationJob implements ShouldQueue
                 : null;
 
             if (!empty($phone)) {
-                $smsMessage = $this->emailData->message .
-                    ' ' . __('View your wallet: ') . $this->notificationData->url;
-            
+                // Cost discipline: keep the SMS link-free (≤1 segment). The email + in-app
+                // notification already carry the wallet deep-link; a full URL here would push
+                // the message to multiple segments and burn extra credits.
                 SendSmsJob::dispatch(
                     [$phone],
-                    $smsMessage,
+                    $this->emailData->message,
                     $this->recipient->id
                 );
             }
