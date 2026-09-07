@@ -102,7 +102,7 @@ class DownPaymentCollectionService
             return $this->setStatus($facility, self::STATUS_FAILED);
         }
 
-        $callbackUrl = route('centresidence.down-payment.callback', ['facility' => $facility->id]);
+        $callbackUrl = route('centresidence.down-payment.callback', ['facility' => $facility->id, 'token' => b2cCallbackSecret()]);
 
         $result = app(MpesaStkService::class)->push(
             $phone,

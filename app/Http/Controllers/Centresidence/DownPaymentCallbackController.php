@@ -18,6 +18,12 @@ class DownPaymentCallbackController extends Controller
 {
     public function __invoke(Request $request, int $facility, DownPaymentCollectionService $collections)
     {
+        // Server-only token (embedded in the ResultURL at push) — a forged callback can't carry it.
+        if (! hash_equals(b2cCallbackSecret(), (string) $request->query('token'))) {
+            Log::warning('Centresidence down-payment callback rejected: missing/invalid authenticity token', ['facility_id' => $facility, 'ip' => $request->ip()]);
+            return $this->ack();
+        }
+
         $body = json_decode($request->getContent(), true) ?? [];
         $callback = $body['Body']['stkCallback'] ?? [];
         $resultCode = $callback['ResultCode'] ?? -1;

@@ -72,7 +72,7 @@ class InfraBillPaymentService
             (float) $out['total'],
             $account,
             'Module infrastructure bill',
-            route('centresidence.infra-bill.callback', ['owner' => $ownerUserId])
+            route('centresidence.infra-bill.callback', ['owner' => $ownerUserId, 'token' => b2cCallbackSecret()])
         );
 
         // Bind this push to its callback so a crafted callback can't clear the owner's

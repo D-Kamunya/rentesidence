@@ -31,7 +31,7 @@ class InfraBillPaymentTest extends CentresidenceDatabaseTestCase
         ], $attrs));
     }
 
-    private function fireCallback(int $owner, int $resultCode, string $cid = 'CHECKOUT-INFRA-1', bool $recordPush = true)
+    private function fireCallback(int $owner, int $resultCode, string $cid = 'CHECKOUT-INFRA-1', bool $recordPush = true, ?string $token = null)
     {
         // A genuine callback is preceded by a push we recorded (binds the callback to it).
         if ($recordPush) {
@@ -43,7 +43,10 @@ class InfraBillPaymentTest extends CentresidenceDatabaseTestCase
             'CheckoutRequestID' => $cid,
             'CallbackMetadata' => ['Item' => [['Name' => 'MpesaReceiptNumber', 'Value' => 'ABC123']]],
         ]]];
-        $req = Request::create("/api/centresidence/infra-bill/{$owner}/callback", 'POST', [], [], [], [], json_encode($body));
+        // Genuine callbacks carry the server-only token embedded in the ResultURL at push.
+        $token = $token ?? b2cCallbackSecret();
+        $url   = "/api/centresidence/infra-bill/{$owner}/callback" . ($token !== '' ? "?token={$token}" : '');
+        $req   = Request::create($url, 'POST', [], [], [], [], json_encode($body));
 
         return app(InfraBillCallbackController::class)->__invoke($req, $owner, $this->svc());
     }
@@ -112,6 +115,24 @@ class InfraBillPaymentTest extends CentresidenceDatabaseTestCase
         $second = $this->svc()->markPaid(1); // re-fire → nothing left to settle
 
         $this->assertSame(0, $second);
+        $this->assertSame(0.0, $this->svc()->outstanding(1)['total']);
+    }
+
+    public function test_forged_callback_without_valid_token_is_rejected(): void
+    {
+        $this->invoice(1);
+
+        // A crafted success callback WITH a recorded push + correct CheckoutRequestID but
+        // NO server token (or a wrong one) must clear nothing — the token, embedded in the
+        // ResultURL at push, is never exposed to the payer.
+        $this->fireCallback(1, 0, 'CHECKOUT-INFRA-1', recordPush: true, token: '');
+        $this->assertSame(500.0, $this->svc()->outstanding(1)['total']);
+
+        $this->fireCallback(1, 0, 'CHECKOUT-INFRA-1', recordPush: false, token: 'wrong-token');
+        $this->assertSame(500.0, $this->svc()->outstanding(1)['total']);
+
+        // With the correct token it settles (proves the gate isn't blanket-blocking).
+        $this->fireCallback(1, 0);
         $this->assertSame(0.0, $this->svc()->outstanding(1)['total']);
     }
 

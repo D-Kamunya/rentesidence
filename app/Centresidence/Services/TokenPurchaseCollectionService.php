@@ -153,7 +153,7 @@ class TokenPurchaseCollectionService
             $amount,
             $account,
             'Utility tokens',
-            route('centresidence.token.callback', ['propertyModule' => $module->id, 'tenant' => $tenantUserId])
+            route('centresidence.token.callback', ['propertyModule' => $module->id, 'tenant' => $tenantUserId, 'token' => b2cCallbackSecret()])
         );
 
         // Bind this push to its callback so a crafted callback can't credit a wallet that

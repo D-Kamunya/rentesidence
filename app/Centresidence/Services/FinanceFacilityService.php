@@ -313,7 +313,7 @@ class FinanceFacilityService
         $result = app(\App\Services\Payment\MpesaStkService::class)->push(
             $phone, (float) $amount->toDecimal(), $account,
             'Early settlement ' . $facility->facility_number,
-            route('centresidence.settle.callback', ['facility' => $facility->id])
+            route('centresidence.settle.callback', ['facility' => $facility->id, 'token' => b2cCallbackSecret()])
         );
 
         if (($result['success'] ?? false) && ! empty($result['reference'])) {

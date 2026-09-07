@@ -21,6 +21,12 @@ class TokenPurchaseCallbackController extends Controller
 {
     public function __invoke(Request $request, int $propertyModule, int $tenant, TokenPurchaseCollectionService $tokens)
     {
+        // Server-only token (embedded in the ResultURL at push) — a forged callback can't carry it.
+        if (! hash_equals(b2cCallbackSecret(), (string) $request->query('token'))) {
+            Log::warning('Centresidence token callback rejected: missing/invalid authenticity token', ['property_module_id' => $propertyModule, 'tenant_id' => $tenant, 'ip' => $request->ip()]);
+            return response()->json(['ResultCode' => 0, 'ResultDesc' => 'Accepted']);
+        }
+
         $body       = json_decode($request->getContent(), true) ?? [];
         $callback   = $body['Body']['stkCallback'] ?? [];
         $resultCode = $callback['ResultCode'] ?? -1;

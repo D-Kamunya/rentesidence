@@ -17,6 +17,12 @@ class InfraBillCallbackController extends Controller
 {
     public function __invoke(Request $request, int $owner, InfraBillPaymentService $bills)
     {
+        // Server-only token (embedded in the ResultURL at push) — a forged callback can't carry it.
+        if (! hash_equals(b2cCallbackSecret(), (string) $request->query('token'))) {
+            Log::warning('Centresidence infra-bill callback rejected: missing/invalid authenticity token', ['owner_id' => $owner, 'ip' => $request->ip()]);
+            return $this->ack();
+        }
+
         $body       = json_decode($request->getContent(), true) ?? [];
         $callback   = $body['Body']['stkCallback'] ?? [];
         $resultCode = $callback['ResultCode'] ?? -1;
