@@ -29,7 +29,13 @@ class AdvantaSmsService
         if (!count($numbers)) {
             return __('No number found');
         }
-    
+
+        // GSM-7 safety net: downgrade smart punctuation (em/en dash, curly quotes, ellipsis, nbsp)
+        // to plain ASCII BEFORE sending. A single non-GSM-7 char forces the whole message into
+        // UCS-2 encoding, which halves the per-segment limit (70 vs 160) and silently doubles the
+        // credit cost. Normalising here means no individual SMS string can ever regress that.
+        $message = self::normalizeGsm7((string) $message);
+
         // Credit gate is only active for owner-initiated sends.
         // null  → system/platform SMS (e.g. Centresidence → owner) — skip gate
         // admin → role check fails                                  — skip gate
@@ -112,7 +118,27 @@ class AdvantaSmsService
         if ($creditCheckEnabled && $blockedByCredits > 0) {
             SmsCreditsService::notifySendSummary($ownerUserId, $sentCount, $failedCount, $blockedByCredits);
         }
-    
+
         return 'success';
+    }
+
+    /**
+     * Map the common non-GSM-7 "smart" punctuation that sneaks in from copy-paste/typography to
+     * its plain-ASCII equivalent, so an SMS stays on the 160-char GSM-7 segment size instead of
+     * collapsing to UCS-2's 70. Punctuation-only — it never touches legitimate message content
+     * (e.g. a non-Latin locale still encodes as it must); it only removes needless cost.
+     */
+    public static function normalizeGsm7(string $message): string
+    {
+        return strtr($message, [
+            "\u{2014}" => '-',    // — em dash
+            "\u{2013}" => '-',    // – en dash
+            "\u{2018}" => "'",    // ‘ left single quote
+            "\u{2019}" => "'",    // ’ right single quote / apostrophe
+            "\u{201C}" => '"',    // “ left double quote
+            "\u{201D}" => '"',    // ” right double quote
+            "\u{2026}" => '...',  // … ellipsis
+            "\u{00A0}" => ' ',    // non-breaking space
+        ]);
     }
 }

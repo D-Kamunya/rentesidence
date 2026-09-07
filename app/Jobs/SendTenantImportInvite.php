@@ -65,7 +65,8 @@ class SendTenantImportInvite implements ShouldQueue
         if (in_array($this->channel, ['sms', 'both'], true) && ! empty($user->contact_number)) {
             try {
                 $pw  = $this->plainPassword ? ' ' . __('Pass') . ': ' . $this->plainPassword : '';
-                $msg = __(':owner now manages your rent on :app — view & pay invoices online. Login: :url', [
+                // GSM-7 only (no em-dash) — at bulk-import scale, UCS-2 would double every invite's cost.
+                $msg = __(':owner now manages your rent on :app. View & pay invoices online. Login: :url', [
                     'owner' => $ownerName, 'app' => $appName, 'url' => $loginUrl,
                 ]) . $pw;
                 SendSmsJob::dispatch([$user->contact_number], $msg, $ownerUserId);

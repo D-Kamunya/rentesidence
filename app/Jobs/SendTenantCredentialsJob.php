@@ -60,7 +60,9 @@ class SendTenantCredentialsJob implements ShouldQueue
         // SMS — short, with the login URL + password; credit-gated downstream.
         if (in_array($this->channel, ['sms', 'both'], true) && ! empty($user->contact_number)) {
             try {
-                $msg = __('Welcome to :app. Sign in at :url — Email: :email Pass: :pw. You\'ll set your own password on first login.', [
+                // GSM-7 only (no em-dash) so a long credential SMS stays at the 160-char segment
+                // size instead of collapsing to UCS-2's 70 — otherwise this doubles/triples in cost.
+                $msg = __('Welcome to :app. Sign in at :url. Email: :email Pass: :pw. You\'ll set your own password on first login.', [
                     'app'   => $appName,
                     'url'   => $loginUrl,
                     'email' => $user->email ?: $user->contact_number,

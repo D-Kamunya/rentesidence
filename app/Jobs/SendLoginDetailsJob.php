@@ -57,7 +57,8 @@ class SendLoginDetailsJob implements ShouldQueue
         // SMS — short, with login URL + password; ungated (no owner to bill).
         if (! empty($this->user->contact_number)) {
             try {
-                $msg = __('Welcome to :app. Sign in at :url — Email: :email Pass: :pw. You\'ll set your own password on first login.', [
+                // GSM-7 only (no em-dash) — keeps a long credential SMS at 160-char segments, not UCS-2's 70.
+                $msg = __('Welcome to :app. Sign in at :url. Email: :email Pass: :pw. You\'ll set your own password on first login.', [
                     'app'   => $appName,
                     'url'   => $loginUrl,
                     'email' => $this->user->email ?: $this->user->contact_number,
