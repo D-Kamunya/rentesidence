@@ -8,6 +8,7 @@ use App\Models\FileManager;
 use App\Models\Gateway;
 use App\Models\GatewayCurrency;
 use App\Models\MpesaAccount;
+use App\Models\Product;
 use App\Models\ProductOrder;
 use App\Models\User;
 use App\Services\CommissionService;
@@ -50,8 +51,12 @@ class ProductPaymentController extends Controller
                 throw new Exception('Payment currency not configured. Please contact support.');
             }
 
-            $cartAmount = $request->cartTotal;
-            $products   = $request->input('products');
+            $products = $request->input('products');
+
+            // SECURITY: never trust the client-supplied `cartTotal` as the charge amount.
+            // Recompute the total server-side from the real product prices, so a tampered
+            // cart total (e.g. cartTotal=1 for expensive goods) can't underpay an order.
+            $cartAmount = $this->computeServerCartTotal($products, (float) $request->cartTotal);
 
             // ── Place order ──────────────────────────────────────────
             $order = $this->placeOrder($cartAmount, $gateway, $gatewayCurrency);
@@ -184,6 +189,43 @@ class ProductPaymentController extends Controller
         }
 
         return handleProductPaymentConfirmation($order, $payerId, $gateway_slug, null);
+    }
+
+    /**
+     * Server-authoritative cart total = sum(real product price × quantity). The client
+     * `cartTotal` is display-only and must never be the charge amount. A material mismatch
+     * is logged as a possible tampering signal, but we always charge the server figure.
+     */
+    private function computeServerCartTotal($products, float $clientTotal): float
+    {
+        $total = 0.0;
+
+        foreach ((array) $products as $line) {
+            $product = Product::find($line['id'] ?? null);
+            $qty     = (int) ($line['quantity'] ?? 0);
+
+            if (! $product || $qty < 1) {
+                throw new Exception('One or more items in your cart are no longer available.');
+            }
+
+            $total += (float) $product->price * $qty;
+        }
+
+        $total = round($total, 2);
+
+        if ($total < 1) {
+            throw new Exception('Invalid cart total.');
+        }
+
+        if (abs($total - $clientTotal) > 0.01) {
+            \Illuminate\Support\Facades\Log::warning('Marketplace checkout cart-total mismatch (charging server figure)', [
+                'user_id' => auth()->id(),
+                'client_total' => $clientTotal,
+                'server_total' => $total,
+            ]);
+        }
+
+        return $total;
     }
 
     public function addProductOrderItems($order, $products): void
