@@ -6,14 +6,12 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
-use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Mail;
-use App\Mail\LifecycleMail;
+use App\Mail\Concerns\SendsCsMail;
 use App\Services\SmsMail\MailService;
 
 abstract class BaseMailJob implements ShouldQueue
 {
-    use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
+    use Dispatchable, InteractsWithQueue, Queueable, SerializesModels, SendsCsMail;
 
     public int $tries = 3;
     public int $backoff = 30; // seconds between retries
@@ -33,31 +31,5 @@ abstract class BaseMailJob implements ShouldQueue
         MailService::sendCustomizeMail($recipients, $subject, $body);
     }
 
-    /**
-     * CS lifecycle send: renders the reusable mail.lifecycle body from a structured data
-     * array (eyebrow/title/blocks/…) and sends it DIRECTLY as a LifecycleMail — not through
-     * sendCustomizeMail, which would wrap an already-complete CS shell inside another shell.
-     * Mirrors the send gates of send()/sendCustomizeMail exactly.
-     */
-    protected function sendCs(array $recipients, string $subject, array $data): void
-    {
-        if (getOption('send_email_status', 0) != ACTIVE) {
-            return;
-        }
-        if (config('mail.status') != 1 || ! config('mail.mailers.smtp.username')) {
-            return;
-        }
-
-        foreach ($recipients as $email) {
-            if (! filter_var($email, FILTER_VALIDATE_EMAIL)) {
-                continue;
-            }
-            try {
-                Mail::to($email)->send(new LifecycleMail($subject, $data));
-                Log::channel('sms-mail')->info('email : ' . $email . ', subject : ' . $subject . ', date : ' . date('d-m-Y'));
-            } catch (\Throwable $e) {
-                Log::channel('sms-mail')->info($e->getMessage());
-            }
-        }
-    }
+    // sendCs() is provided by the App\Mail\Concerns\SendsCsMail trait — the single CS chokepoint.
 }

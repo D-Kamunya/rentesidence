@@ -10,11 +10,11 @@ use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Mail;
+use App\Mail\Concerns\SendsCsMail;
 
 class SendBlogNotificationJob implements ShouldQueue
 {
-    use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
+    use Dispatchable, InteractsWithQueue, Queueable, SerializesModels, SendsCsMail;
 
     public function __construct(
         public BlogPost $post,
@@ -36,11 +36,38 @@ class SendBlogNotificationJob implements ShouldQueue
                 ['email' => $this->subscriber->email]
             );
             
-            Mail::send([], [], function ($message) use ($postUrl, $unsubscribeUrl) {
-                $message->to($this->subscriber->email)
-                        ->subject('New Article: ' . $this->post->title)
-                        ->html($this->buildEmailHtml($postUrl, $unsubscribeUrl));
-            });
+            $appName        = getOption('app_name') ?: config('app.name');
+            $subscriberName = e($this->subscriber->name ?: __('there'));
+            $postTitle      = e($this->post->title);
+            $authorName     = e($this->post->author->name ?? __('Admin'));
+            $readingTime    = e($this->post->reading_time_text ?? '');
+            $excerpt        = e($this->post->excerpt ?? '');
+
+            $blocks = [];
+            if ($this->post->featured_image) {
+                $imageUrl = asset('storage/' . $this->post->featured_image);
+                $blocks[] = ['type' => 'text', 'html' =>
+                    '<img src="' . e($imageUrl) . '" alt="' . $postTitle . '" style="width:100%;max-width:532px;height:auto;border-radius:10px;">'];
+            }
+            $blocks[] = ['type' => 'text', 'html' => __('Hello :name,', ['name' => "<strong>{$subscriberName}</strong>"])
+                . ' ' . __('A new article has been published on the :app blog.', ['app' => e($appName)])];
+            $meta = trim($authorName . ($readingTime ? ' · ' . $readingTime : ''));
+            $blocks[] = ['type' => 'text', 'html' => '<strong style="font-size:16px;color:#1F2A37;">' . $postTitle . '</strong>'
+                . ($meta ? "<br><span style='color:#8A97A8;font-size:12.5px;'>" . $meta . '</span>' : '')
+                . ($excerpt ? "<br><br><span style='color:#6b7280;'>" . $excerpt . '</span>' : '')];
+            $blocks[] = ['type' => 'button', 'url' => $postUrl, 'label' => __('Read full article')];
+
+            $this->sendCs(
+                [$this->subscriber->email],
+                __('New article: :title', ['title' => $this->post->title]),
+                [
+                    'eyebrow'  => __('New article'), 'eyebrowColor' => '#185FA5',
+                    'title'    => __('New article published'),
+                    'blocks'   => $blocks,
+                    'footnote' => __("You're receiving this because you subscribed to the :app blog.", ['app' => $appName])
+                        . ' <a href="' . e($unsubscribeUrl) . '" style="color:#8A97A8;">' . __('Unsubscribe') . '</a>',
+                ]
+            );
 
         } catch (\Exception $e) {
             Log::error('SendBlogNotificationJob failed for subscriber ' . $this->subscriber->email . ': ' . $e->getMessage(), [
@@ -48,66 +75,5 @@ class SendBlogNotificationJob implements ShouldQueue
                 'subscriber_id' => $this->subscriber->id,
             ]);
         }
-    }
-
-    protected function buildEmailHtml($postUrl, $unsubscribeUrl): string
-    {
-        $postTitle = e($this->post->title);
-        $postExcerpt = e($this->post->excerpt ?? '');
-        $authorName = e($this->post->author->name ?? 'Admin');
-        $readingTime = $this->post->reading_time_text;
-        $subscriberName = e($this->subscriber->name ?? 'Subscriber');
-        $appName = e(config('app.name'));
-        
-        $featuredImageHtml = '';
-        if ($this->post->featured_image) {
-            $imageUrl = asset('storage/' . $this->post->featured_image);
-            $featuredImageHtml = '<img src="' . $imageUrl . '" alt="' . $postTitle . '" style="width: 100%; max-width: 600px; height: auto; border-radius: 8px; margin-bottom: 20px;">';
-        }
-
-        return '
-        <!DOCTYPE html>
-        <html>
-        <head>
-            <meta charset="utf-8">
-            <style>
-                body { font-family: Arial, sans-serif; line-height: 1.6; color: #374151; }
-                .container { max-width: 600px; margin: 0 auto; padding: 20px; }
-                .header { background: #185FA5; color: #fff; padding: 30px; text-align: center; border-radius: 12px 12px 0 0; }
-                .content { background: #fff; padding: 30px; border: 0.5px solid #e5e7eb; }
-                .button { display: inline-block; background: #185FA5; color: #fff; text-decoration: none; padding: 12px 30px; border-radius: 7px; font-weight: 600; margin: 20px 0; }
-                .meta { color: #9ca3af; font-size: 13px; margin-bottom: 20px; }
-                .footer { background: #fafafa; padding: 20px 30px; text-align: center; border-radius: 0 0 12px 12px; border: 0.5px solid #e5e7eb; font-size: 12px; color: #9ca3af; }
-                .unsubscribe { color: #9ca3af; text-decoration: underline; }
-            </style>
-        </head>
-        <body>
-            <div class="container">
-                <div class="header">
-                    <h1 style="margin: 0; font-size: 24px;">📢 New Article Published</h1>
-                </div>
-                <div class="content">
-                    <p>Hello ' . $subscriberName . ',</p>
-                    <p>A new article has been published on the ' . $appName . ' blog:</p>
-                    
-                    ' . $featuredImageHtml . '
-                    
-                    <h2 style="color: #111827; font-size: 20px; margin-bottom: 12px;">' . $postTitle . '</h2>
-                    
-                    <div class="meta">
-                        By ' . $authorName . ' · ' . $readingTime . '
-                    </div>
-                    
-                    ' . ($postExcerpt ? '<p style="color: #6b7280;">' . $postExcerpt . '</p>' : '') . '
-                    
-                    <a href="' . $postUrl . '" class="button">Read Full Article →</a>
-                </div>
-                <div class="footer">
-                    <p>You\'re receiving this email because you subscribed to the ' . $appName . ' blog.</p>
-                    <p><a href="' . $unsubscribeUrl . '" class="unsubscribe">Unsubscribe from these emails</a></p>
-                </div>
-            </div>
-        </body>
-        </html>';
     }
 }

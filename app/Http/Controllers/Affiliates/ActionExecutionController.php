@@ -9,9 +9,12 @@ use App\Models\ActionTemplate;
 use App\Models\LeadActivity;
 use App\Services\SuggestionService;
 use App\Services\TemplateSubstitutionService;
+use App\Mail\Concerns\SendsCsMail;
 
 class ActionExecutionController extends Controller
 {
+    use SendsCsMail;
+
     public function __construct(
         protected TemplateSubstitutionService $substitution,
         protected SuggestionService $suggestions,
@@ -98,34 +101,37 @@ class ActionExecutionController extends Controller
         ];
         $subject = $subjects[$template->category] ?? 'Message from ' . (auth()->user()->first_name ?? 'Your Account Manager');
 
-        \Mail::raw($message, function ($mail) use ($lead, $subject, $template) {
-            $mail->to($lead->company->email)->subject($subject);
-
-            // Attach any PDF/image materials
-            foreach ($template->materials as $material) {
-                if ($material->file_path && in_array($material->type, ['pdf', 'png', 'jpg', 'jpeg'])) {
-                    $path = storage_path('app/public/' . $material->file_path);
-                    if (file_exists($path)) {
-                        // Add a descriptive line before attaching
-                        $extension = strtolower(pathinfo($material->file_path, PATHINFO_EXTENSION));
-                        $description = $this->materialDescriptions[$extension] 
-                            ?? $this->materialDescriptions['default'];
-
-                        // You can include this description in the email body if needed
-                        $mail->body .= "\n\n" . $description;
-
-                        // Attach the file itself
-                        $mail->attach($path, ['as' => $material->file_name ?? basename($path)]);
-                    }
-                } elseif ($material->type === 'link' && $material->content) {
-                    $description = $this->materialDescriptions['link'];
-                    $mail->body .= "\n\n" . $description . "\n" . $material->content;
+        // Build the body text + collect attachments, THEN send on the CS layout.
+        $bodyText    = $message;
+        $attachments = [];
+        foreach ($template->materials as $material) {
+            if ($material->file_path && in_array($material->type, ['pdf', 'png', 'jpg', 'jpeg'])) {
+                $path = storage_path('app/public/' . $material->file_path);
+                if (file_exists($path)) {
+                    $extension   = strtolower(pathinfo($material->file_path, PATHINFO_EXTENSION));
+                    $description  = $this->materialDescriptions[$extension] ?? $this->materialDescriptions['default'];
+                    $bodyText    .= "\n\n" . $description;
+                    $attachments[] = ['path' => $path, 'as' => $material->file_name ?? basename($path)];
                 }
-
-                $material->increment('usage_count');
+            } elseif ($material->type === 'link' && $material->content) {
+                $bodyText .= "\n\n" . $this->materialDescriptions['link'] . "\n" . $material->content;
             }
 
-        });
+            $material->increment('usage_count');
+        }
+
+        $this->sendCs(
+            [$recipientEmail],
+            $subject,
+            [
+                'title'  => $subject,
+                'blocks' => [
+                    // Escaped + nl2br: the substituted template is free text, rendered inside the CS shell.
+                    ['type' => 'text', 'html' => nl2br(e($bodyText))],
+                ],
+            ],
+            $attachments
+        );
 
         $this->suggestions->completeForLead($lead->id, 'email', $this->suggestionId());
         $this->logActivity($lead->id, 'email_sent', 'Sent email using template: ' . $template->name);

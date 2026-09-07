@@ -12,47 +12,34 @@ class SendLeadSuggestionsMail extends BaseMailJob
 
     public function handle(): void
     {
-        $urgentText = $this->highPriorityCount > 0
-            ? "<div style='background:#FCEBEB;border:1px solid #F7C1C1;border-radius:8px;padding:12px;margin:16px 0;'>
-                <strong style='color:#A32D2D;'>🔥 {$this->highPriorityCount} Urgent Action" . ($this->highPriorityCount > 1 ? 's' : '') . " Needed!</strong>
-               </div>"
-            : '';
+        $firstName = e($this->affiliateFirstName); // escaped — lands in a free-text block
+        $count     = $this->suggestionCount;
+        $plural    = $count > 1 ? 's' : '';
 
-        $plural = $this->suggestionCount > 1 ? 's' : '';
-        $firstName = e($this->affiliateFirstName); // escaped — lands in a raw-HTML body
+        $blocks = [
+            ['type' => 'text', 'html' => __('Hi :name,', ['name' => "<strong>{$firstName}</strong>"])
+                . ' ' . __('You have :count new suggested action(s) waiting for your leads.', ['count' => "<strong>{$count}</strong>"])],
+        ];
 
-        $this->send(
+        if ($this->highPriorityCount > 0) {
+            $blocks[] = ['type' => 'note', 'text' => '<strong>'
+                . trans_choice(':count urgent action needs attention|:count urgent actions need attention', $this->highPriorityCount, ['count' => $this->highPriorityCount])
+                . '</strong>'];
+        }
+
+        $blocks[] = ['type' => 'text', 'html' => __('These suggestions are based on your leads\' status, temperature, and recent activity. Acting now helps you stay top of mind, move leads through the pipeline faster, and earn more commissions.')];
+        $blocks[] = ['type' => 'button', 'url' => route('affiliate.leads'), 'label' => __('View suggested actions')];
+        $blocks[] = ['type' => 'note', 'text' => '<strong>' . __('Pro tip') . '</strong> — '
+            . __('Leads go cold fast — responding to high-priority suggestions within 24 hours keeps you ahead.')];
+
+        $this->sendCs(
             [$this->affiliateEmail],
-            '🎯 ' . $this->suggestionCount . ' New Action' . $plural . ' for Your Leads',
-            "
-                <div style='font-family:Arial,sans-serif;max-width:600px;margin:0 auto;'>
-                    <h2 style='color:#185FA5;'>Hi {$firstName}! 👋</h2>
-
-                    <p>You have <strong>{$this->suggestionCount} new suggested action{$plural}</strong> waiting for your leads.</p>
-
-                    {$urgentText}
-
-                    <p>These intelligent suggestions are based on your leads' status, temperature, and recent activity. Taking action now will help you:</p>
-
-                    <ul style='line-height:1.8;'>
-                        <li>Stay top of mind with your prospects</li>
-                        <li>Move leads through the pipeline faster</li>
-                        <li>Maximize your conversion rate</li>
-                        <li>Earn more commissions! 💰</li>
-                    </ul>
-
-                    <div style='text-align:center;margin:30px 0;'>
-                        <a href='" . route('affiliate.leads') . "'
-                           style='background:#185FA5;color:#fff;padding:14px 32px;text-decoration:none;border-radius:8px;display:inline-block;font-weight:500;'>
-                           View Suggested Actions
-                        </a>
-                    </div>
-
-                    <p style='color:#6b7280;font-size:13px;margin-top:30px;'>
-                        💡 <strong>Pro Tip:</strong> Leads go cold fast — responding to high-priority suggestions within 24 hours keeps you ahead.
-                    </p>
-                </div>
-            "
+            $count . ' ' . __('new action' . ($plural ? 's' : '') . ' for your leads'),
+            [
+                'eyebrow' => __('Lead suggestions'), 'eyebrowColor' => '#185FA5',
+                'title'   => __(':count new suggested action(s) for your leads', ['count' => $count]),
+                'blocks'  => $blocks,
+            ]
         );
     }
 }

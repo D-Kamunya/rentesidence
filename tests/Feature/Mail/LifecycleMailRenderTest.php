@@ -82,6 +82,27 @@ class LifecycleMailRenderTest extends TestCase
     }
 
     /** @test */
+    public function footnote_html_renders_raw_and_defaults_when_unset(): void
+    {
+        // A custom footnote may carry trusted HTML (e.g. the blog unsubscribe link) — it must
+        // NOT be escaped (the inline @section(name,value) form escapes; the block form does not).
+        $withFootnote = $this->render([
+            'title'    => 'Hi',
+            'blocks'   => [['type' => 'text', 'html' => 'body']],
+            'footnote' => 'Subscribed. <a href="https://example.com/unsub">Unsubscribe</a>',
+        ]);
+        $this->assertStringContainsString('<a href="https://example.com/unsub">Unsubscribe</a>', $withFootnote);
+        $this->assertStringNotContainsString('&lt;a href', $withFootnote);
+
+        // With no footnote, the layout's default footer line still shows.
+        $withoutFootnote = $this->render([
+            'title'  => 'Hi',
+            'blocks' => [['type' => 'text', 'html' => 'body']],
+        ]);
+        $this->assertStringContainsString('you have a', $withoutFootnote);
+    }
+
+    /** @test */
     public function the_mailable_sets_its_subject(): void
     {
         $mail = new LifecycleMail('My subject line', ['title' => 'Hi', 'blocks' => []]);

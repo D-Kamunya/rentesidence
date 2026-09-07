@@ -51,6 +51,8 @@
     @endforeach
 @endsection
 
+{{-- Footnote may contain trusted HTML (e.g. an unsubscribe link). The inline
+     @section(name,value) form ESCAPES its value, so use the block form + {!! !!}. --}}
 @if (!empty($m['footnote']))
-    @section('footnote', $m['footnote'])
+    @section('footnote'){!! $m['footnote'] !!}@endsection
 @endif
