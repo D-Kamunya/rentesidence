@@ -28,7 +28,10 @@
                                 </button>
                             </td>
                             <td>{{ str_replace('_', ' ', $b->settlement_method ?? '—') }}</td>
-                            <td style="font-family:monospace;font-size:12px;">{{ $b->reference ?? '—' }}</td>
+                            {{-- Show the batch number, never the raw B2B ConversationID (reference):
+                                 that value authenticates the payout callback, so exposing it would
+                                 let a partner forge a failure and trigger a re-payout. --}}
+                            <td style="font-family:monospace;font-size:12px;">{{ $b->batch_number ?? '—' }}</td>
                             <td>
                                 @php $sb = ['prepared' => 'is-grey', 'sent' => 'is-pending', 'confirmed' => 'is-paid', 'failed' => 'is-danger'][$b->status] ?? 'is-grey'; @endphp
                                 <span class="cs-badge {{ $sb }}">{{ ucfirst($b->status) }}</span>

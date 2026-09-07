@@ -34,9 +34,12 @@ class PartnerRemittanceConfirmationTest extends CentresidenceDatabaseTestCase
         ]);
     }
 
-    private function fireCallback(int $batchId, array $result)
+    private function fireCallback(int $batchId, array $result, ?string $token = null)
     {
-        $req = Request::create("/api/centresidence/remittance/{$batchId}/callback", 'POST', [], [], [], [], json_encode(['Result' => $result]));
+        // Genuine Safaricom callbacks carry the server-only token from the ResultURL.
+        $token = $token ?? b2cCallbackSecret();
+        $url   = "/api/centresidence/remittance/{$batchId}/callback" . ($token !== '' ? "?token={$token}" : '');
+        $req   = Request::create($url, 'POST', [], [], [], [], json_encode(['Result' => $result]));
 
         return app(PartnerRemittanceCallbackController::class)
             ->__invoke($req, $batchId, app(PartnerRemittanceService::class));
@@ -89,6 +92,29 @@ class PartnerRemittanceConfirmationTest extends CentresidenceDatabaseTestCase
         ]);
 
         $this->assertSame(PartnerRemittanceBatch::STATUS_SENT, $batch->fresh()->status);
+    }
+
+    /**
+     * SECURITY REGRESSION (pentest finding #3, 2026-09-06): the batch's ConversationID
+     * is shown to the finance partner, so it can't be the sole authenticator. A callback
+     * WITHOUT the server-only token (or with a wrong one) must be rejected even when it
+     * carries the correct ConversationID — otherwise a partner could forge a FAILURE and
+     * get the batch re-paid (double-remit).
+     */
+    public function test_callback_without_valid_token_is_rejected_even_with_correct_conversation_id(): void
+    {
+        $batch = $this->sentBatch();
+
+        // Correct ConversationID + result, but no token / wrong token → must not fail the batch.
+        $this->fireCallback($batch->id, ['ResultCode' => 2001, 'ConversationID' => 'AG_CONVERSATION_ID', 'ResultDesc' => 'forged'], '');
+        $this->assertSame(PartnerRemittanceBatch::STATUS_SENT, $batch->fresh()->status);
+
+        $this->fireCallback($batch->id, ['ResultCode' => 2001, 'ConversationID' => 'AG_CONVERSATION_ID', 'ResultDesc' => 'forged'], 'wrong-token');
+        $this->assertSame(PartnerRemittanceBatch::STATUS_SENT, $batch->fresh()->status);
+
+        // With the correct token it reconciles (proves the gate isn't just blanket-blocking).
+        $this->fireCallback($batch->id, ['ResultCode' => 2001, 'ConversationID' => 'AG_CONVERSATION_ID', 'ResultDesc' => 'genuine failure']);
+        $this->assertSame(PartnerRemittanceBatch::STATUS_FAILED, $batch->fresh()->status);
     }
 
     public function test_callback_is_idempotent_no_double_confirm(): void

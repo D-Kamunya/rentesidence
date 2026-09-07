@@ -57,7 +57,12 @@ class PartnerPayoutService
             // Per-batch result URL so Safaricom's async B2B outcome is reconciled
             // back to THIS batch (SENT → CONFIRMED/FAILED). Must be dedicated — the
             // shared config result URL routes to the owner-withdrawal B2C handler.
-            $resultUrl = route('centresidence.remittance.callback', ['batch' => $batch->id]);
+            // The token authenticates the callback (server-only) so a partner can't
+            // forge a failure and trigger a re-payout — see the callback controller.
+            $resultUrl = route('centresidence.remittance.callback', [
+                'batch' => $batch->id,
+                'token' => b2cCallbackSecret(),
+            ]);
 
             return $this->payViaMpesa($account, $amount, $resultUrl);
         } catch (\Throwable $e) {

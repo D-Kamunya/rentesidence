@@ -19,6 +19,17 @@ class PartnerRemittanceCallbackController extends Controller
 {
     public function __invoke(Request $request, int $batch, PartnerRemittanceService $remittances)
     {
+        // Authenticity gate: a genuine Safaricom B2B result carries the server-only token
+        // embedded in the ResultURL at send time (never exposed to the partner). Without
+        // it, a partner who can see their batch's ConversationID could forge a FAILURE to
+        // flip a SENT batch back to FAILED and get it re-paid (double-remit).
+        if (! hash_equals(b2cCallbackSecret(), (string) $request->query('token'))) {
+            Log::warning('Centresidence remittance callback rejected: missing/invalid authenticity token', [
+                'batch_id' => $batch, 'ip' => $request->ip(),
+            ]);
+            return $this->ack();
+        }
+
         $body   = json_decode($request->getContent(), true) ?? [];
         $result = $body['Result'] ?? [];
         $code   = $result['ResultCode'] ?? -1;

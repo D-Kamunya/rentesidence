@@ -23,6 +23,17 @@ abstract class CentresidenceDatabaseTestCase extends TestCase
         parent::setUp();
 
         Sandbox::boot('cs_sqlite');
+
+        // Options table — b2cCallbackSecret() (M-Pesa callback authenticity) reads it.
+        if (! \Illuminate\Support\Facades\Schema::hasTable('settings')) {
+            \Illuminate\Support\Facades\Schema::create('settings', function ($t) {
+                $t->id();
+                $t->string('option_key')->unique();
+                $t->text('option_value')->nullable();
+                $t->timestamps();
+            });
+        }
+
         $this->seedLegacyRows();
     }
 
