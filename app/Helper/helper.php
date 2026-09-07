@@ -1141,11 +1141,10 @@ if (!function_exists('handleProductPaymentConfirmation')) {
                     );
                 }
 
-                // Only send SMS if owner number is available
-                if ($ownerNumber) {
-                    $message = __('New order :id from :app. Please dispatch.', ['id' => $order->order_id, 'app' => getOption('app_name') ?: 'Centresidence']);
-                    SendSmsJob::dispatch([$ownerNumber], $message, $order->user_id);
-                }
+                // Owner/maintainer dispatch alert is handled once by SendSellerDispatchAlertJob
+                // (dispatched from CommissionService::holdOnPayment above) — every payment path +
+                // email + in-app + the caretaker, SMS carved from the owner's credit pool. No inline
+                // owner SMS here (this confirmation can run more than once → would re-send).
 
                 if ($gateway_slug === 'mpesa') {
                     return redirect()->route('tenant.product.order.receipt', $order->id)

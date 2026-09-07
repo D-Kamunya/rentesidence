@@ -307,8 +307,10 @@ class MpesaController extends Controller
                             );
                         }
 
-                        $message = __('New product order :id from :app. Please dispatch.', ['id' => $order->order_id, 'app' => getOption('app_name') ?: 'Centresidence']);
-                        SendSmsJob::dispatch([$ownerNumber], $message, $tenantUserId);
+                        // Owner/maintainer dispatch alert is handled once by SendSellerDispatchAlertJob
+                        // (dispatched from CommissionService::holdOnPayment above) — covering every
+                        // payment path + email + in-app + the caretaker, with the SMS carved from the
+                        // owner's credit pool. No inline owner SMS here (would double-send on STK).
                     }
                 } elseif ($resultCode == 1032) {
                     DB::beginTransaction();

@@ -329,7 +329,9 @@ class DepositSettlementService
 
         if ($tenantUser->contact_number) {
             try {
-                $msg = __(':app: your landlord recorded your deposit settlement — refund :amt. Sign in to confirm receipt or raise a concern.', [
+                // Hyphen (not an em-dash) keeps this in GSM-7: a "—" forces UCS-2 encoding,
+                // which halves the per-segment limit to 70 chars and doubles the credit cost.
+                $msg = __(':app: your landlord recorded your deposit settlement - refund :amt. Sign in to confirm receipt or raise a concern.', [
                     'app' => $app, 'amt' => $refund,
                 ]);
                 SendSmsJob::dispatch([$tenantUser->contact_number], $msg, $settlement->owner_user_id);
