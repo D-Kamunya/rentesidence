@@ -444,6 +444,27 @@ class PropertyService
                 }
                 $property = new Property();
             }
+
+            // ── Server-side UNIT-LIMIT enforcement (mirrors the client's editableUnits) ──
+            // The add/edit form disables over-limit input client-side, but nothing enforced
+            // it here — a direct POST (or re-enabling the field) could exceed the plan cap.
+            // Enforce only when a real cap exists (total>0); a no-plan/unseeded owner is not
+            // blocked, so this can't misfire before the plan catalog is seeded.
+            $unitLimit = (new \App\Services\SubscriptionService())->getUnitLimit();
+            $planTotal = (int) ($unitLimit['total'] ?? 0);
+            if ($planTotal > 0) {
+                $requestedUnits = (int) ($request->property_type == PROPERTY_TYPE_OWN
+                    ? $request->own_number_of_unit
+                    : $request->lease_number_of_unit);
+                $remaining = (int) ($unitLimit['remaining'] ?? 0);
+                // When editing, this property's already-counted units are re-addable.
+                $currentPropertyUnits = $request->property_id ? (int) ($property->number_of_unit ?? 0) : 0;
+                $editableUnits = $remaining + $currentPropertyUnits;
+                if ($requestedUnits > $editableUnits) {
+                    throw new Exception(__('This exceeds your plan’s unit limit. You can add up to :n more unit(s) on your current plan — upgrade to add more.', ['n' => max(0, $editableUnits)]));
+                }
+            }
+
             $property->property_type = $request->property_type;
             $property->owner_user_id = auth()->id();
             $property->name = ($request->property_type == PROPERTY_TYPE_OWN) ? $request->own_property_name : $request->lease_property_name;
