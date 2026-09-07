@@ -61,14 +61,13 @@ class SendOrderStatusNotificationJob implements ShouldQueue
                 );
             }
 
-            // ── SMS notification ─────────────────────────────────────────
+            // ── SMS notification (link-free for cost) ────────────────────
+            // The CS email + the in-app notification above already carry the deep-link; appending
+            // a full URL here would push the message to multiple segments and burn extra credits.
             if (!empty($recipient->contact_number)) {
-                $smsMessage = $this->emailData->message .
-                    ' ' . __('View your orders: ') . $this->notificationData->url;
-
                 SendSmsJob::dispatch(
                     [$recipient->contact_number],
-                    $smsMessage,
+                    $this->emailData->message,
                     $this->order->user_id
                 );
             }
