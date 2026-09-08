@@ -33,10 +33,20 @@ use App\Http\Controllers\Owner\SmsCreditsController;
 use App\Http\Controllers\Owner\CreditTopUpController;
 use App\Http\Controllers\Owner\TenantApplicationController;
 use App\Http\Controllers\Owner\OwnerKnowledgeBaseController;
+use App\Http\Controllers\Owner\TermsAcceptanceController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/account/suspended', fn() => view('owner.suspended'))->name('owner.suspended');
-Route::group(['prefix' => 'owner', 'as' => 'owner.', 'middleware' => ['auth', 'owner', 'owner.active', 'infra.standing']], function () {
+
+// Terms acceptance gate — reachable by a logged-in owner WITHOUT the terms.accepted middleware
+// (else redirect loop). Deliberately not behind owner.active/infra.standing so acceptance is
+// always possible; the accept-gate itself is enforced on the main owner group below.
+Route::group(['prefix' => 'owner', 'as' => 'owner.', 'middleware' => ['auth', 'owner']], function () {
+    Route::get('accept-terms', [TermsAcceptanceController::class, 'show'])->name('terms.show');
+    Route::post('accept-terms', [TermsAcceptanceController::class, 'accept'])->name('terms.accept');
+});
+
+Route::group(['prefix' => 'owner', 'as' => 'owner.', 'middleware' => ['auth', 'owner', 'owner.active', 'infra.standing', 'terms.accepted']], function () {
     Route::get('/', [DashboardController::class, 'dashboard'])->name('dashboard');
     Route::get('top-search', [DashboardController::class, 'topSearch'])->name('top.search');
     Route::get('notification', [DashboardController::class, 'notification'])->name('notification');

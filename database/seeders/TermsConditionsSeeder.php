@@ -31,13 +31,16 @@ class TermsConditionsSeeder extends Seeder
         $app   = getOption('app_name') ?: 'Centresidence';
         $email = getOption('app_email') ?: 'info@centresidence.com';
 
-        Setting::updateOrCreate(
-            ['option_key' => 'terms_conditions'],
-            ['option_value' => $this->draft($app, $email)]
-        );
+        $body = $this->draft($app, $email);
+        Setting::updateOrCreate(['option_key' => 'terms_conditions'], ['option_value' => $body]);
+        config(['settings.terms_conditions' => $body]);
 
-        // keep config in sync for the rest of this request
-        config(['settings.terms_conditions' => $this->draft($app, $email)]);
+        // The current T&C version drives the owner accept-gate (EnsureTermsAccepted). Only-if-absent
+        // so an admin who has bumped it (forcing re-acceptance of a revised T&C) is never reset.
+        if (! Setting::where('option_key', 'terms_version')->exists()) {
+            Setting::updateOrCreate(['option_key' => 'terms_version'], ['option_value' => '1.0']);
+            config(['settings.terms_version' => '1.0']);
+        }
     }
 
     /** The default T&C body as newline-free HTML (frontend nl2br-s the stored value). */

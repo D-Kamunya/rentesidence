@@ -78,6 +78,7 @@ class Kernel extends HttpKernel
         'verified' => \Illuminate\Auth\Middleware\EnsureEmailIsVerified::class,
         'owner.active' => \App\Http\Middleware\CheckOwnerActive::class,
         'infra.standing' => \App\Http\Middleware\EnforceInfraStanding::class,
+        'terms.accepted' => \App\Http\Middleware\EnsureTermsAccepted::class,
         'admin' => Admin::class,
         'isDemo' => IsDemo::class,
         'owner' => Owner::class,
