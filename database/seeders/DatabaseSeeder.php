@@ -28,6 +28,7 @@ class DatabaseSeeder extends Seeder
             // configured environment to live without manual setup.
             BrandingSeeder::class,
             SystemDefaultsSeeder::class,
+            TermsConditionsSeeder::class,
             CentresidenceCatalogSeeder::class,
             KnowledgeBaseSeeder::class,
             OwnerKnowledgeBaseSeeder::class,
