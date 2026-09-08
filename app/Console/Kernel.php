@@ -36,6 +36,10 @@ class Kernel extends ConsoleKernel
 
         // Affiliate commission digest — 1st of each month, for the previous month.
         $schedule->command('affiliate:commission-digest')->monthlyOn(1, '08:00')->withoutOverlapping();
+        // Re-engage owners stuck out of SMS credits with a paused backlog. Weekly is the cadence;
+        // a per-owner Cache throttle inside the command backs it up. (Skips topped-up owners.)
+        $schedule->command('sms:paused-digest')->weeklyOn(1, '08:30')->withoutOverlapping()
+        ->appendOutputTo(storage_path('logs/sms_paused_digest_scheduler.log'));
         $schedule->command('leads:generate-suggestions')->everyFourHours()
         ->appendOutputTo(storage_path('logs/generate_suggestions_scheduler.log'));
         $schedule->command('leads:generate-suggestions --notify')->dailyAt('09:00')

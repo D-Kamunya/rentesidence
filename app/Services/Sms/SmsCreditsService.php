@@ -145,12 +145,62 @@ class SmsCreditsService
      */
     public static function getRetryableFailed(int $ownerUserId, int $days = 30): \Illuminate\Support\Collection
     {
-        return SmsHistory::where('owner_user_id', $ownerUserId)
-            ->where('status', SMS_STATUS_FAILED)
-            ->where('error', 'Insufficient SMS credits')
-            ->where('created_at', '>=', now()->subDays($days))
+        return self::blockedQuery($days)->where('owner_user_id', $ownerUserId)
             ->orderByDesc('created_at')
             ->get();
+    }
+
+    /**
+     * Owners with a paused SMS backlog — at least one message blocked by insufficient credits in
+     * the last N days — as [owner_user_id => blocked_count]. Feeds the scheduled re-engagement
+     * digest (SmsPausedDigest): the caller still filters to those STILL out of credit + throttles.
+     */
+    public static function ownersWithPausedBacklog(int $days): \Illuminate\Support\Collection
+    {
+        return self::blockedQuery($days)
+            ->selectRaw('owner_user_id, COUNT(*) as blocked_count')
+            ->groupBy('owner_user_id')
+            ->pluck('blocked_count', 'owner_user_id');
+    }
+
+    /** Base query: SMS blocked specifically by insufficient credits within the window. */
+    private static function blockedQuery(int $days): \Illuminate\Database\Eloquent\Builder
+    {
+        return SmsHistory::query()
+            ->where('status', SMS_STATUS_FAILED)
+            ->where('error', 'Insufficient SMS credits')
+            ->where('created_at', '>=', now()->subDays(max(1, $days)));
+    }
+
+    /**
+     * Scheduled re-engagement digest for an owner sitting out of SMS credits with a backlog of
+     * messages that couldn't be sent over the last N days. Distinct from the one-time zero-credit
+     * notice (fires once at the crossing) and the per-batch summary (fires only when a batch runs):
+     * this re-surfaces the growing backlog so a days-stuck owner tops up to resume. Email + in-app
+     * only (the owner has no SMS credit to notify by SMS anyway, and it's a platform→owner nudge).
+     */
+    public static function notifyPausedBacklog(int $ownerUserId, int $count, int $days): void
+    {
+        try {
+            $owner = self::getOwner($ownerUserId);
+            if (! $owner || ! $owner->user) {
+                return;
+            }
+
+            $title   = __('SMS paused — top up to resume');
+            $body    = __(':count tenant message(s) could not be sent in the last :days days because your SMS credits ran out. Top up to resume automatic notifications.', ['count' => $count, 'days' => $days]);
+            $url     = route('owner.sms.credits.index');
+            $subject = __('Your tenant SMS notifications are paused');
+            $message = __('Over the last :days days, :count message(s) to your tenants could not be sent because your SMS credit balance is 0. Top up your SMS credits to resume automatic rent reminders and notifications.', ['days' => $days, 'count' => $count]);
+
+            SendSmsCreditsEmailJob::dispatch(
+                $owner->user,
+                (object) ['subject' => $subject, 'message' => $message],
+                (object) ['title'   => $title,   'body'    => $body, 'url' => $url],
+            );
+        } catch (\Exception $e) {
+            Log::error('SmsCreditsService: paused-backlog digest failed – ' . $e->getMessage());
+        }
     }
 
     /**

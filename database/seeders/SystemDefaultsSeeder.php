@@ -53,6 +53,8 @@ class SystemDefaultsSeeder extends Seeder
             'sms_credit_price'          => 1.00, // price per SMS credit
             'sms_low_credit_threshold'  => 50,   // when to fire the low-credit nudge
             'sms_reminder_cooldown_hours' => 24, // min gap between the same SMS reminder
+            'sms_paused_digest_days'      => 7,  // look-back window for the paused-backlog re-engagement digest
+            'sms_paused_digest_throttle_days' => 7, // min gap between paused-digest nudges per owner
 
             // ── Subscription / plan notices ──
             'plan_expiry_notice_days' => 3, // days before expiry to warn the owner
