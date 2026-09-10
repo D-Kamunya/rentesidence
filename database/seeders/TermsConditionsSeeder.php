@@ -114,6 +114,7 @@ class TermsConditionsSeeder extends Seeder
         $blocks[] = $li([
             'Where prepaid utility metering (e.g. water or gas) is enabled, Tenants purchase usage tokens in advance at the applicable tariff.',
             'Tariffs and any embedded margin are disclosed in-app. Prepaid balances are for the metered utility only.',
+            '<strong>You set your own retail tariff</strong> for your metered utilities, and you are solely responsible for ensuring your rates comply with all applicable regulations — including any county water tariff, EPRA-regulated price, and any resale or cost-recovery limits. ' . e($app) . ' provides optional advisory guidance only and does not set, cap, or warrant your tariff; any liability for over-charging or unlawful resale rests entirely with you.',
             'Utility supply must not be withheld or disconnected as a means of enforcing unrelated obligations, and all metering must comply with applicable law and any utility-provider requirements.',
         ]);
 
