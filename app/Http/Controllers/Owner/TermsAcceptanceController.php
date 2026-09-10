@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Owner;
 
 use App\Http\Controllers\Controller;
+use App\Http\Middleware\EnsureTermsAccepted;
 use Illuminate\Http\Request;
 
 /**
@@ -28,10 +29,13 @@ class TermsAcceptanceController extends Controller
             'accept.accepted' => __('Please tick the box to accept the Terms & Conditions.'),
         ]);
 
-        $request->user()->forceFill([
-            'terms_accepted_at'      => now(),
-            'terms_accepted_version' => (string) getOption('terms_version', '1.0'),
-        ])->save();
+        // Record acceptance — but only if the columns are migrated (graceful pre-migration no-op).
+        if (EnsureTermsAccepted::columnsReady()) {
+            $request->user()->forceFill([
+                'terms_accepted_at'      => now(),
+                'terms_accepted_version' => (string) getOption('terms_version', '1.0'),
+            ])->save();
+        }
 
         return redirect()->route('owner.dashboard')
             ->with('success', __('Thank you — your acceptance of the Terms & Conditions has been recorded.'));

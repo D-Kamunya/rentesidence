@@ -5,6 +5,7 @@ namespace Tests\Feature\Legal;
 use App\Http\Middleware\EnsureTermsAccepted;
 use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Schema;
 use Tests\TestCase;
 
 /**
@@ -14,6 +15,20 @@ use Tests\TestCase;
  */
 class TermsAcceptanceGateTest extends TestCase
 {
+    protected function setUp(): void
+    {
+        parent::setUp();
+        // The gate self-activates only once the acceptance columns exist (graceful deploy-lag guard).
+        if (! Schema::hasTable('users')) {
+            Schema::create('users', function ($t) {
+                $t->id();
+                $t->string('terms_accepted_version')->nullable();
+            });
+        } elseif (! Schema::hasColumn('users', 'terms_accepted_version')) {
+            Schema::table('users', fn ($t) => $t->string('terms_accepted_version')->nullable());
+        }
+    }
+
     private function pass(User $user): bool
     {
         config(['settings.terms_version' => '1.0']);
