@@ -9,6 +9,7 @@ use App\Centresidence\Models\PropertyModule;
 use App\Centresidence\Models\TokenPurchase;
 use App\Centresidence\Models\UtilityConsumption;
 use App\Centresidence\Models\UtilityWallet;
+use App\Centresidence\Services\UtilityTariffService;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Schema;
@@ -47,6 +48,7 @@ class DeviceController extends Controller
             'token_revenue'   => 0.0,
         ];
         $onlineSince = Carbon::now()->subMinutes(self::ONLINE_WINDOW_MINUTES);
+        $tariffSvc   = new UtilityTariffService();
 
         if ($this->migrated()) {
             $modules = PropertyModule::query()
@@ -103,6 +105,19 @@ class DeviceController extends Controller
                 $module->view_revenue_net     = (float) ($r->net ?? 0);
                 $module->view_purchase_count  = (int) ($r->purchases ?? 0);
                 $module->view_devices_online  = $online;
+
+                // Owner-set tariff view data (metered modules only) — current tariff + the advisory.
+                if (optional($module->module)->is_metered && $module->tokenConfig) {
+                    $units = (string) ($module->tokenConfig->units_per_kes ?: '0');
+                    $module->view_units_per_kes = (float) $module->tokenConfig->units_per_kes;
+                    $module->view_price_per_unit = $tariffSvc->pricePerUnit($units);
+                    $module->view_commission = (float) ($module->tokenConfig->centresidence_commission_per_token_unit ?? 0);
+                    $module->view_advisory = $tariffSvc->advisory(
+                        $module->view_price_per_unit,
+                        $tariffSvc->utilityClass(optional($module->module)->key),
+                        optional($module->property)->city
+                    );
+                }
 
                 if ($module->status === PropertyModule::STATUS_ACTIVE) {
                     $stats['modules_active']++;

@@ -94,6 +94,8 @@ Route::group(['prefix' => 'owner', 'as' => 'owner.', 'middleware' => ['auth', 'o
     // Centresidence — installed devices & token economics (read-only infra visibility).
     Route::prefix('devices')->name('devices.')->group(function () {
         Route::get('/', [\App\Http\Controllers\Owner\DeviceController::class, 'index'])->name('index');
+        // Owner sets their own retail utility tariff (system-integrity floor enforced; ceiling advisory).
+        Route::post('tariff', [\App\Http\Controllers\Owner\UtilityTariffController::class, 'update'])->name('tariff.update');
         Route::get('{device}', [\App\Http\Controllers\Owner\DeviceController::class, 'show'])->name('show');
     });
 

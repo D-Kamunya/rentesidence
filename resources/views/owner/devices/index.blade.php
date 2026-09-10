@@ -112,6 +112,31 @@
                                         <span class="dv-econ__val">KES {{ number_format($module->view_revenue_net, 0) }} <small>{{ trans_choice(':n top-up|:n top-ups', $module->view_purchase_count, ['n' => $module->view_purchase_count]) }}</small></span>
                                     </div>
                                 </div>
+
+                                {{-- Owner-set retail tariff. You set your own rate; the floor is enforced (it must
+                                     cover our commission); the ceiling is advisory only — you are solely liable for
+                                     regulatory compliance. --}}
+                                @php $adv = $module->view_advisory ?? null; @endphp
+                                <details class="dv-tariff" style="margin-top:12px;border-top:1px solid rgba(120,140,170,.16);padding-top:10px;">
+                                    <summary style="cursor:pointer;font-size:13px;color:#48566A;">
+                                        {{ __('Your tariff') }}: <strong>KES {{ number_format($module->view_price_per_unit ?? 0, 2) }}</strong> / {{ $label }}
+                                        <span style="color:#185FA5;font-weight:600;">· {{ __('Edit') }}</span>
+                                    </summary>
+                                    <form method="POST" action="{{ route('owner.devices.tariff.update') }}" style="margin-top:12px;display:flex;flex-direction:column;gap:8px;max-width:360px;">
+                                        @csrf
+                                        <input type="hidden" name="property_module_id" value="{{ $module->id }}">
+                                        <label class="cs-label" style="font-size:12px;">{{ __('Units per KES 1') }} — {{ $label }} {{ __('a tenant gets per KES 1') }}</label>
+                                        <input type="number" step="0.0001" min="0.0001" name="units_per_kes" required
+                                               value="{{ rtrim(rtrim(number_format((float) ($module->view_units_per_kes ?? 0), 4, '.', ''), '0'), '.') }}"
+                                               class="cs-input"
+                                               oninput="var p=this.form.querySelector('[data-preview]');p.textContent=this.value>0?('≈ KES '+(1/this.value).toFixed(2)+' / {{ $label }}'):'';">
+                                        <p class="cs-muted" data-preview style="margin:0;font-size:12px;"></p>
+                                        @if ($adv)
+                                            <p style="margin:2px 0 0;font-size:11.5px;line-height:1.5;padding:8px 10px;border-radius:8px;{{ $adv['level'] === 'warning' ? 'background:#FEF9EE;border:1px solid #FAC775;color:#854F0B;' : 'background:#F4F6F8;border:1px solid #D8DEE6;color:#48566A;' }}">{{ $adv['message'] }}</p>
+                                        @endif
+                                        <div><button type="submit" style="font-size:13px;padding:8px 18px;background:#185FA5;color:#fff;border:0;border-radius:8px;cursor:pointer;font-weight:600;">{{ __('Save tariff') }}</button></div>
+                                    </form>
+                                </details>
                             @endif
 
                             {{-- Installed devices --}}
