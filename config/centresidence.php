@@ -180,4 +180,40 @@ return [
         // Default downlink fPort for credit/actuate commands (meter-specific).
         'downlink_fport' => (int) env('CHIRPSTACK_DOWNLINK_FPORT', 10),
     ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Utility tariff advisory
+    |--------------------------------------------------------------------------
+    | The OWNER sets the retail tariff (units_per_kes) for their own metered
+    | utility — they own the system and are SOLELY liable for regulatory
+    | compliance. We NEVER hard-cap it. These are ADVISORY-ONLY references we
+    | surface as an informational nudge (with an indemnity line), populated
+    | incrementally as we research county water tariffs (WASREB-approved, so
+    | per-county — there is no national number) and the EPRA LPG maximum.
+    | Reference values are KES per TOKEN UNIT (water = per litre; gas = per kg).
+    | The only HARD guard is the system-integrity floor (owner revenue >= 0),
+    | enforced in code, not here.
+    */
+    'utility_tariffs' => [
+        'references' => [
+            'water' => [
+                // KES per LITRE = county tariff per m³ / 1000. Starter examples (verify + extend):
+                'counties' => [
+                    'nairobi'   => 0.110, // ~KES 110 / m³ domestic
+                    'kirinyaga' => 0.043, // ~KES 43 / m³
+                ],
+                'default' => null,        // water is county-set — no national fallback
+            ],
+            'gas' => [
+                'default' => null,        // set to the EPRA maximum retail price (KES/kg) once confirmed
+            ],
+        ],
+        'advisory_tolerance' => 1.0,      // price beyond reference × this → the louder "exceeds" advisory
+        'authorities' => [
+            'water' => 'your county water & sanitation company (WASREB-regulated)',
+            'gas'   => 'EPRA',
+            'other' => 'the relevant authority',
+        ],
+    ],
 ];
