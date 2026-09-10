@@ -131,6 +131,25 @@
                                                class="cs-input"
                                                oninput="var p=this.form.querySelector('[data-preview]');p.textContent=this.value>0?('≈ KES '+(1/this.value).toFixed(2)+' / {{ $label }}'):'';">
                                         <p class="cs-muted" data-preview style="margin:0;font-size:12px;"></p>
+
+                                        {{-- Cost-basis helper (new to metering): bulk cost + margin → suggested tariff. --}}
+                                        <details style="margin:2px 0;">
+                                            <summary style="cursor:pointer;font-size:12px;color:#185FA5;">{{ __('Help me price this') }}</summary>
+                                            <div style="display:flex;flex-direction:column;gap:6px;margin-top:8px;padding:10px;background:#F7FAFE;border:1px solid #DCE6F1;border-radius:8px;">
+                                                <label style="font-size:11.5px;color:#48566A;">{{ __('Your cost per :label (KES)', ['label' => $label]) }}
+                                                    <input type="number" step="0.0001" min="0" data-cost class="cs-input" style="margin-top:3px;" placeholder="{{ __('e.g. bulk rate ÷ units') }}"></label>
+                                                <label style="font-size:11.5px;color:#48566A;">{{ __('Desired margin (%)') }}
+                                                    <input type="number" step="1" min="0" value="20" data-margin class="cs-input" style="margin-top:3px;"></label>
+                                                @if (($module->view_commission ?? 0) > 0)
+                                                    <p style="margin:0;font-size:11px;color:#8A97A8;">{{ __('Our commission: KES :c per :label (already deducted from your revenue).', ['c' => number_format($module->view_commission, 4), 'label' => $label]) }}</p>
+                                                @endif
+                                                <button type="button" style="align-self:flex-start;font-size:12px;padding:6px 12px;background:#0F2A4A;color:#fff;border:0;border-radius:7px;cursor:pointer;"
+                                                    data-commission="{{ $module->view_commission ?? 0 }}"
+                                                    onclick="(function(b){var f=b.closest('form');var cost=parseFloat(f.querySelector('[data-cost]').value)||0;var m=parseFloat(f.querySelector('[data-margin]').value)||0;var comm=parseFloat(b.getAttribute('data-commission'))||0;var price=(cost+comm)*(1+m/100);if(price>0){var u=f.querySelector('[name=units_per_kes]');u.value=(1/price).toFixed(4);u.dispatchEvent(new Event('input'));}})(this)">{{ __('Suggest tariff') }}</button>
+                                                <p style="margin:0;font-size:10.5px;color:#8A97A8;">{{ __('A guide only. You set the final rate and are responsible for compliance.') }}</p>
+                                            </div>
+                                        </details>
+
                                         @if ($adv)
                                             <p style="margin:2px 0 0;font-size:11.5px;line-height:1.5;padding:8px 10px;border-radius:8px;{{ $adv['level'] === 'warning' ? 'background:#FEF9EE;border:1px solid #FAC775;color:#854F0B;' : 'background:#F4F6F8;border:1px solid #D8DEE6;color:#48566A;' }}">{{ $adv['message'] }}</p>
                                         @endif
