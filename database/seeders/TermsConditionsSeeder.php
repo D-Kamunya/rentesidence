@@ -11,8 +11,11 @@ use Illuminate\Database\Seeder;
  * model — editable live via Admin → Settings → Terms & Conditions (summernote), shown on the public
  * /terms-conditions page.
  *
- * ONLY-IF-ABSENT: never overwrites an existing (admin/counsel-edited) value, so a re-deploy can't
- * clobber the reviewed version. To intentionally re-seed, clear the value first.
+ * AUTHORITATIVE-ONCE (user 2026-09-10): a version sentinel (terms_conditions_seed_v1) gates the
+ * seed, so on the FIRST run we force our comprehensive baseline even over an existing (e.g. stale
+ * stub/truncated) value, then lock it — any LATER counsel edit on the live platform sticks.
+ * Bump the sentinel (v2, …) to intentionally re-baseline a revised T&C (which also bumps
+ * terms_version, re-gating owner acceptance). Mirrors ReminderInvoice::ensureDefaults.
  *
  * ⚠️ THIS IS A DRAFTING STARTING POINT, NOT LEGAL ADVICE. It must be reviewed and adjusted by
  * qualified legal counsel before it is relied upon — it is a legal instrument in a CBK / Data
@@ -23,24 +26,17 @@ class TermsConditionsSeeder extends Seeder
 {
     public function run(): void
     {
-        $existing = Setting::where('option_key', 'terms_conditions')->value('option_value');
-        if (! empty(trim(strip_tags((string) $existing)))) {
-            return; // a real value already exists — do not clobber the reviewed version
+        if (getOption('terms_conditions_seed_v1')) {
+            return; // baseline already force-applied once — respect any counsel-edited live value + version
         }
 
         $app   = getOption('app_name') ?: 'Centresidence';
         $email = getOption('app_email') ?: 'info@centresidence.com';
 
-        $body = $this->draft($app, $email);
-        Setting::updateOrCreate(['option_key' => 'terms_conditions'], ['option_value' => $body]);
-        config(['settings.terms_conditions' => $body]);
-
-        // The current T&C version drives the owner accept-gate (EnsureTermsAccepted). Only-if-absent
-        // so an admin who has bumped it (forcing re-acceptance of a revised T&C) is never reset.
-        if (! Setting::where('option_key', 'terms_version')->exists()) {
-            Setting::updateOrCreate(['option_key' => 'terms_version'], ['option_value' => '1.0']);
-            config(['settings.terms_version' => '1.0']);
-        }
+        // Authoritative on first run — establishes the full T&C + its version even over a stale value.
+        setOption('terms_conditions', $this->draft($app, $email));
+        setOption('terms_version', '1.0'); // drives the owner accept-gate (EnsureTermsAccepted)
+        setOption('terms_conditions_seed_v1', '1'); // lock: don't re-baseline on subsequent runs
     }
 
     /** The default T&C body as newline-free HTML (frontend nl2br-s the stored value). */

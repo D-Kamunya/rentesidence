@@ -53,15 +53,29 @@ class TermsConditionsSeederTest extends TestCase
     }
 
     /** @test */
-    public function it_never_overwrites_an_existing_reviewed_value(): void
+    public function first_run_is_authoritative_over_a_stale_value_and_sets_the_sentinel(): void
     {
-        Setting::create(['option_key' => 'terms_conditions', 'option_value' => '<p>Counsel-reviewed final text.</p>']);
+        // A truncated/stale stub already exists (e.g. the old varchar(191) truncation).
+        Setting::create(['option_key' => 'terms_conditions', 'option_value' => '<p>stale stub</p>']);
+        config(['settings.terms_conditions' => '<p>stale stub</p>']);
 
         (new TermsConditionsSeeder())->run();
 
-        $this->assertSame(
-            '<p>Counsel-reviewed final text.</p>',
-            Setting::where('option_key', 'terms_conditions')->value('option_value')
-        );
+        $value = Setting::where('option_key', 'terms_conditions')->value('option_value');
+        $this->assertStringContainsString('Agenc', $value);          // full draft won
+        $this->assertStringNotContainsString('stale stub', $value);  // stub replaced
+        $this->assertSame('1', getOption('terms_conditions_seed_v1'));
+        $this->assertSame('1.0', getOption('terms_version'));
+    }
+
+    /** @test */
+    public function once_locked_a_later_run_does_not_overwrite_counsel_edits(): void
+    {
+        (new TermsConditionsSeeder())->run();                       // first run establishes + locks
+        setOption('terms_conditions', '<p>Counsel-reviewed final text.</p>');
+
+        (new TermsConditionsSeeder())->run();                       // subsequent run
+
+        $this->assertStringContainsString('Counsel-reviewed final text.', getOption('terms_conditions'));
     }
 }
