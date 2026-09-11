@@ -93,11 +93,22 @@ class FinancingController extends Controller
         // catalogue × qty calculation — render the simplified quote apply form.
         if ($fsrId = $request->integer('fsr')) {
             if ($fsr = $this->acceptedQuote($fsrId, $product->module_id)) {
+                $property = Property::where('owner_user_id', auth()->id())
+                    ->withSum('propertyUnits', 'general_rent')->find($fsr->property_id);
+
                 return view('owner.financing.apply-quote', [
-                    'pageTitle' => __('Apply for financing'),
-                    'product'   => $product,
-                    'fsr'       => $fsr,
-                    'property'  => Property::where('owner_user_id', auth()->id())->find($fsr->property_id),
+                    'pageTitle'      => __('Apply for financing'),
+                    'product'        => $product,
+                    'fsr'            => $fsr,
+                    'property'       => $property,
+                    // Affordability context so the form can show the live monthly + rent-share, and
+                    // the owner can consent to a higher cap — mirrors the normal apply page.
+                    'propertyRent'   => (float) ($property->property_units_sum_general_rent ?? 0),
+                    'existingInfra'  => $property ? $infra->projectedMonthlyForProperty($property)['cost']->toFloat() : 0.0,
+                    'infraPerDevice' => (float) ($product->module?->activeCostComponents->where('cost_model', 'per_active_device')->sum('rate') ?? 0),
+                    'infraFlat'      => (float) ($product->module?->activeCostComponents->where('cost_model', 'flat_monthly')->sum('rate') ?? 0),
+                    'rentCapPct'     => (int) config('centresidence.billing.max_total_rent_deduction_percentage', 60),
+                    'consentMaxPct'  => (int) config('centresidence.billing.max_consented_rent_deduction_percentage', 90),
                 ]);
             }
         }
@@ -203,7 +214,7 @@ class FinancingController extends Controller
         // Quote-based application (from an accepted site-survey quote) — a fixed all-in amount, not
         // a catalogue × qty calculation. Handled separately.
         if ($request->integer('field_study_request_id')) {
-            return $this->storeFromQuote($request, $applications, $cashflow);
+            return $this->storeFromQuote($request, $applications, $cashflow, $infra);
         }
 
         $data = $request->validate([
@@ -409,7 +420,7 @@ class FinancingController extends Controller
     }
 
     /** Create a finance application from an accepted site-survey QUOTE (fixed amount, no catalogue). */
-    private function storeFromQuote(Request $request, FinanceApplicationService $applications, CashflowService $cashflow)
+    private function storeFromQuote(Request $request, FinanceApplicationService $applications, CashflowService $cashflow, InfrastructureCostEngine $infra)
     {
         $data = $request->validate([
             'field_study_request_id'    => 'required|integer',
@@ -427,6 +438,11 @@ class FinancingController extends Controller
         if ((int) $product->module_id !== (int) $fsr->module_id) {
             return back()->with('error', __('Please choose a financier offered for this installation.'));
         }
+
+        // Affordability context so the SAME rent-cap feasibility gate as the normal flow runs.
+        $property      = Property::where('owner_user_id', (int) auth()->id())->withSum('propertyUnits', 'general_rent')->find($fsr->property_id);
+        $propertyRent  = (float) ($property->property_units_sum_general_rent ?? 0);
+        $existingInfra = $property ? $infra->projectedMonthlyForProperty($property)['cost']->toFloat() : 0.0;
 
         // financed = quoted − contribution; clamp to the financier's min/max (mirrors the normal flow).
         $quoted       = (float) $fsr->quoted_amount;
@@ -458,6 +474,10 @@ class FinancingController extends Controller
                 'repayment_months'          => (int) $data['repayment_months'],
                 'consented_deduction_cap'   => ! empty($data['consented_deduction_cap']) && $data['consented_deduction_cap'] > 60
                     ? (int) $data['consented_deduction_cap'] : null,
+                // Feed the rent-cap feasibility gate (skipping this would let a quote facility be
+                // sized beyond what the property's rent can service).
+                'property_rent'             => $propertyRent,
+                'existing_infra'            => $existingInfra,
             ]);
             $applications->submit($application, $cashflow->underwritingContext($application), (int) auth()->id());
         } catch (\App\Centresidence\Exceptions\FacilityInfeasibleException $e) {
