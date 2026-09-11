@@ -17,6 +17,7 @@ use App\Centresidence\Models\PropertyModule;
 use App\Centresidence\Models\SelfFinancedModule;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Storage;
 
@@ -120,23 +121,14 @@ class CentresidenceController extends Controller
             'quoted_at'     => now(),
         ]);
 
-        // Notify the owner their quote is ready.
+        // Notify the owner their quote is ready — in-app + CS email (with the figures) + SMS.
         try {
-            if ($req->owner_id) {
-                addNotification(
-                    __('Your site-survey quote is ready'),
-                    __('We have quoted KES :amt for your :module install. Review it to arrange financing.', [
-                        'amt' => number_format((float) $req->quoted_amount, 2), 'module' => optional($req->module)->name,
-                    ]),
-                    route('owner.financing.surveys'),
-                    null, $req->owner_id, (int) auth()->id()
-                );
-            }
+            \App\Jobs\SendFieldStudyQuoteNotification::dispatch($req->id);
         } catch (\Throwable $e) {
-            // best-effort
+            Log::error('Field-study quote notification dispatch failed', ['request_id' => $req->id, 'error' => $e->getMessage()]);
         }
 
-        return back()->with('success', __('Quotation recorded and the owner has been notified.'));
+        return back()->with('success', __('Quotation recorded and the owner has been notified (in-app, email & SMS).'));
     }
 
     public function facilities()

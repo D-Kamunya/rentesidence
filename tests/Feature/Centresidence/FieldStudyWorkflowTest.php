@@ -3,7 +3,9 @@
 namespace Tests\Feature\Centresidence;
 
 use App\Centresidence\Models\FieldStudyRequest;
+use App\Jobs\SendFieldStudyQuoteNotification;
 use App\Models\User;
+use Illuminate\Support\Facades\Bus;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use Tests\TestCase;
@@ -65,6 +67,7 @@ class FieldStudyWorkflowTest extends TestCase
     /** @test */
     public function admin_quote_moves_it_to_quoted_and_owner_can_then_proceed(): void
     {
+        Bus::fake([SendFieldStudyQuoteNotification::class]);
         $moduleId = DB::table('modules')->insertGetId(['key' => 'gas_meter', 'name' => 'Gas', 'is_active' => true, 'requires_field_study' => true]);
         $reqId = FieldStudyRequest::create(['owner_id' => 10, 'property_id' => null, 'module_id' => $moduleId, 'status' => 'requested'])->id;
 
@@ -72,10 +75,11 @@ class FieldStudyWorkflowTest extends TestCase
         $this->withoutMiddleware()->actingAs($this->actor(10))
             ->post(route('owner.financing.surveys.proceed', $reqId))->assertSessionHas('error');
 
-        // Admin records the quote.
+        // Admin records the quote → owner is notified (in-app + email + SMS via the job).
         $this->withoutMiddleware()->actingAs($this->actor(1, USER_ROLE_ADMIN))
             ->post(route('admin.centresidence.field-studies.quote', $reqId), ['quoted_amount' => 250000, 'quote_note' => 'incl. install'])
             ->assertRedirect();
+        Bus::assertDispatched(SendFieldStudyQuoteNotification::class);
 
         $req = FieldStudyRequest::find($reqId);
         $this->assertSame('quoted', $req->status);
