@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Owner;
 
 use App\Centresidence\Exceptions\OwnerNotInTransactionModeException;
 use App\Centresidence\Exceptions\UnderwritingFailedException;
+use App\Centresidence\Models\FieldStudyRequest;
 use App\Centresidence\Models\FinanceApplication;
 use App\Centresidence\Models\FinanceFacility;
 use App\Centresidence\Models\FinancePartnerModule;
@@ -288,6 +289,78 @@ class FinancingController extends Controller
     }
 
     /** The owner's applications + active facilities + self-financed orders. */
+    /**
+     * Field-study workflow — the owner's site-survey requests for custom installs (e.g. reticulated
+     * gas) that can't be priced from the standard catalogue, plus the form to request a new one.
+     */
+    public function surveys()
+    {
+        $ownerId = (int) auth()->id();
+
+        return view('owner.financing.surveys', [
+            'pageTitle'  => __('Site surveys'),
+            'requests'   => FieldStudyRequest::with(['module', 'property'])->where('owner_id', $ownerId)->latest()->get(),
+            'modules'    => Module::where('is_active', true)->where('requires_field_study', true)->orderBy('name')->get(),
+            'properties' => Property::where('owner_user_id', $ownerId)->orderBy('name')->get(['id', 'name']),
+        ]);
+    }
+
+    public function requestSurvey(Request $request)
+    {
+        $data = $request->validate([
+            'module_id'   => 'required|integer',
+            'property_id' => 'required|integer',
+            'note'        => 'nullable|string|max:1000',
+        ]);
+        $ownerId = (int) auth()->id();
+
+        // Guards: a real field-study module + one of THIS owner's properties (IDOR).
+        $module   = Module::where('is_active', true)->where('requires_field_study', true)->find($data['module_id']);
+        $property = Property::where('owner_user_id', $ownerId)->find($data['property_id']);
+        if (! $module || ! $property) {
+            return back()->with('error', __('Please choose a valid module and one of your properties.'));
+        }
+
+        FieldStudyRequest::create([
+            'owner_id'    => $ownerId,
+            'property_id' => $property->id,
+            'module_id'   => $module->id,
+            'status'      => FieldStudyRequest::STATUS_REQUESTED,
+            'note'        => $data['note'] ?? null,
+        ]);
+
+        try {
+            $admin = \App\Models\User::where('role', USER_ROLE_ADMIN)->first();
+            if ($admin) {
+                addNotification(
+                    __('New site-survey request'),
+                    __('An owner requested a site survey for :module on :property.', ['module' => $module->name, 'property' => $property->name]),
+                    route('admin.centresidence.field-studies'),
+                    null, $admin->id, $ownerId
+                );
+            }
+        } catch (\Throwable $e) {
+            // notification is best-effort
+        }
+
+        return redirect()->route('owner.financing.surveys')
+            ->with('success', __('Your site-survey request has been submitted. Our team will assess the property and send you a quotation.'));
+    }
+
+    /** Owner accepts a quote and proceeds to arrange financing for the quoted amount. */
+    public function proceedSurvey(int $id)
+    {
+        $request = FieldStudyRequest::where('owner_id', (int) auth()->id())->findOrFail($id);
+        if (! $request->isQuoted()) {
+            return back()->with('error', __('This request has not been quoted yet.'));
+        }
+
+        $request->update(['status' => FieldStudyRequest::STATUS_APPLIED]);
+
+        return redirect()->route('owner.financing.module', $request->module_id)
+            ->with('success', __('Quote of KES :amt accepted — continue below to arrange financing for this install.', ['amt' => number_format((float) $request->quoted_amount, 2)]));
+    }
+
     public function mine(FacilityInterestService $interest)
     {
         $applications = collect();

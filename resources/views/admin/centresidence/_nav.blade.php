@@ -5,6 +5,7 @@
         'index'          => ['Overview', 'ri-dashboard-line'],
         'partners'       => ['Finance Partners', 'ri-bank-line'],
         'applications'   => ['Applications', 'ri-file-list-3-line'],
+        'field-studies'  => ['Site Surveys', 'ri-map-pin-line'],
         'facilities'     => ['Facilities', 'ri-funds-line'],
         'defaults'       => ['Defaults', 'ri-error-warning-line'],
         'revenue'        => ['Commission & Revenue', 'ri-coins-line'],

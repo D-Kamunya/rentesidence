@@ -89,6 +89,10 @@ Route::group(['prefix' => 'owner', 'as' => 'owner.', 'middleware' => ['auth', 'o
         // Self-financing (owner funds the module themselves — no partner).
         Route::get('self-finance/{catalogueItemId}', [\App\Http\Controllers\Owner\FinancingController::class, 'selfFinance'])->name('self-finance');
         Route::post('self-finance', [\App\Http\Controllers\Owner\FinancingController::class, 'selfFinanceStore'])->name('self-finance.store');
+        // Field-study workflow — custom installs (e.g. reticulated gas) need a site survey + bespoke quote.
+        Route::get('surveys', [\App\Http\Controllers\Owner\FinancingController::class, 'surveys'])->name('surveys');
+        Route::post('surveys', [\App\Http\Controllers\Owner\FinancingController::class, 'requestSurvey'])->name('surveys.request');
+        Route::post('surveys/{id}/proceed', [\App\Http\Controllers\Owner\FinancingController::class, 'proceedSurvey'])->name('surveys.proceed');
     });
 
     // Centresidence — installed devices & token economics (read-only infra visibility).

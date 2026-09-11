@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Centresidence\Models\CentresidenceCommissionInvoice;
 use App\Centresidence\Models\Device;
 use App\Centresidence\Models\FacilityDefault;
+use App\Centresidence\Models\FieldStudyRequest;
 use App\Centresidence\Models\FinanceApplication;
 use App\Centresidence\Models\FinanceFacility;
 use App\Centresidence\Models\FinancePartner;
@@ -85,6 +86,52 @@ class CentresidenceController extends Controller
             : collect();
 
         return view('admin.centresidence.applications', compact('applications') + ['pageTitle' => 'Finance Applications']);
+    }
+
+    /** Field-study / custom-install survey queue — owners' requests awaiting survey + quotation. */
+    public function fieldStudies()
+    {
+        $requests = $this->migrated() && Schema::hasTable('field_study_requests')
+            ? FieldStudyRequest::with(['module', 'property', 'owner'])->latest()->paginate(30)
+            : collect();
+
+        return view('admin.centresidence.field-studies', compact('requests') + ['pageTitle' => 'Site Surveys']);
+    }
+
+    /** Record the installer/admin quotation for a survey request → owner can then take it to financing. */
+    public function recordQuote(Request $request, int $id)
+    {
+        $data = $request->validate([
+            'quoted_amount' => 'required|numeric|gt:0',
+            'quote_note'    => 'nullable|string|max:1000',
+        ]);
+
+        $req = FieldStudyRequest::findOrFail($id);
+        $req->update([
+            'quoted_amount' => $data['quoted_amount'],
+            'quote_note'    => $data['quote_note'] ?? null,
+            'status'        => FieldStudyRequest::STATUS_QUOTED,
+            'quoted_by'     => (int) auth()->id(),
+            'quoted_at'     => now(),
+        ]);
+
+        // Notify the owner their quote is ready.
+        try {
+            if ($req->owner_id) {
+                addNotification(
+                    __('Your site-survey quote is ready'),
+                    __('We have quoted KES :amt for your :module install. Review it to arrange financing.', [
+                        'amt' => number_format((float) $req->quoted_amount, 2), 'module' => optional($req->module)->name,
+                    ]),
+                    route('owner.financing.surveys'),
+                    null, $req->owner_id, (int) auth()->id()
+                );
+            }
+        } catch (\Throwable $e) {
+            // best-effort
+        }
+
+        return back()->with('success', __('Quotation recorded and the owner has been notified.'));
     }
 
     public function facilities()

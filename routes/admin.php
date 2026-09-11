@@ -42,6 +42,9 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'middleware' => ['auth', 'a
         Route::post('remittances/prepare', [\App\Http\Controllers\Admin\CentresidenceController::class, 'remittancePrepare'])->name('remittances.prepare');
         Route::post('remittances/{id}/mark-sent', [\App\Http\Controllers\Admin\CentresidenceController::class, 'remittanceMarkSent'])->name('remittances.mark-sent');
         Route::get('defaults', [\App\Http\Controllers\Admin\CentresidenceController::class, 'defaults'])->name('defaults');
+        // Field-study / custom-install survey queue (e.g. reticulated gas) + quotation entry.
+        Route::get('field-studies', [\App\Http\Controllers\Admin\CentresidenceController::class, 'fieldStudies'])->name('field-studies');
+        Route::post('field-studies/{id}/quote', [\App\Http\Controllers\Admin\CentresidenceController::class, 'recordQuote'])->name('field-studies.quote');
         Route::get('revenue', [\App\Http\Controllers\Admin\CentresidenceController::class, 'revenue'])->name('revenue');
         Route::get('modules', [\App\Http\Controllers\Admin\CentresidenceController::class, 'modules'])->name('modules');
         Route::get('modules/{id}/edit', [\App\Http\Controllers\Admin\CentresidenceController::class, 'moduleEdit'])->name('modules.edit');
