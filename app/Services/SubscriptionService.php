@@ -27,12 +27,16 @@ class SubscriptionService
             ->select([
                 'owner_packages.*',
                 'subscription_orders.duration_type',
-                // Pull commission columns from packages table
+                // Commission/limit columns come from the catalog (packages). NOTE: we must
+                // NOT re-select packages.pricing_model here — owner_packages.* already carries
+                // the AUTHORITATIVE per-owner pricing_model, and a same-named catalog column
+                // would clobber it in hydration (that was the "Free tier + transaction billing"
+                // divergence: PaymentModeService::switchTo writes owner_packages.pricing_model
+                // only, so the catalog value is stale). owner_packages is the single source.
                 'packages.commission_markup',
                 'packages.commission_discount',
                 'packages.max_marketplace_listings',
                 'packages.monthly_sms_credits',
-                'packages.pricing_model',
                 'packages.name as package_name',
             ])
             ->first();

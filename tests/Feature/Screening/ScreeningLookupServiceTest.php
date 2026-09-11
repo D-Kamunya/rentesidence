@@ -27,6 +27,16 @@ class ScreeningLookupServiceTest extends TestCase
     {
         parent::setUp();
 
+        // Make the SaaS addon read as INSTALLED, otherwise isAddonInstalled('PROTYSAAS') < 1
+        // short-circuits screening to a single-operator "standalone / unlimited" install
+        // (cover = 'plan') and the metered free-tier ladder we're testing never runs.
+        // isAddonInstalled needs BOTH getOption(..._build_version) [config('settings.*')] and
+        // getAddonCodeBuildVersion() [config('addon.PROTYSAAS.build_version')] non-zero.
+        config([
+            'settings.PROTYSAAS_build_version' => 1,
+            'addon.PROTYSAAS.build_version'    => 1,
+        ]);
+
         config(['database.connections.screen_sqlite' => [
             'driver' => 'sqlite', 'database' => ':memory:', 'prefix' => '',
         ]]);
