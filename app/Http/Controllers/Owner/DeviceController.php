@@ -109,12 +109,16 @@ class DeviceController extends Controller
                 // Owner-set tariff view data (metered modules only) — current tariff + the advisory.
                 if (optional($module->module)->is_metered && $module->tokenConfig) {
                     $units = (string) ($module->tokenConfig->units_per_kes ?: '0');
-                    $module->view_units_per_kes = (float) $module->tokenConfig->units_per_kes;
+                    $utilityClass = $tariffSvc->utilityClass(optional($module->module)->key);
+                    $module->view_units_per_kes  = (float) $module->tokenConfig->units_per_kes;
                     $module->view_price_per_unit = $tariffSvc->pricePerUnit($units);
-                    $module->view_commission = (float) ($module->tokenConfig->centresidence_commission_per_token_unit ?? 0);
+                    $module->view_commission     = (float) ($module->tokenConfig->centresidence_commission_per_token_unit ?? 0);
+                    $module->view_utility_class  = $utilityClass;
+                    // Explicit unit noun for tariff phrasing: water → litre, gas → kg (falls back to the label).
+                    $module->view_unit_noun      = $tariffSvc->unitNoun($utilityClass, $module->tokenConfig->token_unit_label);
                     $module->view_advisory = $tariffSvc->advisory(
                         $module->view_price_per_unit,
-                        $tariffSvc->utilityClass(optional($module->module)->key),
+                        $utilityClass,
                         optional($module->property)->city
                     );
                 }

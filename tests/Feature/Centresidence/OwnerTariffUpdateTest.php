@@ -49,25 +49,26 @@ class OwnerTariffUpdateTest extends TestCase
     }
 
     /** @test */
-    public function a_valid_tariff_is_saved_and_owner_revenue_re_derived(): void
+    public function a_valid_price_is_saved_and_converted_to_units(): void
     {
         [$pmId, $tcId] = $this->makeModule(10, true, 'water_meter', 5, 0);
 
-        $this->submitTariff(10, ['property_module_id' => $pmId, 'units_per_kes' => 4])
+        // Owner enters a PRICE of KES 0.25 per litre → stored units_per_kes = 1/0.25 = 4.
+        $this->submitTariff(10, ['property_module_id' => $pmId, 'price_per_unit' => 0.25])
             ->assertRedirect();
 
         $this->assertEqualsWithDelta(4.0, (float) DB::table('module_token_config')->where('id', $tcId)->value('units_per_kes'), 0.001);
-        // owner_revenue = price(1/4=0.25) - commission(0) = 0.25
+        // owner_revenue = price(0.25) - commission(0) = 0.25
         $this->assertEqualsWithDelta(0.25, (float) DB::table('module_token_config')->where('id', $tcId)->value('owner_revenue_per_token_unit'), 0.001);
     }
 
     /** @test */
-    public function a_tariff_below_the_commission_floor_is_rejected(): void
+    public function a_price_below_the_supply_margin_floor_is_rejected(): void
     {
-        // Gas commission 0.02/unit; units 100 → price 0.01 < 0.02 → owner revenue negative → blocked.
+        // Gas supply margin 0.02/kg; a price of 0.01/kg is below it → owner revenue negative → blocked.
         [$pmId, $tcId] = $this->makeModule(10, true, 'gas_meter', 5, 0.02);
 
-        $res = $this->submitTariff(10, ['property_module_id' => $pmId, 'units_per_kes' => 100]);
+        $res = $this->submitTariff(10, ['property_module_id' => $pmId, 'price_per_unit' => 0.01]);
         $res->assertRedirect();
         $res->assertSessionHas('error');
 
@@ -80,7 +81,7 @@ class OwnerTariffUpdateTest extends TestCase
     {
         [$pmId] = $this->makeModule(10, true, 'water_meter', 5, 0); // belongs to owner 10
 
-        $this->submitTariff(99, ['property_module_id' => $pmId, 'units_per_kes' => 4]) // owner 99 attacks
+        $this->submitTariff(99, ['property_module_id' => $pmId, 'price_per_unit' => 0.25]) // owner 99 attacks
             ->assertNotFound();
     }
 }

@@ -71,6 +71,22 @@ class UtilityTariffServiceTest extends TestCase
     }
 
     /** @test */
+    public function unit_noun_is_explicit_per_meter_type(): void
+    {
+        $this->assertSame('litre', $this->svc->unitNoun('water'));
+        $this->assertSame('kg', $this->svc->unitNoun('gas'));
+        $this->assertSame('bottle', $this->svc->unitNoun('other', 'Bottles')); // singularised label
+        $this->assertSame('unit', $this->svc->unitNoun('other', null));
+    }
+
+    /** @test */
+    public function units_per_kes_is_the_inverse_of_an_entered_price(): void
+    {
+        $this->assertEqualsWithDelta(4.0, (float) $this->svc->unitsFromPrice('0.25'), 0.0001);   // KES 0.25/unit → 4/KES
+        $this->assertSame('0', $this->svc->unitsFromPrice('0'));                                  // guard
+    }
+
+    /** @test */
     public function reference_lookup_is_county_aware_for_water(): void
     {
         $this->assertEqualsWithDelta(0.110, $this->svc->reference('water', 'nairobi'), 0.0001);

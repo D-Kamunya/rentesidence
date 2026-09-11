@@ -25,6 +25,31 @@ class UtilityTariffService
     }
 
     /**
+     * The canonical SINGULAR unit noun for tariff phrasing ("KES per <unit>"): water → litre,
+     * gas → kg. For anything else, fall back to a configured label (singularised) or "unit".
+     * Keeps the owner-facing tariff explicit instead of the abstract "units".
+     */
+    public function unitNoun(string $utilityClass, ?string $configLabel = null): string
+    {
+        if ($utilityClass === 'water') return 'litre';
+        if ($utilityClass === 'gas')   return 'kg';
+
+        $label = trim((string) $configLabel);
+        if ($label === '') return 'unit';
+        $label = strtolower($label);
+        return str_ends_with($label, 's') ? rtrim($label, 's') : $label; // Litres → litre
+    }
+
+    /** Convert an owner-entered price/unit (KES) into the stored units_per_kes knob. */
+    public function unitsFromPrice(string $pricePerUnit): string
+    {
+        if (bccomp($pricePerUnit, '0', 8) <= 0) {
+            return '0';
+        }
+        return bcdiv('1', $pricePerUnit, 8);
+    }
+
+    /**
      * HARD floor: the tariff must be positive AND leave the owner's revenue per unit >= 0 (i.e. the
      * price covers our commission). Utility-agnostic — reuses the canonical token formula.
      */

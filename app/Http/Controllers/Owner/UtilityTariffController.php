@@ -20,7 +20,9 @@ class UtilityTariffController extends Controller
     {
         $data = $request->validate([
             'property_module_id' => 'required|integer',
-            'units_per_kes'      => 'required|numeric|gt:0',
+            // Owners set the PRICE a tenant pays per unit (KES per litre / per kg) — explicit and
+            // natural; we convert to the stored units_per_kes knob under the hood.
+            'price_per_unit'     => 'required|numeric|gt:0',
         ]);
 
         $module = PropertyModule::with(['module', 'tokenConfig', 'property'])
@@ -38,11 +40,12 @@ class UtilityTariffController extends Controller
         }
 
         $commission = (string) ($config->centresidence_commission_per_token_unit ?? '0');
-        $units      = (string) $data['units_per_kes'];
+        $price      = (string) $data['price_per_unit'];
+        $units      = $svc->unitsFromPrice($price); // stored knob = 1 / price
 
-        // HARD floor — the ONE block: the tariff must cover our commission (owner revenue >= 0).
+        // HARD floor — the ONE block: the price must cover our commission (owner revenue >= 0).
         if (! $svc->meetsFloor($units, $commission)) {
-            return back()->with('error', __('That tariff is too low — it would not cover the platform commission on this utility. Please increase the rate.'));
+            return back()->with('error', __('That price is too low — it would not cover our supply margin on this utility. Please increase the rate.'));
         }
 
         $config->units_per_kes = $units; // owner_revenue_per_token_unit re-derives on save
