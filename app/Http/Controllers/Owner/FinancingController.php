@@ -60,7 +60,7 @@ class FinancingController extends Controller
     }
 
     /** Module detail — what it is, how it boosts cashflow, and who finances it. */
-    public function module(int $moduleId, PaymentModeService $modes, FinancePartnerService $partners)
+    public function module(int $moduleId, Request $request, PaymentModeService $modes, FinancePartnerService $partners)
     {
         $module = Module::where('is_active', true)->findOrFail($moduleId);
 
@@ -70,11 +70,14 @@ class FinancingController extends Controller
             'catalogue' => ModulePricingCatalogueItem::where('module_id', $module->id)->where('is_active', true)->first(),
             'products' => $this->migrated() ? $partners->marketplaceProductsForModule($module->id) : collect(),
             'isTransactionMode' => $modes->isTransactionMode((int) auth()->id()),
+            // An accepted survey quote in play — reveals the financiers on a quote-based module and
+            // carries the amount into the application.
+            'acceptedQuote' => $this->acceptedQuote($request->integer('fsr') ?: null, $module->id),
         ]);
     }
 
     /** Application form for a chosen partner product (or a mode-switch prompt). */
-    public function apply(int $partnerModuleId, PaymentModeService $modes, InfrastructureCostEngine $infra)
+    public function apply(int $partnerModuleId, Request $request, PaymentModeService $modes, InfrastructureCostEngine $infra)
     {
         $product = FinancePartnerModule::with('partner', 'module')->findOrFail($partnerModuleId);
         $catalogue = ModulePricingCatalogueItem::where('module_id', $product->module_id)->where('is_active', true)->first();
@@ -84,6 +87,19 @@ class FinancingController extends Controller
                 'pageTitle' => 'Switch to transaction mode',
                 'product' => $product,
             ]);
+        }
+
+        // Quote-based application (accepted site-survey quote): a fixed all-in amount, not a
+        // catalogue × qty calculation — render the simplified quote apply form.
+        if ($fsrId = $request->integer('fsr')) {
+            if ($fsr = $this->acceptedQuote($fsrId, $product->module_id)) {
+                return view('owner.financing.apply-quote', [
+                    'pageTitle' => __('Apply for financing'),
+                    'product'   => $product,
+                    'fsr'       => $fsr,
+                    'property'  => Property::where('owner_user_id', auth()->id())->find($fsr->property_id),
+                ]);
+            }
         }
 
         // withCount lets the form offer "apply to all N units"; withSum gives
@@ -184,6 +200,12 @@ class FinancingController extends Controller
     /** Submit a financing application (create draft + soft underwriting). */
     public function store(Request $request, FinanceApplicationService $applications, CashflowService $cashflow, InfrastructureCostEngine $infra)
     {
+        // Quote-based application (from an accepted site-survey quote) — a fixed all-in amount, not
+        // a catalogue × qty calculation. Handled separately.
+        if ($request->integer('field_study_request_id')) {
+            return $this->storeFromQuote($request, $applications, $cashflow);
+        }
+
         $data = $request->validate([
             'finance_partner_module_id' => 'required|integer',
             'property_id' => 'required|integer',
@@ -301,7 +323,7 @@ class FinancingController extends Controller
             'pageTitle'  => __('Site surveys'),
             'requests'   => FieldStudyRequest::with(['module', 'property'])->where('owner_id', $ownerId)->latest()->get(),
             'modules'    => Module::where('is_active', true)->where('requires_field_study', true)->orderBy('name')->get(),
-            'properties' => Property::where('owner_user_id', $ownerId)->orderBy('name')->get(['id', 'name']),
+            'properties' => Property::where('owner_user_id', $ownerId)->withCount('propertyUnits')->orderBy('name')->get(),
         ]);
     }
 
@@ -310,20 +332,29 @@ class FinancingController extends Controller
         $data = $request->validate([
             'module_id'   => 'required|integer',
             'property_id' => 'required|integer',
+            'units'       => 'nullable|integer|min:1',
             'note'        => 'nullable|string|max:1000',
         ]);
         $ownerId = (int) auth()->id();
 
         // Guards: a real field-study module + one of THIS owner's properties (IDOR).
         $module   = Module::where('is_active', true)->where('requires_field_study', true)->find($data['module_id']);
-        $property = Property::where('owner_user_id', $ownerId)->find($data['property_id']);
+        $property = Property::where('owner_user_id', $ownerId)->withCount('propertyUnits')->find($data['property_id']);
         if (! $module || ! $property) {
             return back()->with('error', __('Please choose a valid module and one of your properties.'));
+        }
+
+        // Cap the requested units to what the property actually has (same guard as the finance flow).
+        $maxUnits = (int) $property->property_units_count;
+        $units    = $data['units'] ?? null;
+        if ($units !== null && $maxUnits > 0 && $units > $maxUnits) {
+            return back()->with('error', __(':name has :max units — you cannot request more than that.', ['name' => $property->name ?? __('this property'), 'max' => $maxUnits]))->withInput();
         }
 
         FieldStudyRequest::create([
             'owner_id'    => $ownerId,
             'property_id' => $property->id,
+            'units'       => $units,
             'module_id'   => $module->id,
             'status'      => FieldStudyRequest::STATUS_REQUESTED,
             'note'        => $data['note'] ?? null,
@@ -347,7 +378,7 @@ class FinancingController extends Controller
             ->with('success', __('Your site-survey request has been submitted. Our team will assess the property and send you a quotation.'));
     }
 
-    /** Owner accepts a quote and proceeds to arrange financing for the quoted amount. */
+    /** Owner accepts a quote → the module's financier list, carrying the quote so they can apply for it. */
     public function proceedSurvey(int $id)
     {
         $request = FieldStudyRequest::where('owner_id', (int) auth()->id())->findOrFail($id);
@@ -355,10 +386,86 @@ class FinancingController extends Controller
             return back()->with('error', __('This request has not been quoted yet.'));
         }
 
-        $request->update(['status' => FieldStudyRequest::STATUS_APPLIED]);
+        // Reveal the financiers for this module, carrying the accepted quote (fsr) so the chosen
+        // financier's application is pre-filled with the quoted amount. Status flips to 'applied'
+        // only when the finance application is actually submitted (store()).
+        return redirect()->route('owner.financing.module', ['moduleId' => $request->module_id, 'fsr' => $request->id])
+            ->with('success', __('Quote of KES :amt accepted — choose a financier below to apply for it.', ['amt' => number_format((float) $request->quoted_amount, 2)]));
+    }
 
-        return redirect()->route('owner.financing.module', $request->module_id)
-            ->with('success', __('Quote of KES :amt accepted — continue below to arrange financing for this install.', ['amt' => number_format((float) $request->quoted_amount, 2)]));
+    /** The accepted, owner-scoped field-study request referenced by ?fsr= (or null). */
+    private function acceptedQuote(?int $fsrId, int $moduleId): ?FieldStudyRequest
+    {
+        if (! $fsrId) {
+            return null;
+        }
+        $fsr = FieldStudyRequest::where('owner_id', (int) auth()->id())->where('module_id', $moduleId)->find($fsrId);
+
+        return ($fsr && $fsr->isQuoted()) ? $fsr : null;
+    }
+
+    /** Create a finance application from an accepted site-survey QUOTE (fixed amount, no catalogue). */
+    private function storeFromQuote(Request $request, FinanceApplicationService $applications, CashflowService $cashflow)
+    {
+        $data = $request->validate([
+            'field_study_request_id'    => 'required|integer',
+            'finance_partner_module_id' => 'required|integer',
+            'repayment_months'          => 'required|integer|min:1',
+            'owner_contribution'        => 'nullable|numeric|min:0',
+            'consented_deduction_cap'   => 'nullable|integer|min:60|max:' . (int) config('centresidence.billing.max_consented_rent_deduction_percentage', 90),
+        ]);
+
+        $fsr = FieldStudyRequest::where('owner_id', (int) auth()->id())->find($data['field_study_request_id']);
+        if (! $fsr || ! $fsr->isQuoted()) {
+            return redirect()->route('owner.financing.surveys')->with('error', __('That quote is no longer available.'));
+        }
+        $product = FinancePartnerModule::findOrFail($data['finance_partner_module_id']);
+        if ((int) $product->module_id !== (int) $fsr->module_id) {
+            return back()->with('error', __('Please choose a financier offered for this installation.'));
+        }
+
+        // financed = quoted − contribution; clamp to the financier's min/max (mirrors the normal flow).
+        $quoted       = (float) $fsr->quoted_amount;
+        $contribution = min(max((float) ($data['owner_contribution'] ?? 0), 0), $quoted);
+        $financed     = $quoted - $contribution;
+        $max = (float) $product->max_amount;
+        $min = (float) $product->min_amount;
+        if ($financed <= 0.0) {
+            return back()->with('error', __('Your contribution covers the whole quote — no financing is needed.'));
+        }
+        if ($max > 0 && $financed > $max + 0.01) {
+            return back()->with('error', __('You would finance KES :f, above this financier\'s ceiling of KES :m. Add a larger down-payment or pick another financier.', ['f' => number_format($financed, 2), 'm' => number_format($max, 2)]));
+        }
+        if ($min > 0 && $financed < $min - 0.01) {
+            return back()->with('error', __('You would finance only KES :f, below this financier\'s minimum of KES :m. Lower your down-payment.', ['f' => number_format($financed, 2), 'm' => number_format($min, 2)]));
+        }
+
+        try {
+            $application = $applications->createDraft([
+                'owner_id'                  => (int) auth()->id(),
+                'property_id'               => $fsr->property_id,
+                'module_id'                 => $fsr->module_id,
+                'finance_partner_id'        => $product->finance_partner_id,
+                'finance_partner_module_id' => $product->id,
+                'catalogue_item_id'         => null,
+                'quantity'                  => $fsr->units ?: 1,
+                'quoted_amount'             => $quoted, // ← the override: quote is the all-in project cost
+                'owner_contribution'        => $contribution,
+                'repayment_months'          => (int) $data['repayment_months'],
+                'consented_deduction_cap'   => ! empty($data['consented_deduction_cap']) && $data['consented_deduction_cap'] > 60
+                    ? (int) $data['consented_deduction_cap'] : null,
+            ]);
+            $applications->submit($application, $cashflow->underwritingContext($application), (int) auth()->id());
+        } catch (\App\Centresidence\Exceptions\FacilityInfeasibleException $e) {
+            return back()->with('error', __('This facility would push rent deductions past the allowed cap. Add a larger down-payment or a longer term.'))->withInput();
+        } catch (\Throwable $e) {
+            return back()->with('error', __('We could not start your application right now. Please try again.'))->withInput();
+        }
+
+        $fsr->update(['status' => FieldStudyRequest::STATUS_APPLIED]);
+
+        return redirect()->route('owner.financing.mine')
+            ->with('success', __('Your financing application for the quoted amount has been submitted.'));
     }
 
     public function mine(FacilityInterestService $interest)

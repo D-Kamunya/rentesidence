@@ -22,7 +22,7 @@
                             <tr>
                                 <td>{{ optional($r->owner)->name ?? ('#' . $r->owner_id) }}</td>
                                 <td>{{ optional($r->module)->name }}</td>
-                                <td>{{ optional($r->property)->name ?? '—' }}</td>
+                                <td>{{ optional($r->property)->name ?? '—' }}@if ($r->units) <span class="cs-muted">· {{ $r->units }} {{ __('units') }}</span>@endif</td>
                                 <td>{{ $r->note ?: '—' }}</td>
                                 <td>{{ __(ucfirst($r->status)) }}</td>
                                 <td>{{ $r->quoted_amount !== null ? 'KES ' . number_format((float) $r->quoted_amount, 2) : '—' }}</td>

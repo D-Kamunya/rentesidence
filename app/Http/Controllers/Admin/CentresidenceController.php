@@ -521,6 +521,18 @@ class CentresidenceController extends Controller
         if (($status = $request->get('status')) && in_array($status, ['provisioning', 'active', 'inactive', 'decommissioned'], true)) {
             $query->where('status', $status);
         }
+        // Meter-type tab filter (server-side so it works across pages; coexists with the filters above).
+        if (($type = $request->get('type')) && in_array($type, ['water', 'gas', 'other'], true)) {
+            $query->whereHas('propertyModule.module', function ($q) use ($type) {
+                if ($type === 'water') {
+                    $q->where('key', 'like', '%water%');
+                } elseif ($type === 'gas') {
+                    $q->where(fn ($qq) => $qq->where('key', 'like', '%gas%')->orWhere('key', 'like', '%lpg%'));
+                } else {
+                    $q->where('key', 'not like', '%water%')->where('key', 'not like', '%gas%')->where('key', 'not like', '%lpg%');
+                }
+            });
+        }
         if ($search = trim((string) $request->get('q'))) {
             // Search by device reference (#id), DevEUI or name — so a reported
             // device can be found instantly among thousands.
@@ -548,7 +560,7 @@ class CentresidenceController extends Controller
             'gateways' => Gateway::orderBy('name')->get(),
             'properties' => $properties,
             'unitsByProperty' => $unitsByProperty,
-            'filters' => $request->only(['q', 'property_id', 'gateway_id', 'status', 'property_module_id']),
+            'filters' => $request->only(['q', 'property_id', 'gateway_id', 'status', 'property_module_id', 'type']),
         ]);
     }
 

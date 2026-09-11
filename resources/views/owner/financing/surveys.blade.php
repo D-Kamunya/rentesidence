@@ -36,18 +36,31 @@
                         </div>
                         <div class="col-md-4 cs-field">
                             <label class="cs-label">{{ __('Property') }}</label>
-                            <select name="property_id" class="cs-input" required>
+                            <select name="property_id" id="fsProperty" class="cs-input" required onchange="fsSyncUnits()">
                                 <option value="">{{ __('Select…') }}</option>
                                 @foreach ($properties as $p)
-                                    <option value="{{ $p->id }}">{{ $p->name }}</option>
+                                    <option value="{{ $p->id }}" data-units="{{ (int) $p->property_units_count }}">{{ $p->name }} ({{ (int) $p->property_units_count }} {{ __('units') }})</option>
                                 @endforeach
                             </select>
                         </div>
-                        <div class="col-md-4 cs-field">
+                        <div class="col-md-2 cs-field">
+                            <label class="cs-label">{{ __('Units') }}</label>
+                            <div style="display:flex;gap:6px;">
+                                <input type="number" name="units" id="fsUnits" class="cs-input" min="1" placeholder="{{ __('e.g. 12') }}">
+                                <button type="button" class="cs-btn cs-btn--ghost" style="white-space:nowrap;" onclick="fsAllUnits()">{{ __('All') }}</button>
+                            </div>
+                            <small class="cs-muted" id="fsUnitsHint"></small>
+                        </div>
+                        <div class="col-md-2 cs-field">
                             <label class="cs-label">{{ __('Note (optional)') }}</label>
-                            <input type="text" name="note" class="cs-input" maxlength="1000" placeholder="{{ __('e.g. number of units, access notes') }}">
+                            <input type="text" name="note" class="cs-input" maxlength="1000" placeholder="{{ __('access notes') }}">
                         </div>
                     </div>
+                    <script>
+                        function fsMaxUnits(){ var o=document.getElementById('fsProperty').selectedOptions[0]; return o?parseInt(o.getAttribute('data-units')||'0',10):0; }
+                        function fsSyncUnits(){ var m=fsMaxUnits(); var u=document.getElementById('fsUnits'); u.max=m||''; document.getElementById('fsUnitsHint').textContent=m?('{{ __('Up to') }} '+m):''; if(u.value && m && parseInt(u.value,10)>m){u.value=m;} }
+                        function fsAllUnits(){ var m=fsMaxUnits(); if(m){document.getElementById('fsUnits').value=m;} }
+                    </script>
                     @if ($properties->isEmpty())
                         <p class="cs-muted" style="margin:4px 0 12px;">{{ __('Add a property first to request a survey.') }}</p>
                     @endif

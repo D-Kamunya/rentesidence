@@ -54,6 +54,15 @@
             </div>
         </form>
 
+        {{-- Meter-type tabs — server-side (works across pages) + preserves the search/filter above. --}}
+        @php $activeType = $filters['type'] ?? 'all'; @endphp
+        <div style="display:flex;gap:8px;margin:0 0 14px;flex-wrap:wrap;">
+            @foreach (['all' => __('All'), 'water' => __('Water'), 'gas' => __('Gas'), 'other' => __('Other')] as $t => $tl)
+                @php $url = request()->fullUrlWithQuery(['type' => $t === 'all' ? null : $t, 'page' => null]); @endphp
+                <a href="{{ $url }}" class="cs-btn {{ $activeType === $t ? 'cs-btn--primary' : 'cs-btn--ghost' }} cs-btn--sm">{{ $tl }}</a>
+            @endforeach
+        </div>
+
         <p class="cs-muted" style="margin-bottom:10px;">{{ $devices->total() }} {{ trans_choice('device|devices', $devices->total()) }}</p>
 
         {{-- Per-row forms referenced by inputs via the HTML5 `form` attribute (valid inside tables). --}}

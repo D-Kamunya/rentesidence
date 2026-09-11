@@ -93,6 +93,20 @@ class FinanceApplicationTest extends CentresidenceDatabaseTestCase
         $this->assertCount(1, $app->statusHistory()->get()); // null → draft
     }
 
+    public function test_a_quoted_amount_overrides_the_catalogue_with_no_platform_fee(): void
+    {
+        // Field-study install (e.g. reticulated gas): the surveyed quote is the all-in project cost.
+        $app = app(FinanceApplicationService::class)->createDraft(
+            ['quoted_amount' => 250000, 'catalogue_item_id' => null, 'quantity' => 1] + $this->draftData()
+        );
+
+        $this->assertSame('250000.00', $app->base_cost);       // the quote, not catalogue × qty
+        $this->assertSame('0.00', $app->platform_fee_amount);  // no separate platform fee on a quote
+        $this->assertSame('250000.00', $app->requested_amount);
+        $this->assertNull($app->catalogue_item_id);
+        $this->assertSame(FinanceApplication::STATUS_DRAFT, $app->status);
+    }
+
     public function test_installation_cost_is_folded_into_the_financed_principal(): void
     {
         // Catalogue with a non-zero install fee: base = (3500 + 800) × 10.

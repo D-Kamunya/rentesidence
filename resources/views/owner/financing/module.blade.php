@@ -58,7 +58,18 @@
 
             {{-- Self-finance summary --}}
             <div class="col-lg-5">
-                @if ($module->requires_field_study)
+                @php $aq = $acceptedQuote ?? null; @endphp
+                @if ($aq)
+                    <div class="cs-card">
+                        <div class="cs-card__head"><h2 class="cs-card__title">{{ __('Your quotation') }}</h2></div>
+                        <div class="cs-card__body">
+                            <div style="font-size:24px;font-weight:800;color:var(--gray-900);">KES {{ number_format((float) $aq->quoted_amount, 2) }}</div>
+                            @if ($aq->units)<p class="cs-muted" style="margin:2px 0 0;">{{ $aq->units }} {{ __('units') }}</p>@endif
+                            @if ($aq->quote_note)<p class="cs-muted" style="margin:6px 0 0;font-size:12px;">{{ $aq->quote_note }}</p>@endif
+                            <p style="margin:10px 0 0;font-size:13px;color:var(--gray-700);">{{ __('Choose a financier below to apply for this amount.') }}</p>
+                        </div>
+                    </div>
+                @elseif ($module->requires_field_study)
                     <div class="cs-card">
                         <div class="cs-card__head"><h2 class="cs-card__title">{{ __('Priced per property') }}</h2></div>
                         <div class="cs-card__body">
@@ -89,7 +100,7 @@
                 <h2 class="cs-title" style="font-size:18px;">{{ __('Finance this module') }}</h2>
             </div>
 
-            @if ($module->requires_field_study)
+            @if ($module->requires_field_study && ! $aq)
                 <div class="cs-alert is-info">{{ __('Financing for this install is arranged from your site-survey quotation — request a survey above, then apply once you receive your quote.') }}</div>
             @else
             @unless ($isTransactionMode)
@@ -121,7 +132,7 @@
                                         <td>{{ $p->min_repayment_months }}–{{ $p->max_repayment_months }} {{ __('mo') }}</td>
                                         <td>KES {{ number_format($p->min_amount, 0) }} – {{ number_format($p->max_amount, 0) }}</td>
                                         <td>{{ number_format($p->max_rent_deduction_percentage, 0) }}%</td>
-                                        <td><a href="{{ route('owner.financing.apply', $p->id) }}" class="cs-btn cs-btn--primary cs-btn--sm">{{ __('Apply') }}</a></td>
+                                        <td><a href="{{ route('owner.financing.apply', $aq ? [$p->id, 'fsr' => $aq->id] : $p->id) }}" class="cs-btn cs-btn--primary cs-btn--sm">{{ __('Apply') }}</a></td>
                                     </tr>
                                 @endforeach
                             </tbody>

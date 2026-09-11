@@ -73,29 +73,38 @@ class FinanceApplicationService
         // begins; the UI prompts them to switch first.
         $this->paymentMode->assertEligibleForFinancing((int) $data['owner_id']);
 
-        $catalogueItem = ModulePricingCatalogueItem::findOrFail($data['catalogue_item_id']);
         $partnerModule = FinancePartnerModule::findOrFail($data['finance_partner_module_id']);
 
         $feePercentage = (string) ($data['platform_fee_percentage'] ?? $this->resolvePlatformFee($data['module_id']));
         $months = (int) ($data['repayment_months'] ?? $partnerModule->min_repayment_months);
 
-        // Financed per-unit cost = hardware + installation. Test catalogues carry
-        // no installation_cost (default 0) so existing expectations hold; real
-        // catalogues fold the install fee into the financed principal.
-        $perUnitFinanced = bcadd(
-            (string) $catalogueItem->unit_price,
-            (string) ($catalogueItem->installation_cost ?? 0),
-            2
-        );
+        if (! empty($data['quoted_amount'])) {
+            // Bespoke QUOTE (field-study install, e.g. reticulated gas): the surveyed quotation IS
+            // the all-in project cost — there is no catalogue unit price, and no separate platform
+            // fee on top. catalogue_item_id is null for these.
+            $quoted = bcadd((string) $data['quoted_amount'], '0', 2);
+            $maths = ['base_cost' => $quoted, 'platform_fee_amount' => '0.00', 'requested_amount' => $quoted];
+        } else {
+            $catalogueItem = ModulePricingCatalogueItem::findOrFail($data['catalogue_item_id']);
 
-        $maths = $this->calculator->compute(
-            $perUnitFinanced,
-            (int) $data['quantity'],
-            $feePercentage,
-            (string) $partnerModule->interest_rate,
-            $months,
-            $partnerModule->interest_rate_type
-        );
+            // Financed per-unit cost = hardware + installation. Test catalogues carry
+            // no installation_cost (default 0) so existing expectations hold; real
+            // catalogues fold the install fee into the financed principal.
+            $perUnitFinanced = bcadd(
+                (string) $catalogueItem->unit_price,
+                (string) ($catalogueItem->installation_cost ?? 0),
+                2
+            );
+
+            $maths = $this->calculator->compute(
+                $perUnitFinanced,
+                (int) $data['quantity'],
+                $feePercentage,
+                (string) $partnerModule->interest_rate,
+                $months,
+                $partnerModule->interest_rate_type
+            );
+        }
 
         // Partial financing: the owner may put down a contribution and finance
         // only the remainder. financed = total project cost − contribution. The
@@ -139,8 +148,8 @@ class FinanceApplicationService
                 'module_id' => $data['module_id'],
                 'finance_partner_id' => $data['finance_partner_id'],
                 'finance_partner_module_id' => $data['finance_partner_module_id'],
-                'catalogue_item_id' => $data['catalogue_item_id'],
-                'quantity' => $data['quantity'],
+                'catalogue_item_id' => $data['catalogue_item_id'] ?? null,
+                'quantity' => $data['quantity'] ?? 1,
                 'base_cost' => $maths['base_cost'],
                 'platform_fee_percentage' => $feePercentage,
                 'platform_fee_amount' => $maths['platform_fee_amount'],

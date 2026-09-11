@@ -70,7 +70,7 @@
                 $groupLabels = ['water' => __('Water'), 'gas' => __('Gas'), 'other' => __('Other')];
             @endphp
             @if ($groups->count() > 1)
-                <div class="dv-tabs" style="display:flex;gap:8px;margin:20px 0 4px;flex-wrap:wrap;">
+                <div class="dv-tabs" style="display:flex;gap:8px;margin:20px 0 20px;flex-wrap:wrap;">
                     <button type="button" class="dv-tab" data-filter="all" onclick="csDevFilter(this,'all')" style="background:#185FA5;color:#fff;border:1px solid #185FA5;border-radius:20px;padding:6px 16px;font-size:13px;font-weight:600;cursor:pointer;">{{ __('All') }}</button>
                     @foreach ($groups as $g)
                         <button type="button" class="dv-tab" data-filter="{{ $g }}" onclick="csDevFilter(this,'{{ $g }}')" style="background:#fff;color:#48566A;border:1px solid #DCE6F1;border-radius:20px;padding:6px 16px;font-size:13px;font-weight:600;cursor:pointer;">{{ $groupLabels[$g] ?? ucfirst($g) }}</button>
