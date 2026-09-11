@@ -86,6 +86,7 @@
                         <li><a href="{{ route('admin.centresidence.index') }}">{{ __('Overview') }}</a></li>
                         <li><a href="{{ route('admin.centresidence.partners') }}">{{ __('Finance Partners') }}</a></li>
                         <li><a href="{{ route('admin.centresidence.applications') }}">{{ __('Applications') }}</a></li>
+                        <li><a href="{{ route('admin.centresidence.field-studies') }}">{{ __('Site Surveys') }}</a></li>
                         <li><a href="{{ route('admin.centresidence.facilities') }}">{{ __('Facilities') }}</a></li>
                         <li><a href="{{ route('admin.centresidence.defaults') }}">{{ __('Defaults') }}</a></li>
                         <li><a href="{{ route('admin.centresidence.remittances') }}">{{ __('Remittances') }}</a></li>

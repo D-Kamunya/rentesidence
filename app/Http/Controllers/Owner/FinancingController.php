@@ -324,6 +324,10 @@ class FinancingController extends Controller
             'requests'   => FieldStudyRequest::with(['module', 'property'])->where('owner_id', $ownerId)->latest()->get(),
             'modules'    => Module::where('is_active', true)->where('requires_field_study', true)->orderBy('name')->get(),
             'properties' => Property::where('owner_user_id', $ownerId)->withCount('propertyUnits')->orderBy('name')->get(),
+            // Sidebar: open Financing, highlight Site surveys.
+            'navFinancingMMShowClass'         => 'mm-show',
+            'subNavSiteSurveysMMActiveClass'  => 'mm-active',
+            'subNavSiteSurveysActiveClass'    => 'active',
         ]);
     }
 
