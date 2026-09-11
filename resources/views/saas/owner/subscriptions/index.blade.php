@@ -464,11 +464,16 @@
                             <div class="sub-plan-head">
                                 <div>
                                     <p class="sub-plan-eyebrow">Current Plan</p>
+                                    @php $pm = $userPlan->pricing_model ?? 'subscription'; @endphp
                                     <h2 class="sub-plan-name">
                                         {{ $userPlan->name }}
-                                        <span class="sub-plan-cadence">
-                                            / {{ $userPlan->duration_type == PACKAGE_DURATION_TYPE_MONTHLY ? 'Monthly' : 'Yearly' }}
-                                        </span>
+                                        {{-- Cadence only applies to a subscription tier; free & transaction plans
+                                             are open-ended, so no misleading "/ Monthly". --}}
+                                        @if ($pm === 'subscription')
+                                            <span class="sub-plan-cadence">
+                                                / {{ $userPlan->duration_type == PACKAGE_DURATION_TYPE_MONTHLY ? 'Monthly' : 'Yearly' }}
+                                            </span>
+                                        @endif
                                     </h2>
                                 </div>
                                 <span class="sub-badge sub-badge--active">

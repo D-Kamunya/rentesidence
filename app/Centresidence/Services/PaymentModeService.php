@@ -5,6 +5,7 @@ namespace App\Centresidence\Services;
 use App\Centresidence\Exceptions\FacilityActiveModeLockException;
 use App\Centresidence\Exceptions\OwnerNotInTransactionModeException;
 use App\Centresidence\Models\PropertyModule;
+use App\Models\Package;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
@@ -106,20 +107,41 @@ class PaymentModeService
             return false;
         }
 
-        $package = DB::table('owner_packages')
-            ->where('user_id', $ownerUserId)
-            ->where('status', 1)
-            ->latest('id')
-            ->first();
-
-        if (! $package) {
-            return false;
+        // Transaction (and free) are REAL packages the owner is moved ONTO — not a
+        // billing flag layered over their existing tier. Resolve the canonical plan
+        // for the mode and assign it, so package_id and pricing_model stay consistent
+        // and the owner ends up on ONE coherent plan (no "Free tier + transaction
+        // billing" hybrid). Mirrors the direct plan-selection path (activateFree).
+        // Only transaction/free have a single canonical package — a subscription TIER
+        // is chosen at checkout, so that mode falls through to a plain mode-flip.
+        $target = null;
+        if (in_array($newMode, [self::MODE_TRANSACTION, self::MODE_FREE], true) && Schema::hasTable('packages')) {
+            $target = Package::query()
+                ->where('status', ACTIVE)
+                ->where('pricing_model', $newMode)
+                ->when($newMode === self::MODE_FREE, fn ($q) => $q->where('is_default', ACTIVE))
+                ->orderBy('id')
+                ->first();
         }
 
-        // Mode is authoritative for billing: flip the package AND re-tag the
-        // owner's modules so the billing engines follow the new mode.
-        DB::transaction(function () use ($package, $ownerUserId, $newMode) {
-            DB::table('owner_packages')->where('id', $package->id)->update(['pricing_model' => $newMode]);
+        if ($target) {
+            // 50-year duration = open-ended (matches activateFree). setUserPackage
+            // deactivates the old active row, creates the new plan row, grants SMS,
+            // and syncs module billing to the new mode.
+            setUserPackage($ownerUserId, $target, 365 * 50, 1, null);
+            return true;
+        }
+
+        // No canonical package for this mode (subscription tiers are chosen at
+        // checkout, or the catalogue is misconfigured) — fall back to flipping the
+        // mode on the current row so billing still follows.
+        $current = DB::table('owner_packages')
+            ->where('user_id', $ownerUserId)->where('status', 1)->latest('id')->first();
+        if (! $current) {
+            return false;
+        }
+        DB::transaction(function () use ($current, $ownerUserId, $newMode) {
+            DB::table('owner_packages')->where('id', $current->id)->update(['pricing_model' => $newMode]);
             $this->syncModulesToOwnerMode($ownerUserId);
         });
 
