@@ -21,7 +21,8 @@ class FieldStudyWorkflowTest extends TestCase
         $defs = [
             'modules'    => fn ($t) => [$t->id(), $t->string('key')->nullable(), $t->string('name')->nullable(), $t->boolean('is_active')->default(true), $t->boolean('requires_field_study')->default(false)],
             'properties' => fn ($t) => [$t->id(), $t->unsignedBigInteger('owner_user_id')->nullable(), $t->string('name')->nullable()],
-            'field_study_requests' => fn ($t) => [$t->id(), $t->unsignedBigInteger('owner_id'), $t->unsignedBigInteger('property_id')->nullable(), $t->unsignedBigInteger('module_id'), $t->string('status')->default('requested'), $t->text('note')->nullable(), $t->decimal('quoted_amount', 14, 2)->nullable(), $t->text('quote_note')->nullable(), $t->unsignedBigInteger('quoted_by')->nullable(), $t->timestamp('quoted_at')->nullable()],
+            'property_units' => fn ($t) => [$t->id(), $t->unsignedBigInteger('property_id')->nullable(), $t->string('unit_name')->nullable()],
+            'field_study_requests' => fn ($t) => [$t->id(), $t->unsignedBigInteger('owner_id'), $t->unsignedBigInteger('property_id')->nullable(), $t->unsignedInteger('units')->nullable(), $t->unsignedBigInteger('module_id'), $t->string('status')->default('requested'), $t->text('note')->nullable(), $t->decimal('quoted_amount', 14, 2)->nullable(), $t->text('quote_note')->nullable(), $t->unsignedBigInteger('quoted_by')->nullable(), $t->timestamp('quoted_at')->nullable()],
         ];
         foreach ($defs as $name => $cols) {
             if (! Schema::hasTable($name)) {
@@ -80,9 +81,11 @@ class FieldStudyWorkflowTest extends TestCase
         $this->assertSame('quoted', $req->status);
         $this->assertEqualsWithDelta(250000.0, (float) $req->quoted_amount, 0.01);
 
-        // Now the owner can proceed → marked applied.
+        // Accepting reveals the financiers — redirects to the module page carrying the quote (fsr).
+        // Status stays 'quoted' until a finance application is actually submitted (storeFromQuote).
         $this->withoutMiddleware()->actingAs($this->actor(10))
-            ->post(route('owner.financing.surveys.proceed', $reqId))->assertRedirect();
-        $this->assertSame('applied', FieldStudyRequest::find($reqId)->status);
+            ->post(route('owner.financing.surveys.proceed', $reqId))
+            ->assertRedirect(route('owner.financing.module', ['moduleId' => $req->module_id, 'fsr' => $reqId]));
+        $this->assertSame('quoted', FieldStudyRequest::find($reqId)->status);
     }
 }
