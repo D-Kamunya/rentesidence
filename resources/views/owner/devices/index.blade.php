@@ -65,6 +65,28 @@
             </div>
 
             {{-- Per-module infrastructure --}}
+            @php
+                $groups = $modules->map(fn ($mm) => $mm->view_utility_class ?? 'other')->unique()->values();
+                $groupLabels = ['water' => __('Water'), 'gas' => __('Gas'), 'other' => __('Other')];
+            @endphp
+            @if ($groups->count() > 1)
+                <div class="dv-tabs" style="display:flex;gap:8px;margin:20px 0 4px;flex-wrap:wrap;">
+                    <button type="button" class="dv-tab" data-filter="all" onclick="csDevFilter(this,'all')" style="background:#185FA5;color:#fff;border:1px solid #185FA5;border-radius:20px;padding:6px 16px;font-size:13px;font-weight:600;cursor:pointer;">{{ __('All') }}</button>
+                    @foreach ($groups as $g)
+                        <button type="button" class="dv-tab" data-filter="{{ $g }}" onclick="csDevFilter(this,'{{ $g }}')" style="background:#fff;color:#48566A;border:1px solid #DCE6F1;border-radius:20px;padding:6px 16px;font-size:13px;font-weight:600;cursor:pointer;">{{ $groupLabels[$g] ?? ucfirst($g) }}</button>
+                    @endforeach
+                </div>
+                <script>
+                    function csDevFilter(btn, f){
+                        document.querySelectorAll('.dv-tab').forEach(function(t){ t.style.background='#fff'; t.style.color='#48566A'; t.style.borderColor='#DCE6F1'; });
+                        btn.style.background='#185FA5'; btn.style.color='#fff'; btn.style.borderColor='#185FA5';
+                        document.querySelectorAll('.dv-list .dv-mod').forEach(function(c){
+                            c.style.display = (f==='all' || c.getAttribute('data-utility')===f) ? '' : 'none';
+                        });
+                    }
+                </script>
+            @endif
+
             <div class="dv-list">
                 @foreach ($modules as $module)
                     @php
@@ -74,8 +96,9 @@
                         $label  = $module->view_unit_label ?? (optional($module->tokenConfig)->token_unit_label ?: __('units'));
                         $unitFmt = fn ($v) => (rtrim(rtrim(number_format((float) $v, 2), '0'), '.') ?: '0');
                         $isMetered = optional($mod)->is_metered;
+                        $group = $module->view_utility_class ?? 'other'; // water / gas / other — for the filter tabs
                     @endphp
-                    <div class="cs-card dv-mod">
+                    <div class="cs-card dv-mod" data-utility="{{ $group }}">
                         <div class="cs-card__body">
                             <div class="dv-mod__head">
                                 <span class="dv-mod__icon" style="background:{{ $color }}1a;color:{{ $color }};"><i class="{{ $icon }}"></i></span>

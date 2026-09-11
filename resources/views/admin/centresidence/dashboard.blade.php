@@ -16,8 +16,9 @@
                 ['Finance partners', number_format($metrics['partners']), 'var(--blue)'],
                 ['Platform fees (total)', 'KES ' . number_format($metrics['platform_fees'], 2), 'var(--green)'],
                 ['Commission billed', 'KES ' . number_format($metrics['commission_metered'] + $metrics['commission_non_metered'], 2), 'var(--purple)'],
+                ['Gas token commission', 'KES ' . number_format($metrics['token_commission'] ?? 0, 2), 'var(--amber)'],
                 ['Fallbacks active', number_format($metrics['fallback_active']), 'var(--red)'],
-                ['Active modules', number_format($metrics['active_modules']), 'var(--blue)'],
+                ['Active deployments', number_format($metrics['active_modules']), 'var(--blue)'],
                 ['Active devices', number_format($metrics['active_devices']), 'var(--green)'],
                 ['Gateways', number_format($metrics['gateways']), 'var(--purple)'],
             ];

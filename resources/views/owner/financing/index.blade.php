@@ -36,7 +36,9 @@
                             <div class="cs-modcard__tag">{{ $m->tagline ?? $m->description }}</div>
                             <div class="cs-modcard__meta">
                                 <span>
-                                    @if ($row['financiers'] > 0)
+                                    @if ($m->requires_field_study)
+                                        {{ __('Quote-based · site survey') }}
+                                    @elseif ($row['financiers'] > 0)
                                         {{ $row['financiers'] }} {{ trans_choice('financier|financiers', $row['financiers']) }}
                                     @elseif ($row['catalogue'])
                                         {{ __('Self-finance') }}

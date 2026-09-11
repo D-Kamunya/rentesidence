@@ -45,6 +45,7 @@
                                     <div style="display:flex;gap:16px;padding-top:8px;">
                                         <label style="font-size:13px;"><input type="checkbox" name="is_financeable" value="1" @checked($module->is_financeable)> {{ __('Financeable') }}</label>
                                         <label style="font-size:13px;"><input type="checkbox" name="is_active" value="1" @checked($module->is_active)> {{ __('Active') }}</label>
+                                        <label style="font-size:13px;" title="{{ __('Custom installs priced per property (e.g. reticulated gas) — owners request a site survey + quote instead of seeing a catalogue price.') }}"><input type="checkbox" name="requires_field_study" value="1" @checked($module->requires_field_study ?? false)> {{ __('Quote-based (site survey)') }}</label>
                                     </div>
                                 </div>
                             </div>
@@ -61,14 +62,14 @@
                                 <div class="row" style="border-top:0.5px solid var(--gray-200);padding-top:14px;margin-top:6px;">
                                     <div class="col-12"><div class="cs-section__label" style="margin-bottom:8px;">{{ __('Token economics (metered)') }}</div></div>
                                     <div class="col-md-4 cs-field">
-                                        <label class="cs-label">{{ __('Units per KES') }}</label>
+                                        <label class="cs-label">{{ __('Default starting tariff (units per KES)') }}</label>
                                         <input type="number" step="0.0001" min="0" name="token_units_per_kes" class="cs-input" value="{{ old('token_units_per_kes', $module->token_units_per_kes) }}" placeholder="e.g. 5">
-                                        <small class="cs-muted">{{ $module->token_unit_label ?? __('units') }} {{ __('a tenant gets per KES paid.') }}</small>
+                                        <small class="cs-muted">{{ __('Only the STARTING value on a new install. Each owner sets their own retail price per :label on their My Devices page — that is now owner-controlled.', ['label' => $module->token_unit_label ?? __('unit')]) }}</small>
                                     </div>
                                     <div class="col-md-4 cs-field">
-                                        <label class="cs-label">{{ __('Commission per unit (KES)') }}</label>
+                                        <label class="cs-label">{{ __('Our supply margin per unit (KES)') }}</label>
                                         <input type="number" step="0.0001" min="0" name="token_commission_per_unit" class="cs-input" value="{{ old('token_commission_per_unit', $module->token_commission_per_unit ?? 0) }}" placeholder="0">
-                                        <small class="cs-muted">{{ __('Centresidence income share per unit. Keep 0 — owners keep utility revenue — and set only for an income-share module (e.g. gas).') }}</small>
+                                        <small class="cs-muted">{{ __('Centresidence income share per unit (admin-only; owners cannot change it). Keep 0 for water — owners keep all utility revenue — and set it only for an income-share utility we supply (e.g. gas).') }}</small>
                                     </div>
                                 </div>
                             @endif

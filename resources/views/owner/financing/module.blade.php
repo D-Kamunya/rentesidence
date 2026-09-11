@@ -58,7 +58,15 @@
 
             {{-- Self-finance summary --}}
             <div class="col-lg-5">
-                @if ($catalogue)
+                @if ($module->requires_field_study)
+                    <div class="cs-card">
+                        <div class="cs-card__head"><h2 class="cs-card__title">{{ __('Priced per property') }}</h2></div>
+                        <div class="cs-card__body">
+                            <p style="font-size:13px;color:var(--gray-700);margin:0 0 10px;">{{ __('This installation is quoted per property after a site survey — there is no fixed catalogue price. Request a survey and we will send you a quotation you can then finance.') }}</p>
+                            <a href="{{ route('owner.financing.surveys') }}" class="cs-btn cs-btn--primary" style="width:100%;justify-content:center;">{{ __('Request a site survey') }}</a>
+                        </div>
+                    </div>
+                @elseif ($catalogue)
                     <div class="cs-card">
                         <div class="cs-card__head"><h2 class="cs-card__title">{{ __('What it costs') }}</h2></div>
                         <div class="cs-card__body">
@@ -81,6 +89,9 @@
                 <h2 class="cs-title" style="font-size:18px;">{{ __('Finance this module') }}</h2>
             </div>
 
+            @if ($module->requires_field_study)
+                <div class="cs-alert is-info">{{ __('Financing for this install is arranged from your site-survey quotation — request a survey above, then apply once you receive your quote.') }}</div>
+            @else
             @unless ($isTransactionMode)
                 <div class="cs-alert is-amber">{{ __('Partner financing requires transaction pricing mode (so rent can service the facility automatically). You will be prompted to switch when you apply.') }}</div>
             @endunless
@@ -118,6 +129,7 @@
                     </div>
                 </div>
             @endif
+            @endif {{-- /requires_field_study --}}
         </div>
     </div>
 </div></div></div>

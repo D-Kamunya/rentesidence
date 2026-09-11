@@ -54,6 +54,11 @@ class CentresidenceController extends Controller
             'commission_non_metered' => (clone $commission)->sum('non_metered_commission_total'),
             'commission_invoices'    => (clone $commission)->count(),
             'fallback_active'        => (clone $commission)->where('fallback_deduction_active', true)->count(),
+            // Gas (and any metered) TOKEN commission — our per-unit income share on prepaid utility
+            // sales (distinct from the metered infra BILLING in commission_metered above).
+            'token_commission'       => Schema::hasTable('wallet_transactions')
+                ? (float) \App\Models\WalletTransaction::where('transaction_source', 'token')->sum('commission_amount')
+                : 0.0,
             'active_modules'         => PropertyModule::where('status', 'active')->count(),
             'active_devices'         => Device::where('status', 'active')->count(),
             'gateways'               => Gateway::count(),
@@ -390,6 +395,9 @@ class CentresidenceController extends Controller
             'benefits' => $benefits, 'icon' => $data['icon'] ?? null, 'accent_color' => $data['accent_color'] ?? null,
             'is_financeable' => $request->boolean('is_financeable'), 'is_active' => $request->boolean('is_active'),
             'settlement_target' => $data['settlement_target'] ?? 'centresidence',
+            // Quote-based (custom install, e.g. reticulated gas): owners request a site survey +
+            // bespoke quote instead of seeing a catalogue price.
+            'requires_field_study' => $request->boolean('requires_field_study'),
         ];
 
         if ($module->is_metered) {

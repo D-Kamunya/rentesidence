@@ -98,7 +98,7 @@ class DashboardController extends Controller
         }
         $streams['infrastructure'] = [
             'label'  => __('Infrastructure & tokens'),
-            'note'   => __('Centresidence commission + infrastructure'),
+            'note'   => __('Gas token commission + infrastructure billing'),
             'icon'   => 'ri-flashlight-line',
             'accent' => 'amber',
             'all'    => $tokenCommissionAll + $infraAll,
