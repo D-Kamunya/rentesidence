@@ -71,7 +71,7 @@
                         $mod    = $module->module;
                         $color  = $mod ? $mod->displayColor() : '#185FA5';
                         $icon   = $mod ? $mod->displayIcon() : 'ri-dashboard-3-line';
-                        $label  = optional($module->tokenConfig)->token_unit_label ?: __('units');
+                        $label  = $module->view_unit_label ?? (optional($module->tokenConfig)->token_unit_label ?: __('units'));
                         $unitFmt = fn ($v) => (rtrim(rtrim(number_format((float) $v, 2), '0'), '.') ?: '0');
                         $isMetered = optional($mod)->is_metered;
                     @endphp

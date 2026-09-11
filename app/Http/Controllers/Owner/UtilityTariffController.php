@@ -34,9 +34,20 @@ class UtilityTariffController extends Controller
         if (! optional($module->module)->is_metered) {
             return back()->with('error', __('This module is not metered, so it has no tariff.'));
         }
+
+        // A metered module can be priced even before a token config exists — create one on first
+        // save, inheriting the module's catalogue defaults (our supply margin for gas; the unit label).
         $config = $module->tokenConfig;
         if (! $config) {
-            return back()->with('error', __('This module has no token configuration to price yet.'));
+            $utilityClass = $svc->utilityClass(optional($module->module)->key);
+            $config = new \App\Centresidence\Models\ModuleTokenConfig([
+                'property_module_id'                      => $module->id,
+                'centresidence_commission_per_token_unit' => (float) (optional($module->module)->token_commission_per_unit ?? 0),
+                'token_unit_label'                        => optional($module->module)->unit
+                    ?: ($utilityClass === 'gas' ? 'Kg' : ($utilityClass === 'water' ? 'Litres' : 'units')),
+                'is_active'                               => true,
+            ]);
+            $config->property_module_id = $module->id;
         }
 
         $commission = (string) ($config->centresidence_commission_per_token_unit ?? '0');

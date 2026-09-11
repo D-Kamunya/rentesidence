@@ -30,13 +30,15 @@ class OwnerTariffUpdateTest extends TestCase
         }
     }
 
-    /** @return array{0:int,1:int} [propertyModuleId, tokenConfigId] */
-    private function makeModule(int $ownerId, bool $metered, string $key, float $units, float $commission): array
+    /** @return array{0:int,1:?int} [propertyModuleId, tokenConfigId|null] */
+    private function makeModule(int $ownerId, bool $metered, string $key, float $units, float $commission, bool $withConfig = true): array
     {
         $moduleId = DB::table('modules')->insertGetId(['key' => $key, 'is_metered' => $metered, 'name' => $key]);
         $propId   = DB::table('properties')->insertGetId(['city' => 'Nairobi']);
         $pmId     = DB::table('property_modules')->insertGetId(['owner_id' => $ownerId, 'module_id' => $moduleId, 'property_id' => $propId, 'status' => 'active']);
-        $tcId     = DB::table('module_token_config')->insertGetId(['property_module_id' => $pmId, 'units_per_kes' => $units, 'centresidence_commission_per_token_unit' => $commission, 'token_unit_label' => 'Litres', 'is_active' => true]);
+        $tcId     = $withConfig
+            ? DB::table('module_token_config')->insertGetId(['property_module_id' => $pmId, 'units_per_kes' => $units, 'centresidence_commission_per_token_unit' => $commission, 'token_unit_label' => 'Litres', 'is_active' => true])
+            : null;
 
         return [$pmId, $tcId];
     }
@@ -74,6 +76,20 @@ class OwnerTariffUpdateTest extends TestCase
 
         // Unchanged — the floor blocked the save.
         $this->assertEqualsWithDelta(5.0, (float) DB::table('module_token_config')->where('id', $tcId)->value('units_per_kes'), 0.001);
+    }
+
+    /** @test */
+    public function pricing_a_metered_module_with_no_config_creates_one(): void
+    {
+        [$pmId] = $this->makeModule(10, true, 'water_meter', 0, 0, withConfig: false);
+        $this->assertSame(0, DB::table('module_token_config')->where('property_module_id', $pmId)->count());
+
+        $this->submitTariff(10, ['property_module_id' => $pmId, 'price_per_unit' => 0.10])
+            ->assertRedirect();
+
+        $row = DB::table('module_token_config')->where('property_module_id', $pmId)->first();
+        $this->assertNotNull($row); // created on first save
+        $this->assertEqualsWithDelta(10.0, (float) $row->units_per_kes, 0.001); // 1 / 0.10
     }
 
     /** @test */

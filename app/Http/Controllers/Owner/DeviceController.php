@@ -107,20 +107,21 @@ class DeviceController extends Controller
                 $module->view_devices_online  = $online;
 
                 // Owner-set tariff view data (metered modules only) — current tariff + the advisory.
-                if (optional($module->module)->is_metered && $module->tokenConfig) {
-                    $units = (string) ($module->tokenConfig->units_per_kes ?: '0');
+                if (optional($module->module)->is_metered) {
+                    // Unit + type depend on the METER, not on whether a tariff row exists yet — resolve
+                    // them for every metered module so a not-yet-priced meter still reads "per litre/kg".
                     $utilityClass = $tariffSvc->utilityClass(optional($module->module)->key);
-                    $module->view_units_per_kes  = (float) $module->tokenConfig->units_per_kes;
-                    $module->view_price_per_unit = $tariffSvc->pricePerUnit($units);
-                    $module->view_commission     = (float) ($module->tokenConfig->centresidence_commission_per_token_unit ?? 0);
+                    $cfg          = $module->tokenConfig; // may be null (never priced yet)
+                    $units        = (string) (optional($cfg)->units_per_kes ?: '0');
+
                     $module->view_utility_class  = $utilityClass;
-                    // Explicit unit noun for tariff phrasing: water → litre, gas → kg (falls back to the label).
-                    $module->view_unit_noun      = $tariffSvc->unitNoun($utilityClass, $module->tokenConfig->token_unit_label);
-                    $module->view_advisory = $tariffSvc->advisory(
-                        $module->view_price_per_unit,
-                        $utilityClass,
-                        optional($module->property)->city
-                    );
+                    $module->view_unit_noun      = $tariffSvc->unitNoun($utilityClass, optional($cfg)->token_unit_label); // litre / kg
+                    $module->view_unit_label     = optional($cfg)->token_unit_label
+                        ?: ($utilityClass === 'water' ? __('Litres') : ($utilityClass === 'gas' ? __('Kg') : __('units')));
+                    $module->view_units_per_kes  = (float) optional($cfg)->units_per_kes;
+                    $module->view_price_per_unit = $tariffSvc->pricePerUnit($units);
+                    $module->view_commission     = (float) (optional($cfg)->centresidence_commission_per_token_unit ?? 0);
+                    $module->view_advisory       = $tariffSvc->advisory($module->view_price_per_unit, $utilityClass, optional($module->property)->city);
                 }
 
                 if ($module->status === PropertyModule::STATUS_ACTIVE) {
