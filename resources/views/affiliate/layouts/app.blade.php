@@ -32,6 +32,7 @@
 
     @include('common.layouts.style')
     @stack('style')
+    @include('common.layouts.pwa-meta')
 </head>
 
 <body class="{{ selectedLanguage()->rtl == 1 ? 'direction-rtl' : 'direction-ltr' }}">

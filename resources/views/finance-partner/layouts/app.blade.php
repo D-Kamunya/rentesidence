@@ -7,6 +7,7 @@
     <title>{{ getOption('app_name') . ' — ' . ($pageTitle ?? 'Finance Partner') }}</title>
     @include('common.layouts.style')
     @stack('style')
+    @include('common.layouts.pwa-meta')
     <style>
         .fp-shell { display:flex; min-height:100vh; background:#f6f8fb; }
         .fp-side { width:240px; flex:none; background:#fff; border-right:0.5px solid #e5e7eb; display:flex; flex-direction:column; position:sticky; top:0; height:100vh; }

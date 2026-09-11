@@ -36,6 +36,7 @@
     <link rel="shortcut icon" href="{{ getSettingImage('app_fav_icon') }}" type="image/x-icon">
     <link rel="shortcut icon" href="{{ getSettingImage('app_fav_icon') }}">
 
+    @include('common.layouts.pwa-meta')
 </head>
 
 <body class="{{ selectedLanguage()->rtl == 1 ? 'direction-rtl' : 'direction-ltr' }}">

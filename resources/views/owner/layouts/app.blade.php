@@ -28,6 +28,7 @@
 
     @include('common.layouts.style')
     @stack('style')
+    @include('common.layouts.pwa-meta')
     <script src="https://js.pusher.com/8.2.0/pusher.min.js"></script>
     <script>
         window.Laravel = {!! json_encode([

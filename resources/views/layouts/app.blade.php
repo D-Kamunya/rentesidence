@@ -83,6 +83,7 @@
             'pusher_cluster' => config('app.pusher_cluster'),
         ]) !!};
     </script>
+    @include('common.layouts.pwa-meta')
 </head>
 
 <body class="{{ selectedLanguage()->rtl == 1 ? 'direction-rtl' : 'direction-ltr' }}">
