@@ -6,13 +6,19 @@ use App\Models\Lead;
 
 class TemplateSubstitutionService
 {
-    public function substitute(string $template, Lead $lead): string
+    public function substitute(string $template, Lead $lead, bool $hasBrochure = false): string
     {
         $affiliate = $lead->affiliate;
         $company   = $lead->company;
         $contact   = $lead->contact_person_name ?? $company->company_name;
 
         $vars = [
+            // Stays correct whether a material is attached or not, without losing the
+            // convincing tone: strong ("attached") when one is linked, inviting otherwise.
+            '{{brochure_line}}'   => $hasBrochure
+                ? 'I\'ve attached a brochure with more details.'
+                : 'I\'d be glad to send over a brochure with the full details — just let me know.',
+
             // Contact / company
             '{{contact_name}}'    => $contact,
             '{{company_name}}'    => $company->company_name ?? '',
@@ -69,6 +75,9 @@ class TemplateSubstitutionService
                 '{{lead_status}}'      => 'Current lead status',
                 '{{lead_temperature}}' => 'Lead temperature (Hot / Warm / Cold)',
                 '{{demo_date}}'        => 'Scheduled demo date and time',
+            ],
+            'Smart' => [
+                '{{brochure_line}}'    => 'Auto-phrases a brochure mention — "attached" when a material is linked to this template, "happy to send" when not',
             ],
         ];
     }

@@ -80,8 +80,10 @@ class ActionExecutionController extends Controller
         $this->authorizeLead($lead);
         $template = ActionTemplate::with('materials')->findOrFail($templateId);
 
-        // Substitute placeholders using the service
-        $message = $this->substitution->substitute($template->message_template, $lead);
+        // Substitute placeholders using the service. Pass whether a material is linked
+        // so {{brochure_line}} reads "attached" (it's an email → the file is attached
+        // below) vs "happy to send" when none is linked.
+        $message = $this->substitution->substitute($template->message_template, $lead, $template->materials->isNotEmpty());
 
         $recipientEmail = $lead->company->email;
 

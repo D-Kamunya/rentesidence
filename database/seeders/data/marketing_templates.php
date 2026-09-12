@@ -1,9 +1,8 @@
 <?php
 
 // Canonical DEFAULT marketing/action templates (affiliate suggestion engine).
-// One per (category, action_type); {{contact_name}} {{affiliate_name}} {{company_name}}
-// {{company_country}} {{estimated_units}} {{property_type}} are substituted at send.
-// Reviewed set + channel-gap fillers. Edit here; MarketingTemplateSeeder upserts.
+// {{contact_name}} {{affiliate_name}} {{company_name}} {{company_country}} {{estimated_units}}
+// {{property_type}} {{brochure_line}} are substituted at send. Edit here; MarketingTemplateSeeder upserts.
 
 return array (
   0 => 
@@ -93,7 +92,7 @@ I hope this message finds you well. My name is {{affiliate_name}}, and I\'m reac
 
 Our systems helps property managers and owners like yourself streamline operations, reduce administrative costs, improve tenant satisfaction and increase cash flow – all from a single dashboard. You could even access growth, development or personal loans solely secured by your rental income flow.
 
-I\'ve attached a brochure with more details. I\'d love to schedule a quick 5-10 minute call to walk you through how it works and answer any questions.
+{{brochure_line}} I\'d love to schedule a quick 5-10 minute call to walk you through how it works and answer any questions.
 
 Would you be open to a brief conversation this week?
 

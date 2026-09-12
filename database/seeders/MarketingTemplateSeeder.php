@@ -16,7 +16,7 @@ use Illuminate\Support\Facades\DB;
  *
  * Copy lives in database/seeders/data/marketing_templates.php (reviewed set + the
  * channel-gap fillers), one canonical template per (category, action_type), covering
- * all 7 engine categories × 3 channels. AUTHORITATIVE-ONCE via `marketing_templates_seed_v1`
+ * all 7 engine categories × 3 channels. AUTHORITATIVE-ONCE via `marketing_templates_seed_v2`
  * so a redeploy never clobbers an admin's later edits. On the first run it also RETIRES
  * the pre-seed test templates (their good copy is folded into the defaults here).
  */
@@ -24,7 +24,7 @@ class MarketingTemplateSeeder extends Seeder
 {
     public function run(): void
     {
-        if (getOption('marketing_templates_seed_v1')) {
+        if (getOption('marketing_templates_seed_v2')) {
             return;
         }
 
@@ -50,6 +50,6 @@ class MarketingTemplateSeeder extends Seeder
             ActionTemplate::where('is_default', false)->delete();
         });
 
-        setOption('marketing_templates_seed_v1', '1');
+        setOption('marketing_templates_seed_v2', '1');
     }
 }
