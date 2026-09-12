@@ -31,6 +31,7 @@ class DatabaseSeeder extends Seeder
             TermsConditionsSeeder::class,
             PackageCatalogSeeder::class,
             MarketingTemplateSeeder::class,
+            DemoPrepSeeder::class,
             CentresidenceCatalogSeeder::class,
             KnowledgeBaseSeeder::class,
             OwnerKnowledgeBaseSeeder::class,
