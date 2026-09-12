@@ -52,6 +52,19 @@
 <style>
     @media (max-width: 640px) {
         .page-content-wrapper.p-30 { padding: 14px !important; }
+
+        /* Mobile safety-net: a bare data table becomes its OWN horizontal-scroll box
+           instead of forcing the whole page to scroll sideways (the #1 phone break).
+           Scoped to the app content box; DataTables-managed tables (.dataTable) keep
+           their own responsive handling; tables already inside a .table-responsive
+           wrapper are unaffected in practice. Component-level polish stays per-page
+           as issues surface on-device. */
+        .page-content-wrapper table:not(.dataTable) {
+            display: block;
+            width: 100%;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+        }
     }
 
     /* ── Shared brand mark (sidebar/topbar) — see common/layouts/_brand.blade.php ── */
