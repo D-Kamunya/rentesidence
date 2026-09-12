@@ -130,6 +130,18 @@ class ScreeningLookupService
             ]);
         });
 
+        // Affiliate usage-line commission — the affiliate shares a first-time/recurring cut
+        // of OUR screening revenue on a PAID (credit) hit. Free/plan hits earn us nothing
+        // per-hit, so nothing to share. Best-effort — never breaks the screening.
+        if ($cover === 'credit') {
+            app(\App\Services\AffiliateCommissionService::class)->handleUsageCommission(
+                $ownerUserId,
+                AFFILIATE_COMMISSION_SOURCE_SCREENING,
+                (float) CreditService::pricePerUnit('screening'),
+                'screening-' . $lookup->id
+            );
+        }
+
         return ['status' => 'ok', 'profile' => $profile, 'lookup' => $lookup, 'phone' => $normalized];
     }
 

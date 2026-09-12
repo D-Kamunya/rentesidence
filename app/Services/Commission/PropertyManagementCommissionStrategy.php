@@ -23,8 +23,33 @@ class PropertyManagementCommissionStrategy implements CommissionRuleStrategy
             AFFILIATE_COMMISSION_SOURCE_SUBSCRIPTION => $this->subscription($event),
             AFFILIATE_COMMISSION_SOURCE_RENT         => $this->rent($event),
             AFFILIATE_COMMISSION_SOURCE_MARKETPLACE  => $this->marketplace($event),
+            // Usage lines — screening / agreement / gas token / financing origination.
+            AFFILIATE_COMMISSION_SOURCE_SCREENING,
+            AFFILIATE_COMMISSION_SOURCE_AGREEMENT,
+            AFFILIATE_COMMISSION_SOURCE_GAS_TOKEN,
+            AFFILIATE_COMMISSION_SOURCE_FINANCING    => $this->usageCut($event),
             default => ['rate' => 0.0, 'commission_amount' => 0.0, 'cadence' => 'one_time'],
         };
+    }
+
+    /**
+     * A cut of OUR take on a usage event (never more than we earned), reusing the SAME
+     * first-time/recurring config as subscription — the affiliate earnings just span more
+     * lines now. First event of a (owner, source) = first-time bounty rate; then recurring.
+     */
+    private function usageCut(CommissionEventData $event): array
+    {
+        $rate = $event->clientType === NEW_CLIENT
+            ? (float) getOption('FIRST_TIME_COMMISSION_RATE')
+            : (float) getOption('RECURRING_COMMISSION_RATE');
+
+        $ourTake = max(0.0, (float) ($event->ourCommission ?? 0));
+
+        return [
+            'rate'              => $rate,
+            'commission_amount' => round($ourTake * ($rate / 100), 2),
+            'cadence'           => 'recurring',
+        ];
     }
 
     public function currency(): string

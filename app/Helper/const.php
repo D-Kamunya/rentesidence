@@ -293,3 +293,10 @@ const AFFILIATE_WITHDRAWAL_FAILED = 4;
 const AFFILIATE_COMMISSION_SOURCE_SUBSCRIPTION = 'subscription';
 const AFFILIATE_COMMISSION_SOURCE_RENT         = 'rent';
 const AFFILIATE_COMMISSION_SOURCE_MARKETPLACE  = 'marketplace';
+// Usage lines added 2026-09-13 — the affiliate shares a first-time/recurring cut of
+// OUR take on each event (screening credit, agreement credit, gas token commission,
+// financing origination fee). Gas ONLY on tokens (water/other infra rides the rent line).
+const AFFILIATE_COMMISSION_SOURCE_SCREENING    = 'screening';
+const AFFILIATE_COMMISSION_SOURCE_AGREEMENT    = 'agreement';
+const AFFILIATE_COMMISSION_SOURCE_GAS_TOKEN    = 'gas_token';
+const AFFILIATE_COMMISSION_SOURCE_FINANCING    = 'financing';

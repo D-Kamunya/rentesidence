@@ -296,6 +296,88 @@ class AffiliateCommissionService
         ]);
     }
 
+    /**
+     * Generic recurring USAGE-line commission — screening / agreement / gas token /
+     * financing origination. The affiliate earns a first-time-then-recurring cut of OUR
+     * take on the event, reusing the SAME config as subscription, PER-SOURCE: the first
+     * commission of a (owner, source) uses the first-time bounty rate, then recurring,
+     * capped at RECURRING_COMMISSION_MONTHS from that source's first commission. Mirrors
+     * the marketplace/rent flow. Best-effort (try/catch) so a commission hiccup never
+     * breaks the underlying action (a screening, a signed agreement, a token purchase).
+     *
+     * @param int    $ownerUserId owner's users.id (the client)
+     * @param string $source      AFFILIATE_COMMISSION_SOURCE_SCREENING|AGREEMENT|GAS_TOKEN|FINANCING
+     * @param float  $ourTake     OUR revenue/commission on this event (the cut base)
+     * @param string $externalRef unique per-event ref (idempotency)
+     */
+    public function handleUsageCommission(int $ownerUserId, string $source, float $ourTake, string $externalRef, ?Carbon $when = null): void
+    {
+        try {
+            if ($ourTake <= 0) {
+                return;
+            }
+
+            $ownerRecord = Owner::where('user_id', $ownerUserId)->first();
+            if (! $ownerRecord || ! $ownerRecord->affiliate_id) {
+                return; // no affiliate on this owner — nothing to pay
+            }
+            $affiliateId = $ownerRecord->affiliate_id;
+
+            $months = (int) getOption('RECURRING_COMMISSION_MONTHS', 12);
+            if ($months <= 0) {
+                return;
+            }
+
+            // Idempotency (recordEvent also guards via the unique index).
+            if (AffiliateCommission::where('source', $source)->where('external_ref', $externalRef)->exists()) {
+                return;
+            }
+
+            // Per-source client type + 12-month window measured from this source's first commission.
+            $first = AffiliateCommission::where('affiliate_id', $affiliateId)
+                ->where('owner_id', $ownerRecord->id)
+                ->where('source', $source)
+                ->orderBy('created_at')
+                ->first();
+            $clientType = $first ? RECURRING_CLIENT : NEW_CLIENT;
+            $monthsElapsed = $first ? Carbon::parse($first->created_at)->diffInMonths(now()) : 0;
+            if ($monthsElapsed >= $months) {
+                return; // past the recurring window for this line
+            }
+
+            $product  = ProductRegistry::default();
+            $strategy = ProductRegistry::commissionStrategy($product);
+            $computed = $strategy->compute(new CommissionEventData(
+                product:       $product,
+                source:        $source,
+                grossAmount:   $ourTake, // for usage lines the base IS our take
+                ourCommission: $ourTake,
+                clientType:    $clientType,
+            ));
+
+            if ($computed['commission_amount'] <= 0) {
+                return;
+            }
+
+            $at = $when ?? Carbon::now();
+            $this->recordEvent([
+                'product'           => $product,
+                'affiliate_id'      => $affiliateId,
+                'owner_id'          => $ownerRecord->id,
+                'source'            => $source,
+                'external_ref'      => $externalRef,
+                'commission_rate'   => $computed['rate'],
+                'commission_amount' => $computed['commission_amount'],
+                'currency'          => $strategy->currency(),
+                'cadence'           => $computed['cadence'],
+                'period_month'      => (int) $at->format('n'),
+                'period_year'       => (int) $at->format('Y'),
+            ]);
+        } catch (\Throwable $e) {
+            Log::error("handleUsageCommission failed (source={$source}, owner={$ownerUserId}, ref={$externalRef}) — " . $e->getMessage());
+        }
+    }
+
 
     /**
      * Reverse the affiliate's marketplace commission when a sale is refunded — a NEGATIVE ledger
