@@ -3,9 +3,9 @@
 namespace App\Services\AffiliateOs;
 
 use App\Services\Commission\CommissionRuleStrategy;
-use App\Services\Commission\PropertySalesCommissionStrategy;
+use App\Services\Commission\PropertyManagementCommissionStrategy;
 use App\Services\Suggestions\LeadSuggestionStrategy;
-use App\Services\Suggestions\PropertySalesSuggestionStrategy;
+use App\Services\Suggestions\PropertyManagementSuggestionStrategy;
 
 /**
  * Reads the Affiliate-OS product registry (config/affiliate_os.php) — the single
@@ -19,7 +19,7 @@ class ProductRegistry
     /** The product key legacy/untagged rows belong to. */
     public static function default(): string
     {
-        return (string) config('affiliate_os.default_product', 'property_sales');
+        return (string) config('affiliate_os.default_product', 'property_management');
     }
 
     /** All configured product keys. */
@@ -49,7 +49,7 @@ class ProductRegistry
      */
     public static function suggestionStrategy(string $product): LeadSuggestionStrategy
     {
-        $class = self::config($product)['suggestion_strategy'] ?? PropertySalesSuggestionStrategy::class;
+        $class = self::config($product)['suggestion_strategy'] ?? PropertyManagementSuggestionStrategy::class;
 
         return app($class);
     }
@@ -60,7 +60,7 @@ class ProductRegistry
      */
     public static function commissionStrategy(string $product): CommissionRuleStrategy
     {
-        $class = self::config($product)['commission_strategy'] ?? PropertySalesCommissionStrategy::class;
+        $class = self::config($product)['commission_strategy'] ?? PropertyManagementCommissionStrategy::class;
 
         return app($class);
     }

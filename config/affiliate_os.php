@@ -1,7 +1,7 @@
 <?php
 
-use App\Services\Commission\PropertySalesCommissionStrategy;
-use App\Services\Suggestions\PropertySalesSuggestionStrategy;
+use App\Services\Commission\PropertyManagementCommissionStrategy;
+use App\Services\Suggestions\PropertyManagementSuggestionStrategy;
 
 /*
 |--------------------------------------------------------------------------
@@ -20,17 +20,17 @@ use App\Services\Suggestions\PropertySalesSuggestionStrategy;
 
 return [
 
-    'default_product' => 'property_sales',
+    'default_product' => 'property_management',
 
     'products' => [
 
-        'property_sales' => [
+        'property_management' => [
             'name'                => 'Centresidence — Property Management',
             'currency'            => env('CENTRESIDENCE_CURRENCY', 'KES'),
             // Per-product strategies. commission_strategy is added in WP-B; the
             // suggestion strategy already exists and is dispatched by the engine.
-            'suggestion_strategy' => PropertySalesSuggestionStrategy::class,
-            'commission_strategy' => PropertySalesCommissionStrategy::class,
+            'suggestion_strategy' => PropertyManagementSuggestionStrategy::class,
+            'commission_strategy' => PropertyManagementCommissionStrategy::class,
         ],
 
     ],

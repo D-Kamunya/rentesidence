@@ -4,7 +4,7 @@ namespace Tests\Feature\Affiliate;
 
 use App\Models\Lead;
 use App\Models\LeadActivity;
-use App\Services\Suggestions\PropertySalesSuggestionStrategy;
+use App\Services\Suggestions\PropertyManagementSuggestionStrategy;
 use Illuminate\Support\Collection;
 use Tests\TestCase;
 
@@ -27,7 +27,7 @@ class SuggestionRuleEngineTest extends TestCase
     /** @return \App\Services\Suggestions\SuggestionCandidate[] */
     private function candidates(Lead $lead): array
     {
-        return (new PropertySalesSuggestionStrategy())->candidatesFor($lead, now());
+        return (new PropertyManagementSuggestionStrategy())->candidatesFor($lead, now());
     }
 
     public function test_hot_active_idle_lead_gets_a_high_priority_call(): void

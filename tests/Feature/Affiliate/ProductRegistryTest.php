@@ -3,7 +3,7 @@
 namespace Tests\Feature\Affiliate;
 
 use App\Services\AffiliateOs\ProductRegistry;
-use App\Services\Suggestions\PropertySalesSuggestionStrategy;
+use App\Services\Suggestions\PropertyManagementSuggestionStrategy;
 use Tests\TestCase;
 
 /**
@@ -12,11 +12,11 @@ use Tests\TestCase;
  */
 class ProductRegistryTest extends TestCase
 {
-    public function test_default_product_is_property_sales(): void
+    public function test_default_product_is_property_management(): void
     {
-        $this->assertSame('property_sales', ProductRegistry::default());
-        $this->assertTrue(ProductRegistry::exists('property_sales'));
-        $this->assertContains('property_sales', ProductRegistry::keys());
+        $this->assertSame('property_management', ProductRegistry::default());
+        $this->assertTrue(ProductRegistry::exists('property_management'));
+        $this->assertContains('property_management', ProductRegistry::keys());
     }
 
     public function test_unknown_product_is_not_registered(): void
@@ -27,8 +27,8 @@ class ProductRegistryTest extends TestCase
     public function test_resolves_property_suggestion_strategy(): void
     {
         $this->assertInstanceOf(
-            PropertySalesSuggestionStrategy::class,
-            ProductRegistry::suggestionStrategy('property_sales')
+            PropertyManagementSuggestionStrategy::class,
+            ProductRegistry::suggestionStrategy('property_management')
         );
     }
 
@@ -36,7 +36,7 @@ class ProductRegistryTest extends TestCase
     {
         // The engine must never die on a legacy/unknown product.
         $this->assertInstanceOf(
-            PropertySalesSuggestionStrategy::class,
+            PropertyManagementSuggestionStrategy::class,
             ProductRegistry::suggestionStrategy('some_unregistered_product')
         );
     }

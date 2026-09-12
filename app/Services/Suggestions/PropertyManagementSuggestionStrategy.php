@@ -7,12 +7,16 @@ use Carbon\Carbon;
 use Illuminate\Support\Collection;
 
 /**
- * Centresidence's property-sales lead-nudge rules — extracted verbatim from the
- * GenerateLeadSuggestions command. Reasons over stage × temperature × idle-hours
- * × time-to-demo and returns the next-best actions. Reads the lead's ALREADY
- * LOADED activities/company (no per-lead queries).
+ * Lead-nudge rules for the PROPERTY-MANAGEMENT product — an affiliate MARKETING
+ * THE RENTAL-MANAGEMENT SYSTEM to a prospective owner (lead → demo → trial →
+ * converted paying owner). This is NOT about selling property: when a dedicated
+ * property-SALES branch grows its own affiliate motion, it gets its own product
+ * key + `PropertySales*` strategies (the OS seam supports that) — kept distinct
+ * here so the two never drift. Reasons over stage × temperature × idle-hours ×
+ * time-to-demo and returns next-best actions. Reads the lead's ALREADY LOADED
+ * activities/company (no per-lead queries).
  */
-class PropertySalesSuggestionStrategy implements LeadSuggestionStrategy
+class PropertyManagementSuggestionStrategy implements LeadSuggestionStrategy
 {
     public function candidatesFor(Lead $lead, Carbon $now): array
     {

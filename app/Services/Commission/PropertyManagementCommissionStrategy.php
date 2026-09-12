@@ -15,7 +15,7 @@ use App\Services\AffiliateCommissionService;
  *  - marketplace:  a share (category rate) of OUR commission on the sale — a true
  *                  cut, so we never pay more than we earned.
  */
-class PropertySalesCommissionStrategy implements CommissionRuleStrategy
+class PropertyManagementCommissionStrategy implements CommissionRuleStrategy
 {
     public function compute(CommissionEventData $event): array
     {

@@ -5,7 +5,7 @@ namespace Tests\Feature\Affiliate;
 use App\Models\AffiliateCommission;
 use App\Services\AffiliateCommissionService;
 use App\Services\Commission\CommissionEventData;
-use App\Services\Commission\PropertySalesCommissionStrategy;
+use App\Services\Commission\PropertyManagementCommissionStrategy;
 
 /**
  * Affiliate OS WP-B — the commission-event ledger. Two guarantees:
@@ -19,9 +19,9 @@ class CommissionLedgerTest extends AffiliateDatabaseTestCase
         return app(AffiliateCommissionService::class);
     }
 
-    private function strategy(): PropertySalesCommissionStrategy
+    private function strategy(): PropertyManagementCommissionStrategy
     {
-        return new PropertySalesCommissionStrategy();
+        return new PropertyManagementCommissionStrategy();
     }
 
     // ── Strategy math (behaviour preserved char-for-char) ──────────────────
@@ -31,7 +31,7 @@ class CommissionLedgerTest extends AffiliateDatabaseTestCase
         config(['settings.FIRST_TIME_COMMISSION_RATE' => 10, 'settings.RECURRING_COMMISSION_RATE' => 4]);
 
         $out = $this->strategy()->compute(new CommissionEventData(
-            product: 'property_sales', source: AFFILIATE_COMMISSION_SOURCE_SUBSCRIPTION,
+            product: 'property_management', source: AFFILIATE_COMMISSION_SOURCE_SUBSCRIPTION,
             grossAmount: 1000, clientType: NEW_CLIENT,
         ));
 
@@ -45,7 +45,7 @@ class CommissionLedgerTest extends AffiliateDatabaseTestCase
         config(['settings.FIRST_TIME_COMMISSION_RATE' => 10, 'settings.RECURRING_COMMISSION_RATE' => 4]);
 
         $out = $this->strategy()->compute(new CommissionEventData(
-            product: 'property_sales', source: AFFILIATE_COMMISSION_SOURCE_SUBSCRIPTION,
+            product: 'property_management', source: AFFILIATE_COMMISSION_SOURCE_SUBSCRIPTION,
             grossAmount: 1000, clientType: RECURRING_CLIENT,
         ));
 
@@ -56,7 +56,7 @@ class CommissionLedgerTest extends AffiliateDatabaseTestCase
     public function test_rent_is_point_15_percent_of_gross(): void
     {
         $out = $this->strategy()->compute(new CommissionEventData(
-            product: 'property_sales', source: AFFILIATE_COMMISSION_SOURCE_RENT,
+            product: 'property_management', source: AFFILIATE_COMMISSION_SOURCE_RENT,
             grossAmount: 100000,
         ));
 
@@ -68,7 +68,7 @@ class CommissionLedgerTest extends AffiliateDatabaseTestCase
     {
         // 15% of our 200 commission = 30 (never a % of gross).
         $out = $this->strategy()->compute(new CommissionEventData(
-            product: 'property_sales', source: AFFILIATE_COMMISSION_SOURCE_MARKETPLACE,
+            product: 'property_management', source: AFFILIATE_COMMISSION_SOURCE_MARKETPLACE,
             grossAmount: 5000, ourCommission: 200, ratePercent: 15,
         ));
 
@@ -82,7 +82,7 @@ class CommissionLedgerTest extends AffiliateDatabaseTestCase
     private function event(string $ref, float $amount): array
     {
         return [
-            'product' => 'property_sales', 'affiliate_id' => 1, 'owner_id' => 1,
+            'product' => 'property_management', 'affiliate_id' => 1, 'owner_id' => 1,
             'source' => AFFILIATE_COMMISSION_SOURCE_RENT, 'external_ref' => $ref,
             'commission_rate' => 0.15, 'commission_amount' => $amount,
             'currency' => 'KES', 'cadence' => 'recurring',
