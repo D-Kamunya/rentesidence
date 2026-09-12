@@ -394,6 +394,19 @@ class FinanceFacilityService
         // inside an open DB transaction holding row locks during network I/O.
         FacilityDisbursed::dispatch($facility);
 
+        // Affiliate usage-line commission — a first-time/recurring cut of OUR origination
+        // fee, earned when the facility actually disburses (not at application). Idempotent
+        // both ways: disburse() no-ops if already disbursed, and the commission keys on the
+        // facility ref. Best-effort — never breaks the disbursement (already committed).
+        if ((float) $facility->origination_fee_amount > 0) {
+            app(\App\Services\AffiliateCommissionService::class)->handleUsageCommission(
+                (int) $facility->owner_id,
+                AFFILIATE_COMMISSION_SOURCE_FINANCING,
+                (float) $facility->origination_fee_amount,
+                'financing-' . $facility->id
+            );
+        }
+
         return $facility;
     }
 

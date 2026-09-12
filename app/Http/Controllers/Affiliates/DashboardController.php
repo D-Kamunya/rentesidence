@@ -80,6 +80,32 @@ class DashboardController extends Controller
             'total_referrals' => $totalReferrals
             ];
 
+        // "Your owners generated X this month" — every income line an affiliate earns from
+        // their owners' ACTIVITY, not just the subscription. Surfacing the usage lines
+        // (screening, agreements, gas tokens, financing) shows that even a free-tier owner
+        // who never upgrades still earns the affiliate money — the antidote to dereliction.
+        $activityEarnings = AffiliateCommission::where('affiliate_id', $affiliateId)
+            ->where('period_month', $month)
+            ->where('period_year', $year)
+            ->select('source', \DB::raw('SUM(commission_amount) as total'))
+            ->groupBy('source')
+            ->pluck('total', 'source');
+
+        $sourceLabels = [
+            AFFILIATE_COMMISSION_SOURCE_SUBSCRIPTION => 'Subscriptions',
+            AFFILIATE_COMMISSION_SOURCE_RENT         => 'Rent',
+            AFFILIATE_COMMISSION_SOURCE_MARKETPLACE  => 'Marketplace',
+            AFFILIATE_COMMISSION_SOURCE_SCREENING    => 'Tenant screening',
+            AFFILIATE_COMMISSION_SOURCE_AGREEMENT    => 'Agreements',
+            AFFILIATE_COMMISSION_SOURCE_GAS_TOKEN    => 'Gas tokens',
+            AFFILIATE_COMMISSION_SOURCE_FINANCING    => 'Financing',
+        ];
+        $earningsBySource = [];
+        foreach ($sourceLabels as $key => $label) {
+            $earningsBySource[] = ['label' => $label, 'amount' => (float) ($activityEarnings[$key] ?? 0)];
+        }
+        $ownersGeneratedThisMonth = array_sum(array_column($earningsBySource, 'amount'));
+
          $commissionTrends = AffiliateCommissionPayment::select(
                 'period_month',
                 'period_year',
@@ -148,6 +174,6 @@ class DashboardController extends Controller
             $urgentSuggestions = $suggestionCounts->sum('urgent_count');
             $leadsWithSuggestions = $suggestionCounts->count();
         // Pass the data to the view
-        return view('affiliate.dashboard', compact('summary', 'totalLeads', 'newModules', 'commissionTrends', 'recentCommissions', 'isCertified', 'suggestionCounts', 'pendingWithdrawalsCount', 'totalSuggestions','urgentSuggestions', 'leadsWithSuggestions'));
+        return view('affiliate.dashboard', compact('summary', 'totalLeads', 'newModules', 'commissionTrends', 'recentCommissions', 'isCertified', 'suggestionCounts', 'pendingWithdrawalsCount', 'totalSuggestions','urgentSuggestions', 'leadsWithSuggestions', 'earningsBySource', 'ownersGeneratedThisMonth'));
     }
 }

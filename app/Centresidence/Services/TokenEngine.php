@@ -60,7 +60,7 @@ class TokenEngine
         $commission = Money::fromUnitsTimesRate($units, $commissionPerUnit);
         $ownerGross = $amount->minus($commission);
 
-        return DB::transaction(function () use (
+        $purchase = DB::transaction(function () use (
             $propertyModule, $tenantUserId, $amount, $config,
             $units, $unitsPerKes, $commissionPerUnit, $commission, $ownerGross, $options
         ) {
@@ -122,6 +122,21 @@ class TokenEngine
 
             return $purchase;
         });
+
+        // Affiliate usage-line commission — a first-time/recurring cut of OUR embedded token
+        // commission. GAS ONLY: gas is the only module where we take a per-token commission
+        // (water/other metered recover infra from rent, already in the affiliate's rent line),
+        // so nothing to share elsewhere. Best-effort — never breaks the purchase.
+        if ($commission->isPositive() && optional($propertyModule->module)->key === 'gas_meter') {
+            app(\App\Services\AffiliateCommissionService::class)->handleUsageCommission(
+                (int) $propertyModule->owner_id,
+                AFFILIATE_COMMISSION_SOURCE_GAS_TOKEN,
+                (float) $commission->toDecimal(),
+                'gas_token-' . $purchase->id
+            );
+        }
+
+        return $purchase;
     }
 
     /**

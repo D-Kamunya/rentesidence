@@ -205,6 +205,18 @@ class AgreementService
             $agreement->logEvent(AgreementSignatureEvent::EVENT_SENT, ['template_id' => $agreement->agreement_template_id, 'billed_as' => $coverage]);
         });
 
+        // Affiliate usage-line commission — a first-time/recurring cut of OUR agreement
+        // revenue on a PAID (credit) send. Free/plan sends earn us nothing per-send, so
+        // nothing to share. Best-effort — never breaks the send.
+        if ($coverage === 'credit') {
+            app(\App\Services\AffiliateCommissionService::class)->handleUsageCommission(
+                $ownerUserId,
+                AFFILIATE_COMMISSION_SOURCE_AGREEMENT,
+                (float) \App\Services\Credit\CreditService::pricePerUnit('agreement'),
+                'agreement-' . $agreement->id
+            );
+        }
+
         $this->notifyTenantOfNewAgreement($agreement, $tenantUser);
 
         return $agreement;

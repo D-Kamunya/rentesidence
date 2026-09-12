@@ -77,6 +77,51 @@ class CommissionLedgerTest extends AffiliateDatabaseTestCase
         $this->assertSame('one_time', $out['cadence']);
     }
 
+    /**
+     * Usage lines (screening / agreement / gas token / financing) all funnel through
+     * usageCut(): a first-time/recurring CUT of OUR take on the event — never a % of the
+     * owner's gross, so a payout can never exceed what we earned.
+     *
+     * @dataProvider usageSources
+     */
+    public function test_usage_line_new_client_is_first_time_cut_of_our_take(string $source): void
+    {
+        config(['settings.FIRST_TIME_COMMISSION_RATE' => 30, 'settings.RECURRING_COMMISSION_RATE' => 10]);
+
+        $out = $this->strategy()->compute(new CommissionEventData(
+            product: 'property_management', source: $source,
+            grossAmount: 0, ourCommission: 200, clientType: NEW_CLIENT,
+        ));
+
+        $this->assertSame(30.0, $out['rate']);
+        $this->assertSame(60.0, $out['commission_amount']); // 30% of OUR 200
+        $this->assertSame('recurring', $out['cadence']);
+    }
+
+    /** @dataProvider usageSources */
+    public function test_usage_line_recurring_client_is_recurring_cut_of_our_take(string $source): void
+    {
+        config(['settings.FIRST_TIME_COMMISSION_RATE' => 30, 'settings.RECURRING_COMMISSION_RATE' => 10]);
+
+        $out = $this->strategy()->compute(new CommissionEventData(
+            product: 'property_management', source: $source,
+            grossAmount: 0, ourCommission: 200, clientType: RECURRING_CLIENT,
+        ));
+
+        $this->assertSame(10.0, $out['rate']);
+        $this->assertSame(20.0, $out['commission_amount']); // 10% of OUR 200
+    }
+
+    public static function usageSources(): array
+    {
+        return [
+            'screening' => [AFFILIATE_COMMISSION_SOURCE_SCREENING],
+            'agreement' => [AFFILIATE_COMMISSION_SOURCE_AGREEMENT],
+            'gas_token' => [AFFILIATE_COMMISSION_SOURCE_GAS_TOKEN],
+            'financing' => [AFFILIATE_COMMISSION_SOURCE_FINANCING],
+        ];
+    }
+
     // ── Ledger idempotency ─────────────────────────────────────────────────
 
     private function event(string $ref, float $amount): array
