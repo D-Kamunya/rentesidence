@@ -29,7 +29,7 @@ class PropertyManagementCommissionStrategy implements CommissionRuleStrategy
 
     public function currency(): string
     {
-        return (string) (config('affiliate_os.products.property_sales.currency') ?? 'KES');
+        return (string) (config('affiliate_os.products.property_management.currency') ?? 'KES');
     }
 
     private function subscription(CommissionEventData $event): array
