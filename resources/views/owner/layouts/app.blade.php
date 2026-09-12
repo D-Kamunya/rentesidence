@@ -22,7 +22,7 @@
     <meta name="msapplication-TileImage" content="{{ getSettingImage('app_logo') }}">
 
     <meta name="msapplication-TileColor" content="#F8F8F8">
-    <meta name="theme-color" content="#3686FC">
+    <meta name="theme-color" content="#185FA5">
     <meta name="csrf-token" content="{{ csrf_token() }}" />
     <title>{{ getOption('app_name') . ' - ' . @$pageTitle }}</title>
 

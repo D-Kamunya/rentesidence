@@ -37,10 +37,10 @@ class PackageCatalogSeeder extends Seeder
 {
     public function run(): void
     {
-        // v4 soft-deletes stale legacy bands (e.g. Platinum) so the seed is authoritative
-        // end-to-end. (v2 flattened/tapered the paid SMS grants; v3 zeroed the FREE grant —
-        // SMS is a usage-revenue rail on the free tier, not a giveaway.)
-        if (getOption('package_catalog_v4')) {
+        // v5 sets maintainer/invoice/auto-invoice limits to -1 (unlimited) — they were 0,
+        // which reads/enforces as "zero allowed". (v4 soft-deleted stale bands; v3 zeroed the
+        // FREE SMS grant; v2 flattened/tapered the paid grants.)
+        if (getOption('package_catalog_v5')) {
             return;
         }
 
@@ -87,12 +87,16 @@ class PackageCatalogSeeder extends Seeder
                         'type'                     => 2,
                         'pricing_model'            => $model,
                         'max_unit'                 => $maxUnit,
-                        // Property/tenant/maintainer/invoice limits are dormant (unit-only gating).
-                        'max_property'             => 0,
-                        'max_tenant'               => 0,
-                        'max_maintainer'           => 0,
-                        'max_invoice'              => 0,
-                        'max_auto_invoice'         => 0,
+                        // Unit-only gating: everything else is UNLIMITED. property/tenant are
+                        // dead columns (getOwnerLimit short-circuits them to PHP_INT_MAX), but
+                        // maintainer/invoice/auto-invoice ARE read (getOwnerLimit enforces any
+                        // value != -1) and shown on the plan card, so they must be -1 =
+                        // unlimited — NOT 0 (which reads/enforces as "zero allowed").
+                        'max_property'             => -1,
+                        'max_tenant'               => -1,
+                        'max_maintainer'           => -1,
+                        'max_invoice'              => -1,
+                        'max_auto_invoice'         => -1,
                         'ticket_support'           => ACTIVE,
                         'notice_support'           => ACTIVE,
                         'per_monthly_price'        => $perMonthly,
@@ -118,6 +122,6 @@ class PackageCatalogSeeder extends Seeder
             Package::whereNotIn('name', array_column($bands, 0))->delete();
         });
 
-        setOption('package_catalog_v4', '1');
+        setOption('package_catalog_v5', '1');
     }
 }

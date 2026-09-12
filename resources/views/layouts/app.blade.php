@@ -25,7 +25,7 @@
     <meta name="msapplication-TileImage" content="assets/img/logo.png">
 
     <meta name="msapplication-TileColor" content="#F8F8F8">
-    <meta name="theme-color" content="#3686FC">
+    <meta name="theme-color" content="#185FA5">
 
     <title>@stack('title' ?? '') {{ getOption('app_name') }}</title>
 
