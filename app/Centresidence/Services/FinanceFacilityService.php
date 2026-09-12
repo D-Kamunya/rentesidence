@@ -371,6 +371,24 @@ class FinanceFacilityService
             ]);
         });
 
+        // The facility is now live and at-source repayment (from rent) begins here, so
+        // the owner must be on the Transaction plan — the rail that routes rent through
+        // the platform. The switch is DEFERRED to this point (not to application): so
+        // applying never forces a billing change, and a facility that never disburses
+        // never switches the owner. Only switch if not already on transaction (a second
+        // facility shouldn't re-assign the plan / re-grant credits). Best-effort —
+        // logged, not fatal to the disbursement (which is already committed above).
+        try {
+            $mode = app(PaymentModeService::class);
+            if (! $mode->isTransactionMode((int) $facility->owner_id)) {
+                $mode->switchTo((int) $facility->owner_id, PaymentModeService::MODE_TRANSACTION);
+            }
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::error(
+                "Facility {$facility->id}: switching owner {$facility->owner_id} onto the Transaction plan at disbursement failed — " . $e->getMessage()
+            );
+        }
+
         // Dispatch AFTER the transaction commits: the down-payment listener may
         // perform an M-Pesa STK HTTP call (mpesa driver), which must not run
         // inside an open DB transaction holding row locks during network I/O.

@@ -80,7 +80,6 @@ Route::group(['prefix' => 'owner', 'as' => 'owner.', 'middleware' => ['auth', 'o
         Route::get('/', [\App\Http\Controllers\Owner\FinancingController::class, 'index'])->name('index');
         Route::get('module/{moduleId}', [\App\Http\Controllers\Owner\FinancingController::class, 'module'])->name('module');
         Route::get('apply/{partnerModuleId}', [\App\Http\Controllers\Owner\FinancingController::class, 'apply'])->name('apply');
-        Route::post('switch-mode', [\App\Http\Controllers\Owner\FinancingController::class, 'switchMode'])->name('switch-mode');
         Route::post('apply', [\App\Http\Controllers\Owner\FinancingController::class, 'store'])->name('store');
         Route::get('mine', [\App\Http\Controllers\Owner\FinancingController::class, 'mine'])->name('mine');
         Route::get('deductions', [\App\Http\Controllers\Owner\FinancingController::class, 'deductions'])->name('deductions');

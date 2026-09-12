@@ -14,6 +14,8 @@
         @if (session('error')) <div class="cs-alert is-danger">{{ session('error') }}</div> @endif
         @if ($errors->any()) <div class="cs-alert is-danger">{{ $errors->first() }}</div> @endif
 
+        @include('owner.financing._billing-switch-note')
+
         <div class="row">
             <div class="col-lg-7">
                 <div class="cs-card"><div class="cs-card__body">

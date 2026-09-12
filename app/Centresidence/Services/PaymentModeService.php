@@ -3,7 +3,6 @@
 namespace App\Centresidence\Services;
 
 use App\Centresidence\Exceptions\FacilityActiveModeLockException;
-use App\Centresidence\Exceptions\OwnerNotInTransactionModeException;
 use App\Centresidence\Models\PropertyModule;
 use App\Models\Package;
 use Illuminate\Support\Facades\DB;
@@ -70,17 +69,6 @@ class PaymentModeService
             ->where('owner_id', $ownerUserId)
             ->where('status', 'active')
             ->exists();
-    }
-
-    /**
-     * Gate the START of a financing application: the owner must already be on
-     * transaction mode (the UI prompts them to switch first).
-     */
-    public function assertEligibleForFinancing(int $ownerUserId): void
-    {
-        if (! $this->isTransactionMode($ownerUserId)) {
-            throw new OwnerNotInTransactionModeException($ownerUserId);
-        }
     }
 
     /**

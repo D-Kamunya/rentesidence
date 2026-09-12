@@ -104,7 +104,7 @@
                 <div class="cs-alert is-info">{{ __('Financing for this install is arranged from your site-survey quotation — request a survey above, then apply once you receive your quote.') }}</div>
             @else
             @unless ($isTransactionMode)
-                <div class="cs-alert is-amber">{{ __('Partner financing requires transaction pricing mode (so rent can service the facility automatically). You will be prompted to switch when you apply.') }}</div>
+                <div class="cs-alert is-info">{{ __('Apply on your current plan — nothing changes yet. If your facility is approved and disbursed, your billing then moves to the Transaction plan (1% of rent, unlimited units) so repayment is collected from rent.') }}</div>
             @endunless
 
             @if ($products->isEmpty())

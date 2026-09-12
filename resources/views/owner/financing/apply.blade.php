@@ -8,6 +8,8 @@
 
         @if (session('error')) <div class="cs-alert is-danger">{{ session('error') }}</div> @endif
 
+        @include('owner.financing._billing-switch-note')
+
         <div class="cs-card" style="max-width:760px;">
             <div class="cs-card__head">
                 <h2 class="cs-card__title">{{ optional($product->module)->name }} — {{ optional($product->partner)->company_name }}</h2>

@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers\Owner;
 
-use App\Centresidence\Exceptions\OwnerNotInTransactionModeException;
 use App\Centresidence\Exceptions\UnderwritingFailedException;
 use App\Centresidence\Models\FieldStudyRequest;
 use App\Centresidence\Models\FinanceApplication;
@@ -82,12 +81,11 @@ class FinancingController extends Controller
         $product = FinancePartnerModule::with('partner', 'module')->findOrFail($partnerModuleId);
         $catalogue = ModulePricingCatalogueItem::where('module_id', $product->module_id)->where('is_active', true)->first();
 
-        if (! $modes->isTransactionMode((int) auth()->id())) {
-            return view('owner.financing.switch-mode', [
-                'pageTitle' => 'Switch to transaction mode',
-                'product' => $product,
-            ]);
-        }
+        // No pre-apply wall — owners apply on their CURRENT plan. If they're not already
+        // on transaction billing, the form shows an origin-aware note that their billing
+        // switches to the Transaction plan ONLY if the facility is approved & disbursed
+        // (the switch is deferred to disbursement).
+        $currentMode = $modes->currentMode((int) auth()->id());
 
         // Quote-based application (accepted site-survey quote): a fixed all-in amount, not a
         // catalogue × qty calculation — render the simplified quote apply form.
@@ -101,6 +99,7 @@ class FinancingController extends Controller
                     'product'        => $product,
                     'fsr'            => $fsr,
                     'property'       => $property,
+                    'currentMode'    => $currentMode,
                     // Affordability context so the form can show the live monthly + rent-share, and
                     // the owner can consent to a higher cap — mirrors the normal apply page.
                     'propertyRent'   => (float) ($property->property_units_sum_general_rent ?? 0),
@@ -134,6 +133,7 @@ class FinancingController extends Controller
             'catalogue' => $catalogue,
             'properties' => $properties,
             'existingInfra' => $existingInfra,
+            'currentMode' => $currentMode,
             // Global ceiling on rent deductions, surfaced so the owner sees if a
             // facility would push them past it, plus the max they may consent to.
             'rentCapPct' => (int) config('centresidence.billing.max_total_rent_deduction_percentage', 60),
@@ -197,15 +197,6 @@ class FinancingController extends Controller
         }
 
         return view('owner.financing.deductions', ['pageTitle' => 'Rent & deductions', 'rows' => $rows]);
-    }
-
-    /** Switch the owner onto transaction mode so financing can proceed. */
-    public function switchMode(Request $request, PaymentModeService $modes)
-    {
-        $modes->switchTo((int) auth()->id(), PaymentModeService::MODE_TRANSACTION);
-
-        return redirect()->route('owner.financing.apply', $request->input('partner_module_id'))
-            ->with('success', __('You are now on transaction mode and can apply for financing.'));
     }
 
     /** Submit a financing application (create draft + soft underwriting). */
@@ -307,9 +298,6 @@ class FinancingController extends Controller
                 'This facility needs about :req% of this property\'s rent each month — above your :cap% deduction limit, so it could not repay within the agreed term. To proceed: accept a higher deduction limit, add a larger down-payment, or choose a longer repayment term (up to :max months).',
                 ['req' => round($e->requiredPct), 'cap' => round($e->effectiveCapPct), 'max' => (int) $product->max_repayment_months]
             ));
-        } catch (OwnerNotInTransactionModeException $e) {
-            return redirect()->route('owner.financing.apply', $product->id)
-                ->with('error', __('Please switch to transaction mode before applying.'));
         } catch (UnderwritingFailedException $e) {
             $reasons = collect($e->hardFailures)->pluck('message')->filter()->implode(' ');
 

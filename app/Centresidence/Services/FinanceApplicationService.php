@@ -68,10 +68,12 @@ class FinanceApplicationService
      */
     public function createDraft(array $data): FinanceApplication
     {
-        // Financing requires transaction mode (rent must route through the
-        // company account for at-source repayment). Block before the owner even
-        // begins; the UI prompts them to switch first.
-        $this->paymentMode->assertEligibleForFinancing((int) $data['owner_id']);
+        // Applying does NOT require transaction mode. Owners apply on their current
+        // plan (figures are projections); the switch onto the Transaction plan is
+        // DEFERRED to disbursement (FinanceFacilityService::disburse) — the point the
+        // at-source, from-rent repayment rail is actually needed. So exploring/applying
+        // never forces a billing change, and a facility that never disburses never
+        // switches the owner (no wall, no stranding).
 
         $partnerModule = FinancePartnerModule::findOrFail($data['finance_partner_module_id']);
 

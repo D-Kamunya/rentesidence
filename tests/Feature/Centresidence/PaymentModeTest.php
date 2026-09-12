@@ -3,7 +3,6 @@
 namespace Tests\Feature\Centresidence;
 
 use App\Centresidence\Exceptions\FacilityActiveModeLockException;
-use App\Centresidence\Exceptions\OwnerNotInTransactionModeException;
 use App\Centresidence\Models\FinanceApplication;
 use App\Centresidence\Models\FinanceFacility;
 use App\Centresidence\Models\FinancePartner;
@@ -44,13 +43,16 @@ class PaymentModeTest extends CentresidenceDatabaseTestCase
         $this->assertSame(FinanceApplication::STATUS_DRAFT, $app->status);
     }
 
-    public function test_non_transaction_owner_is_blocked_from_applying(): void
+    public function test_non_transaction_owner_can_apply(): void
     {
-        // Flip owner 1 to subscription mode.
+        // De-walled: applying no longer requires transaction mode. An owner on any plan
+        // can start an application; the switch onto the Transaction plan is DEFERRED to
+        // disbursement (FinanceFacilityService::disburse), so exploring/applying never
+        // forces a billing change and a facility that never disburses never switches them.
         DB::table('owner_packages')->where('user_id', 1)->update(['pricing_model' => 'subscription']);
 
-        $this->expectException(OwnerNotInTransactionModeException::class);
-        app(FinanceApplicationService::class)->createDraft($this->financeDraftData(1));
+        $app = app(FinanceApplicationService::class)->createDraft($this->financeDraftData(1));
+        $this->assertSame(FinanceApplication::STATUS_DRAFT, $app->status);
     }
 
     public function test_switching_mode_retags_existing_modules(): void
