@@ -297,12 +297,6 @@
                         <span>{{ __('Wallet') }}</span>
                     </a>
                 </li>
-                <li>
-                    <a href="{{ route('owner.kb.index') }}" class="kb-nav-highlight">
-                        <i class="fa fa-book"></i>
-                        <span>{{ __('Knowledge Base') }}</span>
-                    </a>
-                </li>
                 @if (isAddonInstalled('PROTYSAAS') > 1)
                     <li>
                         <a href="{{ route('owner.subscription.index') }}">
@@ -311,6 +305,13 @@
                         </a>
                     </li>
                 @endif
+                {{-- Knowledge Base kept LAST — it's colour-highlighted, so links under it read as off. --}}
+                <li>
+                    <a href="{{ route('owner.kb.index') }}" class="kb-nav-highlight">
+                        <i class="fa fa-book"></i>
+                        <span>{{ __('Knowledge Base') }}</span>
+                    </a>
+                </li>
             </ul>
         </div>
         <!-- Sidebar -->

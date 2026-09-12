@@ -14,10 +14,13 @@ use Illuminate\Support\Facades\DB;
 /**
  * Infrastructure Cost Engine (handbook §6.2 / §8.3).
  *
- * For TRANSACTION-billed modules, metered costs are recovered from token
- * revenue (Token Engine, WP4). Non-metered costs (locks, parking) have no token
- * flow, so they are billed directly here as a separate
- * `owner_infrastructure_invoice` per (owner, property, month). Idempotent.
+ * For TRANSACTION-billed modules, infrastructure costs (platform software fee +
+ * LoRaWAN gateway usage) are billed for ALL modules alike — metered (water/gas)
+ * AND non-metered (locks, parking) — as an `owner_infrastructure_invoice` per
+ * (owner, property, month), and RECOVERED FROM RENT at settlement (within the
+ * owner's deduction cap). Per-token commission (gas only) is a SEPARATE income
+ * share carved by the Token Engine — it does NOT double as infra-cost recovery
+ * (the retired WP4 model). Idempotent.
  *
  * Design note (handbook §4.3 vs §8.3 reconciliation): owners are billed via
  * non-metered module cost components × device count — NOT by distributing the

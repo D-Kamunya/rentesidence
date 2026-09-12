@@ -186,32 +186,6 @@
                     </ul>
                 </li>
                 <li>
-                    <a href="javascript: void(0);" class="has-arrow kb-nav-highlight">
-                        <i class="fa fa-book" aria-hidden="true"></i>
-                        <span>{{ __('Knowledge Base') }}</span>
-                    </a>
-                    <ul class="sub-menu" aria-expanded="false">
-                        <li>
-                            <a class="{{ @$navKBArticlesMMShowClass }}" href="{{ route('admin.kb.articles') }}">
-                                <i class="fa fa-file" aria-hidden="true"></i>
-                                <span>{{ __('All Articles') }}</span>
-                            </a>
-                        </li>
-                        <li>
-                            <a class="{{ @$navKBArticlesMMShowClass }}" href="{{ route('admin.kb.articles.create') }}">
-                                <i class="fa fa-plus-circle" aria-hidden="true"></i>
-                                <span>{{ __('New Article') }}</span>
-                            </a>
-                        </li>
-                        <li>
-                            <a class="{{ @$navKBCategoriesMMShowClass }}" href="{{ route('admin.kb.categories') }}">
-                                <i class="fa fa-folder" aria-hidden="true"></i>
-                                <span>{{ __('Categories') }}</span>
-                            </a>
-                        </li>
-                    </ul>
-                </li>
-                <li>
                     <a href="javascript: void(0);" class="has-arrow">
                         <i class="fa fa-rss-square" aria-hidden="true"></i>
                         <span>{{ __('Blog') }}</span>
@@ -254,6 +228,33 @@
                         <i class="ri-refresh-line"></i>
                         <span>{{ __('Version Update') }}</span>
                     </a>
+                </li>
+                {{-- Knowledge Base kept LAST — it's colour-highlighted, so links under it read as off. --}}
+                <li>
+                    <a href="javascript: void(0);" class="has-arrow kb-nav-highlight">
+                        <i class="fa fa-book" aria-hidden="true"></i>
+                        <span>{{ __('Knowledge Base') }}</span>
+                    </a>
+                    <ul class="sub-menu" aria-expanded="false">
+                        <li>
+                            <a class="{{ @$navKBArticlesMMShowClass }}" href="{{ route('admin.kb.articles') }}">
+                                <i class="fa fa-file" aria-hidden="true"></i>
+                                <span>{{ __('All Articles') }}</span>
+                            </a>
+                        </li>
+                        <li>
+                            <a class="{{ @$navKBArticlesMMShowClass }}" href="{{ route('admin.kb.articles.create') }}">
+                                <i class="fa fa-plus-circle" aria-hidden="true"></i>
+                                <span>{{ __('New Article') }}</span>
+                            </a>
+                        </li>
+                        <li>
+                            <a class="{{ @$navKBCategoriesMMShowClass }}" href="{{ route('admin.kb.categories') }}">
+                                <i class="fa fa-folder" aria-hidden="true"></i>
+                                <span>{{ __('Categories') }}</span>
+                            </a>
+                        </li>
+                    </ul>
                 </li>
                 <li class="font-semi-bold mt-20 text-center text-info">
                     <a href="">

@@ -9,7 +9,8 @@
     #sidebar-menu .kb-nav-highlight {
         background: linear-gradient(135deg, #185FA5, #0F4A84) !important;
         color: #fff !important;
-        border-radius: 8px;
+        /* Flush to the sidebar edge on the LEFT (straight), rounded on the RIGHT. */
+        border-radius: 0 8px 8px 0;
         box-shadow: 0 4px 12px rgba(24, 95, 165, .2);
         margin-top: 4px;
     }
