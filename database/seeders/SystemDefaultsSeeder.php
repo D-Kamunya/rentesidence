@@ -42,8 +42,23 @@ class SystemDefaultsSeeder extends Seeder
             'marketplace_auto_release_days'  => 7,
 
             // ── Credit rail — agreements (Admin → Settings → Agreement Settings) ──
-            'agreement_free_quota' => 10,   // free e-sign agreements/month on the free plan
+            // Agreements are a usage-revenue rail like SMS, so the free plan is NOT given a
+            // generous grant (that would undercut the rail). Kept small, not zero: every send
+            // costs us one OTP SMS, so a tiny allowance lets a small landlord TEST e-sign
+            // (which seeds Global Tenant ID adoption) before they start paying per agreement.
+            'agreement_free_quota' => 3,    // free e-sign agreements/month on the free plan
             'agreement_price'      => 50,   // price per agreement credit once quota is used
+
+            // ── Affiliate commission model (Admin → Settings → Affiliate Settings) ──
+            // The rates every affiliate income line reads (subscription, rent, marketplace,
+            // screening, agreement, gas token, financing). Seeded because getOption() falls
+            // back to 0 — an unseeded deploy would silently pay affiliates NOTHING. The
+            // first-time rate is the activation bounty (owner's first activity in each line);
+            // the recurring rate then applies for RECURRING_COMMISSION_MONTHS, measured per
+            // line from that line's first commission.
+            'FIRST_TIME_COMMISSION_RATE' => 30, // % of our take on the owner's first event/line
+            'RECURRING_COMMISSION_RATE'  => 10, // % of our take thereafter, within the window
+            'RECURRING_COMMISSION_MONTHS' => 12, // how long the recurring share runs, per line
 
             // ── Credit rail — tenant screening ──
             'screening_free_quota' => 3,    // free screenings/month on the free plan
