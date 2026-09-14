@@ -129,7 +129,7 @@ a:hover {
    hover color (the previous blanket `a:hover{color:primary !important}` was turning every
    <a>-styled button's text blue on hover — white, grey, whatever the button intended). The
    :not() list excludes our button class families so each button's own :hover color wins. */
-a:hover:not([class*="btn"]):not([class*="button"]):not([class*="__more"]):not([class*="__cta"]):not([class*="__act"]):not([class*="__edit"]):not([class*="-back"]):not(.contact-tile) {
+a:hover:not([class*="btn"]):not([class*="button"]):not([class*="__more"]):not([class*="__cta"]):not([class*="__act"]):not([class*="__edit"]):not([class*="-back"]):not([class*="cs-topic"]):not([class*="cs-kbitem"]):not([class*="cs-crumb"]):not(.contact-tile) {
     color: var(--primary-color) !important;
 }
 
