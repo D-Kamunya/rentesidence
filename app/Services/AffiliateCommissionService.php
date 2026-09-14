@@ -212,6 +212,42 @@ class AffiliateCommissionService
         return round($ourCommissionAmount * ($ratePercent / 100), 2);
     }
 
+    /**
+     * The affiliate income lines to SURFACE (wallet, dashboard, KB/training), in display
+     * order, GATED by which verticals are actually live — so we never advertise or teach
+     * income an affiliate cannot yet earn. The commission HOOKS stay wired regardless; this
+     * governs only what is shown/taught. A parked vertical lights up automatically the moment
+     * its flag flips (no code change), keeping surfaces honest without maintaining two lists.
+     *
+     * @return array<string,string> ordered [source => human label]
+     */
+    public static function surfacedStreams(): array
+    {
+        // Live platform lines — always earnable.
+        $streams = [
+            AFFILIATE_COMMISSION_SOURCE_SUBSCRIPTION => 'Subscriptions',
+            AFFILIATE_COMMISSION_SOURCE_RENT         => 'Rent',
+            AFFILIATE_COMMISSION_SOURCE_MARKETPLACE  => 'Marketplace',
+            AFFILIATE_COMMISSION_SOURCE_SCREENING    => 'Tenant screening',
+            AFFILIATE_COMMISSION_SOURCE_AGREEMENT    => 'Agreements',
+        ];
+
+        // Financing — surfaced where the finance vertical is live.
+        if (config('centresidence.enabled', true)) {
+            $streams[AFFILIATE_COMMISSION_SOURCE_FINANCING] = 'Financing';
+        }
+
+        // Gas tokens — PARKED until the gas vertical goes live (reticulated dormant; PAYG
+        // partner sitting pending). The hook stays dormant; this keeps gas out of every
+        // affiliate-facing surface and the training data so we never advertise income that
+        // can't be earned yet. Flip centresidence.gas_live to surface it on launch.
+        if (config('centresidence.gas_live', false)) {
+            $streams[AFFILIATE_COMMISSION_SOURCE_GAS_TOKEN] = 'Gas tokens';
+        }
+
+        return $streams;
+    }
+
     public function handleMarketplaceCommission(ProductOrder $order, ?float $ourCommissionAmount = null): void
     {
         $firstProduct = $order->orderItems->first()?->product;
@@ -553,8 +589,23 @@ class AffiliateCommissionService
 
         $marketplacePayout = $marketplaceAmount; // already the net amount
 
+        // ── Usage lines (screening / agreement / gas token / financing) + any future source ──
+        // Everything recorded that isn't one of the three bucketed sources above is still
+        // EARNED and therefore PAYABLE. Summing the remainder (rather than naming each new
+        // source) means the payout total can never silently drop a recorded commission and
+        // auto-includes new lines without another edit here. Reversals net naturally.
+        $usagePayout = round((float) AffiliateCommission::where('affiliate_id', $affiliateId)
+            ->whereNotIn('source', [
+                AFFILIATE_COMMISSION_SOURCE_SUBSCRIPTION,
+                AFFILIATE_COMMISSION_SOURCE_RENT,
+                AFFILIATE_COMMISSION_SOURCE_MARKETPLACE,
+            ])
+            ->where('period_month', $month)
+            ->where('period_year', $year)
+            ->sum('commission_amount'), 2);
+
         // ── Total ─────────────────────────────────────────────
-        $totalPayout = round($newPayout + $recurringPayout + $rentPayout + $marketplacePayout, 2);
+        $totalPayout = round($newPayout + $recurringPayout + $rentPayout + $marketplacePayout + $usagePayout, 2);
 
         // One row per (affiliate, period): update the existing summary in place or
         // create it. The unique index (acp_affiliate_period_unique) guarantees the

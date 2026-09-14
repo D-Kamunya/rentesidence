@@ -160,4 +160,38 @@ class CommissionLedgerTest extends AffiliateDatabaseTestCase
         $this->assertSame(2, AffiliateCommission::count());
         $this->assertSame(240.0, $this->svc()->getLifeTimeGrossCommissions(1));
     }
+
+    // ── Usage-line payability (regression) ──────────────────────────────────
+
+    private function usageEvent(string $source, string $ref, float $amount): array
+    {
+        return [
+            'product' => 'property_management', 'affiliate_id' => 1, 'owner_id' => 1,
+            'source' => $source, 'external_ref' => $ref,
+            'commission_rate' => 30, 'commission_amount' => $amount,
+            'currency' => 'KES', 'cadence' => 'recurring',
+            'period_month' => 3, 'period_year' => 2026,
+        ];
+    }
+
+    /**
+     * Regression: the period rollup once summed only subscription+rent+marketplace, so a
+     * usage-line commission (screening/agreement/gas/financing) was earned but never entered
+     * total_commission_payout — i.e. recorded yet un-withdrawable. It must be payable.
+     */
+    public function test_usage_line_commission_is_payable_in_the_period_total(): void
+    {
+        $this->svc()->recordEvent($this->usageEvent(AFFILIATE_COMMISSION_SOURCE_SCREENING, 'screening-1', 45));
+
+        $this->assertSame(45.0, $this->svc()->getLifeTimeGrossCommissions(1));
+    }
+
+    public function test_period_total_combines_bucketed_and_usage_lines(): void
+    {
+        $this->svc()->recordEvent($this->event('order-1', 150));                                        // rent (bucketed)
+        $this->svc()->recordEvent($this->usageEvent(AFFILIATE_COMMISSION_SOURCE_AGREEMENT, 'agreement-1', 30));
+        $this->svc()->recordEvent($this->usageEvent(AFFILIATE_COMMISSION_SOURCE_FINANCING, 'financing-1', 120));
+
+        $this->assertSame(300.0, $this->svc()->getLifeTimeGrossCommissions(1)); // 150 + 30 + 120
+    }
 }

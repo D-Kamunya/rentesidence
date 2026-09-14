@@ -91,15 +91,9 @@ class DashboardController extends Controller
             ->groupBy('source')
             ->pluck('total', 'source');
 
-        $sourceLabels = [
-            AFFILIATE_COMMISSION_SOURCE_SUBSCRIPTION => 'Subscriptions',
-            AFFILIATE_COMMISSION_SOURCE_RENT         => 'Rent',
-            AFFILIATE_COMMISSION_SOURCE_MARKETPLACE  => 'Marketplace',
-            AFFILIATE_COMMISSION_SOURCE_SCREENING    => 'Tenant screening',
-            AFFILIATE_COMMISSION_SOURCE_AGREEMENT    => 'Agreements',
-            AFFILIATE_COMMISSION_SOURCE_GAS_TOKEN    => 'Gas tokens',
-            AFFILIATE_COMMISSION_SOURCE_FINANCING    => 'Financing',
-        ];
+        // Gated to live verticals only (gas stays hidden until launch) — single source
+        // of truth so wallet, dashboard and training never drift or advertise parked income.
+        $sourceLabels = AffiliateCommissionService::surfacedStreams();
         $earningsBySource = [];
         foreach ($sourceLabels as $key => $label) {
             $earningsBySource[] = ['label' => $label, 'amount' => (float) ($activityEarnings[$key] ?? 0)];

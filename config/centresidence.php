@@ -22,6 +22,14 @@ return [
     // live product depends on this being on.
     'enabled' => env('CENTRESIDENCE_ENABLED', true),
 
+    // Gas vertical live-switch. PARKED for now: reticulated is finished-but-dormant
+    // (only viable at commercial throughput or install under ~3M/unit-~50k), and PAYG
+    // is partner-first pending its build sitting. Kept OFF so the gas affiliate income
+    // line stays out of affiliate-facing surfaces and training until the vertical
+    // actually goes live — the commission hook itself is dormant regardless. Flip on
+    // launch to surface it everywhere automatically.
+    'gas_live' => env('CENTRESIDENCE_GAS_LIVE', false),
+
     /*
     |--------------------------------------------------------------------------
     | Money & precision
