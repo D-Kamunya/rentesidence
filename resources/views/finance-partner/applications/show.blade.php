@@ -56,6 +56,60 @@
                 </div>
             </div>
 
+            @php $uwr = $underwriting; @endphp
+            <div class="cs-card">
+                <div class="cs-card__head" style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;">
+                    <h2 class="cs-card__title">{{ __('Owner cashflow & occupancy') }}</h2>
+                    <form method="get" style="margin:0;">
+                        <select name="months" class="cs-input" style="width:auto;padding:4px 8px;font-size:12px;" onchange="this.form.submit()">
+                            @foreach([3,6,12,24] as $opt)
+                                <option value="{{ $opt }}" {{ $uwr['months'] === $opt ? 'selected' : '' }}>{{ __('Last :n months', ['n' => $opt]) }}</option>
+                            @endforeach
+                        </select>
+                    </form>
+                </div>
+                <div class="cs-card__body">
+                    <p class="cs-muted" style="font-size:12px;margin:0 0 12px;">
+                        {{ __('Proven rent settled through Centresidence — the cashflow a rent-secured facility is repaid from, at source, before it reaches the owner.') }}
+                    </p>
+                    <div class="row">
+                        <div class="col-6 cs-field">
+                            <div class="cs-label">{{ __('Average monthly rent') }}</div>
+                            <span class="cs-amt">KES {{ number_format($uwr['average'], 2) }}</span>
+                            <div class="cs-muted" style="font-size:11px;">{{ __('over :n months', ['n' => $uwr['months']]) }}</div>
+                        </div>
+                        <div class="col-6 cs-field">
+                            <div class="cs-label">{{ __('Occupancy (now)') }}</div>
+                            <span class="cs-amt">{{ $uwr['occupancy']['rate'] }}%</span>
+                            <div class="cs-muted" style="font-size:11px;">{{ $uwr['occupancy']['occupied'] }} / {{ $uwr['occupancy']['total'] }} {{ __('units occupied') }}</div>
+                        </div>
+                        <div class="col-6 cs-field">
+                            <div class="cs-label">{{ __('Range (min–max)') }}</div>
+                            KES {{ number_format($uwr['min'], 0) }} – {{ number_format($uwr['max'], 0) }}
+                        </div>
+                        <div class="col-6 cs-field">
+                            <div class="cs-label">{{ __('Reliability') }}</div>
+                            {{ $uwr['months_with_data'] }}/{{ $uwr['months'] }} {{ __('months with rent') }} · {{ __('stability') }} {{ $uwr['stability_score'] }}%
+                        </div>
+                    </div>
+                    @php $peak = max(1, $uwr['max']); @endphp
+                    <div style="margin-top:8px;">
+                        @foreach($uwr['monthly'] as $m)
+                            <div style="display:flex;align-items:center;gap:8px;margin:3px 0;font-size:11px;">
+                                <span class="cs-muted" style="width:64px;flex:none;">{{ $m['label'] }}</span>
+                                <span style="flex:1;background:#EEF0F2;border-radius:4px;height:14px;overflow:hidden;">
+                                    <span style="display:block;height:100%;width:{{ $m['collected'] > 0 ? max(2, round($m['collected'] / $peak * 100)) : 0 }}%;background:#0F766E;"></span>
+                                </span>
+                                <span style="width:92px;flex:none;text-align:right;">KES {{ number_format($m['collected'], 0) }}</span>
+                            </div>
+                        @endforeach
+                    </div>
+                    <p class="cs-muted" style="font-size:11px;margin:10px 0 0;">
+                        {{ __('Settled rent only (gross, before platform fee). A short history or empty months lowers confidence — weigh the spread and stability, not the average alone.') }}
+                    </p>
+                </div>
+            </div>
+
             <div class="cs-card">
                 <div class="cs-card__head"><h2 class="cs-card__title">{{ __('Eligibility check') }}</h2></div>
                 <div class="cs-card__body">

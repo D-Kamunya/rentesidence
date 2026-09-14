@@ -255,10 +255,16 @@ class PortalController extends Controller
         ]);
     }
 
-    public function applicationShow(int $id)
+    public function applicationShow(Request $request, int $id)
     {
         $application = FinanceApplication::with('owner', 'module', 'property', 'partnerModule', 'documents', 'statusHistory')
             ->where('finance_partner_id', $this->partner()->id)->findOrFail($id);
+
+        // Underwriting: the owner's PROVEN rent cashflow over a window the financier chooses,
+        // plus occupancy — the rent moat turned into a decision aid (see OwnerUnderwritingService).
+        $lookback = (int) $request->get('months', 6);
+        $underwriting = app(\App\Centresidence\Services\OwnerUnderwritingService::class)
+            ->snapshot((int) $application->owner_id, $lookback);
 
         // Once approved, disbursement happens in the same pipeline — surface it
         // right here instead of a separate trip to Facilities.
@@ -285,6 +291,7 @@ class PortalController extends Controller
             'application' => $application,
             'facility' => $facility,
             'payee' => $payee,
+            'underwriting' => $underwriting,
         ]);
     }
 
