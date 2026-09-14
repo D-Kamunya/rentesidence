@@ -409,8 +409,50 @@ class AffiliateCommissionService
                 'period_month'      => (int) $at->format('n'),
                 'period_year'       => (int) $at->format('Y'),
             ]);
+
+            // BOUNTY: the FIRST commission on a line for this owner is a milestone worth an
+            // immediate nudge (the free-tier engagement driver — "your owner just earned you
+            // something"). Recurring events stay in the monthly digest; this fires once per
+            // (owner, line). Only for surfaced/live lines, so nothing leaks while a vertical
+            // is parked. Best-effort — never affects the commission itself.
+            if ($clientType === NEW_CLIENT && array_key_exists($source, self::surfacedStreams())) {
+                $this->notifyBounty($affiliateId, $ownerRecord, $source, (float) $computed['commission_amount']);
+            }
         } catch (\Throwable $e) {
             Log::error("handleUsageCommission failed (source={$source}, owner={$ownerUserId}, ref={$externalRef}) — " . $e->getMessage());
+        }
+    }
+
+    /**
+     * First-event-per-line milestone alert to the affiliate — in-app + email (no SMS, per the
+     * digest's cost decision). Wrapped so a mail/notify failure never surfaces as a commission
+     * failure. Reuses the same rails as AffiliateCommissionDigest.
+     */
+    private function notifyBounty(int $affiliateId, Owner $ownerRecord, string $source, float $amount): void
+    {
+        try {
+            $user = Affiliate::find($affiliateId)?->user;
+            if (! $user) {
+                return;
+            }
+
+            $line  = strtolower(self::surfacedStreams()[$source] ?? str_replace('_', ' ', $source));
+            $owner = optional($ownerRecord->user)->name ?: __('one of your owners');
+            $money = currencyPrice($amount);
+
+            $title = __('🎉 First :line commission from :owner', ['line' => $line, 'owner' => $owner]);
+            $body  = __(':owner just earned you your first :line commission — :amount. This line keeps paying while they stay active; see the breakdown on your dashboard.', [
+                'owner'  => $owner,
+                'line'   => $line,
+                'amount' => $money,
+            ]);
+
+            addNotification($title, $body, route('affiliate.dashboard'), null, $user->id, $user->id);
+            if (! empty($user->email)) {
+                \App\Services\SmsMail\MailService::sendMail([$user->email], $title, $body, null);
+            }
+        } catch (\Throwable $e) {
+            Log::error("notifyBounty failed (affiliate={$affiliateId}, source={$source}) — " . $e->getMessage());
         }
     }
 
