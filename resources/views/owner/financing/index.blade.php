@@ -23,35 +23,46 @@
         @if ($modules->isEmpty())
             <div class="cs-card"><div class="cs-card__body cs-empty">{{ __('No modules are available right now. Check back soon.') }}</div></div>
         @else
-            <div class="cs-modgrid">
-                @foreach ($modules as $row)
-                    @php $m = $row['module']; $color = $m->displayColor(); @endphp
-                    <a href="{{ route('owner.financing.module', $m->id) }}" class="cs-modcard">
-                        <div class="cs-modcard__media" style="background:linear-gradient(135deg, {{ $color }}, {{ $color }}cc);">
-                            <i class="{{ $m->displayIcon() }}"></i>
-                            <span class="cs-modcard__chip">{{ $m->is_metered ? __('Metered') : __('Smart') }}</span>
-                        </div>
-                        <div class="cs-modcard__body">
-                            <div class="cs-modcard__name">{{ $m->name }}</div>
-                            <div class="cs-modcard__tag">{{ $m->tagline ?? $m->description }}</div>
-                            <div class="cs-modcard__meta">
-                                <span>
-                                    @if ($m->requires_field_study)
-                                        {{ __('Quote-based · site survey') }}
-                                    @elseif ($row['financiers'] > 0)
-                                        {{ $row['financiers'] }} {{ trans_choice('financier|financiers', $row['financiers']) }}
-                                    @elseif ($row['catalogue'])
-                                        {{ __('Self-finance') }}
-                                    @else
-                                        {{ __('Coming soon') }}
-                                    @endif
-                                </span>
-                                <span class="cs-modcard__cta" style="color:{{ $color }};">{{ __('Explore') }} <i class="ri-arrow-right-line"></i></span>
+            @foreach ($categories as $cat)
+                <div style="margin:{{ $loop->first ? '2px' : '26px' }} 2px 12px;display:flex;align-items:center;gap:10px;">
+                    <i class="{{ $cat['meta']['icon'] ?? 'ri-apps-2-line' }}" style="font-size:18px;color:var(--cs-blue,#185FA5);"></i>
+                    <div>
+                        <div style="font-weight:650;font-size:15px;color:var(--cs-ink,#1B1E22);">{{ __($cat['meta']['label']) }}</div>
+                        @if (!empty($cat['meta']['blurb']))
+                            <div class="cs-muted" style="font-size:12px;">{{ __($cat['meta']['blurb']) }}</div>
+                        @endif
+                    </div>
+                </div>
+                <div class="cs-modgrid">
+                    @foreach ($cat['rows'] as $row)
+                        @php $m = $row['module']; $color = $m->displayColor(); @endphp
+                        <a href="{{ route('owner.financing.module', $m->id) }}" class="cs-modcard">
+                            <div class="cs-modcard__media" style="background:linear-gradient(135deg, {{ $color }}, {{ $color }}cc);">
+                                <i class="{{ $m->displayIcon() }}"></i>
+                                <span class="cs-modcard__chip">{{ $m->is_metered ? __('Metered') : __('Smart') }}</span>
                             </div>
-                        </div>
-                    </a>
-                @endforeach
-            </div>
+                            <div class="cs-modcard__body">
+                                <div class="cs-modcard__name">{{ $m->name }}</div>
+                                <div class="cs-modcard__tag">{{ $m->tagline ?? $m->description }}</div>
+                                <div class="cs-modcard__meta">
+                                    <span>
+                                        @if ($m->requires_field_study)
+                                            {{ __('Quote-based · site survey') }}
+                                        @elseif ($row['financiers'] > 0)
+                                            {{ $row['financiers'] }} {{ trans_choice('financier|financiers', $row['financiers']) }}
+                                        @elseif ($row['catalogue'])
+                                            {{ __('Self-finance') }}
+                                        @else
+                                            {{ __('Coming soon') }}
+                                        @endif
+                                    </span>
+                                    <span class="cs-modcard__cta" style="color:{{ $color }};">{{ __('Explore') }} <i class="ri-arrow-right-line"></i></span>
+                                </div>
+                            </div>
+                        </a>
+                    @endforeach
+                </div>
+            @endforeach
         @endif
     </div>
 </div></div></div>

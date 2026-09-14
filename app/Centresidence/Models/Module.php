@@ -99,4 +99,27 @@ class Module extends Model
     {
         return $this->accent_color ?: '#185FA5';
     }
+
+    // ── Category (the financing-network classification) ───────────────────
+
+    /** Category key, defaulting to infra for legacy rows. */
+    public function categoryKey(): string
+    {
+        return $this->category ?: 'infra';
+    }
+
+    /** Config-driven category metadata (label / blurb / icon). */
+    public function categoryMeta(): array
+    {
+        $cats = (array) config('centresidence.module_categories', []);
+
+        return $cats[$this->categoryKey()]
+            ?? $cats['infra']
+            ?? ['label' => 'Infrastructure', 'blurb' => '', 'icon' => 'ri-flashlight-line'];
+    }
+
+    public function categoryLabel(): string
+    {
+        return $this->categoryMeta()['label'] ?? 'Infrastructure';
+    }
 }

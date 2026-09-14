@@ -51,9 +51,21 @@ class FinancingController extends Controller
                 ]);
         }
 
+        // Group the catalog by financing-network category (config order). Today every module
+        // is infra; developmental / lifestyle / financial sections appear automatically as
+        // those spokes are added — same rent-secured hub, just classified.
+        $categories = [];
+        foreach ((array) config('centresidence.module_categories', []) as $key => $meta) {
+            $rows = $modules->filter(fn ($row) => $row['module']->categoryKey() === $key)->values();
+            if ($rows->isNotEmpty()) {
+                $categories[] = ['key' => $key, 'meta' => $meta, 'rows' => $rows];
+            }
+        }
+
         return view('owner.financing.index', [
             'pageTitle' => 'Infrastructure Financing',
             'modules' => $modules,
+            'categories' => $categories,
             'isTransactionMode' => $modes->isTransactionMode((int) auth()->id()),
         ]);
     }

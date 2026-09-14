@@ -36,6 +36,9 @@ class CentresidenceCatalogSeeder extends Seeder
                 'how_it_works' => $d['how_it_works'], 'benefits' => $d['benefits'],
                 'icon' => $d['icon'], 'accent_color' => $d['color'], 'settlement_target' => 'centresidence',
                 'display_order' => $i + 1, 'is_financeable' => true, 'is_active' => true,
+                // Financing-network category (all current modules are infra; the column lets
+                // developmental/lifestyle/financial spokes join the same rent-secured hub).
+                'category' => $d['category'] ?? 'infra',
                 // Token economics: commission is the Centresidence income share —
                 // 0 for most modules (owners keep utility revenue), set only where
                 // Centresidence shares operational value (gas reticulation).

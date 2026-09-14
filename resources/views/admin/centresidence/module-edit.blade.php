@@ -21,6 +21,14 @@
                             <div class="col-md-5 cs-field"><label class="cs-label">{{ __('Accent colour') }}</label><input id="fColor" type="color" name="accent_color" class="cs-input" style="height:40px;padding:4px;" value="{{ old('accent_color', $module->displayColor()) }}"></div>
                         </div>
                         <div class="cs-field"><label class="cs-label">{{ __('Tagline (card subtitle)') }}</label><input id="fTag" name="tagline" class="cs-input" value="{{ old('tagline', $module->tagline) }}" maxlength="255"></div>
+                        <div class="cs-field">
+                            <label class="cs-label">{{ __('Category (financing network)') }}</label>
+                            <select name="category" class="cs-select">
+                                @foreach (config('centresidence.module_categories', []) as $ck => $cm)
+                                    <option value="{{ $ck }}" {{ old('category', $module->categoryKey()) === $ck ? 'selected' : '' }}>{{ __($cm['label']) }}</option>
+                                @endforeach
+                            </select>
+                        </div>
                         <div class="row">
                             <div class="col-md-6 cs-field"><label class="cs-label">{{ __('Icon (remix icon class)') }}</label><input id="fIcon" name="icon" class="cs-input" value="{{ old('icon', $module->icon) }}" placeholder="ri-drop-line"></div>
                             <div class="col-md-6 cs-field"><label class="cs-label">{{ __('Image (optional, replaces icon)') }}</label><input type="file" name="image" class="cs-input" accept="image/*"></div>

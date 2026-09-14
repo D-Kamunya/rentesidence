@@ -372,6 +372,7 @@ class CentresidenceController extends Controller
             'unit_price' => 'nullable|numeric|min:0',
             'installation_cost' => 'nullable|numeric|min:0',
             'settlement_target' => 'nullable|in:centresidence,owner',
+            'category' => 'nullable|string|in:' . implode(',', array_keys((array) config('centresidence.module_categories', []))),
             'token_units_per_kes' => 'nullable|numeric|min:0',
             'token_commission_per_unit' => 'nullable|numeric|min:0',
         ]);
@@ -387,6 +388,7 @@ class CentresidenceController extends Controller
             'benefits' => $benefits, 'icon' => $data['icon'] ?? null, 'accent_color' => $data['accent_color'] ?? null,
             'is_financeable' => $request->boolean('is_financeable'), 'is_active' => $request->boolean('is_active'),
             'settlement_target' => $data['settlement_target'] ?? 'centresidence',
+            'category' => $data['category'] ?? $module->categoryKey(),
             // Quote-based (custom install, e.g. reticulated gas): owners request a site survey +
             // bespoke quote instead of seeing a catalogue price.
             'requires_field_study' => $request->boolean('requires_field_study'),

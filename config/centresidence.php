@@ -22,6 +22,33 @@ return [
     // live product depends on this being on.
     'enabled' => env('CENTRESIDENCE_ENABLED', true),
 
+    // Module CATEGORIES — the financing network spans more than infra. Every financeable
+    // module carries one of these; they all plug into the SAME rent-secured, serviced-at-source
+    // repayment (the hub). Order here drives display order; add a category = config only.
+    // Pure lending categories (financial) stay PARTNER-FRONTED until we hold a credit licence.
+    'module_categories' => [
+        'infra' => [
+            'label' => 'Infrastructure',
+            'blurb' => 'Smart utilities & hardware that turn a cost centre into prepaid, recurring income — repaid from rent at source.',
+            'icon'  => 'ri-flashlight-line',
+        ],
+        'developmental' => [
+            'label' => 'Development & upgrades',
+            'blurb' => 'Refurbishment, unit expansion and off-plan build-out — grow the asset, repaid from the rent it earns.',
+            'icon'  => 'ri-building-2-line',
+        ],
+        'lifestyle' => [
+            'label' => 'Lifestyle & amenities',
+            'blurb' => 'Tenant-facing amenities that lift occupancy and rent — financed against the same rent flow.',
+            'icon'  => 'ri-sparkling-line',
+        ],
+        'financial' => [
+            'label' => 'Financial products',
+            'blurb' => 'Owner/working-capital facilities against the rent roll. Partner-fronted until licensed.',
+            'icon'  => 'ri-bank-line',
+        ],
+    ],
+
     // Gas vertical live-switch. PARKED for now: reticulated is finished-but-dormant
     // (only viable at commercial throughput or install under ~3M/unit-~50k), and PAYG
     // is partner-first pending its build sitting. Kept OFF so the gas affiliate income
