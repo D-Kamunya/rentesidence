@@ -203,7 +203,16 @@ class FinanceApplicationService
 
     public function approve(FinanceApplication $application, string $approvedAmount, ?int $actorId = null): FinanceApplication
     {
-        $application->forceFill(['approved_amount' => $approvedAmount])->save();
+        // Defense in depth (the portal also validates): never approve MORE than the owner
+        // applied to finance — the facility is repaid from their rent at source, so an
+        // over-approval would obligate them beyond their consent. Clamp to the financed amount.
+        $max    = (float) ($application->financed_amount > 0 ? $application->financed_amount : $application->requested_amount);
+        $amount = (float) $approvedAmount;
+        if ($max > 0 && $amount > $max) {
+            $amount = $max;
+        }
+
+        $application->forceFill(['approved_amount' => $amount])->save();
 
         return $this->transitionTo($application, FinanceApplication::STATUS_APPROVED, $actorId, 'Approved by partner');
     }

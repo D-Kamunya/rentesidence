@@ -302,7 +302,16 @@ class PortalController extends Controller
     public function approve(Request $request, int $id, FinanceApplicationService $applications)
     {
         $application = FinanceApplication::where('finance_partner_id', $this->partner()->id)->findOrFail($id);
-        $amount = $request->validate(['approved_amount' => 'required|numeric|min:1'])['approved_amount'];
+
+        // Never finance MORE than the owner applied for — the facility is serviced from their
+        // rent at source, so an over-approval would burden them beyond what they consented to.
+        // Approving less is fine (part-finance; owner tops up the rest).
+        $maxApprovable = (float) ($application->financed_amount > 0 ? $application->financed_amount : $application->requested_amount);
+        $rules = ['approved_amount' => ['required', 'numeric', 'min:1']];
+        if ($maxApprovable > 0) {
+            $rules['approved_amount'][] = 'max:' . $maxApprovable;
+        }
+        $amount = $request->validate($rules)['approved_amount'];
 
         try {
             if ($application->status === FinanceApplication::STATUS_SUBMITTED) {

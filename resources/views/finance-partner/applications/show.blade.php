@@ -161,9 +161,11 @@
                     <div class="cs-card__body">
                         <form method="POST" action="{{ route('finance-partner.applications.approve', $application->id) }}" style="margin-bottom:18px;">
                             @csrf
+                            @php $maxApprove = $application->financed_amount > 0 ? $application->financed_amount : $application->requested_amount; @endphp
                             <div class="cs-field">
                                 <label class="cs-label">{{ __('Approved amount (KES)') }}</label>
-                                <input type="number" step="0.01" name="approved_amount" class="cs-input" value="{{ $application->financed_amount > 0 ? $application->financed_amount : $application->requested_amount }}" required>
+                                <input type="number" step="0.01" min="1" max="{{ $maxApprove }}" name="approved_amount" class="cs-input" value="{{ $maxApprove }}" required>
+                                <span class="cs-muted" style="font-size:11px;">{{ __('Up to KES :max (the financed amount). Approve less to part-finance — the owner tops up the rest.', ['max' => number_format($maxApprove, 2)]) }}</span>
                             </div>
                             <button type="submit" class="cs-btn cs-btn--complete" style="width:100%;justify-content:center;">{{ __('Approve & create facility') }}</button>
                         </form>
