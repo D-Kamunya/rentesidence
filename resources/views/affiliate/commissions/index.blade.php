@@ -1460,9 +1460,17 @@
         });
 
         function fmt(val) {
-            return 'KSh ' + parseFloat(val || 0).toLocaleString('en-KE', { 
-                minimumFractionDigits: 2, 
-                maximumFractionDigits: 2 
+            return 'KSh ' + parseFloat(val || 0).toLocaleString('en-KE', {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2
+            });
+        }
+
+        // Escape any value interpolated into innerHTML below — owner names are user-set,
+        // so rendering them raw would be a stored-XSS sink (owner → affiliate's browser).
+        function esc(s) {
+            return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
+                return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
             });
         }
 
@@ -1479,7 +1487,7 @@
                     data.subscription.forEach(function (r) {
                         subBody.innerHTML += '<tr>'
                             + '<td class="cmx-td-date">' + (r.date || '—') + '</td>'
-                            + '<td>' + (r.owner || '—') + '</td>'
+                            + '<td>' + esc(r.owner || '—') + '</td>'
                             + '<td><span class="cmx-type-badge cmx-type-badge--' + (r.type === 'New Client' ? 'new' : 'recurring') + '">' + (r.type || '—') + '</span></td>'
                             + '<td>' + fmt(r.subscription_amount) + '</td>'
                             + '<td>' + (r.rate || '—') + '%</td>'
@@ -1503,7 +1511,7 @@
                     data.rent.forEach(function (r) {
                         rentBody.innerHTML += '<tr>'
                             + '<td class="cmx-td-date">' + (r.date || '—') + '</td>'
-                            + '<td>' + (r.owner || '—') + '</td>'
+                            + '<td>' + esc(r.owner || '—') + '</td>'
                             + '<td>' + (r.rate || '—') + '%</td>'
                             + '<td style="font-weight:600;color:var(--cmx-green-dark)">' + fmt(r.commission_amount) + '</td>'
                             + '</tr>';
@@ -1525,7 +1533,7 @@
                     data.marketplace.forEach(function (r) {
                         marketBody.innerHTML += '<tr>'
                             + '<td class="cmx-td-date">' + (r.date || '—') + '</td>'
-                            + '<td>' + (r.owner || '—') + '</td>'
+                            + '<td>' + esc(r.owner || '—') + '</td>'
                             + '<td>' + (r.rate || '—') + '%</td>'
                             + '<td style="font-weight:600;color:var(--cmx-green-dark)">' + fmt(r.commission_amount) + '</td>'
                             + '</tr>';
@@ -1547,8 +1555,8 @@
                     data.other.forEach(function (r) {
                         otherBody.innerHTML += '<tr>'
                             + '<td class="cmx-td-date">' + (r.date || '—') + '</td>'
-                            + '<td>' + (r.owner || '—') + '</td>'
-                            + '<td>' + (r.source || '—') + '</td>'
+                            + '<td>' + esc(r.owner || '—') + '</td>'
+                            + '<td>' + esc(r.source || '—') + '</td>'
                             + '<td>' + (r.rate || '—') + '%</td>'
                             + '<td style="font-weight:600;color:var(--cmx-green-dark)">' + fmt(r.commission_amount) + '</td>'
                             + '</tr>';
