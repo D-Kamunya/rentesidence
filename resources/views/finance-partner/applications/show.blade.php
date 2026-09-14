@@ -1,7 +1,7 @@
 @extends('finance-partner.layouts.app')
 
 @section('content')
-    @php $uw = $application->underwriting_result_json; $pending = in_array($application->status, ['submitted', 'under_review']); @endphp
+    @php $uw = $eligibility; @endphp
     <div class="cs-titlebar">
         <div>
             <h1 class="cs-title">{{ $application->application_number ?? ('#' . $application->id) }}</h1>
@@ -35,6 +35,8 @@
                             $pTotal    = (float) $application->estimated_monthly_repayment * (int) $application->repayment_months;
                             $pProfit   = $pTotal - $pFinanced;
                             $pReturnPct = $pFinanced > 0 ? $pProfit / $pFinanced * 100 : 0;
+                            $pNetProfit = $pProfit - $projFees['total'];
+                            $pNetPct    = $pFinanced > 0 ? $pNetProfit / $pFinanced * 100 : 0;
                         @endphp
                         @if ($application->estimated_monthly_repayment > 0)
                             <div class="col-12">
@@ -45,11 +47,19 @@
                                         <span class="cs-muted" style="font-size:11px;">{{ __('over :n months', ['n' => $application->repayment_months]) }}</span>
                                     </div>
                                     <div>
-                                        <div class="cs-label">{{ __('Your interest (profit)') }}</div>
+                                        <div class="cs-label">{{ __('Your interest (gross)') }}</div>
                                         <span class="cs-amt" style="font-size:18px;color:#0B5940;">+KES {{ number_format($pProfit, 2) }}</span>
                                         <span class="cs-muted" style="font-size:11px;">({{ number_format($pReturnPct, 1) }}% {{ __('on') }} KES {{ number_format($pFinanced, 0) }})</span>
                                     </div>
+                                    <div>
+                                        <div class="cs-label">{{ __('Net of our fees (est.)') }}</div>
+                                        <span class="cs-amt" style="font-size:18px;color:#0B5940;">+KES {{ number_format($pNetProfit, 2) }}</span>
+                                        <span class="cs-muted" style="font-size:11px;">({{ number_format($pNetPct, 1) }}%) · −KES {{ number_format($projFees['total'], 0) }} {{ __('fees') }}</span>
+                                    </div>
                                 </div>
+                                <p class="cs-muted" style="font-size:11px;margin:6px 2px 0;">
+                                    {{ __('Estimate. Centresidence origination + servicing fees are netted from your remittances — the realised amounts are itemised per batch on the facility overview once disbursed.') }}
+                                </p>
                             </div>
                         @endif
                     </div>

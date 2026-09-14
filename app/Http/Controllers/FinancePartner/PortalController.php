@@ -269,6 +269,31 @@ class PortalController extends Controller
         $underwriting = app(\App\Centresidence\Services\CashflowService::class)
             ->presentationSnapshot((int) $application->property_id, $lookback);
 
+        // Eligibility: while the application is still PENDING, re-evaluate the rules LIVE against
+        // CURRENT cashflow (the same CashflowService the panel uses) so the financier decides on
+        // today's data and the two cards can't drift apart. Once decided, show the stored snapshot
+        // (the record of what was evaluated at the decision).
+        $pending = in_array($application->status, ['submitted', 'under_review'], true);
+        $eligibility = $application->underwriting_result_json;
+        if ($pending && $application->partnerModule) {
+            $ctx = app(\App\Centresidence\Services\CashflowService::class)->underwritingContext($application);
+            $eligibility = app(\App\Centresidence\Services\UnderwritingEngine::class)
+                ->evaluate($application->partnerModule, $ctx);
+        }
+
+        // Return projection NET of Centresidence's origination + servicing fees (we net these from
+        // the partner's remittances). The REALIZED net is itemised per batch on the facility
+        // overview; this is the decision-time estimate, using the partner's own configured rates.
+        $partner    = $this->partner();
+        $feeSvc     = app(\App\Centresidence\Services\PartnerFeeService::class);
+        $finForFee  = (float) ($application->financed_amount > 0 ? $application->financed_amount : $application->requested_amount);
+        $totalRepay = (float) $application->estimated_monthly_repayment * (int) $application->repayment_months;
+        $projFees = [
+            'origination' => round($finForFee * $feeSvc->originationRate($partner) / 100, 2),
+            'servicing'   => round($totalRepay * $feeSvc->servicingRate($partner) / 100, 2),
+        ];
+        $projFees['total'] = round($projFees['origination'] + $projFees['servicing'], 2);
+
         // Once approved, disbursement happens in the same pipeline — surface it
         // right here instead of a separate trip to Facilities.
         $facility = FinanceFacility::where('finance_application_id', $application->id)
@@ -296,6 +321,9 @@ class PortalController extends Controller
             'payee' => $payee,
             'underwriting' => $underwriting,
             'uwDefaultMonths' => $uwDefaultMonths,
+            'eligibility' => $eligibility,
+            'pending' => $pending,
+            'projFees' => $projFees,
         ]);
     }
 
