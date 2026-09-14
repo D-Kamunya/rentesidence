@@ -121,6 +121,7 @@
                                             <option value="subscription">{{ __('Subscriptions') }}</option>
                                             <option value="rent">{{ __('Rent') }}</option>
                                             <option value="marketplace">{{ __('Marketplace') }}</option>
+                                            <option value="other">{{ __('Other') }}</option>
                                         </select>
                                     </div>
                                 </div>
@@ -133,17 +134,26 @@
                                                 <th>{{ __('Subscriptions') }}</th>
                                                 <th>{{ __('Rent') }}</th>
                                                 <th>{{ __('Marketplace') }}</th>
+                                                <th>{{ __('Other') }}</th>
                                                 <th>{{ __('Total Payout') }}</th>
                                                 <th>{{ __('Detail') }}</th>
                                             </tr>
                                         </thead>
                                         <tbody>
                                             @forelse($monthlySummaries as $row)
+                                            @php
+                                                // "Other" = usage lines (screening/agreement/financing/…): the total minus
+                                                // the three columns above, so the row's parts always sum to the Total.
+                                                $otherPayout = round($row->total_commission_payout
+                                                    - ($row->new_commission_payout + $row->recurring_commission_payout
+                                                       + $row->rent_commission_payout + $row->marketplace_commission_payout), 2);
+                                            @endphp
                                             <tr data-month="{{ $row->period_month }}"
                                                 data-year="{{ $row->period_year }}"
                                                 data-has-subscription="{{ $row->new_commission_payout + $row->recurring_commission_payout > 0 ? 'subscription' : '' }}"
                                                 data-has-rent="{{ $row->rent_commission_payout > 0 ? 'rent' : '' }}"
-                                                data-has-marketplace="{{ $row->marketplace_commission_payout > 0 ? 'marketplace' : '' }}">
+                                                data-has-marketplace="{{ $row->marketplace_commission_payout > 0 ? 'marketplace' : '' }}"
+                                                data-has-other="{{ $otherPayout > 0 ? 'other' : '' }}">
                                                 <td class="cmx-td-date">
                                                     {{ \Carbon\Carbon::createFromDate($row->period_year, $row->period_month, 1)->format('M Y') }}
                                                 </td>
@@ -171,6 +181,14 @@
                                                         <span class="cmx-na">—</span>
                                                     @endif
                                                 </td>
+                                                <td class="cmx-td-amount">
+                                                    @if($otherPayout > 0)
+                                                        KSh {{ number_format($otherPayout, 2) }}
+                                                        <span class="cmx-pill cmx-pill--marketplace">Other</span>
+                                                    @else
+                                                        <span class="cmx-na">—</span>
+                                                    @endif
+                                                </td>
                                                 <td class="cmx-td-amount cmx-td-amount--total">
                                                     KSh {{ number_format($row->total_commission_payout, 2) }}
                                                 </td>
@@ -186,7 +204,7 @@
                                             </tr>
                                             @empty
                                             <tr>
-                                                <td colspan="6" class="cmx-empty">
+                                                <td colspan="7" class="cmx-empty">
                                                     <div class="cmx-empty__icon">
                                                         <svg width="28" height="28" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="1.5"/></svg>
                                                     </div>
@@ -443,6 +461,11 @@
                     {{ __('Marketplace') }}
                     <span class="cmx-detail-tab__count" id="cmxMarketCount">0</span>
                 </button>
+                <button class="cmx-detail-tab" data-tab="other">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="1.8"/><path d="M12 16v-4M12 8h.01" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+                    {{ __('Other') }}
+                    <span class="cmx-detail-tab__count" id="cmxOtherCount">0</span>
+                </button>
             </div>
 
             <div id="cmx-tab-subscription" class="cmx-detail-panel">
@@ -484,6 +507,20 @@
                     <tbody id="cmxMarketRows"></tbody>
                 </table>
                 <p class="cmx-detail-empty" id="cmxMarketEmpty" style="display:none;">{{ __('No marketplace commissions this month.') }}</p>
+            </div>
+
+            <div id="cmx-tab-other" class="cmx-detail-panel" style="display:none;">
+                <table class="cmx-detail-table">
+                    <thead><tr>
+                        <th>{{ __('Date') }}</th>
+                        <th>{{ __('Owner') }}</th>
+                        <th>{{ __('Source') }}</th>
+                        <th>{{ __('Rate') }}</th>
+                        <th>{{ __('Payout') }}</th>
+                    </tr></thead>
+                    <tbody id="cmxOtherRows"></tbody>
+                </table>
+                <p class="cmx-detail-empty" id="cmxOtherEmpty" style="display:none;">{{ __('No other commissions this month.') }}</p>
             </div>
         </div>
 
@@ -1259,7 +1296,8 @@
                     if (!val) { row.style.display = ''; return; }
                     var show = (val === 'subscription' && row.dataset.hasSubscription === 'subscription')
                             || (val === 'rent'         && row.dataset.hasRent         === 'rent')
-                            || (val === 'marketplace'  && row.dataset.hasMarketplace  === 'marketplace');
+                            || (val === 'marketplace'  && row.dataset.hasMarketplace  === 'marketplace')
+                            || (val === 'other'        && row.dataset.hasOther        === 'other');
                     row.style.display = show ? '' : 'none';
                 });
             });
@@ -1499,6 +1537,29 @@
             }
             var marketCount = document.getElementById('cmxMarketCount');
             if (marketCount) marketCount.textContent = data.marketplace ? data.marketplace.length : 0;
+
+            /* Other (usage lines — screening / agreement / financing / …) */
+            var otherBody  = document.getElementById('cmxOtherRows');
+            var otherEmpty = document.getElementById('cmxOtherEmpty');
+            if (otherBody) {
+                otherBody.innerHTML = '';
+                if (data.other && data.other.length) {
+                    data.other.forEach(function (r) {
+                        otherBody.innerHTML += '<tr>'
+                            + '<td class="cmx-td-date">' + (r.date || '—') + '</td>'
+                            + '<td>' + (r.owner || '—') + '</td>'
+                            + '<td>' + (r.source || '—') + '</td>'
+                            + '<td>' + (r.rate || '—') + '%</td>'
+                            + '<td style="font-weight:600;color:var(--cmx-green-dark)">' + fmt(r.commission_amount) + '</td>'
+                            + '</tr>';
+                    });
+                    if (otherEmpty) otherEmpty.style.display = 'none';
+                } else {
+                    if (otherEmpty) otherEmpty.style.display = 'block';
+                }
+            }
+            var otherCount = document.getElementById('cmxOtherCount');
+            if (otherCount) otherCount.textContent = data.other ? data.other.length : 0;
 
             /* Reset tabs to first */
             document.querySelectorAll('.cmx-detail-tab').forEach(function (t) { 

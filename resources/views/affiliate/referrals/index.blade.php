@@ -92,6 +92,7 @@
                                         <th>{{ __('Subscriptions') }}</th>
                                         <th>{{ __('Rent') }}</th>
                                         <th>{{ __('Marketplace') }}</th>
+                                        <th>{{ __('Other') }}</th>
                                         <th>{{ __('Total Earned') }}</th>
                                         <th>{{ __('Details') }}</th>
                                     </tr>
@@ -146,6 +147,9 @@
                                         <td class="ref-amount">
                                             KSh {{ number_format($referral->marketplace_earned ?? 0, 2) }}
                                         </td>
+                                        <td class="ref-amount">
+                                            KSh {{ number_format($referral->other_earned ?? 0, 2) }}
+                                        </td>
                                         <td class="ref-amount ref-amount--total">
                                             KSh {{ number_format($referral->total_earned ?? 0, 2) }}
                                         </td>
@@ -162,7 +166,7 @@
                                     </tr>
                                     @empty
                                     <tr>
-                                        <td colspan="9" class="ref-empty">
+                                        <td colspan="10" class="ref-empty">
                                             <div class="ref-empty__icon">
                                                 <svg width="32" height="32" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="1.5"/><line x1="8" y1="12" x2="16" y2="12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
                                             </div>
@@ -222,6 +226,7 @@
                                 <th>{{ __('Subscriptions') }}</th>
                                 <th>{{ __('Rent') }}</th>
                                 <th>{{ __('Marketplace') }}</th>
+                                <th>{{ __('Other') }}</th>
                                 <th>{{ __('Total') }}</th>
                             </tr>
                         </thead>
@@ -571,6 +576,10 @@
             '<div class="ref-detail-stat">' +
                 '<span class="ref-detail-stat__label">Marketplace</span>' +
                 '<span class="ref-detail-stat__value">KSh ' + fmt(data.stats.marketplace_total) + '</span>' +
+            '</div>' +
+            '<div class="ref-detail-stat">' +
+                '<span class="ref-detail-stat__label">Other</span>' +
+                '<span class="ref-detail-stat__value">KSh ' + fmt(data.stats.other_total) + '</span>' +
             '</div>';
 
         // Monthly earnings
@@ -583,11 +592,12 @@
                     '<td>' + (r.subscription != 0 ? 'KSh ' + fmt(r.subscription) : '—') + '</td>' +
                     '<td>' + (r.rent != 0 ? 'KSh ' + fmt(r.rent) : '—') + '</td>' +
                     '<td>' + (r.marketplace != 0 ? 'KSh ' + fmt(r.marketplace) : '—') + '</td>' +
+                    '<td>' + (r.other != 0 ? 'KSh ' + fmt(r.other) : '—') + '</td>' +
                     '<td style="font-weight:600;color:var(--ref-green-dark);">KSh ' + fmt(r.total) + '</td>' +
                 '</tr>';
             });
         } else {
-            monthlyBody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:20px;color:var(--ref-gray-400);">No earnings data</td></tr>';
+            monthlyBody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:20px;color:var(--ref-gray-400);">No earnings data</td></tr>';
         }
 
         // Recent commissions — this is a recent-activity feed, NOT the full ledger, so

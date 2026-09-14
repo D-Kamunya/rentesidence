@@ -103,9 +103,27 @@ class CommissionsController extends Controller
                 'commission_amount'=> $r->commission_amount,
             ])->values()->toArray();
 
+        // "Other" = usage lines (screening / agreement / financing / …): everything not
+        // already bucketed above, so the modal's tabs sum to the row total. Labelled from
+        // the surfaced-streams map (falls back to a humanised source for anything unmapped).
+        $labels  = \App\Services\AffiliateCommissionService::surfacedStreams();
+        $bucketed = [
+            AFFILIATE_COMMISSION_SOURCE_SUBSCRIPTION,
+            AFFILIATE_COMMISSION_SOURCE_RENT,
+            AFFILIATE_COMMISSION_SOURCE_MARKETPLACE,
+        ];
+        $other = $rows->whereNotIn('source', $bucketed)
+            ->map(fn($r) => [
+                'date'             => $r->created_at->format('d M Y'),
+                'owner'            => $r->owner?->user?->name ?? $r->owner?->name ?? '—',
+                'source'           => $labels[$r->source] ?? ucwords(str_replace('_', ' ', (string) $r->source)),
+                'rate'             => $r->commission_rate,
+                'commission_amount'=> $r->commission_amount,
+            ])->values()->toArray();
+
         return response()->json([
             'success' => true,
-            'data'    => compact('period', 'subscription', 'rent', 'marketplace'),
+            'data'    => compact('period', 'subscription', 'rent', 'marketplace', 'other'),
         ]);
     }
 }
