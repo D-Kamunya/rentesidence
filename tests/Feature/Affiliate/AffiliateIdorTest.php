@@ -101,7 +101,7 @@ class AffiliateIdorTest extends AffiliateDatabaseTestCase
         return Lead::create([
             'company_id'           => $company->id,
             'affiliate_id'         => $ownerUserId,
-            'product'              => 'property_sales',
+            'product'              => 'property_management',
             'status'               => 'active',
             'temperature'          => 'warm',
             'ownership_expires_at' => now()->addDays(60),

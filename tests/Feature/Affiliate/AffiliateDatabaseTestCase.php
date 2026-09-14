@@ -79,7 +79,7 @@ abstract class AffiliateDatabaseTestCase extends TestCase
             $t->id();
             $t->unsignedBigInteger('affiliate_id');
             $t->unsignedBigInteger('owner_id')->nullable();
-            $t->string('product')->default('property_sales');
+            $t->string('product')->default('property_management');
             $t->string('source')->nullable();
             $t->string('external_ref')->nullable();
             $t->string('type')->nullable();

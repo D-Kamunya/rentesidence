@@ -140,7 +140,7 @@ class LeadServiceTest extends TestCase
         ], 1);
 
         $this->assertSame(\App\Services\AffiliateOs\ProductRegistry::default(), $lead->product);
-        $this->assertSame('property_sales', $lead->product);
+        $this->assertSame('property_management', $lead->product);
     }
 
     public function test_schedule_demo_transitions_and_dispatches_mail(): void
