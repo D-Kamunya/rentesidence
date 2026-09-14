@@ -73,10 +73,20 @@
                     <p class="cs-muted" style="font-size:12px;margin:0 0 12px;">
                         {{ __('Proven rent for this property (paid invoices, the same basis as the eligibility checks) — the cashflow a facility is repaid from at source, before it reaches the owner.') }}
                     </p>
+                    @php $uwShort = $uwr['history_months'] < $uwr['months']; @endphp
+                    @if($uwShort)
+                        <div style="display:flex;gap:8px;align-items:flex-start;padding:9px 11px;border-radius:8px;background:#FBEEDC;border:1px solid #E7C99A;font-size:11.5px;color:#8A5A12;margin:0 0 12px;">
+                            <span style="font-weight:700;">⚠</span>
+                            <span>{{ __('This property has only :h of :n months of paid history. The average is prorated over the full :n-month window, so it reads LOWER than the true monthly rent — use the per-month bars below for the actual figures, or shorten the window to the months on record.', ['h' => $uwr['history_months'], 'n' => $uwr['months']]) }}</span>
+                        </div>
+                    @endif
                     <div class="row">
                         <div class="col-6 cs-field">
                             <div class="cs-label">{{ __('Average monthly rent') }}</div>
                             <span class="cs-amt">KES {{ number_format($uwr['average'], 2) }}</span>
+                            @if($uwShort)
+                                <span style="display:inline-block;font-size:10px;font-weight:700;padding:1px 7px;border-radius:999px;background:#FBEEDC;color:#8A5A12;margin-left:4px;vertical-align:middle;">{{ __(':h/:n mo', ['h' => $uwr['history_months'], 'n' => $uwr['months']]) }}</span>
+                            @endif
                             <div class="cs-muted" style="font-size:11px;">{{ __('over :n months', ['n' => $uwr['months']]) }}</div>
                         </div>
                         <div class="col-6 cs-field">

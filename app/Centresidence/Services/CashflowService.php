@@ -56,9 +56,24 @@ class CashflowService
         return round(min($occupied, $totalUnits) / $totalUnits * 100, 2);
     }
 
-    /** Distinct months that have at least one paid invoice (history depth). */
+    /**
+     * Distinct months that have at least one paid invoice (history depth). Counts the
+     * `billing_period` DATE (first-of-covered-month) — NOT the legacy `month` string, which
+     * is a month NAME ("January") and so is year-blind (Jan-2025 and Jan-2026 collapse to one,
+     * badly over/under-counting real history).
+     */
     public function cashflowHistoryMonths(int $propertyId): int
     {
+        if (Schema::hasColumn('invoices', 'billing_period')) {
+            return (int) DB::table('invoices')
+                ->where('property_id', $propertyId)
+                ->where('status', INVOICE_STATUS_PAID)
+                ->whereNull('deleted_at')
+                ->whereNotNull('billing_period')
+                ->distinct()
+                ->count('billing_period');
+        }
+
         return (int) DB::table('invoices')
             ->where('property_id', $propertyId)
             ->where('status', INVOICE_STATUS_PAID)
