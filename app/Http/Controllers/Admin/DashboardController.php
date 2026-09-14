@@ -47,8 +47,9 @@ class DashboardController extends Controller
 
     /**
      * Platform earnings across every revenue stream we run — subscriptions, marketplace commission,
-     * the tokenized infrastructure (Centresidence) commission + infrastructure invoices, and the
-     * prepaid credit "token" buckets (SMS / agreement / screening). Each figure is an actual table
+     * the tokenized infrastructure (Centresidence) commission + infrastructure invoices, financing
+     * (origination + servicing fees netted from remittances), and the prepaid credit "token" buckets
+     * (SMS / agreement / screening). Each figure is an actual table
      * sum; streams never overlap (marketplace, token and rent are distinct `transaction_source`s, and
      * the credit buckets live in a separate ledger). Missing tables degrade to zero, never error.
      */
@@ -103,6 +104,28 @@ class DashboardController extends Controller
             'accent' => 'amber',
             'all'    => $tokenCommissionAll + $infraAll,
             'month'  => $tokenCommissionMonth + $infraMonth,
+        ];
+
+        // ── Financing (our origination + servicing fees, netted from remittances) ──
+        // Both realised fees are stored per remittance batch (with a timestamp), so all-time
+        // and this-month attribute cleanly. Origination on the batch equals the sum of what
+        // was collected into finance_facilities.origination_fee_collected.
+        $finAll = $finMonth = 0.0;
+        if (Schema::hasTable('partner_remittance_batches')
+            && Schema::hasColumn('partner_remittance_batches', 'origination_fee')) {
+            $finBase  = DB::table('partner_remittance_batches');
+            $finAll   = (float) (clone $finBase)->sum('origination_fee')
+                      + (float) (clone $finBase)->sum('servicing_fee');
+            $finMonth = (float) (clone $finBase)->where('created_at', '>=', $monthStart)->sum('origination_fee')
+                      + (float) (clone $finBase)->where('created_at', '>=', $monthStart)->sum('servicing_fee');
+        }
+        $streams['financing'] = [
+            'label'  => __('Financing'),
+            'note'   => __('Origination + servicing fees on facilities'),
+            'icon'   => 'ri-bank-line',
+            'accent' => 'teal',
+            'all'    => $finAll,
+            'month'  => $finMonth,
         ];
 
         // ── Prepaid credit "token" buckets (SMS / agreement / screening) ──────

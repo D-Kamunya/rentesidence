@@ -322,6 +322,7 @@
     .earn-card--green  { border-top-color: var(--green);  }
     .earn-card--amber  { border-top-color: var(--amber);  }
     .earn-card--violet { border-top-color: var(--purple); }
+    .earn-card--teal   { border-top-color: #0F766E;        }
     .earn-card__head { display: flex; align-items: center; gap: 9px; margin-bottom: 14px; }
     .earn-card__ic { width: 32px; height: 32px; border-radius: 9px; display: flex; align-items: center; justify-content: center; flex: none; }
     .earn-card__ic svg { width: 17px; height: 17px; fill: none; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
@@ -329,6 +330,7 @@
     .earn-card--green  .earn-card__ic { background: var(--green-light); } .earn-card--green  .earn-card__ic svg { stroke: var(--green-dark); }
     .earn-card--amber  .earn-card__ic { background: var(--amber-light); } .earn-card--amber  .earn-card__ic svg { stroke: var(--amber);      }
     .earn-card--violet .earn-card__ic { background: #EEEDF9;            } .earn-card--violet .earn-card__ic svg { stroke: var(--purple);     }
+    .earn-card--teal   .earn-card__ic { background: #D5F0EC;            } .earn-card--teal   .earn-card__ic svg { stroke: #0F766E;           }
     .earn-card__label { font-size: 13px; font-weight: 600; color: var(--gray-800); }
     .earn-card__amt { font-size: 22px; font-weight: 700; color: var(--gray-900); line-height: 1; }
     .earn-card__sub { font-size: 10px; color: var(--gray-400); text-transform: uppercase; letter-spacing: .06em; margin-top: 5px; }
@@ -428,6 +430,7 @@
                             @case('subscriptions')<svg viewBox="0 0 24 24"><path d="M12 2l2.4 4.9 5.4.8-3.9 3.8.9 5.4-4.8-2.5-4.8 2.5.9-5.4L4.2 7.7l5.4-.8z"/></svg>@break
                             @case('marketplace')<svg viewBox="0 0 24 24"><path d="M3 9l1-5h16l1 5"/><path d="M4 9v11h16V9"/><path d="M9 20v-6h6v6"/></svg>@break
                             @case('infrastructure')<svg viewBox="0 0 24 24"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>@break
+                            @case('financing')<svg viewBox="0 0 24 24"><line x1="3" y1="21" x2="21" y2="21"/><path d="M5 21V10M19 21V10M12 3L3 8h18z"/><line x1="9" y1="21" x2="9" y2="10"/><line x1="15" y1="21" x2="15" y2="10"/></svg>@break
                             @default<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v10M9.5 10h4a2 2 0 0 1 0 4h-4"/></svg>
                         @endswitch
                     </span>
