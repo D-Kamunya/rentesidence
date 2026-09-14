@@ -180,19 +180,28 @@
     backdrop.addEventListener('click', e => { if (e.target === backdrop) close(); });
     document.addEventListener('keydown', e => { if (e.key === 'Escape' && backdrop.classList.contains('is-open')) close(); });
 
+    // Escape values interpolated into innerHTML below — invoice name/month are owner-set
+    // free text, so rendering them raw would be a stored-XSS sink (owner → maintainer, who
+    // can confirm payments).
+    function esc(s) {
+        return String(s == null ? '' : s).replace(/[&<>"']/g, c => (
+            { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]
+        ));
+    }
+
     function render(d) {
         const invoices = d.invoices || [];
         const canConfirm = !!d.canConfirm;
         if (!invoices.length) { listEl.innerHTML = '<div class="mrc-state">{{ __('No invoices for this tenant yet.') }}</div>'; return; }
         listEl.innerHTML = invoices.map(i => `
-            <div class="mrc-inv" data-id="${i.id}">
+            <div class="mrc-inv" data-id="${esc(i.id)}">
                 <div>
-                    <div class="mrc-inv__label">${i.period || i.month || ''}</div>
-                    <div class="mrc-inv__meta">${(i.label && i.label !== i.month) ? i.label + ' · ' : ''}${i.invoice_no ?? ''}</div>
+                    <div class="mrc-inv__label">${esc(i.period || i.month || '')}</div>
+                    <div class="mrc-inv__meta">${(i.label && i.label !== i.month) ? esc(i.label) + ' · ' : ''}${esc(i.invoice_no ?? '')}</div>
                 </div>
                 <div style="display:flex;align-items:center;gap:10px;">
                     <span class="mrc-badge ${i.paid ? 'mrc-badge--ok' : 'mrc-badge--due'}">${i.paid ? '{{ __('Paid') }}' : '{{ __('Unpaid') }}'}</span>
-                    <span class="mrc-inv__amt">${i.amount}</span>
+                    <span class="mrc-inv__amt">${esc(i.amount)}</span>
                     ${(canConfirm && !i.paid) ? '<button type="button" class="mrc-mark">{{ __('Mark received') }}</button>' : ''}
                 </div>
             </div>`).join('');
