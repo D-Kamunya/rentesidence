@@ -135,6 +135,88 @@ class CashflowService
         ];
     }
 
+    /**
+     * A presentation snapshot for the finance-partner application review — the SAME per-property
+     * paid-invoice basis the underwriting rules use (so the panel and the Eligibility check never
+     * disagree), enriched with the spread + a stability signal + a monthly series that make an
+     * underwriting call honest rather than a lone rosy average. Default window = the partner's
+     * required_cashflow_months (resolved by the caller); financier may override on the page.
+     *
+     * @return array<string,mixed>
+     */
+    public function presentationSnapshot(int $propertyId, int $months): array
+    {
+        $months = max(1, min(36, $months));
+
+        // Per-month collected — same table + filters as averageMonthlyRent(), bucketed for display.
+        $byMonth = [];
+        DB::table('invoices')
+            ->where('property_id', $propertyId)
+            ->where('status', INVOICE_STATUS_PAID)
+            ->whereNull('deleted_at')
+            ->where('created_at', '>=', $this->since($months))
+            ->get(['amount', 'created_at'])
+            ->each(function ($r) use (&$byMonth) {
+                $key = Carbon::parse($r->created_at)->format('Y-m');
+                $byMonth[$key] = ($byMonth[$key] ?? 0) + (float) $r->amount;
+            });
+
+        $monthly = [];
+        for ($i = $months - 1; $i >= 0; $i--) {
+            $d = Carbon::now()->startOfMonth()->subMonths($i);
+            $monthly[] = [
+                'label'     => $d->format('M Y'),
+                'collected' => round((float) ($byMonth[$d->format('Y-m')] ?? 0), 2),
+            ];
+        }
+
+        $values   = array_column($monthly, 'collected');
+        $withData = array_values(array_filter($values, fn ($v) => $v > 0));
+        // Headline average = the SAME figure the rules underwrite on (total / N prorate).
+        $average  = $this->averageMonthlyRent($propertyId, $months)->toFloat();
+
+        $totalUnits = (int) DB::table('property_units')
+            ->where('property_id', $propertyId)->whereNull('deleted_at')->count();
+        $occupied = (int) DB::table('tenants')
+            ->where('property_id', $propertyId)
+            ->where('status', TENANT_STATUS_ACTIVE)
+            ->whereNull('deleted_at')->distinct()->count('unit_id');
+        $occupied = $totalUnits > 0 ? min($occupied, $totalUnits) : $occupied;
+
+        return [
+            'months'           => $months,
+            'monthly'          => $monthly,
+            'average'          => round($average, 2),
+            'min'              => $withData ? round(min($withData), 2) : 0.0,
+            'max'              => $values ? round(max($values), 2) : 0.0,
+            'months_with_data' => count($withData),
+            'history_months'   => $this->cashflowHistoryMonths($propertyId),
+            'stability_score'  => $this->stabilityScore($values),
+            'occupancy'        => [
+                'occupied' => $occupied,
+                'total'    => $totalUnits,
+                'rate'     => $totalUnits > 0 ? (int) round($occupied / $totalUnits * 100) : 0,
+            ],
+        ];
+    }
+
+    /**
+     * 0–100 steadiness of the month-to-month series (100 = flat/reliable, lower = lumpy), from the
+     * coefficient of variation — sits next to the average so a spiky history can't hide behind it.
+     */
+    private function stabilityScore(array $values): int
+    {
+        $mean = count($values) ? array_sum($values) / count($values) : 0.0;
+        if ($mean <= 0 || count($values) < 2) {
+            return 0;
+        }
+        $variance = 0.0;
+        foreach ($values as $v) {
+            $variance += ($v - $mean) ** 2;
+        }
+        return (int) max(0, min(100, round((1 - sqrt($variance / count($values)) / $mean) * 100)));
+    }
+
     private function since(int $months): string
     {
         return Carbon::now()->subMonths($months)->startOfMonth()->toDateTimeString();

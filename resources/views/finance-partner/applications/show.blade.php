@@ -60,17 +60,18 @@
             <div class="cs-card">
                 <div class="cs-card__head" style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;">
                     <h2 class="cs-card__title">{{ __('Owner cashflow & occupancy') }}</h2>
+                    @php $uwOpts = collect([3, 6, 12, 24, $uwDefaultMonths])->filter(fn ($n) => $n > 0)->unique()->sort()->values(); @endphp
                     <form method="get" style="margin:0;">
                         <select name="months" class="cs-input" style="width:auto;padding:4px 8px;font-size:12px;" onchange="this.form.submit()">
-                            @foreach([3,6,12,24] as $opt)
-                                <option value="{{ $opt }}" {{ $uwr['months'] === $opt ? 'selected' : '' }}>{{ __('Last :n months', ['n' => $opt]) }}</option>
+                            @foreach($uwOpts as $opt)
+                                <option value="{{ $opt }}" {{ $uwr['months'] === $opt ? 'selected' : '' }}>{{ __('Last :n months', ['n' => $opt]) }}@if($opt === $uwDefaultMonths) {{ __('· your default') }}@endif</option>
                             @endforeach
                         </select>
                     </form>
                 </div>
                 <div class="cs-card__body">
                     <p class="cs-muted" style="font-size:12px;margin:0 0 12px;">
-                        {{ __('Proven rent settled through Centresidence — the cashflow a rent-secured facility is repaid from, at source, before it reaches the owner.') }}
+                        {{ __('Proven rent for this property (paid invoices, the same basis as the eligibility checks) — the cashflow a facility is repaid from at source, before it reaches the owner.') }}
                     </p>
                     <div class="row">
                         <div class="col-6 cs-field">
@@ -105,7 +106,7 @@
                         @endforeach
                     </div>
                     <p class="cs-muted" style="font-size:11px;margin:10px 0 0;">
-                        {{ __('Settled rent only (gross, before platform fee). A short history or empty months lowers confidence — weigh the spread and stability, not the average alone.') }}
+                        {{ __(':n months of paid-invoice history on record. A short history or empty months lowers confidence — weigh the spread and stability, not the average alone.', ['n' => $uwr['history_months']]) }}
                     </p>
                 </div>
             </div>
