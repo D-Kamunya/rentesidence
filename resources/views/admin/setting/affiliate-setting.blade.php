@@ -46,10 +46,10 @@
                                                 <strong>{{ __('These rates apply across every affiliate income line.') }}</strong>
                                                 {{ __('The first-time rate is paid on an owner\'s first activity in each line; the recurring rate applies for the number of months set below (measured per line, from that line\'s first commission). Income lines:') }}
                                                 <span class="d-block mt-1">
-                                                    {{ __('Subscription (of the plan fee) · Rent (a set share of our rent fee) · Marketplace (a cut of our sale commission) · Tenant screening · Agreements · Gas tokens (gas only) · Financing (origination fee).') }}
+                                                    {{ __('Subscription (of the plan fee) · Rent (a set share of our rent fee) · Marketplace (a cut of our sale commission) · Tenant screening · Agreements ·') }}@if(config('centresidence.gas_live', false)) {{ __('Gas tokens (gas only) ·') }}@endif {{ __('Financing (origination fee).') }}
                                                 </span>
                                                 <span class="d-block mt-1 text-muted">
-                                                    {{ __('For the usage lines (screening, agreements, gas tokens, financing) the rate is applied to OUR take on each event, so a payout never exceeds what we earned — the affiliate earns from what their owners do, not just the plan they are on.') }}
+                                                    {{ __('For the usage lines (screening, agreements,') }}@if(config('centresidence.gas_live', false)) {{ __('gas tokens,') }}@endif {{ __('financing) the rate is applied to OUR take on each event, so a payout never exceeds what we earned — the affiliate earns from what their owners do, not just the plan they are on.') }}
                                                 </span>
                                             </div>
                                             <form action="{{ route('admin.setting.general-setting.update') }}"
