@@ -45,9 +45,31 @@
                     </tbody>
                 </table>
             </div>
-            <p class="cs-muted" style="margin-top:12px;font-size:11.5px;">
-                {{ __('“Platform fee” = the transaction-mode commission on your rent. “Module costs” = software & gateway for your smart modules. “Financing” = repayment of your active facilities. “Overdue recovery” = any past-due metered commission caught up. Only the rent portion of an invoice is deducted from — late fees and other charges reach you in full — and deductions are capped so you always keep a protected share of every rent payment.') }}
-            </p>
+            <style>
+                .dedlegend { margin-top:18px; border:1px solid var(--line,#E6E1D8); border-radius:12px; background:#FBFCFD; padding:16px 18px; }
+                .dedlegend__title { font-size:11px; font-weight:700; letter-spacing:.05em; text-transform:uppercase; color:#6b7280; margin:0 0 12px; }
+                .dedlegend__grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px 22px; margin:0; }
+                @media (max-width:560px) { .dedlegend__grid { grid-template-columns:1fr; } }
+                .dedlegend__item { padding-left:12px; border-left:2px solid #185FA5; }
+                .dedlegend__item dt { font-size:12.5px; font-weight:700; color:#111827; }
+                .dedlegend__item dd { margin:2px 0 0; font-size:12.5px; color:#4b5563; line-height:1.5; }
+                .dedlegend__note { display:flex; gap:9px; align-items:flex-start; margin:15px 0 0; padding:11px 13px; border-radius:9px;
+                    background:#E8F0F9; color:#1F4B76; font-size:12px; line-height:1.55; }
+                .dedlegend__note svg { flex:none; width:16px; height:16px; margin-top:1px; color:#185FA5; }
+            </style>
+            <div class="dedlegend">
+                <p class="dedlegend__title">{{ __('What each deduction means') }}</p>
+                <dl class="dedlegend__grid">
+                    <div class="dedlegend__item"><dt>{{ __('Platform fee') }}</dt><dd>{{ __('The transaction-mode commission on your rent.') }}</dd></div>
+                    <div class="dedlegend__item"><dt>{{ __('Module costs') }}</dt><dd>{{ __('Software & gateway for your smart modules.') }}</dd></div>
+                    <div class="dedlegend__item"><dt>{{ __('Financing') }}</dt><dd>{{ __('Repayment of your active facilities.') }}</dd></div>
+                    <div class="dedlegend__item"><dt>{{ __('Overdue recovery') }}</dt><dd>{{ __('Any past-due metered commission caught up.') }}</dd></div>
+                </dl>
+                <p class="dedlegend__note">
+                    <svg viewBox="0 0 24 24" fill="none"><path d="M12 3l7 4v5c0 4-3 7-7 8-4-1-7-4-7-8V7l7-4z" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><path d="M9 12l2 2 4-4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                    <span>{{ __('Only the rent portion of an invoice is deducted from — late fees and other charges reach you in full — and deductions are capped so you always keep a protected share of every rent payment.') }}</span>
+                </p>
+            </div>
         @endif
     </div>
 </div></div></div>
