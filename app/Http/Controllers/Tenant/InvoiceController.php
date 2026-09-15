@@ -53,6 +53,7 @@ class InvoiceController extends Controller
         $data['noticeEarliest'] = $tenantRecord ? $vn->earliestMoveOut($ownerId)->toDateString() : null;
         $data['activeNotice']   = $activeNotice;
         $data['canGiveNotice']  = $tenantRecord && (int) $tenantRecord->status === TENANT_STATUS_ACTIVE;
+        $data['tenancyEnded']   = $tenantRecord && (int) $tenantRecord->status === TENANT_STATUS_CLOSE;
         // Once the move-out date has arrived on an acknowledged/completed notice and the owner
         // hasn't closed the tenancy, let the tenant nudge them ("in case the owner forgot").
         $data['canRemindClose'] = $activeNotice

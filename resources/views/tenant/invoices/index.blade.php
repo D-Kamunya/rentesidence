@@ -57,13 +57,15 @@
                                     {{ __('Give notice to vacate') }}
                                 </button>
                             @endif
-                            <button type="button" class="inv-btn inv-btn--pay" data-bs-toggle="modal" data-bs-target="#payUpcomingModal">
-                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
-                                    <rect x="3" y="5" width="18" height="16" rx="2" stroke="currentColor" stroke-width="1.8"/>
-                                    <path d="M3 9h18M8 3v4M16 3v4M12 13v4M10 15h4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
-                                </svg>
-                                {{ __('Pay Upcoming Rent') }}
-                            </button>
+                            @if (empty($tenancyEnded))
+                                <button type="button" class="inv-btn inv-btn--pay" data-bs-toggle="modal" data-bs-target="#payUpcomingModal">
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+                                        <rect x="3" y="5" width="18" height="16" rx="2" stroke="currentColor" stroke-width="1.8"/>
+                                        <path d="M3 9h18M8 3v4M16 3v4M12 13v4M10 15h4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+                                    </svg>
+                                    {{ __('Pay Upcoming Rent') }}
+                                </button>
+                            @endif
                         </div>
                     </div>
 
@@ -1025,6 +1027,22 @@
             });
         })();
     </script>
+
+    @if (empty($tenancyEnded))
+    {{-- Deep-link from the dashboard "Pay your rent ahead" pointer opens the modal straight away --}}
+    <script>
+        (function () {
+            try {
+                var params = new URLSearchParams(window.location.search);
+                if (params.get('pay_ahead') !== '1') return;
+                var el = document.getElementById('payUpcomingModal');
+                if (el && window.bootstrap && bootstrap.Modal) {
+                    new bootstrap.Modal(el).show();
+                }
+            } catch (e) {}
+        })();
+    </script>
+    @endif
 
     {{-- Notice-to-vacate: flag an early date + submit --}}
     <script>

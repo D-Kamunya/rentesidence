@@ -23,6 +23,9 @@ class DashboardController extends Controller
         $data['property'] = Property::findOrFail($tenantUser->property_id);
         $data['unit'] = PropertyUnit::findOrFail($tenantUser->unit_id);
         $data['tenant'] = $tenantUser;
+        // Terminal state: a closed tenancy should read cleanly ("ended") rather than showing stale
+        // live surfaces (rent, meters, give-notice). The full no-owner experience is the Tenant Helper.
+        $data['tenancyEnded'] = (int) $tenantUser->status === TENANT_STATUS_CLOSE;
         $data['invoices'] = Invoice::where('tenant_id', $tenantUser->id)
             ->with(['invoiceItems.invoiceType'])
             ->latest()

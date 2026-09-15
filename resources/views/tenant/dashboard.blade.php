@@ -16,14 +16,35 @@
                                 <span class="iconify font-24" data-icon="openmoji:waving-hand"></span>
                             </p>
                         </div>
-                        <a href="{{ route('tenant.maintenance-request.index') }}" class="theme-btn-primary">
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
-                                <path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/>
-                            </svg>
-                            {{ __('Maintenance Request') }}
-                        </a>
+                        @if (empty($tenancyEnded))
+                            <a href="{{ route('tenant.maintenance-request.index') }}" class="theme-btn-primary">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+                                    <path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/>
+                                </svg>
+                                {{ __('Maintenance Request') }}
+                            </a>
+                        @endif
                     </div>
 
+                    {{-- Terminal state: this tenancy has ended. Clean close, forward pointer. --}}
+                    @if (!empty($tenancyEnded))
+                        <div class="tmo-nudge tmo-nudge--ended" style="cursor:default;">
+                            <span class="tmo-nudge__ic"><i class="ri-checkbox-circle-line"></i></span>
+                            <span class="tmo-nudge__body">
+                                <strong>{{ __('Your tenancy has ended') }}</strong>
+                                <span>
+                                    @if (!empty($tenant->close_date))
+                                        {{ __('Closed on') }} {{ \Carbon\Carbon::parse($tenant->close_date)->format('d M Y') }}.
+                                    @endif
+                                    {{ __('Your records stay available below. When you\'re ready, find your next home.') }}
+                                </span>
+                            </span>
+                            <a href="{{ route('house.hunt') }}" class="tmo-nudge__cta">{{ __('Find a home') }}</a>
+                        </div>
+                    @endif
+
+                    {{-- Live-tenancy nudges — suppressed once the tenancy has ended (see banner above). --}}
+                    @if (empty($tenancyEnded))
                     {{-- Move-out status — surfaced up top; links to the actual thing on Invoices --}}
                     @if (!empty($pendingSettlement))
                         <a href="{{ route('tenant.invoice.index') }}" class="tmo-nudge tmo-nudge--action">
@@ -72,6 +93,17 @@
                             <span class="tmo-nudge__go"><i class="ri-arrow-right-line"></i></span>
                         </a>
                     @endif
+
+                    {{-- Always-visible pointer: paying rent ahead is easy to miss on the Invoices tab. --}}
+                    <a href="{{ route('tenant.invoice.index', ['pay_ahead' => 1]) }}" class="tmo-nudge tmo-nudge--action">
+                        <span class="tmo-nudge__ic"><i class="ri-calendar-check-line"></i></span>
+                        <span class="tmo-nudge__body">
+                            <strong>{{ __('Pay your rent ahead') }}</strong>
+                            <span>{{ __('Cover one or several upcoming months in one go — never miss a due date.') }}</span>
+                        </span>
+                        <span class="tmo-nudge__go"><i class="ri-arrow-right-line"></i></span>
+                    </a>
+                    @endif {{-- /live-tenancy nudges (empty($tenancyEnded)) --}}
 
                     {{-- Summary Cards --}}
                     <div class="row g-3 mb-4">
@@ -545,14 +577,23 @@
     .tmo-nudge:hover { transform:translateY(-1px); }
     .tmo-nudge--ok { background:#E1F5EE; border-color:#B6E3D3; }
     .tmo-nudge--action { background:#FAEEDA; border-color:#F5D9A8; }
+    .tmo-nudge--ended { background:#F3F4F6; border-color:#E5E7EB; }
     .tmo-nudge__ic { flex:none; width:40px; height:40px; border-radius:10px; background:#fff; display:flex; align-items:center; justify-content:center; color:#0C447C; }
     .tmo-nudge--ok .tmo-nudge__ic { color:#0F6E56; }
     .tmo-nudge--action .tmo-nudge__ic { color:#854F0B; }
+    .tmo-nudge--ended .tmo-nudge__ic { color:#374151; }
     .tmo-nudge__ic i { font-size:20px; }
     .tmo-nudge__body { flex:1; min-width:0; display:flex; flex-direction:column; gap:2px; }
     .tmo-nudge__body strong { font-size:14px; color:#111827; }
     .tmo-nudge__body span { font-size:12.5px; color:#4b5563; }
     .tmo-nudge__go { flex:none; color:#6b7280; font-size:18px; }
+    .tmo-nudge__cta { flex:none; display:inline-flex; align-items:center; gap:6px; background:#185FA5; color:#fff;
+        font-size:12.5px; font-weight:600; padding:8px 14px; border-radius:8px; text-decoration:none; white-space:nowrap; transition:background .13s; }
+    .tmo-nudge__cta:hover { background:#0F4A84; color:#fff; }
+    @media (max-width:640px) {
+        .tmo-nudge { flex-wrap:wrap; }
+        .tmo-nudge__cta { flex:1 1 100%; justify-content:center; margin-top:4px; }
+    }
 
     /* ── Page header ─────────────────────────────────────────── */
     .dash-header {
