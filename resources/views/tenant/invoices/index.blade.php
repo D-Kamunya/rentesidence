@@ -27,12 +27,30 @@
                         </div>
                         <div class="inv-header-actions">
                             @if (!empty($activeNotice))
-                                @php $vnAck = $activeNotice->status === \App\Models\VacationNotice::STATUS_ACKNOWLEDGED; @endphp
+                                @php
+                                    $vnStatus = $activeNotice->status;
+                                    $vnDone   = $vnStatus === \App\Models\VacationNotice::STATUS_COMPLETED;
+                                    // Green styling once the landlord has acknowledged (and through completion).
+                                    $vnAck    = in_array($vnStatus, [\App\Models\VacationNotice::STATUS_ACKNOWLEDGED, \App\Models\VacationNotice::STATUS_COMPLETED], true);
+                                    $vnLabel  = $vnDone
+                                        ? __('Moving out')
+                                        : ($vnAck ? __('Vacation notice acknowledged') : __('Vacation notice given'));
+                                    $vnTitle  = $vnDone
+                                        ? __('Your move-out is being finalized')
+                                        : ($vnAck ? __('Your landlord has acknowledged your notice to vacate') : __('You have given notice to vacate'));
+                                @endphp
                                 <span class="inv-notice-pill {{ $vnAck ? 'inv-notice-pill--ack' : '' }}"
-                                      title="{{ $vnAck ? __('Your landlord has acknowledged your notice to vacate') : __('You have given notice to vacate') }}">
+                                      title="{{ $vnTitle }}">
                                     <svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M9 12l2 2 4-4M12 3l7 4v5c0 4-3 7-7 8-4-1-7-4-7-8V7l7-4z" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                                    {{ $vnAck ? __('Vacation notice acknowledged') : __('Vacation notice given') }} · {{ \Carbon\Carbon::parse($activeNotice->intended_move_out_date)->format('d M Y') }}
+                                    {{ $vnLabel }} · {{ \Carbon\Carbon::parse($activeNotice->intended_move_out_date)->format('d M Y') }}
                                 </span>
+                                @if (!empty($canRemindClose))
+                                    <button type="button" class="inv-btn inv-btn--ghost" id="remindCloseBtn"
+                                            title="{{ __('Your move-out date has passed — nudge your landlord to finalize your account') }}">
+                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M18 8a6 6 0 00-12 0c0 7-3 9-3 9h18s-3-2-3-9M13.7 21a2 2 0 01-3.4 0" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                                        {{ __('Remind landlord to finalize') }}
+                                    </button>
+                                @endif
                             @elseif (!empty($canGiveNotice))
                                 <button type="button" class="inv-btn inv-btn--ghost" data-bs-toggle="modal" data-bs-target="#vacateModal">
                                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
@@ -1039,6 +1057,30 @@
                     error: function (xhr) {
                         submitEl.disabled = false;
                         var msg = (xhr.responseJSON && (xhr.responseJSON.message || xhr.responseJSON.error)) || '{{ __('Could not send your notice.') }}';
+                        if (window.toastr) toastr.error(msg);
+                    }
+                });
+            });
+        })();
+    </script>
+
+    {{-- Remind the landlord to finalize (Close Tenant) once the move-out date has passed --}}
+    <script>
+        (function () {
+            var btn = document.getElementById('remindCloseBtn');
+            if (!btn) return;
+            var url = @json(route('tenant.vacation-notice.remind'));
+            btn.addEventListener('click', function () {
+                btn.disabled = true;
+                $.ajax({
+                    url: url, type: 'POST', data: {},
+                    success: function (res) {
+                        if (window.toastr) toastr.success(res.message || '{{ __('Your landlord has been reminded.') }}');
+                        // Keep it disabled — throttled to once per 24h server-side.
+                    },
+                    error: function (xhr) {
+                        btn.disabled = false;
+                        var msg = (xhr.responseJSON && (xhr.responseJSON.message || xhr.responseJSON.error)) || '{{ __('Could not send the reminder.') }}';
                         if (window.toastr) toastr.error(msg);
                     }
                 });

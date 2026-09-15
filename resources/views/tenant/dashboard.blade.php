@@ -44,14 +44,17 @@
                             <span class="tmo-nudge__go"><i class="ri-arrow-right-line"></i></span>
                         </a>
                     @elseif (!empty($activeNotice))
-                        @php $vnAck = $activeNotice->status === \App\Models\VacationNotice::STATUS_ACKNOWLEDGED; @endphp
+                        @php
+                            $vnAck    = in_array($activeNotice->status, [\App\Models\VacationNotice::STATUS_ACKNOWLEDGED, \App\Models\VacationNotice::STATUS_COMPLETED], true);
+                            $vnPassed = $vnAck && \Carbon\Carbon::parse($activeNotice->intended_move_out_date)->lte(\Carbon\Carbon::today());
+                        @endphp
                         <a href="{{ route('tenant.invoice.index') }}" class="tmo-nudge {{ $vnAck ? 'tmo-nudge--ok' : '' }}">
                             <span class="tmo-nudge__ic"><i class="ri-logout-box-r-line"></i></span>
                             <span class="tmo-nudge__body">
-                                <strong>{{ $vnAck ? __('Notice to vacate — acknowledged') : __('Notice to vacate — sent') }}</strong>
+                                <strong>{{ $vnPassed ? __('Moving out — awaiting finalization') : ($vnAck ? __('Notice to vacate — acknowledged') : __('Notice to vacate — sent')) }}</strong>
                                 <span>
                                     {{ __('Move-out') }} {{ \Carbon\Carbon::parse($activeNotice->intended_move_out_date)->format('d M Y') }} ·
-                                    {{ $vnAck ? __('your landlord has acknowledged it.') : __('awaiting your landlord\'s acknowledgement.') }}
+                                    {{ $vnPassed ? __('your move-out date has passed — your landlord will finalize your account. You can nudge them from Invoices.') : ($vnAck ? __('your landlord has acknowledged it.') : __('awaiting your landlord\'s acknowledgement.')) }}
                                 </span>
                             </span>
                             <span class="tmo-nudge__go"><i class="ri-arrow-right-line"></i></span>

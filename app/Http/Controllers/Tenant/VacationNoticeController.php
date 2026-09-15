@@ -34,4 +34,19 @@ class VacationNoticeController extends Controller
             ? $this->success(['meets_notice' => $res['meets_notice'] ?? true], $res['message'])
             : $this->error([], $res['message']);
     }
+
+    /** Tenant nudges the landlord to finalize (Close Tenant) once their move-out date has passed. */
+    public function remind(Request $request)
+    {
+        $tenant = optional(auth()->user())->tenant;
+        if (!$tenant || (int) $tenant->status !== TENANT_STATUS_ACTIVE) {
+            return $this->error([], __('No active tenancy found.'));
+        }
+
+        $res = app(VacationNoticeService::class)->remindOwnerToClose($tenant);
+
+        return $res['ok']
+            ? $this->success([], $res['message'])
+            : $this->error([], $res['message']);
+    }
 }

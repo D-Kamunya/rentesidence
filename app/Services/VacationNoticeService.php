@@ -76,6 +76,84 @@ class VacationNoticeService
     }
 
     /**
+     * The notice that means "this tenant is moving out" for DISPLAY purposes — persists through
+     * COMPLETED (settlement done) too, so the tenant keeps seeing "Moving out on [date]" until the
+     * owner actually closes them, instead of reverting to "Give notice to vacate" mid-move-out.
+     * (WITHDRAWN is excluded — a cancelled notice frees the tenant to file a fresh one.)
+     */
+    public function movingOutNotice(int $tenantId): ?VacationNotice
+    {
+        return VacationNotice::where('tenant_id', $tenantId)
+            ->whereIn('status', [
+                VacationNotice::STATUS_PENDING,
+                VacationNotice::STATUS_ACKNOWLEDGED,
+                VacationNotice::STATUS_COMPLETED,
+            ])
+            ->latest('id')
+            ->first();
+    }
+
+    /**
+     * Tenant-triggered nudge to the owner to finalize (Close Tenant) once the move-out date has
+     * arrived and the owner hasn't closed the tenancy yet — the "in case the owner forgot" path.
+     * Throttled to one reminder per tenancy per 24h (cache, no schema). Owner-facing bell + email
+     * only (mirrors notifyOwner — no SMS, so we never spend the owner's own credits to nudge them).
+     *
+     * @return array{ok:bool,message:string}
+     */
+    public function remindOwnerToClose(Tenant $tenant): array
+    {
+        $notice = $this->movingOutNotice((int) $tenant->id);
+        if (!$notice || !in_array($notice->status, [VacationNotice::STATUS_ACKNOWLEDGED, VacationNotice::STATUS_COMPLETED], true)) {
+            return ['ok' => false, 'message' => __('There is no acknowledged move-out to remind about.')];
+        }
+        if (Carbon::parse($notice->intended_move_out_date)->gt(Carbon::today())) {
+            return ['ok' => false, 'message' => __('You can send a reminder once your move-out date has arrived.')];
+        }
+
+        $cacheKey = 'vn_close_remind_' . $tenant->id;
+        if (\Illuminate\Support\Facades\Cache::has($cacheKey)) {
+            return ['ok' => false, 'message' => __('You already reminded your landlord recently — please give them a little time.')];
+        }
+
+        $this->notifyOwnerCloseReminder($tenant, $notice);
+        \Illuminate\Support\Facades\Cache::put($cacheKey, 1, now()->addDay());
+
+        return ['ok' => true, 'message' => __('We have reminded your landlord to finalize your account.')];
+    }
+
+    /** Bell (+ best-effort email) to the landlord that the tenant has moved out and awaits closing. */
+    private function notifyOwnerCloseReminder(Tenant $tenant, VacationNotice $notice): void
+    {
+        try {
+            $tenantName = trim(optional($tenant->user)->first_name . ' ' . optional($tenant->user)->last_name) ?: __('A tenant');
+            $unitLabel  = optional($tenant->unit)->unit_name ?: ('#' . $tenant->unit_id);
+            $moveOut    = Carbon::parse($notice->intended_move_out_date)->format('d M Y');
+
+            $title = __('Ready to close');
+            $body  = $tenantName . ' (' . $unitLabel . ') ' . __('says they have moved out') . ' (' . $moveOut . '). '
+                . __('Finalize the tenancy with Close Tenant when the move-out is complete.');
+            $url   = route('owner.tenant.details', [$tenant->id, 'tab' => 'profile']);
+
+            addNotification($title, $body, $url, null, $notice->owner_user_id, $tenant->user_id ?? null);
+
+            if (getOption('send_email_status', 0) == ACTIVE) {
+                $ownerEmail = optional(\App\Models\User::find($notice->owner_user_id))->email;
+                if ($ownerEmail) {
+                    (new MailService())->sendMail(
+                        [$ownerEmail],
+                        getOption('app_name') . ' — ' . $title,
+                        $body,
+                        $notice->owner_user_id
+                    );
+                }
+            }
+        } catch (\Throwable $e) {
+            Log::error('notifyOwnerCloseReminder failed for notice ' . $notice->id . ' — ' . $e->getMessage());
+        }
+    }
+
+    /**
      * File a tenant's notice to vacate. Early move-out is ALLOWED but flagged (meets_notice=false).
      * Guards one live notice per tenancy. Notifies the owner. Returns a UI-friendly result.
      *

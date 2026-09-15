@@ -43,13 +43,21 @@ class InvoiceController extends Controller
             ? \App\Models\DepositSettlement::with('items')->where('tenant_id', $tenantRecord->id)->latest('id')->first()
             : null;
 
-        // Notice-to-vacate context: required period, earliest valid move-out, and any live notice.
+        // Notice-to-vacate context: required period, earliest valid move-out, and any move-out.
+        // activeNotice PERSISTS through completed (settlement done) so the tenant keeps seeing
+        // "Moving out" until the owner closes them, rather than reverting to "Give notice".
         $vn = app(\App\Services\VacationNoticeService::class);
         $ownerId = (int) ($tenantRecord->owner_user_id ?? 0);
+        $activeNotice = $tenantRecord ? $vn->movingOutNotice((int) $tenantRecord->id) : null;
         $data['noticeDays']     = $tenantRecord ? $vn->noticePeriodDays($ownerId) : 30;
         $data['noticeEarliest'] = $tenantRecord ? $vn->earliestMoveOut($ownerId)->toDateString() : null;
-        $data['activeNotice']   = $tenantRecord ? $vn->activeNotice((int) $tenantRecord->id) : null;
+        $data['activeNotice']   = $activeNotice;
         $data['canGiveNotice']  = $tenantRecord && (int) $tenantRecord->status === TENANT_STATUS_ACTIVE;
+        // Once the move-out date has arrived on an acknowledged/completed notice and the owner
+        // hasn't closed the tenancy, let the tenant nudge them ("in case the owner forgot").
+        $data['canRemindClose'] = $activeNotice
+            && in_array($activeNotice->status, [\App\Models\VacationNotice::STATUS_ACKNOWLEDGED, \App\Models\VacationNotice::STATUS_COMPLETED], true)
+            && \Carbon\Carbon::parse($activeNotice->intended_move_out_date)->lte(\Carbon\Carbon::today());
         // Retrieve records from the SubscriptionOrder model
         // $latestMpesaOrder = Order::whereNotNull('payment_id')
         //     ->where('user_id', $tenantId) // Filter by user_id

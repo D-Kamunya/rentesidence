@@ -38,7 +38,8 @@ class DashboardController extends Controller
         $data['today'] = date('Y-m-d');
 
         // Move-out lifecycle status the tenant is likely waiting on — surfaced up top for visibility.
-        $data['activeNotice'] = app(\App\Services\VacationNoticeService::class)->activeNotice((int) $tenantUser->id);
+        // Persists through completion so the dashboard keeps showing "Moving out" until the owner closes.
+        $data['activeNotice'] = app(\App\Services\VacationNoticeService::class)->movingOutNotice((int) $tenantUser->id);
         $data['pendingSettlement'] = \App\Models\DepositSettlement::where('tenant_id', $tenantUser->id)
             ->where('status', \App\Models\DepositSettlement::STATUS_RECORDED)
             ->latest('id')->first();

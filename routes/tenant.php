@@ -41,6 +41,7 @@ Route::group(['prefix' => 'tenant', 'as' => 'tenant.', 'middleware' => ['auth', 
     // Notice to vacate (move-out lifecycle).
     Route::group(['prefix' => 'vacation-notice', 'as' => 'vacation-notice.'], function () {
         Route::post('/', [\App\Http\Controllers\Tenant\VacationNoticeController::class, 'store'])->name('store');
+        Route::post('/remind', [\App\Http\Controllers\Tenant\VacationNoticeController::class, 'remind'])->name('remind');
     });
 
     Route::group(['prefix' => 'order', 'as' => 'order.'], function () {
