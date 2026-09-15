@@ -11,11 +11,19 @@
                         @if ($att)
                             @php
                                 $attParts = [];
-                                if (!empty($att['notice']))     $attParts[] = __('notice to vacate');
-                                if (!empty($att['settlement'])) $attParts[] = __('reported settlement');
-                                if (!empty($att['documents']))  $attParts[] = __('documents to review');
-                                // Link to the tab that carries it — Documents only when that's the sole signal.
-                                $attTab = (!empty($att['documents']) && empty($att['notice']) && empty($att['settlement'])) ? 'document' : 'payment';
+                                if (!empty($att['notice']))      $attParts[] = __('notice to vacate');
+                                if (!empty($att['settlement']))  $attParts[] = __('reported settlement');
+                                if (!empty($att['ready_close'])) $attParts[] = __('ready to close');
+                                if (!empty($att['documents']))   $attParts[] = __('documents to review');
+                                // Link to the tab that carries it. Payment signals win; else Profile
+                                // (Close Tenant lives there); else Documents.
+                                if (!empty($att['notice']) || !empty($att['settlement'])) {
+                                    $attTab = 'payment';
+                                } elseif (!empty($att['ready_close'])) {
+                                    $attTab = 'profile';
+                                } else {
+                                    $attTab = 'document';
+                                }
                             @endphp
                             <a href="{{ route('owner.tenant.details', [$tenant->id, 'tab' => $attTab]) }}" class="ow-attention" title="{{ implode(' · ', $attParts) }}">
                                 <span class="ow-attention__dot"></span>{{ __('Needs attention') }}

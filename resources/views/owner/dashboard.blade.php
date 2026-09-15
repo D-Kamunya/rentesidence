@@ -156,6 +156,47 @@
                         </div>
                     @endif
 
+                    {{-- Ready to close: acknowledged notices at/past move-out — finalize the tenancy --}}
+                    @if (!empty($readyToClose) && $readyToClose->count() > 0)
+                        <div class="notice-bar notice-bar--warning mb-4">
+                            <div class="notice-bar__left">
+                                <div class="notice-bar__icon">
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+                                        <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+                                    </svg>
+                                </div>
+                                <div>
+                                    <div class="notice-bar__text">
+                                        <strong>{{ $readyToClose->count() }} {{ Str::plural('tenancy', $readyToClose->count()) }} ready to close</strong>
+                                        {{ __('— move-out date reached; finalize to free the unit') }}
+                                    </div>
+                                    <div class="notice-bar__sub">
+                                        @foreach ($readyToClose->take(4) as $rc)
+                                            @php
+                                                $rcName = trim(optional(optional($rc->tenant)->user)->first_name . ' ' . optional(optional($rc->tenant)->user)->last_name) ?: __('Tenant');
+                                                $rcDate = \Carbon\Carbon::parse($rc->intended_move_out_date);
+                                                $rcPast = $rcDate->isPast();
+                                            @endphp
+                                            <a href="{{ route('owner.tenant.details', [$rc->tenant_id, 'tab' => 'profile']) }}"
+                                               style="color:inherit;text-decoration:underline;margin-right:14px;white-space:nowrap;display:inline-block;">
+                                                {{ $rcName }} — {{ $rcDate->format('d M Y') }}@if ($rcPast) ({{ __('date passed') }})@endif
+                                            </a>
+                                        @endforeach
+                                        @if ($readyToClose->count() > 4)
+                                            <span>+{{ $readyToClose->count() - 4 }} {{ __('more') }}</span>
+                                        @endif
+                                    </div>
+                                </div>
+                            </div>
+                            @if ($readyToClose->count() === 1)
+                                <a href="{{ route('owner.tenant.details', [$readyToClose->first()->tenant_id, 'tab' => 'profile']) }}" class="notice-bar__action">
+                                    <svg width="10" height="10" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                                    {{ __('Close tenant') }}
+                                </a>
+                            @endif
+                        </div>
+                    @endif
+
                     {{-- Pending Tickets Nudge --}}
                     @if (isset($pendingTickets) && $pendingTickets > 0)
                         <div class="notice-bar notice-bar--warning mb-4">

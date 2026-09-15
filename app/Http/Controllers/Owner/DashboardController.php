@@ -126,6 +126,9 @@ class DashboardController extends Controller
             ->latest('id')
             ->get();
 
+        // ── Acknowledged notices at/near move-out: prompt the owner to CLOSE (never auto-closed) ──
+        $data['readyToClose'] = app(\App\Services\VacationNoticeService::class)->readyToCloseForOwner($ownerId);
+
         return view('owner.dashboard')->with($data);
     }
     

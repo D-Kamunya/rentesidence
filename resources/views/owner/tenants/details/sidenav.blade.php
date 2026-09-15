@@ -6,6 +6,7 @@
     <a href="{{ route('owner.tenant.details', [$tenant->id, 'tab' => 'profile']) }}"
        class="td-nav__item {{ @$navTenantProfileActiveClass ? 'is-active' : '' }}">
         <i class="ri-account-circle-line"></i><span>{{ __('Profile Information') }}</span>
+        @if ($tdAtt['ready_close'])<span class="td-nav__dot" title="{{ __('Ready to close — move-out date reached') }}"></span>@endif
     </a>
     <a href="{{ route('owner.tenant.details', [$tenant->id, 'tab' => 'home']) }}"
        class="td-nav__item {{ @$navTenantHomeActiveClass ? 'is-active' : '' }}">

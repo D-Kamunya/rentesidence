@@ -33,6 +33,31 @@ class VacationNoticeService
         return $from->addDays($this->noticePeriodDays($ownerUserId));
     }
 
+    /**
+     * How many days out an ACKNOWLEDGED notice starts prompting the owner to CLOSE the tenancy.
+     * A notice acknowledged weeks ahead shouldn't nag immediately; it becomes a "ready to close"
+     * prompt only once the move-out date is within this window (or already past — with no lower
+     * bound, so a forgotten tenancy keeps prompting until the owner actually closes it).
+     */
+    public const CLOSE_PROMPT_WITHIN_DAYS = 3;
+
+    /**
+     * Acknowledged notices whose move-out date has arrived (or is within CLOSE_PROMPT_WITHIN_DAYS)
+     * for a still-open tenancy — i.e. the owner should now finalize with Close Tenant. Closing stays
+     * a deliberate human act (never auto-closed); this is only the prompt so it isn't forgotten.
+     * Excludes already-closed tenants. Soonest move-out first.
+     */
+    public function readyToCloseForOwner(int $ownerUserId): \Illuminate\Support\Collection
+    {
+        return VacationNotice::with(['tenant.user', 'unit'])
+            ->where('owner_user_id', $ownerUserId)
+            ->where('status', VacationNotice::STATUS_ACKNOWLEDGED)
+            ->whereDate('intended_move_out_date', '<=', Carbon::today()->addDays(self::CLOSE_PROMPT_WITHIN_DAYS))
+            ->whereHas('tenant', fn ($q) => $q->where('status', '!=', TENANT_STATUS_CLOSE))
+            ->orderBy('intended_move_out_date')
+            ->get();
+    }
+
     /** Does this tenancy already have a LIVE notice (pending/acknowledged)? The one-notice guard. */
     public function hasActiveNotice(int $tenantId): bool
     {
