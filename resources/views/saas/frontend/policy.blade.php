@@ -7,8 +7,8 @@
 <div class="cspol">
     <style>
         .cspol{
-            --paper:#0E1218; --card:#161C26; --line:#242B36;
-            --stone-900:#EDEAE3; --stone-700:#C4C0B7; --stone-500:#9A958A;
+            --paper:#FAF9F6; --card:#FFFFFF; --line:#E6E1D8;
+            --stone-900:#1B1E22; --stone-700:#3A3F47; --stone-500:#6B7280;
             --cs-blue:#185FA5; --cs-blue-2:#1c72c2; --amber:#E7A339;
             --serif:Georgia,'Iowan Old Style','Times New Roman',serif;
             --sans:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;
@@ -21,9 +21,9 @@
         .cspol-head{
             position:relative; overflow:hidden;
             background:
-                radial-gradient(1100px 300px at 15% -40%, rgba(24,95,165,.22), transparent 70%),
+                radial-gradient(1100px 300px at 15% -40%, rgba(24,95,165,.10), transparent 70%),
                 radial-gradient(700px 260px at 100% 0%, rgba(231,163,57,.08), transparent 70%),
-                #12161D;
+                linear-gradient(180deg,#EFF4FA 0%,#FFFFFF 100%);
             border-bottom:1px solid var(--line);
         }
         .cspol-head__wrap{max-width:820px; margin:0 auto; padding:64px 24px 40px}

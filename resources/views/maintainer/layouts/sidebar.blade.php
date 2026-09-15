@@ -53,6 +53,13 @@
                         <li><a href="{{ route('change-password') }}">{{ __('Change Password') }}</a></li>
                     </ul>
                 </li>
+                {{-- Install app (auto-hides once installed). --}}
+                <li>
+                    <a href="#" data-cs-install onclick="return window.csPwaInstall ? (window.csPwaInstall(), false) : true;">
+                        <i class="ri-smartphone-line"></i>
+                        <span>{{ __('Install app') }}</span>
+                    </a>
+                </li>
 
             </ul>
         </div>

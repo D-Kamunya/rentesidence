@@ -229,6 +229,13 @@
                         <span>{{ __('Version Update') }}</span>
                     </a>
                 </li>
+                {{-- Install app (auto-hides once installed). --}}
+                <li>
+                    <a href="#" data-cs-install onclick="return window.csPwaInstall ? (window.csPwaInstall(), false) : true;">
+                        <i class="ri-smartphone-line"></i>
+                        <span>{{ __('Install app') }}</span>
+                    </a>
+                </li>
                 {{-- Knowledge Base kept LAST — it's colour-highlighted, so links under it read as off. --}}
                 <li>
                     <a href="javascript: void(0);" class="has-arrow kb-nav-highlight">

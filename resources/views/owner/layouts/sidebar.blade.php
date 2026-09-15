@@ -305,6 +305,13 @@
                         </a>
                     </li>
                 @endif
+                {{-- Install app — the permanent home for the PWA prompt (auto-hides once installed). --}}
+                <li>
+                    <a href="#" data-cs-install onclick="return window.csPwaInstall ? (window.csPwaInstall(), false) : true;">
+                        <i class="ri-smartphone-line"></i>
+                        <span>{{ __('Install app') }}</span>
+                    </a>
+                </li>
                 {{-- Knowledge Base kept LAST — it's colour-highlighted, so links under it read as off. --}}
                 <li>
                     <a href="{{ route('owner.kb.index') }}" class="kb-nav-highlight">

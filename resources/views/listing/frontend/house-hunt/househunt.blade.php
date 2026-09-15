@@ -13,40 +13,40 @@
   /* The frontend <body> has a light/grey background; paint the layout's content
      wrapper dark for this page so the gutters around the centered content stay on-brand
      (this <style> only loads on House Hunt, so it's effectively page-scoped). */
-  main{background:#0E1218}
+  main{background:#FAF9F6}
   .hh{
-    --paper:#0E1218; --paper-2:#141922; --card:#161C26;
-    --hero-dark:#0E1218;
-    --stone-900:#EDEAE3; --stone-700:#C4C0B7; --stone-500:#9A958A; --stone-400:#7C776C;
-    --line:#242B36;
-    --cs-blue:#185FA5; --cs-blue-2:#1c72c2; --cs-blue-deep:#0F4A84; --cs-blue-tint:#12283F;
+    --paper:#FAF9F6; --paper-2:#EFF4FA; --card:#FFFFFF;
+    --hero-dark:#FAF9F6;
+    --stone-900:#1B1E22; --stone-700:#3A3F47; --stone-500:#6B7280; --stone-400:#9AA0A8;
+    --line:#E6E1D8;
+    --cs-blue:#185FA5; --cs-blue-2:#1c72c2; --cs-blue-deep:#0F4A84; --cs-blue-tint:#E8F0F9;
     --amber:#E7A339; --amber-2:#f0af49;
-    --green:#1D9E75; --green-tint:#123027;
-    --shadow:0 20px 46px -22px rgba(0,0,0,.6); --shadow-sm:0 10px 26px -16px rgba(0,0,0,.55);
+    --green:#1D9E75; --green-tint:#E3F3EC;
+    --shadow:0 20px 46px -24px rgba(20,23,28,.16); --shadow-sm:0 10px 26px -18px rgba(20,23,28,.10);
     --serif:Georgia,'Iowan Old Style','Times New Roman',serif;
     --sans:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;
-    color-scheme:dark;font-family:var(--sans);color:var(--stone-900);background:var(--paper)}
+    color-scheme:light;font-family:var(--sans);color:var(--stone-900);background:var(--paper)}
   .hh *{box-sizing:border-box}
   .hh a{text-decoration:none}
   .hh-wrap{max-width:1200px;margin:0 auto;padding:0 24px}
 
   /* Hero */
-  .hh-hero{position:relative;overflow:hidden;min-height:440px;display:flex;align-items:center;
-    background:linear-gradient(180deg,rgba(10,13,18,.62),rgba(10,13,18,.86)),
+  .hh-hero{position:relative;overflow:hidden;min-height:560px;display:flex;align-items:center;
+    background:linear-gradient(180deg,rgba(11,17,26,.32) 0%,rgba(11,17,26,.40) 46%,rgba(11,17,26,.66) 100%),
       url('{{ asset('assets/images/exterior.jpg') }}');
     background-size:cover;background-position:center}
   .hh-hero::after{content:"";position:absolute;inset:0;pointer-events:none;
-    background:radial-gradient(760px 360px at 82% -10%, rgba(231,163,57,.16), transparent 60%),
-               radial-gradient(760px 420px at 8% 6%, rgba(24,95,165,.28), transparent 55%)}
-  .hh-hero__inner{position:relative;z-index:2;text-align:center;width:100%;padding:150px 24px 96px}
+    background:radial-gradient(760px 360px at 82% -10%, rgba(231,163,57,.18), transparent 60%),
+               radial-gradient(760px 420px at 8% 6%, rgba(24,95,165,.26), transparent 55%)}
+  .hh-hero__inner{position:relative;z-index:2;text-align:center;width:100%;padding:132px 24px 138px}
   .hh-hero .eyebrow{font-size:12.5px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:var(--amber)}
   .hh-hero h1{font-family:var(--serif);font-weight:600;letter-spacing:-.015em;
-    font-size:clamp(34px,5.4vw,58px);color:#F2EFEA;margin:14px 0 0;text-wrap:balance}
-  .hh-hero p{margin:16px auto 0;max-width:560px;font-size:18px;line-height:1.55;color:#C7C0B4}
+    font-size:clamp(34px,5.4vw,58px);color:#F5F2EC;margin:14px 0 0;text-wrap:balance;text-shadow:0 2px 16px rgba(0,0,0,.4)}
+  .hh-hero p{margin:16px auto 0;max-width:560px;font-size:18px;line-height:1.55;color:#E4DED2;text-shadow:0 1px 10px rgba(0,0,0,.4)}
 
   /* Filter card — floats up over the hero base */
   .hh-filter{background:var(--card);border:1px solid var(--line);border-radius:18px;box-shadow:var(--shadow);
-    padding:22px;margin:-52px auto 0;max-width:1100px;position:relative;z-index:5}
+    padding:22px;margin:-92px auto 0;max-width:1100px;position:relative;z-index:5}
   .hh-filter form{display:flex;flex-direction:column;gap:16px}
   .hh-fields{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;align-items:end}
   @media(max-width:820px){.hh-fields{grid-template-columns:1fr 1fr}}
@@ -65,10 +65,10 @@
   .hh-btn--blue{background:var(--cs-blue);color:#fff !important;box-shadow:0 10px 24px -12px rgba(24,95,165,.7)}
   .hh-btn--blue:hover{background:var(--cs-blue-2);transform:translateY(-2px);color:#fff !important}
   .hh-btn--ghost{background:transparent;color:var(--stone-700) !important;border-color:var(--line)}
-  .hh-btn--ghost:hover{border-color:var(--cs-blue);color:#fff !important}
+  .hh-btn--ghost:hover{border-color:var(--cs-blue);color:var(--cs-blue) !important;background:rgba(24,95,165,.06)}
 
   /* Listings */
-  .hh-listings{padding:64px 0 80px}
+  .hh-listings{padding-top:64px;padding-bottom:80px}
   .hh-count{color:var(--stone-500);font-size:14.5px;margin-bottom:22px}
   .hh-count b{color:var(--stone-900)}
   .hh-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:24px}
@@ -92,7 +92,7 @@
   .hh-meta__row{display:flex;align-items:center;gap:9px;font-size:14px;color:var(--stone-700)}
   .hh-meta__row svg{width:17px;height:17px;color:var(--stone-500);flex:0 0 auto}
   .hh-meta__row b{color:var(--stone-900);font-weight:650}
-  .hh-price-tag{color:var(--amber);font-weight:750}
+  .hh-price-tag{color:#B4780F;font-weight:750}
   .hh-card__cta{margin-top:auto;padding-top:18px}
   .hh-card__cta a{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;
     background:var(--cs-blue);color:#fff !important;font-weight:650;font-size:14.5px;padding:12px;border-radius:11px;transition:.18s}
@@ -107,9 +107,19 @@
   .hh .page-link{display:inline-flex;align-items:center;justify-content:center;min-width:40px;height:40px;padding:0 12px;
     border-radius:10px;border:1px solid var(--line);background:var(--card);color:var(--stone-700) !important;
     font-size:14px;text-decoration:none;transition:.15s}
-  .hh .page-link:hover{border-color:var(--cs-blue);color:#fff !important}
+  .hh .page-link:hover{border-color:var(--cs-blue);color:var(--cs-blue) !important}
   .hh .page-item.active .page-link{background:var(--cs-blue);border-color:var(--cs-blue);color:#fff !important}
   .hh .page-item.disabled .page-link{opacity:.4}
+
+  /* ── Phone fitness ── tighten the vertical rhythm + shorten the hero for phone. */
+  @media(max-width:640px){
+    .hh-hero{min-height:430px}
+    .hh-hero__inner{padding:98px 20px 108px}
+    .hh-filter{margin:-70px auto 0;padding:18px}
+    .hh-listings{padding-top:44px;padding-bottom:60px}
+    .hh-grid{gap:18px}
+    .hh-count{margin-bottom:16px}
+  }
 </style>
 
 <div class="hh">

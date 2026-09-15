@@ -12,19 +12,19 @@
 --}}
 
 <style>
-  /* Declare the page already uses a dark scheme so a browser's "auto dark mode"
-     doesn't force-invert backgrounds (which would turn the transparent nav black). */
-  html{color-scheme:dark}
+  html{color-scheme:light}
   .csh{
-    /* Committed DARK-premium palette (brand surface — landing/marketing). */
-    --paper:#0E1218; --paper-2:#141922; --card:#161C26;
-    --ink:#12161D; --ink-2:#1B212C; --hero-dark:#12161D;
-    --stone-900:#EDEAE3; --stone-700:#C4C0B7; --stone-500:#9A958A; --stone-400:#7C776C;
-    --line:#242B36;
-    --cs-blue:#185FA5; --cs-blue-2:#1c72c2; --cs-blue-deep:#0F4A84; --cs-blue-tint:#12283F;
-    --amber:#E7A339; --amber-2:#f0af49; --amber-soft:#F6E4C4; --amber-tint:#241d10;
-    --shadow:0 20px 46px -22px rgba(0,0,0,.6);
-    --shadow-sm:0 10px 26px -16px rgba(0,0,0,.55);
+    /* LIGHT palette (fintech = trust + openness). Alternating warm-paper (--paper) and a
+       faint cs-blue-tinted band (--paper-2) give depth + section separation with no dark
+       surface; white cards ride on top; cs-blue is the interactive accent, amber the warmth. */
+    --paper:#FAF9F6; --paper-2:#EFF4FA; --card:#FFFFFF;
+    --ink:#FAF9F6; --ink-2:#EFF4FA; --hero-dark:#FAF9F6;
+    --stone-900:#1B1E22; --stone-700:#3A3F47; --stone-500:#6B7280; --stone-400:#9AA0A8;
+    --line:#E6E1D8;
+    --cs-blue:#185FA5; --cs-blue-2:#1c72c2; --cs-blue-deep:#0F4A84; --cs-blue-tint:#E8F0F9;
+    --amber:#E7A339; --amber-2:#f0af49; --amber-soft:#FBEEDC; --amber-tint:#FBF1E1;
+    --shadow:0 20px 46px -24px rgba(20,23,28,.16);
+    --shadow-sm:0 10px 26px -18px rgba(20,23,28,.10);
     --maxw:1160px;
     --serif:Georgia,'Iowan Old Style','Times New Roman',serif;
     --sans:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;
@@ -43,40 +43,44 @@
   .csh-btn--amber:hover{transform:translateY(-2px);background:var(--amber-2);color:#20160A !important}
   .csh-btn--blue{background:var(--cs-blue);color:#fff !important;box-shadow:0 10px 24px -12px rgba(24,95,165,.7)}
   .csh-btn--blue:hover{transform:translateY(-2px);background:var(--cs-blue-2);color:#fff !important}
-  .csh-btn--ghost-light{background:transparent;color:#EDE7DC !important;border-color:rgba(237,231,220,.28)}
-  .csh-btn--ghost-light:hover{border-color:rgba(237,231,220,.6);background:rgba(255,255,255,.05);color:#fff !important}
+  .csh-btn--ghost-light{background:rgba(255,255,255,.82);color:var(--cs-blue) !important;border-color:rgba(24,95,165,.4);
+    backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px)}
+  .csh-btn--ghost-light:hover{border-color:var(--cs-blue);background:#FFFFFF;color:var(--cs-blue) !important}
 
   /* hero */
   .csh-hero{position:relative;overflow:hidden;
     background:
-      radial-gradient(1000px 520px at 82% -10%, rgba(231,163,57,.16), transparent 60%),
-      radial-gradient(900px 600px at 6% 14%, rgba(24,95,165,.30), transparent 55%),
-      linear-gradient(180deg,#12161D 0%,#151B24 100%);
-    color:#EDE7DC}
+      radial-gradient(1000px 520px at 82% -10%, rgba(231,163,57,.12), transparent 60%),
+      radial-gradient(900px 600px at 6% 14%, rgba(24,95,165,.12), transparent 55%),
+      linear-gradient(180deg,#EFF4FA 0%,#FFFFFF 100%);
+    color:var(--stone-900)}
   .csh-hero__photo{position:absolute;right:0;bottom:0;width:64%;height:100%;z-index:1;pointer-events:none}
   .csh-hero__photo .csh-shot{position:absolute;inset:0;z-index:1;background-size:cover;background-position:center;
     animation:cshCross 16s ease-in-out infinite}
   .csh-hero__photo .csh-shot--2{animation-delay:8s;opacity:0}
   @keyframes cshCross{0%{opacity:1}44%{opacity:1}50%{opacity:0}94%{opacity:0}100%{opacity:1}}
   .csh-hero__photo::before{content:"";position:absolute;inset:0;z-index:2;
-    background:linear-gradient(90deg,var(--hero-dark) 6%,rgba(18,22,29,.5) 38%,transparent 74%)}
+    background:linear-gradient(90deg,#FFFFFF 3%,rgba(255,255,255,.5) 26%,transparent 60%)}
   .csh-hero__photo::after{content:"";position:absolute;inset:0;z-index:2;
-    background:linear-gradient(0deg,rgba(18,22,29,.62),transparent 46%)}
+    background:linear-gradient(0deg,rgba(255,255,255,.38),transparent 42%)}
   @media (prefers-reduced-motion:reduce){.csh-hero__photo .csh-shot{animation:none}.csh-hero__photo .csh-shot--2{opacity:0}}
   .csh-hero .csh-wrap{position:relative;z-index:3;padding:150px 24px 110px}
   .csh-hero__col{max-width:600px}
-  .csh-hero__eye{color:var(--amber)}
+  .csh-hero__eye{color:var(--cs-blue)}
   .csh-hero h1{font-family:var(--serif);font-weight:600;letter-spacing:-.015em;
-    font-size:clamp(40px,6.2vw,72px);margin:20px 0 0;color:#EDE7DC}
-  .csh-hero h1 .csh-con{color:#5AA0E0;font-style:italic}
-  .csh-hero__sub{margin-top:22px;max-width:540px;font-size:19px;line-height:1.55;color:#C7C0B4}
+    font-size:clamp(40px,6.2vw,72px);margin:20px 0 0;color:var(--stone-900)}
+  .csh-hero h1 .csh-con{color:var(--cs-blue);font-style:italic}
+  .csh-hero__sub{margin-top:22px;max-width:540px;font-size:19px;line-height:1.55;color:#4A4F57}
   .csh-hero__cta{display:flex;gap:14px;flex-wrap:wrap;margin-top:34px}
   .csh-chips{display:flex;gap:10px;flex-wrap:wrap;margin-top:40px}
-  .csh-chip{display:inline-flex;align-items:center;gap:8px;font-size:13.5px;font-weight:600;color:#D9D2C6;
-    background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.11);padding:8px 14px;border-radius:99px}
+  .csh-chip{display:inline-flex;align-items:center;gap:8px;font-size:13.5px;font-weight:600;color:var(--stone-700);
+    background:#FFFFFF;border:1px solid var(--line);padding:8px 14px;border-radius:99px;box-shadow:0 1px 2px rgba(20,23,28,.05)}
   .csh-chip .csh-dot{width:7px;height:7px;border-radius:50%;background:var(--amber)}
-  @media(max-width:820px){.csh-hero__photo{width:100%;height:46%;opacity:.5}
-    .csh-hero__photo::before{background:linear-gradient(90deg,var(--hero-dark) 10%,transparent 90%)}
+  @media(max-width:820px){.csh-hero__photo{width:100%;height:54%;opacity:.92}
+    /* phone: photo sits at the BOTTOM — fade it VERTICALLY (light at top into the text,
+       vivid at the bottom), not the desktop horizontal fade, and drop the white bottom veil. */
+    .csh-hero__photo::before{background:linear-gradient(180deg,#FFFFFF 0%,rgba(255,255,255,.5) 26%,transparent 64%)}
+    .csh-hero__photo::after{background:none}
     .csh-hero__sub{max-width:none}}
 
   .csh-band{padding:82px 0;background:var(--paper)}
@@ -88,9 +92,9 @@
 
   /* free band */
   .csh-free{background:
-      radial-gradient(600px 260px at 88% -40%, rgba(231,163,57,.35), transparent 60%),
-      linear-gradient(135deg,var(--amber-tint), var(--paper-2));
-    border:1px solid var(--line);border-radius:22px;padding:52px 48px;box-shadow:var(--shadow-sm);
+      radial-gradient(720px 320px at 91% -32%, rgba(231,163,57,.55), rgba(231,163,57,.12) 44%, transparent 68%),
+      linear-gradient(135deg,#FBEAD0 0%,#FDF6EC 52%,#FFFFFF 100%);
+    border:1px solid #F1E2C6;border-radius:22px;padding:52px 48px;box-shadow:var(--shadow-sm);
     display:grid;grid-template-columns:1.3fr .7fr;gap:34px;align-items:center}
   .csh-free h2{font-size:clamp(26px,3.4vw,40px);font-weight:800;color:var(--stone-900)}
   .csh-free h2 em{font-style:normal;color:var(--cs-blue)}
@@ -215,6 +219,52 @@
   .csh .csh-cta-final{text-align:center;padding:118px 24px 108px}
   .csh-cta-final h2{font-family:var(--serif);font-weight:600;font-size:clamp(28px,4vw,46px);color:var(--stone-900)}
   .csh-cta-final p{margin-top:14px;color:var(--stone-500);font-size:18px}
+
+  /* Get the app */
+  .csh-getapp{background:radial-gradient(720px 320px at 10% -25%, rgba(24,95,165,.13), transparent 60%),linear-gradient(180deg,#EFF4FA 0%,#FFFFFF 100%)}
+  .csh-getapp__grid{display:grid;grid-template-columns:1.05fr .95fr;gap:48px;align-items:center}
+  @media(max-width:860px){.csh-getapp__grid{grid-template-columns:1fr;gap:34px}}
+  .csh-getapp h2{font-size:clamp(26px,3.4vw,40px);font-weight:750;color:var(--stone-900);margin-top:12px}
+  .csh-getapp p{margin-top:14px;color:var(--stone-500);font-size:18px;max-width:520px}
+  .csh-getapp__pts{margin-top:20px;display:flex;flex-direction:column;gap:11px}
+  .csh-getapp__pt{display:flex;align-items:center;gap:10px;font-size:14.5px;color:var(--stone-700)}
+  .csh-getapp__pt svg{width:18px;height:18px;color:var(--cs-blue);flex:0 0 auto}
+  .csh-getapp__cta{margin-top:26px;display:flex;gap:12px;flex-wrap:wrap}
+  .csh-phone{justify-self:center;width:266px;max-width:100%;aspect-ratio:9/18.6;position:relative;
+    border-radius:38px;background:#0B1220;padding:11px;box-shadow:0 42px 84px -30px rgba(20,23,28,.42),0 0 0 1px rgba(20,23,28,.08)}
+  .csh-phone::before{content:"";position:absolute;top:13px;left:50%;transform:translateX(-50%);width:92px;height:20px;border-radius:0 0 12px 12px;background:#0B1220;z-index:3}
+  .csh-phscreen{position:absolute;inset:11px;border-radius:29px;overflow:hidden;background:#FAF9F6;display:flex;flex-direction:column}
+  .csh-phbar{padding:26px 15px 12px;display:flex;align-items:center;justify-content:space-between;background:#fff;border-bottom:1px solid #EEF0F2}
+  .csh-phbrand{font-weight:800;font-size:14.5px;letter-spacing:-.02em}
+  .csh-phbrand .a{color:#1F2430}.csh-phbrand .b{color:#185FA5}
+  .csh-phbody{padding:13px;display:flex;flex-direction:column;gap:10px}
+  .csh-phhi{font-size:11.5px;color:#6B7280}
+  .csh-phtiles{display:grid;grid-template-columns:1fr 1fr;gap:9px}
+  .csh-phtile{background:#fff;border:1px solid #EAE6DE;border-radius:12px;padding:10px 11px;box-shadow:0 1px 2px rgba(20,23,28,.04)}
+  .csh-phtile .k{font-size:8.5px;color:#9AA0A8;text-transform:uppercase;letter-spacing:.05em}
+  .csh-phtile .v{font-family:var(--serif);font-size:17px;font-weight:600;color:#1B1E22;margin-top:3px}
+  .csh-phtile .v--blue{color:#185FA5}
+  .csh-phrow{background:#fff;border:1px solid #EAE6DE;border-radius:12px;padding:10px 11px;display:flex;align-items:center;justify-content:space-between;gap:8px}
+  .csh-phrow .t{font-size:11.5px;font-weight:650;color:#1B1E22}
+  .csh-phrow .s{font-size:9.5px;color:#6B7280;margin-top:2px}
+  .csh-phpill{font-size:8.5px;font-weight:700;color:#0F6E56;background:#E3F3EC;padding:3px 8px;border-radius:99px;flex:0 0 auto;white-space:nowrap}
+  .csh-phcta{margin-top:2px;background:#185FA5;color:#fff;text-align:center;font-size:12px;font-weight:650;padding:9px;border-radius:11px}
+
+  /* ── Phone fitness ── tighten the vertical rhythm so content isn't buried under
+     desktop-scale padding (the hero's 150px top became a dead gap under the nav). */
+  @media(max-width:640px){
+    .csh-hero .csh-wrap{padding:98px 20px 70px}
+    .csh-hero__sub{font-size:16.5px;margin-top:18px}
+    .csh-hero__cta{margin-top:26px}
+    .csh-chips{margin-top:30px}
+    .csh-eyebrow{letter-spacing:.11em}
+    .csh-band{padding:52px 0}
+    .csh-free{padding:30px 22px}
+    .csh-grow{padding:34px 24px}
+    .csh-grid{margin-top:32px}
+    .csh-hiw,.csh-who,.csh-part,.csh-trust{margin-top:30px}
+    .csh .csh-cta-final{padding:70px 20px 62px}
+  }
 </style>
 
 <div class="csh">
@@ -457,6 +507,58 @@
           <div class="csh-qa"><b><span class="csh-q">Q.</span>{{ __('How do tenants pay rent?') }}</b><p>{{ __('Straight from their phone, including M-Pesa, with receipts sent automatically.') }}</p></div>
           <div class="csh-qa"><b><span class="csh-q">Q.</span>{{ __('Can I manage more than one property?') }}</b><p>{{ __('Yes, as many as you like, all from one dashboard.') }}</p></div>
         @endforelse
+      </div>
+    </div>
+  </section>
+
+  {{-- GET THE APP --}}
+  <section class="csh-band csh-getapp" id="get-app">
+    <div class="csh-wrap csh-getapp__grid">
+      <div>
+        <span class="csh-eyebrow">{{ __('Take it with you') }}</span>
+        <h2>{{ __('Your whole property, in your pocket') }}</h2>
+        <p>{{ __('Install Centresidence straight from your browser — no app store, no download, one tap. Owners, tenants and caretakers get the same fast, app-like experience on any phone.') }}</p>
+        <div class="csh-getapp__pts">
+          <div class="csh-getapp__pt">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+            <span>{{ __('Opens like a real app — full screen, its own icon on your home screen.') }}</span>
+          </div>
+          <div class="csh-getapp__pt">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+            <span>{{ __('Rent, receipts, tokens and tickets — everywhere you are.') }}</span>
+          </div>
+          <div class="csh-getapp__pt">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+            <span>{{ __('Nothing to update, nothing to download — always the latest version.') }}</span>
+          </div>
+        </div>
+        <div class="csh-getapp__cta">
+          <a href="#" data-cs-install onclick="return window.csPwaInstall ? (window.csPwaInstall(), false) : true;" class="csh-btn csh-btn--blue">{{ __('Install the app') }}</a>
+        </div>
+      </div>
+      <div class="csh-phone" aria-hidden="true">
+        <div class="csh-phscreen">
+          <div class="csh-phbar">
+            <span class="csh-phbrand"><span class="a">Centre</span><span class="b">sidence</span></span>
+            <span style="font-size:16px">☰</span>
+          </div>
+          <div class="csh-phbody">
+            <div class="csh-phhi">{{ __('Good morning, Amina') }}</div>
+            <div class="csh-phtiles">
+              <div class="csh-phtile"><div class="k">{{ __('Collected') }}</div><div class="v">KES 184k</div></div>
+              <div class="csh-phtile"><div class="k">{{ __('Occupancy') }}</div><div class="v v--blue">96%</div></div>
+            </div>
+            <div class="csh-phrow">
+              <div><div class="t">{{ __('Unit 4B · Rent') }}</div><div class="s">{{ __('Due 1 Oct') }}</div></div>
+              <span class="csh-phpill">{{ __('Paid') }}</span>
+            </div>
+            <div class="csh-phrow">
+              <div><div class="t">{{ __('Gas tokens') }}</div><div class="s">{{ __('12.4 kg left') }}</div></div>
+              <span class="csh-phpill" style="color:#185FA5;background:#E8F0F9">{{ __('Top up') }}</span>
+            </div>
+            <div class="csh-phcta">{{ __('Pay rent') }}</div>
+          </div>
+        </div>
       </div>
     </div>
   </section>

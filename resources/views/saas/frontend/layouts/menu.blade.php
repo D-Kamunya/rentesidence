@@ -1,64 +1,49 @@
 <link href="https://fonts.googleapis.com/css2?family=Josefin+Sans:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
     /* ── Centresidence public header ──────────────────────────────────────────
-       Dark-premium brand chrome. Uses the two-tone WORDMARK (light variant) — the
-       glossy dimensional lockup is reserved for big brand moments (login splash),
-       not tiny nav chrome. On the home route the bar is TRANSPARENT so it blends
-       into the dark hero; on other frontend pages it is solid dark. */
+       LIGHT brand chrome (fintech = trust + openness). Two-tone WORDMARK, light
+       surface variant; the glossy dimensional lockup is reserved for the login brand
+       moment. On the home route the bar is TRANSPARENT over the light hero; on other
+       frontend pages it is solid white. cs-blue is the interactive accent. */
     .menu-section-area{background:transparent}
     #mainNav.navbar{border-bottom:1px solid transparent;transition:background .25s,border-color .25s}
-    #mainNav.csnav--solid{background:rgba(14,18,24,.92)!important;backdrop-filter:blur(12px);
-        -webkit-backdrop-filter:blur(12px);border-bottom-color:rgba(255,255,255,.08)}
+    #mainNav.csnav--solid{background:rgba(255,255,255,.92)!important;backdrop-filter:blur(12px);
+        -webkit-backdrop-filter:blur(12px);border-bottom-color:#EAE6DE}
     #mainNav.csnav--transparent{background:transparent!important;box-shadow:none!important}
-    /* home: transparent over the hero, subtle dark blur once scrolled (no hard bar) */
-    #mainNav.csnav--transparent.sticky{background:rgba(11,15,21,.88)!important;
+    /* home: transparent over the hero, a soft white blur once scrolled (no hard bar) */
+    #mainNav.csnav--transparent.sticky{background:rgba(255,255,255,.9)!important;
         backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);
-        box-shadow:0 10px 30px -20px rgba(0,0,0,.85)!important;border-bottom-color:rgba(255,255,255,.07)}
+        box-shadow:0 10px 30px -22px rgba(24,95,165,.35)!important;border-bottom-color:#EAE6DE}
 
-    /* Brand lockup: shiny square CS icon + two-tone wordmark */
+    /* Brand lockup: shiny square CS icon + two-tone wordmark (light-surface colours) */
     .cs-lockup{display:inline-flex;align-items:center;gap:11px}
-    .cs-logo-icon{height:40px;width:auto;display:block;filter:drop-shadow(0 4px 10px rgba(24,95,165,.4))}
-    /* Wordmark */
+    .cs-logo-icon{height:40px;width:auto;display:block;filter:drop-shadow(0 4px 10px rgba(24,95,165,.22))}
     .cs-wordmark{display:inline-flex;align-items:baseline;font-weight:800;letter-spacing:-.02em;
         font-size:23px;line-height:1;font-family:var(--sans,-apple-system,'Segoe UI',Roboto,Arial,sans-serif)}
-    /* subtle shadow so the wordmark stays legible if it ever overlaps a bright image */
-    .cs-wordmark{text-shadow:0 1px 5px rgba(0,0,0,.45)}
-    .cs-wordmark .a{color:#F2EFEA}
-    .cs-wordmark .b{color:#5AA0E0}
+    .cs-wordmark .a{color:#1F2430}
+    .cs-wordmark .b{color:#185FA5}
 
-    /* Nav links + actions on dark. The nav is transparent over the hero, so links can
-       fall over a BRIGHT part of the image → use white + a text-shadow (legible on dark
-       AND bright); amber text would blend on warm/dusk imagery. Amber is used where it
-       always wins: as a solid fill on the Sign In button (the hero CTA colour). */
-    #mainNav .nav-link{color:#FFFFFF!important;font-weight:550;text-shadow:0 1px 6px rgba(0,0,0,.6)}
-    #mainNav .nav-link:hover,#mainNav .nav-link.active{color:#F0AF49!important}
-    #mainNav .theme-btn-outline{color:#20160A!important;border:1px solid #E7A339!important;
-        background:#E7A339!important;border-radius:10px;padding:9px 22px;transition:.18s;font-weight:650;
-        white-space:nowrap;display:inline-block;margin-right:2px;box-shadow:0 8px 20px -8px rgba(231,163,57,.6)}
-    #mainNav .theme-btn-outline:hover{border-color:#f0af49!important;background:#f0af49!important;color:#20160A!important;transform:translateY(-1px)}
+    /* Nav links + actions on light — ink text, cs-blue hover; the primary CTA (Sign In /
+       Dashboard) is a solid cs-blue fill (the interactive accent), never amber. */
+    #mainNav .nav-link{color:#2A2F37!important;font-weight:550}
+    #mainNav .nav-link:hover,#mainNav .nav-link.active{color:#185FA5!important}
+    #mainNav .theme-btn-outline{color:#FFFFFF!important;border:1px solid #185FA5!important;
+        background:#185FA5!important;border-radius:10px;padding:9px 22px;transition:.18s;font-weight:650;
+        white-space:nowrap;display:inline-block;margin-right:2px;box-shadow:0 8px 20px -9px rgba(24,95,165,.5)}
+    #mainNav .theme-btn-outline:hover{border-color:#124B84!important;background:#124B84!important;color:#FFFFFF!important;transform:translateY(-1px)}
     #mainNav .navbar-nav-right{justify-content:flex-end;overflow:visible}
     #mainNav .container{overflow:visible}
-    /* Logged-in "Dashboard" occupies the same slot as "Sign In" (they're never shown together),
-       so give it the same CS amber CTA treatment for a consistent, on-brand nav. */
-    #mainNav .nav-dash-link{color:#20160A!important;border:1px solid #E7A339!important;background:#E7A339!important;
+    #mainNav .nav-dash-link{color:#FFFFFF!important;border:1px solid #185FA5!important;background:#185FA5!important;
         border-radius:10px;padding:9px 22px;font-weight:650;white-space:nowrap;display:inline-block;
-        text-shadow:none;transition:.18s;box-shadow:0 8px 20px -8px rgba(231,163,57,.6)}
-    #mainNav .nav-dash-link:hover{border-color:#f0af49!important;background:#f0af49!important;color:#20160A!important;transform:translateY(-1px)}
-    #mainNav .navbar-toggler{color:#EDE7DC;border-color:rgba(255,255,255,.25)}
+        transition:.18s;box-shadow:0 8px 20px -9px rgba(24,95,165,.5)}
+    #mainNav .nav-dash-link:hover{border-color:#124B84!important;background:#124B84!important;color:#FFFFFF!important;transform:translateY(-1px)}
+    #mainNav .navbar-toggler{color:#2A2F37;border-color:rgba(24,95,165,.25)}
 
-    /* Offcanvas (mobile drawer) dark */
-    /* Dark ONLY as a real mobile drawer (< lg). On desktop (navbar-expand-lg) the
-       offcanvas renders INLINE as the nav content, so a background here painted a dark
-       box over the transparent nav — that was the "black bar". Scope it to mobile. */
+    /* Offcanvas (mobile drawer) — light. */
     @media (max-width:991.98px){
-        #offcanvasNavbarDark{background:#0E1218!important;color:#EDE7DC}
-        /* CRITICAL BUGFIX: the nav's glassy `backdrop-filter:blur()` establishes a CONTAINING
-           BLOCK for fixed-position descendants, which traps THIS offcanvas — its top:0/bottom:0
-           resolve against the ~59px nav bar instead of the viewport, collapsing the drawer and
-           clipping the menu to a sliver (the "3 dots" bug on csnav--solid pages like House Hunt
-           / Blog, and on Home once scrolled). On mobile the offcanvas is a real fixed drawer, so
-           drop the blur here; the nav keeps its solid/tinted background. Desktop keeps the glass
-           (there the offcanvas renders INLINE, not as a fixed drawer, so no trap). */
+        #offcanvasNavbarDark{background:#FFFFFF!important;color:#2A2F37}
+        /* Keep the mobile bugfix: the nav's glass blur traps the fixed drawer, so drop the
+           blur on mobile (the nav keeps its solid background). Desktop keeps the glass. */
         #mainNav.csnav--solid,
         #mainNav.csnav--transparent,
         #mainNav.csnav--transparent.sticky{
@@ -70,8 +55,8 @@
         #offcanvasNavbarDark .offcanvas-body,
         #offcanvasNavbarDark .offcanvas-header{background:transparent!important}
     }
-    #offcanvasNavbarDark .nav-link{color:#CFC8BC!important}
-    #offcanvasNavbarDark .btn-close{filter:invert(1) grayscale(1) brightness(2)}
+    #offcanvasNavbarDark .nav-link{color:#2A2F37!important}
+    #offcanvasNavbarDark .btn-close{filter:none}
 </style>
 @if (env('LOGIN_HELP') == 'active')
     <div class="alert alert-danger text-center mb-0" role="alert">

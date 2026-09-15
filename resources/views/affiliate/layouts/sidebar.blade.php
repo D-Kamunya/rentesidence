@@ -66,6 +66,13 @@
                     </a>
                 </li>
 
+                {{-- Install app (auto-hides once installed). --}}
+                <li>
+                    <a href="#" data-cs-install onclick="return window.csPwaInstall ? (window.csPwaInstall(), false) : true;">
+                        <i class="ri-smartphone-line"></i>
+                        <span>{{ __('Install app') }}</span>
+                    </a>
+                </li>
                 <li>
                     <a href="{{ route('affiliate.kb.index') }}" class="kb-nav-highlight">
                         <i class="fa fa-book"></i>

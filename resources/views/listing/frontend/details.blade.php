@@ -7,17 +7,17 @@
     related-listing routes, and every $listing/$images/$information/$relatedListings field.
 --}}
 <style>
-  main{background:#0E1218}
+  main{background:#FAF9F6}
   .sd{
-    --paper:#0E1218; --paper-2:#141922; --card:#161C26; --card-2:#1B222E;
-    --stone-900:#EDEAE3; --stone-700:#C4C0B7; --stone-500:#9A958A; --stone-400:#7C776C;
-    --line:#242B36;
-    --cs-blue:#185FA5; --cs-blue-2:#1c72c2; --cs-blue-tint:#12283F;
+    --paper:#FAF9F6; --paper-2:#EFF4FA; --card:#FFFFFF; --card-2:#F4F1EC;
+    --stone-900:#1B1E22; --stone-700:#3A3F47; --stone-500:#6B7280; --stone-400:#9AA0A8;
+    --line:#E6E1D8;
+    --cs-blue:#185FA5; --cs-blue-2:#1c72c2; --cs-blue-tint:#E8F0F9;
     --amber:#E7A339; --green:#1D9E75;
-    --shadow:0 20px 46px -22px rgba(0,0,0,.6); --shadow-sm:0 10px 26px -16px rgba(0,0,0,.55);
+    --shadow:0 20px 46px -24px rgba(20,23,28,.16); --shadow-sm:0 10px 26px -18px rgba(20,23,28,.10);
     --serif:Georgia,'Iowan Old Style','Times New Roman',serif;
     --sans:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;
-    color-scheme:dark;font-family:var(--sans);color:var(--stone-900)}
+    color-scheme:light;font-family:var(--sans);color:var(--stone-900)}
   .sd *{box-sizing:border-box}
   .sd a{text-decoration:none}
   .sd-wrap{max-width:1200px;margin:0 auto;padding:0 24px}
@@ -34,14 +34,14 @@
 
   /* Back */
   .sd-back{display:inline-flex;align-items:center;gap:8px;color:var(--stone-500);font-size:14px;font-weight:600;margin-bottom:18px;transition:.15s}
-  .sd-back:hover{color:#fff}.sd-back svg{width:16px;height:16px}
+  .sd-back:hover{color:var(--cs-blue)}.sd-back svg{width:16px;height:16px}
 
   /* Header */
-  .sd-badge{display:inline-flex;background:rgba(29,158,117,.15);color:#4fd1a5;border:1px solid rgba(29,158,117,.4);
+  .sd-badge{display:inline-flex;background:rgba(29,158,117,.12);color:#0F6E56;border:1px solid rgba(29,158,117,.35);
     font-size:11.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;padding:6px 13px;border-radius:99px}
   .sd-head{display:flex;justify-content:space-between;align-items:flex-end;gap:16px;flex-wrap:wrap;margin-top:14px}
-  .sd-head h1{font-family:var(--serif);font-weight:600;letter-spacing:-.015em;font-size:clamp(28px,4vw,44px);color:#F2EFEA;margin:0;text-wrap:balance}
-  .sd-price{color:var(--amber);font-weight:800;font-size:clamp(22px,3vw,32px);white-space:nowrap}
+  .sd-head h1{font-family:var(--serif);font-weight:600;letter-spacing:-.015em;font-size:clamp(28px,4vw,44px);color:var(--stone-900);margin:0;text-wrap:balance}
+  .sd-price{color:#B4780F;font-weight:800;font-size:clamp(22px,3vw,32px);white-space:nowrap}
   .sd-meta{display:flex;flex-wrap:wrap;gap:22px;margin-top:16px;padding-bottom:22px;border-bottom:1px solid var(--line);color:var(--stone-500);font-size:14px}
   .sd-meta span{display:inline-flex;align-items:center;gap:8px}
   .sd-meta svg{width:16px;height:16px;color:var(--cs-blue)}
@@ -119,6 +119,12 @@
   .sd-submit:hover{background:var(--cs-blue-2)}
   .sd-cancel{background:transparent;color:var(--stone-500)!important;border:1px solid var(--line);border-radius:11px;padding:12px 22px;font-weight:600;cursor:pointer}
   .sd-cancel:hover{border-color:var(--stone-400);color:var(--stone-900)!important}
+
+  /* ── Phone fitness ── trim the desktop top gap + shorter carousel on phone. */
+  @media(max-width:640px){
+    .sd-top{padding-top:92px}
+    .sd .single-property-slider img{height:280px}
+  }
 </style>
 
 <div class="sd">

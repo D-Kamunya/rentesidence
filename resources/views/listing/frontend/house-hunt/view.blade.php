@@ -14,17 +14,17 @@
 --}}
 
 <style>
-  main{background:#0E1218}
+  main{background:#FAF9F6}
   .hd{
-    --paper:#0E1218; --paper-2:#141922; --card:#161C26; --card-2:#1B222E;
-    --stone-900:#EDEAE3; --stone-700:#C4C0B7; --stone-500:#9A958A; --stone-400:#7C776C;
-    --line:#242B36;
-    --cs-blue:#185FA5; --cs-blue-2:#1c72c2; --cs-blue-tint:#12283F;
+    --paper:#FAF9F6; --paper-2:#EFF4FA; --card:#FFFFFF; --card-2:#F4F1EC;
+    --stone-900:#1B1E22; --stone-700:#3A3F47; --stone-500:#6B7280; --stone-400:#9AA0A8;
+    --line:#E6E1D8;
+    --cs-blue:#185FA5; --cs-blue-2:#1c72c2; --cs-blue-tint:#E8F0F9;
     --amber:#E7A339; --amber-2:#f0af49;
-    --shadow:0 20px 46px -22px rgba(0,0,0,.6); --shadow-sm:0 10px 26px -16px rgba(0,0,0,.55);
+    --shadow:0 20px 46px -24px rgba(20,23,28,.16); --shadow-sm:0 10px 26px -18px rgba(20,23,28,.10);
     --serif:Georgia,'Iowan Old Style','Times New Roman',serif;
     --sans:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;
-    color-scheme:dark;font-family:var(--sans);color:var(--stone-900)}
+    color-scheme:light;font-family:var(--sans);color:var(--stone-900)}
   .hd *{box-sizing:border-box}
   .hd a{text-decoration:none}
   .hd-wrap{max-width:1200px;margin:0 auto;padding:0 24px}
@@ -49,7 +49,7 @@
   /* Back link */
   .hd-back{display:inline-flex;align-items:center;gap:8px;color:var(--stone-500);font-size:14px;font-weight:600;
     margin:26px 0 4px;transition:.15s}
-  .hd-back:hover{color:#fff}
+  .hd-back:hover{color:var(--cs-blue)}
   .hd-back svg{width:16px;height:16px}
 
   /* Units */
@@ -122,6 +122,13 @@
   .hd-close:hover{border-color:var(--stone-400);color:var(--stone-900) !important}
   /* lightbox stays dark */
   #imageLightboxModal .modal-content{background:#0B0F15;border:1px solid var(--line);border-radius:16px}
+
+  /* ── Phone fitness ── shorter image hero on phone. */
+  @media(max-width:640px){
+    .hd-hero{height:340px}
+    .hd-hero__inner{padding:0 20px 40px}
+    .hd-hero__inner h1{font-size:clamp(26px,7vw,34px)}
+  }
 </style>
 
 <div class="hd">
