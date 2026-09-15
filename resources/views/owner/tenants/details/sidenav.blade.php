@@ -104,6 +104,19 @@
         .td-info dt, .td-info__k { padding-bottom:0; border-bottom:none; color:#6b7280; }
         .td-info dd, .td-info__v { padding-top:2px; }
     }
+    @media (max-width: 640px) {
+        /* Hero was a single non-wrapping row → the action buttons (Resend Login /
+           Edit Info) ran off the right edge and truncated. Let it wrap: avatar +
+           identity on row one, the two actions share a full row beneath. */
+        .td-hero { flex-wrap:wrap; gap:12px; }
+        .td-hero__spacer { display:none; }
+        .td-hero > div { flex:1 1 140px; min-width:0; }
+        .td-hero__sub { word-break:break-word; }
+        .td-hero form.d-inline,
+        .td-hero > .td-hero__edit { flex:1 1 calc(50% - 6px); }
+        .td-hero form.d-inline .td-hero__edit,
+        .td-hero > .td-hero__edit { width:100%; justify-content:center; white-space:nowrap; }
+    }
 
     /* Shared form/modal/button styles for this page's modals (pf-* names; this page
        never renders alongside the profile-settings page that also defines them). */
