@@ -7,19 +7,33 @@
             <div class="page-content-wrapper bg-white p-30 radius-20">
                 <div class="container">
 
-                    {{-- Centresidence financing nudge --}}
-                    <a href="{{ route('owner.financing.index') }}" style="text-decoration:none;display:block;">
-                        <div style="display:flex;align-items:center;gap:14px;background:linear-gradient(90deg,#E6F1FB,#E1F5EE);border:1px solid #B5D4F4;border-radius:14px;padding:16px 20px;margin-bottom:22px;">
-                            <div style="width:42px;height:42px;border-radius:12px;background:#185FA5;display:flex;align-items:center;justify-content:center;flex:none;">
-                                <i class="ri-funds-line" style="color:#fff;font-size:22px;"></i>
-                            </div>
-                            <div style="flex:1;">
-                                <div style="font-weight:700;color:#111827;">{{ __('Boost your property cashflow with smart modules') }}</div>
-                                <div style="font-size:13px;color:#374151;">{{ __('Add water/gas meters, smart locks and more — finance them through a partner, or self-finance and own them outright.') }}</div>
-                            </div>
-                            <span style="display:inline-flex;align-items:center;gap:6px;background:#185FA5;color:#fff;font-size:12px;font-weight:500;padding:8px 16px;border-radius:7px;white-space:nowrap;transition:all .13s;">{{ __('Explore modules') }}</span>
-                        </div>
-                    </a>
+                    {{-- Centresidence financing nudge (responsive + dismissible; starts
+                         hidden and is revealed by JS so a snoozed banner never flashes). --}}
+                    <div class="cs-fin-nudge" id="csFinNudge" hidden>
+                        <a href="{{ route('owner.financing.index') }}" class="cs-fin-nudge__link">
+                            <span class="cs-fin-nudge__ico"><i class="ri-funds-line"></i></span>
+                            <span class="cs-fin-nudge__txt">
+                                <span class="cs-fin-nudge__title">{{ __('Boost your property cashflow with smart modules') }}</span>
+                                <span class="cs-fin-nudge__sub">{{ __('Add water/gas meters, smart locks and more — finance them through a partner, or self-finance and own them outright.') }}</span>
+                            </span>
+                            <span class="cs-fin-nudge__cta">{{ __('Explore modules') }}</span>
+                        </a>
+                        <button type="button" class="cs-fin-nudge__x" aria-label="{{ __('Dismiss') }}" onclick="csDismissFinNudge()">&times;</button>
+                    </div>
+                    <script>
+                        (function () {
+                            var KEY = 'cs_fin_nudge_snooze', DAYS = 30;
+                            var el = document.getElementById('csFinNudge');
+                            if (!el) return;
+                            var until = 0;
+                            try { until = parseInt(localStorage.getItem(KEY) || '0', 10) || 0; } catch (e) {}
+                            if (Date.now() > until) { el.hidden = false; }
+                            window.csDismissFinNudge = function () {
+                                el.hidden = true;
+                                try { localStorage.setItem(KEY, String(Date.now() + DAYS * 864e5)); } catch (e) {}
+                            };
+                        })();
+                    </script>
 
                     {{-- Page Header --}}
                     <div class="dash-header mb-4">
@@ -789,6 +803,40 @@
 
 @push('style')
 <style>
+/* ── Financing nudge banner (responsive + dismissible) ─────── */
+.cs-fin-nudge { position:relative; margin-bottom:22px; }
+.cs-fin-nudge__link {
+    display:flex; align-items:center; gap:14px; flex-wrap:wrap; text-decoration:none;
+    background:linear-gradient(90deg,#E6F1FB,#E1F5EE); border:1px solid #B5D4F4;
+    border-radius:14px; padding:16px 46px 16px 20px;
+}
+.cs-fin-nudge__ico {
+    width:42px; height:42px; border-radius:12px; background:#185FA5; flex:none;
+    display:flex; align-items:center; justify-content:center; font-size:22px;
+}
+.cs-fin-nudge__ico i { color:#fff; }
+.cs-fin-nudge__txt { flex:1 1 240px; min-width:0; display:flex; flex-direction:column; gap:3px; }
+.cs-fin-nudge__title { font-weight:700; color:#111827; }
+.cs-fin-nudge__sub { font-size:13px; color:#374151; line-height:1.45; }
+.cs-fin-nudge__cta {
+    flex:none; display:inline-flex; align-items:center; gap:6px; background:#185FA5;
+    color:#fff; font-size:12px; font-weight:500; padding:8px 16px; border-radius:7px;
+    white-space:nowrap; transition:background .13s;
+}
+.cs-fin-nudge__link:hover .cs-fin-nudge__cta { background:#0F4A84; }
+.cs-fin-nudge__x {
+    position:absolute; top:8px; right:10px; border:none; background:transparent;
+    color:#6b7280; font-size:22px; line-height:1; cursor:pointer; padding:2px 7px;
+    border-radius:6px; transition:all .13s;
+}
+.cs-fin-nudge__x:hover { color:#111827; background:rgba(0,0,0,.06); }
+@media (max-width:600px) {
+    .cs-fin-nudge__link { padding:14px 40px 14px 14px; gap:12px; }
+    /* Row 1 = icon + text fill the width; Row 2 = full-width CTA (no one-word columns). */
+    .cs-fin-nudge__txt { flex:1 1 calc(100% - 54px); }
+    .cs-fin-nudge__cta { flex:1 1 100%; justify-content:center; }
+}
+
 /* ── SMS pack buttons (in modal) ─────────────────────────── */
 .sms-pack-btn {
     display:flex; flex-direction:column; align-items:center;

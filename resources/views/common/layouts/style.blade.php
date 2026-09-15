@@ -51,7 +51,23 @@
      owner, affiliate, tenant, maintainer, finance-partner). --}}
 <style>
     @media (max-width: 640px) {
+        /* Even, tight page gutters. Default is lopsided on phones — .page-content adds
+           0 left / 20px right, and .container-fluid adds 12px each side → ~12px left vs
+           ~32px right. Zero the page-content sides and let the fluid gutter do it evenly. */
+        .page-content { padding-left: 0 !important; padding-right: 0 !important; }
+
         .page-content-wrapper.p-30 { padding: 14px !important; }
+
+        /* An inner bootstrap .container re-adds side gutters AND caps its own width
+           (centring with dead gutters at 576–767px) — so content gets crushed into a
+           narrow column inside an already-narrow card. Let it use the full trimmed card
+           on phones. Applies app-wide (owner/tenant/maintainer/affiliate/admin), which is
+           why several dashboards nest a .container inside .page-content-wrapper. */
+        .page-content-wrapper .container {
+            max-width: 100% !important;
+            padding-left: 0 !important;
+            padding-right: 0 !important;
+        }
 
         /* Mobile safety-net: a bare data table becomes its OWN horizontal-scroll box
            instead of forcing the whole page to scroll sideways (the #1 phone break).
