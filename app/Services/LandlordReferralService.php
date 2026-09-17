@@ -67,13 +67,38 @@ class LandlordReferralService
 
     /**
      * Record an invite the tenant is sending to a specific landlord.
-     * Returns null (silently) when the funnel is off or the tenant is over the daily
-     * velocity cap — the caller shows a soft message; nothing is written past the cap.
+     *
+     * Anti-spam: an invite to a contact this tenant has ALREADY invited returns the existing
+     * row (never a duplicate, and — because the caller only notifies a freshly-created row —
+     * never a repeat SMS/email to the same person). A brand-new invite is refused past the
+     * daily velocity cap. Returns null only when the funnel is off or the cap is hit; the caller
+     * distinguishes "already invited" (existing row) from "sent" via wasRecentlyCreated().
      */
     public function startInvite(User $referrer, array $invitee): ?LandlordReferral
     {
         if (! $this->enabled()) {
             return null;
+        }
+
+        $phone = $this->normalizePhone($invitee['phone'] ?? null);
+        $email = isset($invitee['email']) ? strtolower(trim((string) $invitee['email'])) ?: null : null;
+
+        // Dedupe: same tenant, same contact → hand back the existing invite, don't re-send.
+        if ($phone || $email) {
+            $existing = LandlordReferral::where('referrer_user_id', $referrer->id)
+                ->where(function ($q) use ($phone, $email) {
+                    if ($phone) {
+                        $q->orWhere('invitee_phone', $phone);
+                    }
+                    if ($email) {
+                        $q->orWhere('invitee_email', $email);
+                    }
+                })
+                ->first();
+
+            if ($existing) {
+                return $existing;
+            }
         }
 
         if ($this->invitesToday($referrer->id) >= (int) config('referrals.anti_abuse.max_invites_per_day', 20)) {
@@ -84,8 +109,8 @@ class LandlordReferralService
             'referrer_user_id' => $referrer->id,
             'code'             => $this->codeForTenant($referrer->id),
             'invitee_name'     => $invitee['name'] ?? null,
-            'invitee_phone'    => $this->normalizePhone($invitee['phone'] ?? null),
-            'invitee_email'    => $invitee['email'] ?? null,
+            'invitee_phone'    => $phone,
+            'invitee_email'    => $email,
             'invitee_company'  => $invitee['company'] ?? null,
             'status'           => LandlordReferral::STATUS_PENDING,
             'meta'             => ['self_referral' => $this->looksLikeSelfReferral($referrer, $invitee)],

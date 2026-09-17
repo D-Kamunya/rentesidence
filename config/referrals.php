@@ -45,8 +45,10 @@ return [
 
     // Anti-abuse guardrails (mostly structural; these are the tunable numbers).
     'anti_abuse' => [
-        // A single tenant can start at most this many invites in a rolling 24h (velocity cap).
-        'max_invites_per_day' => (int) env('LANDLORD_REFERRAL_MAX_INVITES_DAY', 20),
+        // A single tenant can start at most this many NEW invites in a rolling 24h (velocity
+        // cap). A genuine tenant knows a handful of landlords, so a low ceiling cuts the spam
+        // surface hard; re-inviting the same contact is deduped and never counts or re-sends.
+        'max_invites_per_day' => (int) env('LANDLORD_REFERRAL_MAX_INVITES_DAY', 5),
         // Flag (don't auto-pay) a referral for manual review when a referrer's confirmed
         // count in a rolling window exceeds this — a spike worth a human look.
         'manual_review_after' => (int) env('LANDLORD_REFERRAL_REVIEW_AFTER', 10),

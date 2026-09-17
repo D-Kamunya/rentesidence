@@ -51,6 +51,12 @@ class SendLandlordInviteJob implements ShouldQueue
                         'preheader'    => __(':who thinks Centresidence would work for your rentals.', ['who' => $who]),
                         'blocks'       => [
                             ['type' => 'text', 'html' => $hello . ' ' . __(':who uses Centresidence to handle their rent and invited you to put your property on it — collect rent from your tenants\' phones (M-Pesa included), send receipts automatically, and see every unit at a glance. It\'s free to start.', ['who' => "<strong>" . e($who) . "</strong>"])],
+                            ['type' => 'text', 'html' => '<strong>' . __('Why landlords love it') . '</strong><ul style="margin:8px 0 0;padding-left:20px;line-height:1.7;">'
+                                . '<li>' . __('Rent that collects itself — tenants pay from their phone, matched to the right invoice, receipt sent instantly.') . '</li>'
+                                . '<li>' . __('Every property and unit in one dashboard — who\'s paid, who\'s due, at a glance.') . '</li>'
+                                . '<li>' . __('Deposits tracked, agreements signed in-app, and a clean record for every tenancy.') . '</li>'
+                                . '<li>' . __('Free to start — add smart meters, a marketplace or financing only when you\'re ready.') . '</li>'
+                                . '</ul>'],
                             ['type' => 'button', 'url' => $this->inviteUrl, 'label' => __('Get set up')],
                             ['type' => 'note', 'html' => __('Our team reviews every request and will reach out to help you get going. No account is created until you complete the short form.')],
                         ],

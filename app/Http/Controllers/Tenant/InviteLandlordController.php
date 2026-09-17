@@ -30,12 +30,17 @@ class InviteLandlordController extends Controller
         $user = auth()->user();
         $code = $this->referrals->codeForTenant($user->id);
 
+        // Connected tenants (landlord already on CS) refer OTHER landlords; ownerless tenants
+        // invite their own. The heading/nav/title differ so "Invite your landlord" never misleads.
+        $isConnected = ! $user->isOwnerlessTenant();
+
         $referralList = LandlordReferral::where('referrer_user_id', $user->id)
             ->latest()
             ->get();
 
         return view('tenant.invite-landlord.index', [
-            'pageTitle'       => __('Invite Your Landlord'),
+            'pageTitle'       => $isConnected ? __('Refer a Landlord') : __('Invite Your Landlord'),
+            'isConnected'     => $isConnected,
             'code'            => $code,
             'inviteUrl'       => route('referral.invite', $code),
             'referralList'    => $referralList,
@@ -74,6 +79,12 @@ class InviteLandlordController extends Controller
 
         if (! $referral) {
             return back()->with('error', __('You\'ve sent a lot of invites today — please try again tomorrow.'));
+        }
+
+        // Dedupe guard: an existing invite for this landlord comes back not-recently-created —
+        // don't re-notify (prevents repeat SMS/email to the same person).
+        if (! $referral->wasRecentlyCreated) {
+            return back()->with('success', __('You\'ve already invited this landlord — share your link to remind them.'));
         }
 
         // Reach the landlord on the tenant's behalf (platform-paid SMS + on-brand email).

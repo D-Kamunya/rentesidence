@@ -248,7 +248,7 @@
                                         </div>
                                     </div>
                                     <div style="flex:none;background:#fff;color:#185FA5;font-weight:650;font-size:14px;
-                                        padding:10px 18px;border-radius:10px;">{{ __('Invite your landlord') }} →</div>
+                                        padding:10px 18px;border-radius:10px;">{{ empty($ownerless) ? __('Refer a landlord') : __('Invite your landlord') }} →</div>
                                 </div>
                             </a>
                         </div>

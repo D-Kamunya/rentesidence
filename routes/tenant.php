@@ -48,7 +48,10 @@ Route::group(['prefix' => 'tenant', 'as' => 'tenant.', 'middleware' => ['auth', 
     // OUTSIDE the tenant.owned guard: inviting a landlord is a growth action, not owner-bound.
     Route::group(['prefix' => 'invite-landlord', 'as' => 'invite-landlord.'], function () {
         Route::get('/', [\App\Http\Controllers\Tenant\InviteLandlordController::class, 'index'])->name('index');
-        Route::post('/', [\App\Http\Controllers\Tenant\InviteLandlordController::class, 'store'])->name('store');
+        // Throttled on top of the per-tenant daily cap + contact dedupe — bounds outbound
+        // invite SMS/email so the form can't be used to spam numbers.
+        Route::post('/', [\App\Http\Controllers\Tenant\InviteLandlordController::class, 'store'])
+            ->middleware('throttle:12,60')->name('store');
     });
 
     // ── Owner-bound surfaces: blocked for an ownerless (Helper) tenant, whose tenancy is closed.

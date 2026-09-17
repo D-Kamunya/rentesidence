@@ -30,7 +30,7 @@
                 <li class="{{ @$navInviteLandlordMMActiveClass }}">
                     <a href="{{ route('tenant.invite-landlord.index') }}" class="{{ @$navInviteLandlordActiveClass }}">
                         <i class="ri-user-shared-line"></i>
-                        <span>{{ __('Invite Your Landlord') }}</span>
+                        <span>{{ empty($ownerless) ? __('Refer a Landlord') : __('Invite Your Landlord') }}</span>
                     </a>
                 </li>
                 @endif

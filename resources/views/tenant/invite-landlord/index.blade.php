@@ -57,8 +57,12 @@
 <div class="page-content">
   <div class="container-fluid il-wrap">
 
-    <h1 class="il-head">{{ __('Invite Your Landlord') }}</h1>
-    <p class="il-sub">{{ __('Know a landlord who isn\'t on Centresidence yet? Invite them. When they come on board, you help build a rental world that works for you') }}@if($cashEnabled && $cashAmount > 0) {{ __('— and you earn a reward') }}@endif.</p>
+    <h1 class="il-head">{{ !empty($isConnected) ? __('Refer a Landlord') : __('Invite Your Landlord') }}</h1>
+    @if (!empty($isConnected))
+      <p class="il-sub">{{ __('Your landlord is already on Centresidence — but know another landlord who isn\'t? Refer them. When they come on board, you help grow the network') }}@if($cashEnabled && $cashAmount > 0) {{ __('— and you earn a reward') }}@endif.</p>
+    @else
+      <p class="il-sub">{{ __('Know a landlord who isn\'t on Centresidence yet? Invite them. When they come on board, you help build a rental world that works for you') }}@if($cashEnabled && $cashAmount > 0) {{ __('— and you earn a reward') }}@endif.</p>
+    @endif
 
     @if (session('success'))<div class="il-flash il-flash--ok">{{ session('success') }}</div>@endif
     @if (session('error'))<div class="il-flash il-flash--err">{{ session('error') }}</div>@endif

@@ -133,6 +133,21 @@ class LandlordReferralServiceTest extends TestCase
         $this->assertSame(3, LandlordReferral::where('status', LandlordReferral::STATUS_PENDING)->count());
     }
 
+    public function test_reinviting_the_same_landlord_does_not_duplicate_or_resend(): void
+    {
+        $tenant = $this->tenant();
+
+        $first = $this->svc->startInvite($tenant, ['name' => 'Len', 'phone' => '254 700 123 123']);
+        $this->assertTrue($first->wasRecentlyCreated, 'A first invite is a fresh row → the caller notifies.');
+
+        // Same number (differently spaced) + same email in different case → the existing row,
+        // NOT recently created → the caller won't re-send.
+        $again = $this->svc->startInvite($tenant, ['phone' => '254700123123', 'email' => 'LEN@Example.com']);
+        $this->assertSame($first->id, $again->id);
+        $this->assertFalse($again->wasRecentlyCreated, 'Re-inviting the same contact never re-notifies.');
+        $this->assertSame(1, LandlordReferral::where('referrer_user_id', $tenant->id)->count());
+    }
+
     public function test_attach_lead_links_pending_invite_and_is_idempotent_per_lead(): void
     {
         $tenant = $this->tenant();
