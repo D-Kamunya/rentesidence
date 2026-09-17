@@ -592,7 +592,6 @@
           <option value="trial">{{ __('Getting started / free trial') }}</option>
           <option value="partner">{{ __('Partnership or affiliate') }}</option>
         </select>
-        <input type="text" name="subject" placeholder="{{ __('Subject') }}">
         <textarea name="message" rows="4" placeholder="{{ __('Tell us about your properties') }}"></textarea>
         <button type="submit" class="csh-btn csh-btn--blue" style="width:100%;justify-content:center;margin-top:14px">{{ __('Send inquiry') }}</button>
       </form>
@@ -611,24 +610,15 @@
 @push('script')
     <script src="{{ asset('assets/js/custom/frontend-index.js') }}"></script>
     <script>
-        /* Tag the contact form with the visitor's intent based on which CTA they clicked, so a
-           genuine free-trial/signup enquiry is distinguishable from a general contact (the admin
-           gets a flagged notification). Also pre-fills the subject so the lead is self-describing. */
+        /* Pre-select the intent dropdown from the CTA the visitor clicked, so a genuine
+           free-trial/signup enquiry is distinguishable from a general contact (the visitor can
+           still change it). The subject is derived from the intent server-side — no field here. */
         (function () {
             var intentEl = document.getElementById('cshIntent');
-            var subjectEl = document.querySelector('.csh-form input[name="subject"]');
-            var labels = {
-                trial:   '{{ __('Free trial / Get started') }}',
-                partner: '{{ __('Partnership enquiry') }}'
-            };
             document.querySelectorAll('a[href="#contact-us"][data-intent]').forEach(function (a) {
                 a.addEventListener('click', function () {
                     var intent = a.getAttribute('data-intent') || 'general';
                     if (intentEl) intentEl.value = intent;
-                    // Only pre-fill the subject if the visitor hasn't typed one.
-                    if (subjectEl && !subjectEl.value.trim() && labels[intent]) {
-                        subjectEl.value = labels[intent];
-                    }
                 });
             });
         })();

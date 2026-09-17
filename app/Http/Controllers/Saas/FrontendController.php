@@ -66,7 +66,9 @@ class FrontendController extends Controller
             'last_name' => 'required|string|max:100',
             'email' => 'required|email|max:100',
             'phone' => 'required|max:20',
-            'subject' => 'required|string|max:255',
+            // Subject is no longer a form field — the intent dropdown captures it. Kept nullable
+            // in case an older client still posts one.
+            'subject' => 'nullable|string|max:255',
             'message' => 'required|string|max:255',
             'intent' => 'nullable|string|in:general,trial,partner',
         ]);
@@ -75,12 +77,21 @@ class FrontendController extends Controller
             // Intent: distinguishes a genuine trial/signup enquiry from a general contact.
             $intent = in_array($request->intent, ['trial', 'partner', 'general'], true) ? $request->intent : 'general';
 
+            // Derive the subject from the intent (the dropdown replaced the free-text field), so
+            // the admin list + the reply-email subject line stay populated.
+            $intentLabels = [
+                'general' => __('General enquiry'),
+                'trial'   => __('Getting started / free trial'),
+                'partner' => __('Partnership or affiliate'),
+            ];
+            $subject = $request->filled('subject') ? $request->subject : ($intentLabels[$intent] ?? __('General enquiry'));
+
             $message = new Message();
             $message->first_name = $request->first_name;
             $message->last_name = $request->last_name;
             $message->email = $request->email;
             $message->phone = $request->phone;
-            $message->subject = $request->subject;
+            $message->subject = $subject;
             if (\Illuminate\Support\Facades\Schema::hasColumn('messages', 'intent')) {
                 $message->intent = $intent;
             }
