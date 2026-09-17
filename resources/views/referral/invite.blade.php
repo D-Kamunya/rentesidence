@@ -109,6 +109,16 @@
             <input type="number" name="estimated_units" value="{{ old('estimated_units') }}" min="0" max="100000" placeholder="{{ __('e.g. 12') }}">
           </div>
         </div>
+        <div class="inv-field">
+          <label>{{ __('Property type') }}</label>
+          <select name="property_type">
+            @php $ptypes = ['Residential' => __('Residential'), 'Commercial' => __('Commercial'), 'Mixed-use' => __('Mixed-use'), 'Other' => __('Other')]; @endphp
+            <option value="">{{ __('Select (optional)') }}</option>
+            @foreach ($ptypes as $val => $label)
+              <option value="{{ $val }}" @selected(old('property_type') === $val)>{{ $label }}</option>
+            @endforeach
+          </select>
+        </div>
         <button type="submit" class="inv-submit">{{ __('Request my setup') }}</button>
         <p class="inv-fineprint">{{ __('By submitting, you agree to be contacted about setting up your Centresidence account. We never share your details.') }}</p>
       </form>
