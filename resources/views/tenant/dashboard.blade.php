@@ -105,7 +105,8 @@
                     </a>
                     @endif {{-- /live-tenancy nudges (empty($tenancyEnded)) --}}
 
-                    {{-- Summary Cards --}}
+                    {{-- Summary Cards — owner-bound (unit/rent/tickets) only for an active tenancy. --}}
+                    @if (empty($ownerless))
                     <div class="row g-3 mb-4">
 
                         {{-- My Unit --}}
@@ -180,10 +181,51 @@
                         </div>
 
                     </div>
+                    @else
+                    {{-- Standalone (ownerless) summary: the tenant's own, portable things. --}}
+                    <div class="row g-3 mb-4">
+                        <div class="col-12 col-md-4">
+                            <a href="{{ route('tenant.rental-score.index') }}" class="glance-card glance-card--blue" style="text-decoration:none;">
+                                <div class="glance-card__icon-wrap">
+                                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M12 3l7 4v5c0 4-3 7-7 8-4-1-7-4-7-8V7l7-4z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/><path d="M9 12l2 2 4-4" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                                </div>
+                                <div class="glance-card__body">
+                                    <p class="glance-card__label">{{ __('My Rental Score') }}</p>
+                                    <p class="glance-card__value" style="font-size:18px;">{{ __('View') }}</p>
+                                    <p class="glance-card__sub">{{ __('Your portable record') }}</p>
+                                </div>
+                            </a>
+                        </div>
+                        <div class="col-12 col-md-4">
+                            <a href="{{ route('house.hunt') }}" class="glance-card glance-card--green" style="text-decoration:none;">
+                                <div class="glance-card__icon-wrap">
+                                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M3 10.5L12 3l9 7.5V21a1 1 0 01-1 1H5a1 1 0 01-1-1V10.5z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/><path d="M9 22V12h6v10" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/></svg>
+                                </div>
+                                <div class="glance-card__body">
+                                    <p class="glance-card__label">{{ __('Find a Home') }}</p>
+                                    <p class="glance-card__value" style="font-size:18px;">{{ __('Browse') }}</p>
+                                    <p class="glance-card__sub">{{ __('Your next place') }}</p>
+                                </div>
+                            </a>
+                        </div>
+                        <div class="col-12 col-md-4">
+                            <a href="{{ route('tenant.invoice.index') }}" class="glance-card glance-card--amber" style="text-decoration:none;">
+                                <div class="glance-card__icon-wrap">
+                                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M8 3H5a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2V5a2 2 0 00-2-2h-3M8 3v4h8V3M8 11h8M8 15h5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                                </div>
+                                <div class="glance-card__body">
+                                    <p class="glance-card__label">{{ __('My Records') }}</p>
+                                    <p class="glance-card__value" style="font-size:18px;">{{ __('Invoices') }}</p>
+                                    <p class="glance-card__sub">{{ __('Your payment history') }}</p>
+                                </div>
+                            </a>
+                        </div>
+                    </div>
+                    @endif
                     {{-- End Summary Cards --}}
 
                     {{-- Utilities (Centresidence) — a balance card per metered module on the unit, else nothing --}}
-                    @if (!empty($hasUtilities))
+                    @if (empty($ownerless) && !empty($hasUtilities))
                         <div class="row g-3 mb-4">
                             @foreach ($utilityModules as $um)
                                 @php
@@ -212,8 +254,8 @@
                     {{-- Invoices + Notice Board --}}
                     <div class="row g-3">
 
-                        {{-- Invoice Card --}}
-                        <div class="col-lg-8">
+                        {{-- Invoice Card (full width when ownerless — Notice Board is owner-bound, hidden) --}}
+                        <div class="{{ empty($ownerless) ? 'col-lg-8' : 'col-lg-12' }}">
                             <div class="dash-card">
 
                                 <div class="dash-card__head d-flex align-items-center justify-content-between">
@@ -358,8 +400,8 @@
                         </div>
                         {{-- End Invoice Card --}}
 
-                        {{-- Notice Board --}}
-                        @if (ownerCurrentPackage(auth()->user()->owner_user_id)?->notice_support == ACTIVE || isAddonInstalled('PROTYSAAS') < 1)
+                        {{-- Notice Board (owner-bound — hidden for an ownerless tenant) --}}
+                        @if (empty($ownerless) && (ownerCurrentPackage(auth()->user()->owner_user_id)?->notice_support == ACTIVE || isAddonInstalled('PROTYSAAS') < 1))
                             <div class="col-lg-4">
                                 <div class="dash-card h-100">
                                     <div class="dash-card__head d-flex align-items-center justify-content-between">
@@ -436,7 +478,7 @@
                     </div>
                     {{-- End Invoices + Notice --}}
 
-                    @if(isset($featuredProducts) && $featuredProducts->isNotEmpty())
+                    @if(empty($ownerless) && isset($featuredProducts) && $featuredProducts->isNotEmpty())
                     <div class="row g-3 mt-1">
                         <div class="col-12">
                             <div class="dash-card mkt-card">

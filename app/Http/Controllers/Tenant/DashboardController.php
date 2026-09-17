@@ -20,8 +20,10 @@ class DashboardController extends Controller
     {
         $data['pageTitle'] = __('Dashboard');
         $tenantUser = auth()->user()->tenant;
-        $data['property'] = Property::findOrFail($tenantUser->property_id);
-        $data['unit'] = PropertyUnit::findOrFail($tenantUser->unit_id);
+        // find (not findOrFail): an ownerless/closed tenant may reference a unit/property that has
+        // since been removed — the standalone dashboard doesn't render these, so null is fine.
+        $data['property'] = Property::find($tenantUser->property_id);
+        $data['unit'] = PropertyUnit::find($tenantUser->unit_id);
         $data['tenant'] = $tenantUser;
         // Terminal state: a closed tenancy should read cleanly ("ended") rather than showing stale
         // live surfaces (rent, meters, give-notice). The full no-owner experience is the Tenant Helper.

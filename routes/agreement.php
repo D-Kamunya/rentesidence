@@ -30,7 +30,8 @@ Route::group(['prefix' => 'owner', 'as' => 'owner.', 'middleware' => ['auth', 'o
 });
 
 Route::group(['prefix' => 'tenant', 'as' => 'tenant.', 'middleware' => ['auth', 'tenant']], function () {
-    Route::group(['prefix' => 'agreement', 'as' => 'agreement.'], function () {
+    // Agreement is owner-bound — blocked for an ownerless (Helper) tenant.
+    Route::group(['prefix' => 'agreement', 'as' => 'agreement.', 'middleware' => 'tenant.owned'], function () {
         Route::get('/', [AgreementController::class, 'tenantAgreement'])->name('index');
         Route::get('show/{id}', [AgreementController::class, 'tenantShow'])->name('show');
         Route::post('otp/{id}', [AgreementController::class, 'requestOtp'])->name('otp');

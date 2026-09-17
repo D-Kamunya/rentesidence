@@ -26,6 +26,21 @@ class User extends Authenticatable
         return $this->hasOne(Tenant::class, 'user_id', 'id');
     }
 
+    /**
+     * Is this a tenant with NO active tenancy — i.e. the standalone "Tenant Helper" state?
+     * owner_user_id persists after a tenancy is closed, so the CLOSED status is the signal (not the
+     * owner id). When ownerless, the tenant app hides every owner-bound surface (rent, tickets,
+     * notices, marketplace, maintenance, documents, agreement…) and shows only the tenant's own,
+     * portable things (rental score, invoice history, profile). Data is preserved, just not linked
+     * back to the former owner. NOTE: future self-registered Helper users (no tenancy row at all)
+     * will also be ownerless — extend this to a role check when self-registration lands.
+     */
+    public function isOwnerlessTenant(): bool
+    {
+        $tenant = $this->tenant;
+        return $tenant && (int) $tenant->status === TENANT_STATUS_CLOSE;
+    }
+
     public function maintainer(): HasOne
     {
         return $this->hasOne(Maintainer::class, 'user_id', 'id');

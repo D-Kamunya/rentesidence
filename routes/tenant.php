@@ -44,6 +44,10 @@ Route::group(['prefix' => 'tenant', 'as' => 'tenant.', 'middleware' => ['auth', 
         Route::post('/remind', [\App\Http\Controllers\Tenant\VacationNoticeController::class, 'remind'])->name('remind');
     });
 
+    // ── Owner-bound surfaces: blocked for an ownerless (Helper) tenant, whose tenancy is closed.
+    //    The nav hides these; this stops direct hits (which would error on missing owner data). ──
+    Route::group(['middleware' => 'tenant.owned'], function () {
+
     Route::group(['prefix' => 'order', 'as' => 'order.'], function () {
         Route::get('/', [ProductOrderController::class, 'index'])->name('index');
         // Route::get('print/{id}', [InvoiceController::class, 'details'])->name('print');
@@ -96,6 +100,8 @@ Route::group(['prefix' => 'tenant', 'as' => 'tenant.', 'middleware' => ['auth', 
         Route::get('/', [UtilityTokenController::class, 'index'])->name('index');
         Route::post('purchase', [UtilityTokenController::class, 'purchase'])->name('purchase');
     });
+
+    }); // ── /owner-bound surfaces ──
 });
 
 Route::get('/pay/invoice/{token}', [InvoiceController::class, 'instantRentPayShow'])

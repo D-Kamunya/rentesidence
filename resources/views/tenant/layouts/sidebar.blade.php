@@ -24,6 +24,9 @@
                         <span>{{ __('My Rental Score') }}</span>
                     </a>
                 </li>
+                {{-- Owner-bound surfaces — hidden for an ownerless (standalone Helper) tenant so nothing
+                     links back to the former owner. Data is preserved; these return as history later. --}}
+                @if (empty($ownerless))
                 <li class="{{ @$navMarketPlaceMMActiveClass }}">
                     <a href="{{ route('tenant.product.index') }}" class="{{ @$navMarketPlaceActiveClass }}">
                         <i class="ri-store-2-fill "></i>
@@ -79,6 +82,7 @@
                         </a>
                     </li>
                 @endif
+                @endif {{-- /owner-bound surfaces (empty($ownerless)) --}}
                 <li>
                     <a href="javascript: void(0);" class="has-arrow">
                         <i class="ri-account-circle-line"></i>

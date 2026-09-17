@@ -83,6 +83,7 @@ class Kernel extends HttpKernel
         'isDemo' => IsDemo::class,
         'owner' => Owner::class,
         'tenant' => Tenant::class,
+        'tenant.owned' => \App\Http\Middleware\BlockOwnerlessTenant::class,
         'tenancy' => TenancyMiddleware::class,
         'maintainer' => Maintainer::class,
         'common' => CommonMiddleware::class,

@@ -32,6 +32,12 @@ class AppServiceProvider extends ServiceProvider
     public function boot()
     {
         Paginator::useBootstrapFive();
+
+        // Share the "ownerless" (standalone Tenant Helper) flag to every tenant view so the sidebar,
+        // dashboard and guards all read one source of truth. Cheap: ->tenant is loaded once/request.
+        \Illuminate\Support\Facades\View::composer('tenant.*', function ($view) {
+            $view->with('ownerless', optional(auth()->user())->isOwnerlessTenant() ?? false);
+        });
         try {
             Builder::defaultStringLength(191);
             $connection = DB::connection()->getPdo();
