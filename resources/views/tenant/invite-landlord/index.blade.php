@@ -50,6 +50,8 @@
   .il-flash{border-radius:10px;padding:11px 14px;font-size:13.5px;margin-bottom:16px;}
   .il-flash--ok{background:#E1F5EE;border:1px solid #9ad9c4;color:#0F6E56;}
   .il-flash--err{background:#FBE9E7;border:1px solid #f0b8b0;color:#B42318;}
+  .il-how{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-top:12px;}
+  @media (max-width:640px){.il-how{grid-template-columns:1fr;}}
 </style>
 
 <div class="page-content">
@@ -152,6 +154,51 @@
             </table>
           @endif
         </div>
+      </div>
+    </div>
+
+    {{-- The light "Invite your landlord" guide — placed where the tenant acts. How it works,
+         what to say, and the honest bit about when a reward is paid. --}}
+    <div class="il-card" style="margin-top:18px;">
+      <h3>{{ __('How it works') }}</h3>
+      <div class="il-how">
+        <div style="display:flex;flex-direction:column;gap:6px;">
+          <div style="width:30px;height:30px;border-radius:9px;display:grid;place-items:center;background:#E6F1FB;color:#185FA5;font-weight:700;font-size:14px;">1</div>
+          <div style="font-weight:650;color:#1b1e22;font-size:14px;">{{ __('Share your link') }}</div>
+          <div style="font-size:12.8px;color:#6b7280;line-height:1.5;">{{ __('Send your invite link to a landlord who isn\'t on Centresidence yet — by WhatsApp, SMS, however you like.') }}</div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:6px;">
+          <div style="width:30px;height:30px;border-radius:9px;display:grid;place-items:center;background:#E6F1FB;color:#185FA5;font-weight:700;font-size:14px;">2</div>
+          <div style="font-weight:650;color:#1b1e22;font-size:14px;">{{ __('They get set up') }}</div>
+          <div style="font-size:12.8px;color:#6b7280;line-height:1.5;">{{ __('They fill a short form; our team reviews it and helps them start collecting rent. You\'ll see the status here.') }}</div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:6px;">
+          <div style="width:30px;height:30px;border-radius:9px;display:grid;place-items:center;background:#E1F5EE;color:#0F6E56;font-weight:700;font-size:14px;">3</div>
+          <div style="font-weight:650;color:#1b1e22;font-size:14px;">
+            @if ($cashEnabled && $cashAmount > 0){{ __('You get rewarded') }}@else{{ __('You build your world') }}@endif
+          </div>
+          <div style="font-size:12.8px;color:#6b7280;line-height:1.5;">
+            @if ($cashEnabled && $cashAmount > 0)
+              {{ __('When they become a paying customer, your reward is confirmed, held briefly, then paid out per company protocol.') }}
+            @else
+              {{ __('Every landlord you bring on makes your rental record, deposits and reminders work better for you.') }}
+            @endif
+          </div>
+        </div>
+      </div>
+
+      <div style="margin-top:18px;padding-top:16px;border-top:1px solid #efebe3;">
+        <div style="font-weight:650;color:#1b1e22;font-size:14px;margin-bottom:8px;">{{ __('What to tell your landlord') }}</div>
+        <ul style="margin:0;padding-left:18px;color:#4a4f57;font-size:13.2px;line-height:1.7;">
+          <li>{{ __('Tenants pay rent from their phone (M-Pesa included) — no more chasing or cash trips.') }}</li>
+          <li>{{ __('Receipts send themselves, and every unit\'s status is visible at a glance.') }}</li>
+          <li>{{ __('It\'s free to start — the essentials cost nothing.') }}</li>
+        </ul>
+        @if ($cashEnabled && $cashAmount > 0)
+          <p style="margin:12px 0 0;font-size:12px;color:#9aa2ad;line-height:1.5;">
+            {{ __('A note on rewards: they\'re only paid once your referred landlord actually becomes a paying Centresidence customer, are held for a short window, and are paid on a schedule above a minimum balance — this keeps the program fair for everyone.') }}
+          </p>
+        @endif
       </div>
     </div>
   </div>
