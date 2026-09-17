@@ -52,9 +52,18 @@ class KycConfigService
     public function getTenantRequests($tenantId)
     {
         $verifications = KycVerification::where('tenant_id', $tenantId)->get()->keyBy('kyc_config_id');
+        $uploadedConfigIds = $verifications->keys()->all();
 
         return KycConfig::where('owner_user_id', auth()->id())
-            ->where('tenant_id', $tenantId)
+            ->where(function ($q) use ($tenantId, $uploadedConfigIds) {
+                // Tenant-scoped requests, PLUS any owner-wide (tenant_id NULL) or other config this
+                // tenant has actually uploaded against — otherwise a pending doc against an owner-wide
+                // config has no Accept/Reject here, so its owner attention signal can never clear.
+                $q->where('tenant_id', $tenantId);
+                if (!empty($uploadedConfigIds)) {
+                    $q->orWhereIn('id', $uploadedConfigIds);
+                }
+            })
             ->latest('id')
             ->get()
             ->map(function ($cfg) use ($verifications) {
