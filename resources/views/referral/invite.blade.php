@@ -13,7 +13,9 @@
   /* Light design language — matches the marketing site (paper ground, stone ink, amber accent).
      The frontend layout paints a light background, so hero text must be dark to be readable. */
   .inv-page{background:#FAF9F6;}
-  .inv-wrap{max-width:1080px;margin:0 auto;padding:56px 20px 80px;}
+  /* Top padding clears the sticky public header (House Hunt uses ~132px); 104px gives the
+     hero room to breathe below the solid nav without feeling detached. */
+  .inv-wrap{max-width:1080px;margin:0 auto;padding:104px 20px 80px;}
   .inv-hero{text-align:center;max-width:740px;margin:0 auto 40px;}
   .inv-eyebrow{display:inline-block;font-size:12px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;
     color:#185FA5;background:#E8F0F9;border:1px solid #CBDDF1;
