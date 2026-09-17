@@ -510,6 +510,24 @@ class LandlordReferralService
         return (float) $this->payableReferralsQuery($referrerUserId)->sum('reward_amount');
     }
 
+    /** All confirmed-but-not-yet-paid cash rewards (payable + still-held + reserved + in-review). */
+    public function confirmedCashTotal(int $referrerUserId): float
+    {
+        return (float) LandlordReferral::where('referrer_user_id', $referrerUserId)
+            ->where('status', LandlordReferral::STATUS_CONFIRMED)
+            ->where('reward_type', LandlordReferral::REWARD_CASH)
+            ->sum('reward_amount');
+    }
+
+    /** Total cash rewards already paid out to the tenant. */
+    public function paidTotal(int $referrerUserId): float
+    {
+        return (float) LandlordReferral::where('referrer_user_id', $referrerUserId)
+            ->where('status', LandlordReferral::STATUS_PAID)
+            ->where('reward_type', LandlordReferral::REWARD_CASH)
+            ->sum('reward_amount');
+    }
+
     /**
      * The referrals that make up a tenant's payable balance: confirmed cash rewards, past the
      * hold, not flagged for review, and not already reserved to an in-flight/settled payout.

@@ -126,11 +126,23 @@
         @if ($cashEnabled && $cashAmount > 0)
           <div class="il-card" style="margin-bottom:16px;">
             <h3>{{ __('Your rewards') }}</h3>
-            <div class="il-stat"><span class="k">{{ __('Ready to pay') }}</span><span class="v">{{ $currency }} {{ number_format($payableBalance, 0) }}</span></div>
+            {{-- Headline: everything earned (whether it has cleared the holding period or not). --}}
+            <div style="display:flex;align-items:baseline;gap:8px;margin:6px 0 4px;">
+              <span style="font-size:26px;font-weight:800;color:#0F6E56;line-height:1;">{{ $currency }} {{ number_format($totalEarned, 0) }}</span>
+              <span style="font-size:12px;color:#9aa2ad;">{{ __('earned so far') }}</span>
+            </div>
+            <div class="il-stat"><span class="k">{{ __('Ready to withdraw') }}</span><span class="v">{{ $currency }} {{ number_format($payableBalance, 0) }}</span></div>
+            @if ($pendingBalance > 0)
+              <div class="il-stat"><span class="k">{{ __('On the way (still clearing)') }}</span><span class="v" style="color:#B45309;">{{ $currency }} {{ number_format($pendingBalance, 0) }}</span></div>
+            @endif
+            @if ($paidBalance > 0)
+              <div class="il-stat"><span class="k">{{ __('Paid out') }}</span><span class="v">{{ $currency }} {{ number_format($paidBalance, 0) }}</span></div>
+            @endif
             <div class="il-stat"><span class="k">{{ __('Landlords confirmed') }}</span><span class="v">{{ $confirmedCount }}</span></div>
             @if (!$canGraduate && $graduationGoal > 0)
               <div class="il-stat"><span class="k">{{ __('To unlock affiliate') }}</span><span class="v">{{ max(0, $graduationGoal - $confirmedCount) }} {{ __('more') }}</span></div>
             @endif
+            <p style="margin:12px 0 0;font-size:11.5px;color:#9aa2ad;line-height:1.5;">{{ __('Rewards clear after a short holding period, then are paid to your M-Pesa on our regular payout schedule once above the minimum — you don\'t need to request it.') }}</p>
           </div>
         @endif
 

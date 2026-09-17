@@ -38,13 +38,20 @@ class InviteLandlordController extends Controller
             ->latest()
             ->get();
 
+        $payable   = $this->referrals->payableBalance($user->id);
+        $confirmed = $this->referrals->confirmedCashTotal($user->id);
+        $paid      = $this->referrals->paidTotal($user->id);
+
         return view('tenant.invite-landlord.index', [
             'pageTitle'       => $isConnected ? __('Refer a Landlord') : __('Invite Your Landlord'),
             'isConnected'     => $isConnected,
             'code'            => $code,
             'inviteUrl'       => route('referral.invite', $code),
             'referralList'    => $referralList,
-            'payableBalance'  => $this->referrals->payableBalance($user->id),
+            'payableBalance'  => $payable,
+            'pendingBalance'  => max(0, $confirmed - $payable), // confirmed but still within the hold window
+            'paidBalance'     => $paid,
+            'totalEarned'     => $confirmed + $paid,
             'confirmedCount'  => $this->referrals->confirmedCount($user->id),
             'cashEnabled'     => $this->referrals->cashEnabled(),
             'cashAmount'      => (float) config('referrals.cash_amount', 0),

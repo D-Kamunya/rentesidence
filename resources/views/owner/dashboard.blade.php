@@ -483,8 +483,8 @@
                                     <svg viewBox="0 0 120 80" fill="none" xmlns="http://www.w3.org/2000/svg">
                                         <!-- Pie chart / occupancy indicator -->
                                         <circle cx="45" cy="40" r="28" stroke="#E1F5EE" stroke-width="12" fill="none"/>
-                                        <circle cx="45" cy="40" r="28" stroke="#0F6E56" stroke-width="12" fill="none" 
-                                                stroke-dasharray="{{ round(($totalTenants / max($totalUnits, 1)) * 176) }} 176" 
+                                        <circle cx="45" cy="40" r="28" stroke="#0F6E56" stroke-width="12" fill="none"
+                                                stroke-dasharray="{{ round(($totalTenants / max($totalUnitsdash, 1)) * 176) }} 176"
                                                 stroke-linecap="round" opacity="0.7"
                                                 transform="rotate(-90 45 40)"/>
                                         <!-- Home icon inside -->
@@ -497,7 +497,7 @@
                                 <div class="stat-card__content">
                                     <p class="stat-card__label">Occupancy Rate</p>
                                     <p class="stat-card__value stat-card__value--green">
-                                        {{ $totalUnits > 0 ? round(($totalTenants / $totalUnits) * 100) : 0 }}%
+                                        {{ $totalUnitsdash > 0 ? round(($totalTenants / $totalUnitsdash) * 100) : 0 }}%
                                     </p>
                                 </div>
                             </div>
