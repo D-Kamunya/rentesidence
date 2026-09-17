@@ -42,6 +42,11 @@ class InvoiceController extends Controller
         $data['depositSettlement'] = $tenantRecord
             ? \App\Models\DepositSettlement::with('items')->where('tenant_id', $tenantRecord->id)->latest('id')->first()
             : null;
+        // Context for the settlement record (property + landlord) — makes it a self-contained,
+        // portable record once the tenant is ownerless and the affiliation has ended.
+        $data['settlementProperty'] = $tenantRecord ? optional(\App\Models\Property::find($tenantRecord->property_id))->name : null;
+        $settlementOwner = ($tenantRecord && $tenantRecord->owner_user_id) ? \App\Models\User::find($tenantRecord->owner_user_id) : null;
+        $data['settlementLandlord'] = $settlementOwner ? (trim($settlementOwner->first_name . ' ' . $settlementOwner->last_name) ?: null) : null;
 
         // Notice-to-vacate context: required period, earliest valid move-out, and any move-out.
         // activeNotice PERSISTS through completed (settlement done) so the tenant keeps seeing

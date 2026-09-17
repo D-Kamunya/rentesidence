@@ -119,6 +119,13 @@
                                     <span class="inv-settle__badge inv-settle__badge--warn">{{ $ds->owner_responded_at ? __('Landlord responded') : __('Issue reported') }}</span>
                                 @endif
                             </div>
+                            @if (!empty($settlementProperty) || !empty($settlementLandlord))
+                                <p class="inv-settle__context">
+                                    @if (!empty($settlementProperty)){{ $settlementProperty }}@endif
+                                    @if (!empty($settlementProperty) && !empty($settlementLandlord)) · @endif
+                                    @if (!empty($settlementLandlord)){{ __('Landlord') }}: {{ $settlementLandlord }}@endif
+                                </p>
+                            @endif
                             <div class="inv-settle__rows">
                                 <div><span>{{ __('Deposit held') }}</span><span>{{ currencyPrice($ds->deposit_held) }}</span></div>
                                 @if ((float) $ds->total_deductions > 0)
@@ -488,7 +495,8 @@
     .inv-settle { background:#fff; border:0.5px solid #e5e7eb; border-radius:12px; padding:16px 18px; }
     .inv-settle--confirmed { border-color:#B6E3D3; background:#F3FBF8; }
     .inv-settle--disputed { border-color:#F3C4BC; background:#FDF6F4; }
-    .inv-settle__head { display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:12px; }
+    .inv-settle__head { display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:6px; }
+    .inv-settle__context { font-size:12px; color:#6b7280; margin:0 0 12px; }
     .inv-settle__title { font-size:14px; font-weight:600; color:#111827; }
     .inv-settle__badge { font-size:11px; font-weight:600; padding:3px 10px; border-radius:99px; }
     .inv-settle__badge--ok { background:#E1F5EE; color:#0F6E56; }
