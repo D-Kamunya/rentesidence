@@ -26,7 +26,7 @@
                             </nav>
                         </div>
                         <div class="inv-header-actions">
-                            @if (!empty($activeNotice))
+                            @if (empty($tenancyEnded) && !empty($activeNotice))
                                 @php
                                     $vnStatus = $activeNotice->status;
                                     $vnDone   = $vnStatus === \App\Models\VacationNotice::STATUS_COMPLETED;
@@ -51,7 +51,7 @@
                                         {{ __('Remind landlord to finalize') }}
                                     </button>
                                 @endif
-                            @elseif (!empty($canGiveNotice))
+                            @elseif (empty($tenancyEnded) && !empty($canGiveNotice))
                                 <button type="button" class="inv-btn inv-btn--ghost" data-bs-toggle="modal" data-bs-target="#vacateModal">
                                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
                                     {{ __('Give notice to vacate') }}
@@ -185,7 +185,11 @@
                             <span class="inv-deposit-note__text">
                                 {{ __('Your landlord is holding a refundable security deposit of') }}
                                 <strong>{{ currencyPrice($depositHeld) }}</strong>
-                                {{ __('for you — returned when you move out, less any agreed deductions. Centresidence keeps the record.') }}
+                                @if (!empty($tenancyEnded))
+                                    {{ __('for you. Now that you\'ve moved out, it should be returned to you less any agreed deductions — your landlord will settle it. Centresidence keeps the record.') }}
+                                @else
+                                    {{ __('for you — returned when you move out, less any agreed deductions. Centresidence keeps the record.') }}
+                                @endif
                             </span>
                         </div>
                     @endif
