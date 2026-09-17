@@ -82,13 +82,17 @@
                             </div>
                         </div>
 
-                        {{-- Uploaded documents --}}
+                        {{-- Other files: the tenant's free-form FileManager attachments — a SEPARATE
+                             store from the KYC requests above (whose uploads show as thumbnails there).
+                             View-only; no review workflow. Named "Other Files" so it isn't mistaken for
+                             the tenant's KYC uploads (which live under Requested Documents). --}}
                         <div class="td-card">
                             <div class="td-card__head">
                                 <span class="td-card__ic"><i class="ri-folder-2-line"></i></span>
-                                <h3 class="td-card__title">{{ __('Uploaded Documents') }}</h3>
+                                <h3 class="td-card__title">{{ __('Other Files') }}</h3>
                             </div>
                             <div class="td-card__body" style="padding:14px 18px 18px;">
+                                <p style="font-size:12px;color:#9ca3af;margin:0 0 10px;">{{ __('Files attached to this tenant outside the document requests above.') }}</p>
                                 @forelse ($tenant->documents as $document)
                                     <div class="td-doc">
                                         {!! app(\App\Services\KycVerificationService::class)->docThumb($document->FileUrl) !!}
