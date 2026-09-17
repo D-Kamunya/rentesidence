@@ -15,6 +15,23 @@ function getDataViewRes(response) {
     } else {
         selector.find('.reply-sec').addClass('d-none');
     }
+
+    // Trial-enquiry onboarding: offer a one-click "Create owner" only for a trial-intent
+    // message that hasn't been onboarded yet; show a "created" note once it has.
+    var createFooter = document.getElementById('createOwnerFooter');
+    var createdFooter = document.getElementById('ownerCreatedFooter');
+    if (createFooter) createFooter.style.display = 'none';
+    if (createdFooter) createdFooter.style.display = 'none';
+    if (response.intent === 'trial') {
+        if (response.owner_id) {
+            if (createdFooter) createdFooter.style.display = '';
+        } else if (createFooter) {
+            var base = document.getElementById('createOwnerRoute').value;
+            document.getElementById('createOwnerForm').setAttribute('action', base.replace('ID_PLACEHOLDER', response.id));
+            createFooter.style.display = '';
+        }
+    }
+
     selector.modal('show')
 }
 

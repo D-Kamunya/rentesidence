@@ -6,6 +6,7 @@
             <div class="container-fluid">
                 <div class="page-content-wrapper bg-white p-30 radius-20 cs-controls">
                     @include('centresidence._design')
+                    @include('partials.dev-credentials')
 
                     <div class="row">
                         <div class="col-12">
@@ -96,11 +97,27 @@
                             title="{{ __('Reply') }}">{{ __('Reply') }}</button>
                     </div>
                 </form>
+                {{-- Trial-enquiry onboarding: a separate form (its own action) shown by JS only for a
+                     trial-intent message that hasn't been onboarded yet. Do it after due diligence. --}}
+                <div class="modal-footer justify-content-start" id="createOwnerFooter" style="display:none;border-top:1px dashed #E6E1D8;">
+                    <form method="POST" id="createOwnerForm" action="">
+                        @csrf
+                        <button type="submit" class="theme-btn"
+                            data-cs-confirm="{{ __('Create an owner account from this enquiry and send their login details? Do this only after confirming the request is genuine.') }}">
+                            {{ __('Create owner account') }}
+                        </button>
+                    </form>
+                    <span class="ms-2" style="font-size:12.5px;color:#9aa2ad;align-self:center;">{{ __('Trial enquiry — onboard after your due-diligence check.') }}</span>
+                </div>
+                <div class="modal-footer justify-content-start" id="ownerCreatedFooter" style="display:none;">
+                    <span style="font-size:13px;color:#0F6E56;font-weight:600;">✓ {{ __('An owner account has been created from this enquiry.') }}</span>
+                </div>
             </div>
         </div>
     </div>
     <input type="hidden" id="messageIndexRoute" value="{{ route('admin.message.index') }}">
     <input type="hidden" id="messageInfoRoute" value="{{ route('admin.message.get.info') }}">
+    <input type="hidden" id="createOwnerRoute" value="{{ route('admin.message.create-owner', ['id' => 'ID_PLACEHOLDER']) }}">
 @endsection
 
 @push('style')

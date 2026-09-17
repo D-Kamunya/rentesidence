@@ -11,6 +11,7 @@ use App\Models\Package;
 use App\Models\ReferralPayout;
 use App\Models\User;
 use App\Services\LandlordReferralService;
+use App\Services\OwnerOnboardingService;
 use App\Services\Payment\MpesaB2CService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
@@ -154,38 +155,15 @@ class ReferralPayoutController extends Controller
         try {
             $nameParts = explode(' ', trim($referral->invitee_name ?: $company->company_name), 2);
 
-            $user = new User();
-            $user->first_name = $nameParts[0] ?? 'Owner';
-            $user->last_name = $nameParts[1] ?? '';
-            $user->contact_number = $company->phone ?: $referral->invitee_phone;
-            $user->email = $email;
-            // System temp password → owner sets their own on first login (ForcePasswordChange).
-            $plainPassword = Str::random(10);
-            $user->password = Hash::make($plainPassword);
-            $user->must_change_password = 1;
-            $user->status = USER_STATUS_ACTIVE;
-            $user->email_verified_at = Carbon::now()->format('Y-m-d H:i:s');
-            $user->role = USER_ROLE_OWNER;
-            $user->verify_token = str_replace('-', '', Str::uuid()->toString());
-            $user->save();
-
-            $owner = new Owner();
-            $owner->user_id = $user->id;
-            $owner->affiliate_id = null; // a referral has no affiliate
-            $owner->save();
-
-            $defaultPackage = Package::where(['is_trail' => ACTIVE])->first();
-            $duration = (int) getOption('trail_duration', 1);
-            if ($defaultPackage) {
-                setUserPackage($user->id, $defaultPackage, $duration, 1);
-            }
-
-            // Same plug-and-play defaults a converted lead gets.
-            setOwnerGateway($user->id);
-            setOwnerInvoiceType($user->id);
-            setOwnerDefaultMaintenanceIssue($user->id);
-            setOwnerDefaultTicketTopics($user->id);
-            setOwnerDefaultDocumentConfig($user->id);
+            // Shared owner-onboarding machinery (temp password, forced reset, trial + defaults).
+            ['user' => $user, 'owner' => $owner, 'password' => $plainPassword] =
+                app(OwnerOnboardingService::class)->create([
+                    'first_name'   => $nameParts[0] ?? 'Owner',
+                    'last_name'    => $nameParts[1] ?? '',
+                    'phone'        => $company->phone ?: $referral->invitee_phone,
+                    'email'        => $email,
+                    'affiliate_id' => null, // a referral has no affiliate
+                ]);
 
             $lead->update([
                 'owner_id'         => $owner->id,
@@ -213,12 +191,7 @@ class ReferralPayoutController extends Controller
             // DEV ONLY: surface the temp password in a persistent panel so the flow can be tested
             // without live email/SMS. Never in prod.
             if (config('app.debug')) {
-                session()->flash('dev_credentials', [
-                    'name'     => trim($user->first_name . ' ' . $user->last_name),
-                    'email'    => $user->email,
-                    'phone'    => $user->contact_number,
-                    'password' => $plainPassword,
-                ]);
+                session()->flash('dev_credentials', app(OwnerOnboardingService::class)->devCredentials($user, $plainPassword));
             }
 
             return back()->with('success', __('Owner account created — login details sent to :email.', ['email' => $email]));

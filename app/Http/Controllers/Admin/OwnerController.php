@@ -51,40 +51,18 @@ class OwnerController extends Controller
     {
         DB::beginTransaction();
         try {
-            $user = new User();
-            $user->first_name = $request->first_name;
-            $user->last_name = $request->last_name;
-            $user->contact_number = $request->contact_number;
-            $user->email = $request->email;
-            // New onboarding lifecycle (matches tenant + referral creation): a system-generated
-            // temporary password delivered by email + SMS, and a forced reset on first login —
-            // the admin no longer types a password. Account is active immediately.
-            $plainPassword = Str::random(10);
-            $user->password = Hash::make($plainPassword);
-            $user->must_change_password = 1;
-            $user->status = USER_STATUS_ACTIVE;
-            $user->email_verified_at = Carbon::now()->format('Y-m-d H:i:s');
-            $user->role = USER_ROLE_OWNER;
-            $user->verify_token = str_replace('-', '', Str::uuid()->toString());
-            $user->save();
-
-            $owner = new Owner();
-            $owner->user_id = $user->id;
-            $owner->affiliate_id = $request->affiliate_id;
-            $owner->save();
-
-            $duration = (int) getOption('trail_duration', 1);
-
-            $defaultPackage = Package::where(['is_trail' => ACTIVE])->first();
-            if ($defaultPackage) {
-                setUserPackage($user->id, $defaultPackage, $duration, 1);
-            }
-
-            setOwnerGateway($user->id);
-            setOwnerInvoiceType($user->id);
-            setOwnerDefaultMaintenanceIssue($user->id);
-            setOwnerDefaultTicketTopics($user->id);
-            setOwnerDefaultDocumentConfig($user->id);
+            // Shared owner-onboarding machinery: system temp password, forced reset on first
+            // login, active + verified, trial package + plug-and-play defaults. The admin no
+            // longer types a password (matches tenant + referral + trial-message creation).
+            $onboard = app(\App\Services\OwnerOnboardingService::class)->create([
+                'first_name'   => $request->first_name,
+                'last_name'    => $request->last_name,
+                'phone'        => $request->contact_number,
+                'email'        => $request->email,
+                'affiliate_id' => $request->affiliate_id,
+            ]);
+            $user = $onboard['user'];
+            $plainPassword = $onboard['password'];
 
             DB::commit();
 
@@ -94,12 +72,7 @@ class OwnerController extends Controller
             // DEV ONLY: surface the temp password in a persistent panel so the flow can be tested
             // without live email/SMS (the toast flash disappears too fast to copy). Never in prod.
             if (config('app.debug')) {
-                session()->flash('dev_credentials', [
-                    'name'     => trim($user->first_name . ' ' . $user->last_name),
-                    'email'    => $user->email,
-                    'phone'    => $user->contact_number,
-                    'password' => $plainPassword,
-                ]);
+                session()->flash('dev_credentials', app(\App\Services\OwnerOnboardingService::class)->devCredentials($user, $plainPassword));
             }
             return back()->with('success', __('OWNER REGISTERED SUCCESSFULLY'));
         } catch (Exception $e) {
