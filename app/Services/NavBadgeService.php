@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\AffiliateWithdrawal;
 use App\Models\HouseHuntApplication;
 use App\Models\Invoice;
+use App\Models\LandlordReferral;
 
 /**
  * Sidebar count badges — the actionable "you have N things waiting" numbers on nav links,
@@ -39,14 +40,27 @@ class NavBadgeService
         ];
     }
 
-    /** Admin sidebar: pending affiliate withdrawals, referral payouts ready to pay. */
+    /**
+     * Admin sidebar: pending affiliate withdrawals, and referral items needing attention —
+     * owner sign-up requests to onboard PLUS reward payouts ready to pay.
+     */
     public function forAdmin(): array
     {
         return [
             'affiliate_withdrawals' => $this->safe(fn () => AffiliateWithdrawal::where('status', AFFILIATE_WITHDRAWAL_PENDING)->count()),
             'referral_payouts'      => $this->safe(function () {
                 $svc = app(LandlordReferralService::class);
-                return $svc->enabled() ? $svc->tenantsEligibleForPayout()->count() : 0;
+                if (! $svc->enabled()) {
+                    return 0;
+                }
+
+                // A referred landlord filled the form and is waiting to be onboarded into an owner.
+                $onboard = LandlordReferral::where('status', LandlordReferral::STATUS_LEAD_CREATED)
+                    ->whereNull('owner_id')
+                    ->whereHas('lead', fn ($q) => $q->whereNull('owner_id'))
+                    ->count();
+
+                return $onboard + $svc->tenantsEligibleForPayout()->count();
             }),
         ];
     }

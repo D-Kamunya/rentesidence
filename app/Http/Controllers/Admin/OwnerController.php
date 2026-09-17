@@ -56,8 +56,14 @@ class OwnerController extends Controller
             $user->last_name = $request->last_name;
             $user->contact_number = $request->contact_number;
             $user->email = $request->email;
-            $user->password = Hash::make($request->password);
-            $user->status = USER_STATUS_UNVERIFIED;
+            // New onboarding lifecycle (matches tenant + referral creation): a system-generated
+            // temporary password delivered by email + SMS, and a forced reset on first login —
+            // the admin no longer types a password. Account is active immediately.
+            $plainPassword = Str::random(10);
+            $user->password = Hash::make($plainPassword);
+            $user->must_change_password = 1;
+            $user->status = USER_STATUS_ACTIVE;
+            $user->email_verified_at = Carbon::now()->format('Y-m-d H:i:s');
             $user->role = USER_ROLE_OWNER;
             $user->verify_token = str_replace('-', '', Str::uuid()->toString());
             $user->save();
@@ -75,54 +81,27 @@ class OwnerController extends Controller
             }
 
             setOwnerGateway($user->id);
-            
             setOwnerInvoiceType($user->id);
-
             setOwnerDefaultMaintenanceIssue($user->id);
-
             setOwnerDefaultTicketTopics($user->id);
-
             setOwnerDefaultDocumentConfig($user->id);
 
             DB::commit();
-            if (getOption('send_email_status', 0) == ACTIVE) {
-                $emails = [$user->email];
-                $subject = getOption('app_name') . ' ' . __('welcome you');
-                $message = __('Welcome to Centresidence. You have successfully been registered');
-                $ownerUserId = $user->id;
 
-                $mailService = new MailService;
-                $mailService->sendWelcomeMail($emails, $subject, $message, $ownerUserId);
+            // Deliver the login credentials (email + SMS, forced reset on first login).
+            \App\Jobs\SendLoginDetailsJob::dispatch($user, $plainPassword);
 
-                if (getOption('email_verification_status', 0) == ACTIVE) {
-                    $subject = __('Account Verification') . ' ' . getOption('app_name');
-                    $message = __('Welcome to Centresidence! Please verify your account');
-                    $template = EmailTemplate::where('owner_user_id', $ownerUserId)->where('category', EMAIL_TEMPLATE_EMAIL_VERIFY)->where('status', ACTIVE)->first();
-                    if ($template) {
-                        $customizedFieldsArray = [
-                            '{{user_name}}' => $user->name,
-                            '{{verify_link}}' => route('user.email.verified', $user->verify_token),
-                            '{{otp}}' => $user->otp,
-                            '{{app_name}}' => getOption('app_name'),
-                        ];
-                        $content = getEmailTemplate($template->body, $customizedFieldsArray);
-                        $mailService->sendCustomizeMail($emails, $template->subject, $content);
-                    } else {
-                        $mailService->sendUserEmailVerificationMail($emails, $subject, $message, $user, $ownerUserId);
-                    }
-                    return redirect()->route('user.email.verify', $user->verify_token);
-                } else {
-                    $user->status = USER_STATUS_ACTIVE;
-                    $user->email_verified_at = Carbon::now()->format("Y-m-d H:i:s");
-                    $user->save();
-                }
-            } else {
-                $user->status = USER_STATUS_ACTIVE;
-                $user->email_verified_at = Carbon::now()->format("Y-m-d H:i:s");
-                $user->save();
+            // DEV ONLY: surface the temp password in a persistent panel so the flow can be tested
+            // without live email/SMS (the toast flash disappears too fast to copy). Never in prod.
+            if (config('app.debug')) {
+                session()->flash('dev_credentials', [
+                    'name'     => trim($user->first_name . ' ' . $user->last_name),
+                    'email'    => $user->email,
+                    'phone'    => $user->contact_number,
+                    'password' => $plainPassword,
+                ]);
             }
-            $message = __("OWNER REGISTERED SUCCESSFULLY");
-            return back()->with('success', $message);
+            return back()->with('success', __('OWNER REGISTERED SUCCESSFULLY'));
         } catch (Exception $e) {
             DB::rollBack();
             return back()->with('error', $e->getMessage());

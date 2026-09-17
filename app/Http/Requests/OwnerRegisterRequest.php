@@ -33,7 +33,8 @@ class OwnerRegisterRequest extends FormRequest
             'last_name' => ['required', 'string', 'max:255'],
             'contact_number' => ['required', 'string', 'unique:users,contact_number'],
             'email' => ['required', 'string', 'email', 'max:255', 'unique:users,email'],
-            'password' => ['required', 'string', 'min:6', 'confirmed'],
+            // Password is no longer admin-typed — the account gets a system temp password and a
+            // forced reset on first login (new onboarding lifecycle).
             'g-recaptcha-response' => [new ReCaptcha]
         ];
     }

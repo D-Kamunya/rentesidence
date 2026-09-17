@@ -72,7 +72,7 @@ class ReferralPayoutController extends Controller
         $recent         = LandlordReferral::with('referrer')->latest()->limit(50)->get();
 
         return view('admin.referral-payouts.index', [
-            'pageTitle'       => __('Referral Payouts'),
+            'pageTitle'       => __('Referrals'),
             'eligible'        => $eligible,
             'onboardRequests' => $onboardRequests,
             'history'         => $history,
@@ -209,6 +209,17 @@ class ReferralPayoutController extends Controller
 
             // Deliver the login credentials (email + SMS, forced reset on first login).
             SendLoginDetailsJob::dispatch($user, $plainPassword);
+
+            // DEV ONLY: surface the temp password in a persistent panel so the flow can be tested
+            // without live email/SMS. Never in prod.
+            if (config('app.debug')) {
+                session()->flash('dev_credentials', [
+                    'name'     => trim($user->first_name . ' ' . $user->last_name),
+                    'email'    => $user->email,
+                    'phone'    => $user->contact_number,
+                    'password' => $plainPassword,
+                ]);
+            }
 
             return back()->with('success', __('Owner account created — login details sent to :email.', ['email' => $email]));
         } catch (\Throwable $e) {

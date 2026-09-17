@@ -187,7 +187,7 @@
                         <li>
                             <a class="{{ @$navReferralPayoutsMMShowClass }}" href="{{ route('admin.referral-payouts.index') }}">
                             <i class="ri-hand-coin-line" aria-hidden="true"></i>
-                                <span>{{ __('Referral Payouts') }}@include('partials.nav-count', ['n' => $navBadges['referral_payouts'] ?? 0])</span>
+                                <span>{{ __('Referrals') }}@include('partials.nav-count', ['n' => $navBadges['referral_payouts'] ?? 0])</span>
                             </a>
                         </li>
                         @endif

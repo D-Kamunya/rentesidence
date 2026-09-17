@@ -36,12 +36,13 @@
           </style>
 
           <div class="rp-head">
-            <h1>{{ __('Referral Payouts') }}</h1>
+            <h1>{{ __('Referrals') }}</h1>
             <p>{{ __('Invite-a-landlord rewards. Payouts are batched per tenant and only appear once past the holding period and above the minimum of') }} {{ $currency }} {{ number_format($minPayout) }}.</p>
           </div>
 
           @if (session('success'))<div class="rp-flash rp-flash--ok">{{ session('success') }}</div>@endif
           @if (session('error'))<div class="rp-flash rp-flash--err">{{ session('error') }}</div>@endif
+          @include('partials.dev-credentials')
 
           {{-- ── Funnel at a glance ── --}}
           @php

@@ -7,6 +7,7 @@
             <div class="container-fluid">
                 <!-- Page Content Wrapper Start -->
                 <div class="page-content-wrapper bg-white p-30 radius-20">
+                    @include('partials.dev-credentials')
                     <!-- start page title -->
                     <div class="row">
                         <div class="col-12">
@@ -113,24 +114,10 @@
                                                         </div>
                                                     </div>
                                                      <div class="row">
-                                                        <div class="col-md-6 mb-25">
-                                                            <label
-                                                                class="label-text-title color-heading font-medium mb-2">{{ __('Password') }}
-                                                                <span class="text-danger">*</span></label>
-                                                            <input type="password" name="password"
-                                                                class="form-control"
-                                                                placeholder="{{ __('Password') }}">
-                                                            @error('password')
-                                                                <span class="text-danger">{{ $message }}</span>
-                                                            @enderror
-                                                        </div>
-                                                        <div class="col-md-6 mb-25">
-                                                            <label
-                                                                class="label-text-title color-heading font-medium mb-2">{{ __('Password Confirmation') }}
-                                                                <span class="text-danger">*</span></label>
-                                                            <input type="password" name="password_confirmation"
-                                                                class="form-control"
-                                                                placeholder="{{ __('Confirmation Password') }}">
+                                                        <div class="col-md-12 mb-25">
+                                                            <div class="alert alert-info" style="margin:0;font-size:13.5px;">
+                                                                {{ __('No password needed — the owner gets a system-generated temporary password by email and SMS, and is asked to set their own on first login.') }}
+                                                            </div>
                                                         </div>
                                                     </div>
                                                 </div>
