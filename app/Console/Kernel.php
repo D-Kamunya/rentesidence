@@ -56,6 +56,10 @@ class Kernel extends ConsoleKernel
         // Escrow safety net: release held marketplace proceeds after the acceptance window.
         $schedule->command('marketplace:auto-release-settlements')->dailyAt('03:30')->withoutOverlapping();
 
+        // Invite-a-landlord: confirm rewards for referred owners who crossed the revenue
+        // threshold without buying a subscription (the paid-subscription case is instant).
+        $schedule->command('referrals:evaluate-revenue')->dailyAt('04:00')->withoutOverlapping();
+
     }
 
     /**

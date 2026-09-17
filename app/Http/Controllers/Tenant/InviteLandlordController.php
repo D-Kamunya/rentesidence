@@ -76,6 +76,17 @@ class InviteLandlordController extends Controller
             return back()->with('error', __('You\'ve sent a lot of invites today — please try again tomorrow.'));
         }
 
-        return back()->with('success', __('Invite saved. Share your link with your landlord to get started.'));
+        // Reach the landlord on the tenant's behalf (platform-paid SMS + on-brand email).
+        // No account is created — they still fill the vetted public form at /invite/{code}.
+        $user = auth()->user();
+        \App\Jobs\SendLandlordInviteJob::dispatch(
+            trim(($user->first_name ?? '') . ' ' . ($user->last_name ?? '')) ?: null,
+            route('referral.invite', $referral->code),
+            $referral->invitee_phone,
+            $referral->invitee_email,
+            $referral->invitee_name,
+        );
+
+        return back()->with('success', __('Invite sent! We\'ve reached out to your landlord, and you can share your link too.'));
     }
 }

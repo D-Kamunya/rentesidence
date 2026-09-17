@@ -31,7 +31,7 @@ class ReferralIntakeTest extends TestCase
         config(['database.default' => 'refi_sqlite']);
         DB::purge('refi_sqlite');
 
-        config(['referrals.enabled' => true, 'referrals.cash_enabled' => true, 'referrals.cash_amount' => 200, 'referrals.currency' => 'KES', 'referrals.hold_days' => 30]);
+        config(['referrals.enabled' => true, 'referrals.cash_enabled' => true, 'referrals.cash_amount' => 200, 'referrals.currency' => 'KES', 'referrals.hold_days' => 30, 'referrals.revenue_threshold' => 1000]);
 
         Schema::create('users', function ($t) {
             $t->id();
@@ -80,6 +80,31 @@ class ReferralIntakeTest extends TestCase
             $t->id();
             $t->unsignedBigInteger('user_id')->index();
             $t->softDeletes();
+            $t->timestamps();
+        });
+
+        Schema::create('subscription_orders', function ($t) {
+            $t->id();
+            $t->unsignedBigInteger('user_id');
+            $t->float('amount')->default(0);
+            $t->tinyInteger('payment_status')->default(0); // 1 = paid
+            $t->softDeletes();
+            $t->timestamps();
+        });
+
+        Schema::create('owner_wallets', function ($t) {
+            $t->id();
+            $t->unsignedBigInteger('user_id')->unique();
+            $t->decimal('balance', 12, 2)->default(0);
+            $t->timestamps();
+        });
+
+        Schema::create('wallet_transactions', function ($t) {
+            $t->id();
+            $t->unsignedBigInteger('owner_wallet_id');
+            $t->decimal('gross_amount', 12, 2)->default(0);
+            $t->decimal('net_amount', 12, 2)->default(0);
+            $t->string('type')->default('credit');
             $t->timestamps();
         });
 
@@ -205,5 +230,33 @@ class ReferralIntakeTest extends TestCase
 
         // An unknown user id (no owner record) confirms nothing.
         $this->assertNull($this->referrals->confirmForOwnerUser(999999, 'first_subscription'));
+    }
+
+    public function test_revenue_sweep_confirms_owner_who_crossed_threshold_without_a_subscription(): void
+    {
+        // Referred owner is converted but hasn't bought a subscription.
+        $tenant = User::create(['first_name' => 'Rae', 'role' => USER_ROLE_TENANT]);
+        $code = $this->referrals->codeForTenant($tenant->id);
+        $ownerUser = User::create(['first_name' => 'Ray', 'role' => USER_ROLE_OWNER]);
+        $ownerId = DB::table('owners')->insertGetId(['user_id' => $ownerUser->id, 'created_at' => now(), 'updated_at' => now()]);
+        $lead = $this->leads->createReferralMarketplaceLead(['company_name' => 'Ray Rentals', 'phone' => '254700666000', 'contact_person_name' => 'Ray']);
+        $this->referrals->attachLead($code, $lead);
+        $lead->update(['owner_id' => $ownerId, 'status' => 'converted']);
+
+        // Below threshold → nothing confirmed.
+        $this->assertSame(0, $this->referrals->confirmEligibleByRevenue());
+        $this->assertSame('lead_created', $lead->fresh() ? LandlordReferral::where('lead_id', $lead->id)->value('status') : null);
+
+        // Owner earns real money through us via wallet credits (rent/marketplace) ≥ 1000.
+        $walletId = DB::table('owner_wallets')->insertGetId(['user_id' => $ownerUser->id, 'balance' => 0, 'created_at' => now(), 'updated_at' => now()]);
+        DB::table('wallet_transactions')->insert(['owner_wallet_id' => $walletId, 'gross_amount' => 1200, 'net_amount' => 1188, 'type' => 'credit', 'created_at' => now(), 'updated_at' => now()]);
+
+        $this->assertSame(1, $this->referrals->confirmEligibleByRevenue());
+        $ref = LandlordReferral::where('owner_id', $ownerId)->first();
+        $this->assertSame(LandlordReferral::STATUS_CONFIRMED, $ref->status);
+        $this->assertSame('revenue_threshold', $ref->trigger_reason);
+
+        // Idempotent — a second sweep confirms nothing more.
+        $this->assertSame(0, $this->referrals->confirmEligibleByRevenue());
     }
 }

@@ -5,9 +5,11 @@ namespace App\Services;
 use App\Models\LandlordReferral;
 use App\Models\LandlordReferralCode;
 use App\Models\Lead;
+use App\Models\Owner;
 use App\Models\User;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
 
 /**
@@ -221,9 +223,87 @@ class LandlordReferralService
             return null;
         }
 
-        $ownerId = \App\Models\Owner::where('user_id', $ownerUserId)->value('id');
+        $ownerId = Owner::where('user_id', $ownerUserId)->value('id');
 
         return $ownerId ? $this->confirmForOwner((int) $ownerId, $reason) : null;
+    }
+
+    /**
+     * Real money the owner has moved THROUGH us — the second "real customer" signal, for an
+     * owner who monetizes without ever buying a subscription (e.g. a transaction-mode owner
+     * earning us rent commission). Sums paid subscription orders + the gross of every wallet
+     * CREDIT (rent / marketplace / token net all land here). A phantom owner has neither, so
+     * this can't be farmed. Guarded so it degrades to 0 on a bare/partial schema.
+     */
+    public function realMoneyThroughUsForOwnerUser(int $ownerUserId): float
+    {
+        $total = 0.0;
+
+        if (Schema::hasTable('subscription_orders')) {
+            $total += (float) DB::table('subscription_orders')
+                ->where('user_id', $ownerUserId)
+                ->where('payment_status', ORDER_PAYMENT_STATUS_PAID)
+                ->whereNull('deleted_at')
+                ->sum('amount');
+        }
+
+        if (Schema::hasTable('owner_wallets') && Schema::hasTable('wallet_transactions')) {
+            $walletId = DB::table('owner_wallets')->where('user_id', $ownerUserId)->value('id');
+            if ($walletId) {
+                $total += (float) DB::table('wallet_transactions')
+                    ->where('owner_wallet_id', $walletId)
+                    ->where('type', 'credit')
+                    ->sum('gross_amount');
+            }
+        }
+
+        return $total;
+    }
+
+    /**
+     * Sweep attributed-but-unconfirmed referrals whose owner has crossed the revenue threshold
+     * and confirm them ('revenue_threshold'). Complements the paid-subscription hook: this is the
+     * "OR cumulative revenue ≥ threshold" half of the real-customer bar. Returns the count confirmed.
+     * Idempotent (confirmForOwner rewards once), so it's safe to run daily.
+     */
+    public function confirmEligibleByRevenue(): int
+    {
+        if (! $this->enabled()) {
+            return 0;
+        }
+
+        $threshold = (float) config('referrals.revenue_threshold', 0);
+        if ($threshold <= 0) {
+            return 0;
+        }
+
+        // Candidates: attributed (pending/lead_created), not yet rewarded, whose lead has
+        // converted to an owner. The owner_id lives on the linked lead until confirm sets it.
+        $candidates = LandlordReferral::whereIn('status', [LandlordReferral::STATUS_PENDING, LandlordReferral::STATUS_LEAD_CREATED])
+            ->whereHas('lead', fn ($q) => $q->whereNotNull('owner_id'))
+            ->with('lead')
+            ->get();
+
+        $confirmed = 0;
+        foreach ($candidates as $referral) {
+            $ownerId = (int) optional($referral->lead)->owner_id;
+            if (! $ownerId) {
+                continue;
+            }
+
+            $ownerUserId = Owner::where('id', $ownerId)->value('user_id');
+            if (! $ownerUserId) {
+                continue;
+            }
+
+            if ($this->realMoneyThroughUsForOwnerUser((int) $ownerUserId) >= $threshold) {
+                if ($this->confirmForOwner($ownerId, 'revenue_threshold')) {
+                    $confirmed++;
+                }
+            }
+        }
+
+        return $confirmed;
     }
 
     /**
