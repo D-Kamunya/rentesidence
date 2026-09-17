@@ -30,6 +30,9 @@
             .rp-flash{border-radius:10px;padding:11px 14px;font-size:13.5px;margin-bottom:18px;}
             .rp-flash--ok{background:#E1F5EE;border:1px solid #9ad9c4;color:#0F6E56;}
             .rp-flash--err{background:#FBE9E7;border:1px solid #f0b8b0;color:#B42318;}
+            .rp-kpis{display:grid;grid-template-columns:repeat(6,1fr);gap:12px;margin-bottom:30px;}
+            @media (max-width:900px){.rp-kpis{grid-template-columns:repeat(3,1fr);}}
+            @media (max-width:520px){.rp-kpis{grid-template-columns:repeat(2,1fr);}}
           </style>
 
           <div class="rp-head">
@@ -39,6 +42,27 @@
 
           @if (session('success'))<div class="rp-flash rp-flash--ok">{{ session('success') }}</div>@endif
           @if (session('error'))<div class="rp-flash rp-flash--err">{{ session('error') }}</div>@endif
+
+          {{-- ── Funnel at a glance ── --}}
+          @php
+            $sc = fn($k) => (int) ($statusCounts[$k] ?? 0);
+            $kpis = [
+              [__('Referrers'), $totalReferrers, '#185FA5'],
+              [__('Invites sent'), $sc('pending'), '#B45309'],
+              [__('Signed up'), $sc('lead_created'), '#5B4B9E'],
+              [__('Confirmed'), $sc('confirmed'), '#0F6E56'],
+              [__('Paid'), $sc('paid'), '#0F6E56'],
+              [__('Clawed back'), $sc('clawed_back'), '#B42318'],
+            ];
+          @endphp
+          <div class="rp-kpis">
+            @foreach ($kpis as [$label, $val, $col])
+              <div style="background:#fff;border:1px solid #eee;border-radius:12px;padding:14px 16px;">
+                <div style="font-size:24px;font-weight:800;color:{{ $col }};line-height:1;">{{ number_format($val) }}</div>
+                <div style="font-size:11.5px;color:#9aa2ad;margin-top:5px;text-transform:uppercase;letter-spacing:.04em;font-weight:600;">{{ $label }}</div>
+              </div>
+            @endforeach
+          </div>
 
           {{-- ── Eligible for payout ── --}}
           <div class="rp-sec">
@@ -106,6 +130,44 @@
             </table>
           </div>
           @endif
+
+          {{-- ── Recent referral activity ── --}}
+          <div class="rp-sec">
+            <h2>{{ __('Recent referral activity') }}</h2>
+            <p class="hint">{{ __('Every invite tenants have made — visible from the moment it is created, long before anything is payable.') }}</p>
+            @php
+              $refStatusMeta = [
+                'pending'      => [__('Invite sent'), 'pending'],
+                'lead_created' => [__('Signed up'), 'processing'],
+                'confirmed'    => [__('Confirmed'), 'paid'],
+                'paid'         => [__('Reward paid'), 'paid'],
+                'clawed_back'  => [__('Clawed back'), 'failed'],
+                'rejected'     => [__('Rejected'), 'cancelled'],
+                'expired'      => [__('Expired'), 'cancelled'],
+              ];
+            @endphp
+            @if ($recent->isEmpty())
+              <div class="rp-empty">{{ __('No referrals yet.') }}</div>
+            @else
+              <table class="rp-table">
+                <thead><tr><th>{{ __('Referrer') }}</th><th>{{ __('Invited landlord') }}</th><th>{{ __('Status') }}</th><th>{{ __('When') }}</th></tr></thead>
+                <tbody>
+                  @foreach ($recent as $r)
+                    @php [$lbl, $cls] = $refStatusMeta[$r->status] ?? [ucfirst($r->status), 'cancelled']; @endphp
+                    <tr>
+                      <td>{{ optional($r->referrer)->first_name }} {{ optional($r->referrer)->last_name }} <span style="color:#9aa2ad;">#{{ $r->referrer_user_id }}</span></td>
+                      <td>
+                        {{ $r->invitee_name ?: ($r->invitee_company ?: '—') }}
+                        @if ($r->invitee_phone || $r->invitee_email)<div style="font-size:11.5px;color:#9aa2ad;">{{ $r->invitee_phone ?: $r->invitee_email }}</div>@endif
+                      </td>
+                      <td><span class="rp-chip rp-chip--{{ $cls }}">{{ $lbl }}</span>@if($r->needs_review)<span class="rp-chip rp-chip--pending" style="margin-left:5px;">{{ __('review') }}</span>@endif</td>
+                      <td>{{ $r->created_at->format('M j, Y') }}</td>
+                    </tr>
+                  @endforeach
+                </tbody>
+              </table>
+            @endif
+          </div>
 
           {{-- ── Payout history ── --}}
           <div class="rp-sec">

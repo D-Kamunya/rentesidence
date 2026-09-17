@@ -186,7 +186,7 @@
                         @if (config('referrals.enabled'))
                         <li>
                             <a class="{{ @$navReferralPayoutsMMShowClass }}" href="{{ route('admin.referral-payouts.index') }}">
-                            <i class="fa fa-handshake-o" aria-hidden="true"></i>
+                            <i class="ri-hand-coin-line" aria-hidden="true"></i>
                                 <span>{{ __('Referral Payouts') }}</span>
                             </a>
                         </li>

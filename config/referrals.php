@@ -21,8 +21,10 @@ return [
     'cash_enabled' => env('LANDLORD_REFERRAL_CASH', true),
 
     // One-time cash bonus per referred owner who becomes a real customer (bounded CAC).
-    // Conservative start; treat it as a customer-acquisition cost.
-    'cash_amount' => (float) env('LANDLORD_REFERRAL_CASH_AMOUNT', 200),
+    // This default is the go-live value — no env or manual setup needed at deploy; override
+    // per market via env. Safe to keep meaningful because the hold + min-payout batch mean a
+    // tenant only cashes out after the referred owner has transacted real money (CAC self-funds).
+    'cash_amount' => (float) env('LANDLORD_REFERRAL_CASH_AMOUNT', 500),
     'currency'    => env('LANDLORD_REFERRAL_CURRENCY', 'KES'),
 
     // The "real customer" bar — protects CAC and kills the farm-a-tiny-payment attack.

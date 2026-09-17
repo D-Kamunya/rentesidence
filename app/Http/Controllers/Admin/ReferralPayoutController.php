@@ -48,13 +48,21 @@ class ReferralPayoutController extends Controller
             ->latest()
             ->get();
 
+        // Full-funnel visibility: every referral tenants have made, not just the payable ones.
+        $statusCounts   = LandlordReferral::selectRaw('status, COUNT(*) as c')->groupBy('status')->pluck('c', 'status');
+        $totalReferrers = (int) LandlordReferral::distinct('referrer_user_id')->count('referrer_user_id');
+        $recent         = LandlordReferral::with('referrer')->latest()->limit(50)->get();
+
         return view('admin.referral-payouts.index', [
-            'pageTitle' => __('Referral Payouts'),
-            'eligible'  => $eligible,
-            'history'   => $history,
-            'flagged'   => $flagged,
-            'currency'  => config('referrals.currency', 'KES'),
-            'minPayout' => (float) config('referrals.min_payout', 0),
+            'pageTitle'      => __('Referral Payouts'),
+            'eligible'       => $eligible,
+            'history'        => $history,
+            'flagged'        => $flagged,
+            'statusCounts'   => $statusCounts,
+            'totalReferrers' => $totalReferrers,
+            'recent'         => $recent,
+            'currency'       => config('referrals.currency', 'KES'),
+            'minPayout'      => (float) config('referrals.min_payout', 0),
         ]);
     }
 

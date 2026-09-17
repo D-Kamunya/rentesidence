@@ -12,7 +12,7 @@
         'rejected'     => [__('Not eligible'),        '#6b7280', '#f3f4f6'],
         'expired'      => [__('Expired'),             '#6b7280', '#f3f4f6'],
     ];
-    $shareText = __('I use Centresidence to manage my rent — you should put your property on it. Get set up here: ') . $inviteUrl;
+    $shareText = __('I use Centresidence for my rent — it\'s a full rental property management system. You should put your rental properties on it. Get set up here: ') . $inviteUrl;
 @endphp
 
 <style>
@@ -30,8 +30,10 @@
   .il-btn--p{background:#185FA5;color:#fff;} .il-btn--p:hover{filter:brightness(1.07);}
   .il-btn--wa{background:#25d366;color:#fff;} .il-btn--wa:hover{filter:brightness(1.05);}
   .il-btn--ghost{background:#fff;border:1px solid #e6e1d8;color:#185FA5;}
-  .il-reward{display:flex;gap:13px;align-items:flex-start;background:#f0f6fc;border:1px solid #cbddf1;border-radius:12px;padding:14px 16px;margin-top:18px;}
-  .il-reward .amt{font-size:20px;font-weight:800;color:#185FA5;line-height:1;white-space:nowrap;}
+  .il-reward{display:flex;gap:16px;align-items:center;background:#f0f6fc;border:1px solid #cbddf1;border-radius:12px;padding:16px 18px;margin-top:18px;}
+  .il-reward .amtbox{flex:none;text-align:center;padding-right:16px;border-right:1px solid #cbddf1;}
+  .il-reward .amt{font-size:26px;font-weight:800;color:#185FA5;line-height:1;white-space:nowrap;}
+  .il-reward .amtlbl{font-size:10px;color:#6b8fb0;text-transform:uppercase;letter-spacing:.05em;font-weight:700;margin-top:5px;}
   .il-reward .txt{font-size:12.8px;color:#4a4f57;line-height:1.5;}
   .il-stat{display:flex;justify-content:space-between;align-items:baseline;padding:10px 0;border-top:1px solid #efebe3;}
   .il-stat:first-of-type{border-top:none;}
@@ -88,7 +90,10 @@
 
           @if ($cashEnabled && $cashAmount > 0)
             <div class="il-reward">
-              <div class="amt">{{ $currency }} {{ number_format($cashAmount) }}</div>
+              <div class="amtbox">
+                <div class="amt">{{ $currency }} {{ number_format($cashAmount) }}</div>
+                <div class="amtlbl">{{ __('per referral') }}</div>
+              </div>
               <div class="txt">{{ __('Your one-time reward for each landlord you refer who becomes a paying Centresidence customer. Rewards are held for a short period, then paid out per company protocol above a minimum balance.') }}</div>
             </div>
           @endif
