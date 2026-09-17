@@ -3,13 +3,21 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Jobs\SendLoginDetailsJob;
 use App\Models\LandlordReferral;
+use App\Models\LeadActivity;
+use App\Models\Owner;
+use App\Models\Package;
 use App\Models\ReferralPayout;
 use App\Models\User;
 use App\Services\LandlordReferralService;
 use App\Services\Payment\MpesaB2CService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Str;
 
 /**
  * Admin review + settlement of invite-a-landlord reward payouts.
@@ -48,21 +56,32 @@ class ReferralPayoutController extends Controller
             ->latest()
             ->get();
 
+        // Owner sign-up requests — a referred landlord filled the form; admin onboards them into
+        // an owner in one click (a referral is the platform's lead, never an affiliate's to claim).
+        // Only those whose lead exists and hasn't become an owner yet.
+        $onboardRequests = LandlordReferral::where('status', LandlordReferral::STATUS_LEAD_CREATED)
+            ->whereNull('owner_id')
+            ->whereHas('lead', fn ($q) => $q->whereNull('owner_id'))
+            ->with(['referrer', 'lead.company'])
+            ->latest()
+            ->get();
+
         // Full-funnel visibility: every referral tenants have made, not just the payable ones.
         $statusCounts   = LandlordReferral::selectRaw('status, COUNT(*) as c')->groupBy('status')->pluck('c', 'status');
         $totalReferrers = (int) LandlordReferral::distinct('referrer_user_id')->count('referrer_user_id');
         $recent         = LandlordReferral::with('referrer')->latest()->limit(50)->get();
 
         return view('admin.referral-payouts.index', [
-            'pageTitle'      => __('Referral Payouts'),
-            'eligible'       => $eligible,
-            'history'        => $history,
-            'flagged'        => $flagged,
-            'statusCounts'   => $statusCounts,
-            'totalReferrers' => $totalReferrers,
-            'recent'         => $recent,
-            'currency'       => config('referrals.currency', 'KES'),
-            'minPayout'      => (float) config('referrals.min_payout', 0),
+            'pageTitle'       => __('Referral Payouts'),
+            'eligible'        => $eligible,
+            'onboardRequests' => $onboardRequests,
+            'history'         => $history,
+            'flagged'         => $flagged,
+            'statusCounts'    => $statusCounts,
+            'totalReferrers'  => $totalReferrers,
+            'recent'          => $recent,
+            'currency'        => config('referrals.currency', 'KES'),
+            'minPayout'       => (float) config('referrals.min_payout', 0),
         ]);
     }
 
@@ -99,6 +118,104 @@ class ReferralPayoutController extends Controller
         $this->referrals->markPayoutProcessing($payout, $result['reference'] ?? null);
 
         return back()->with('success', __('M-Pesa payout initiated — it will confirm once M-Pesa completes the transfer.'));
+    }
+
+    /**
+     * One-click: turn a referred landlord's sign-up request into a full owner account.
+     *
+     * Reuses the same onboarding lifecycle as a lead conversion — an auto-generated temporary
+     * password, credentials delivered by email + SMS, and a forced reset on first login
+     * (must_change_password) — but WITHOUT requiring an affiliate (a referral is the platform's
+     * lead). Links the lead and the referral to the new owner so the reward confirms when the
+     * owner later pays. Atomic; credentials go out only after the commit.
+     */
+    public function createOwner(Request $request, int $referralId)
+    {
+        $referral = LandlordReferral::with('lead.company')->findOrFail($referralId);
+        $lead = $referral->lead;
+
+        if (! $lead) {
+            return back()->with('error', __('This request has no lead attached.'));
+        }
+        if ($lead->owner_id || $referral->owner_id) {
+            return back()->with('error', __('An owner account already exists for this request.'));
+        }
+
+        $company = $lead->company;
+        $email = $company->email ?? $referral->invitee_email;
+        if (empty($email) || ! filter_var($email, FILTER_VALIDATE_EMAIL)) {
+            return back()->with('error', __('This request has no valid email — the account and its setup link are keyed on it.'));
+        }
+        if (User::where('email', $email)->exists()) {
+            return back()->with('error', __('An account already exists with this email address.'));
+        }
+
+        DB::beginTransaction();
+        try {
+            $nameParts = explode(' ', trim($referral->invitee_name ?: $company->company_name), 2);
+
+            $user = new User();
+            $user->first_name = $nameParts[0] ?? 'Owner';
+            $user->last_name = $nameParts[1] ?? '';
+            $user->contact_number = $company->phone ?: $referral->invitee_phone;
+            $user->email = $email;
+            // System temp password → owner sets their own on first login (ForcePasswordChange).
+            $plainPassword = Str::random(10);
+            $user->password = Hash::make($plainPassword);
+            $user->must_change_password = 1;
+            $user->status = USER_STATUS_ACTIVE;
+            $user->email_verified_at = Carbon::now()->format('Y-m-d H:i:s');
+            $user->role = USER_ROLE_OWNER;
+            $user->verify_token = str_replace('-', '', Str::uuid()->toString());
+            $user->save();
+
+            $owner = new Owner();
+            $owner->user_id = $user->id;
+            $owner->affiliate_id = null; // a referral has no affiliate
+            $owner->save();
+
+            $defaultPackage = Package::where(['is_trail' => ACTIVE])->first();
+            $duration = (int) getOption('trail_duration', 1);
+            if ($defaultPackage) {
+                setUserPackage($user->id, $defaultPackage, $duration, 1);
+            }
+
+            // Same plug-and-play defaults a converted lead gets.
+            setOwnerGateway($user->id);
+            setOwnerInvoiceType($user->id);
+            setOwnerDefaultMaintenanceIssue($user->id);
+            setOwnerDefaultTicketTopics($user->id);
+            setOwnerDefaultDocumentConfig($user->id);
+
+            $lead->update([
+                'owner_id'         => $owner->id,
+                'status'           => 'converted',
+                'converted_at'     => now(),
+                'last_activity_at' => now(),
+            ]);
+            optional($company)->update(['sales_status' => 'client']);
+
+            // Link the referral to the owner so the reward confirms when they transact.
+            $referral->update(['owner_id' => $owner->id]);
+
+            LeadActivity::create([
+                'lead_id'     => $lead->id,
+                'user_id'     => auth()->id(),
+                'type'        => 'trial_started',
+                'description' => 'Owner account created by admin from a tenant invite-a-landlord referral.',
+            ]);
+
+            DB::commit();
+
+            // Deliver the login credentials (email + SMS, forced reset on first login).
+            SendLoginDetailsJob::dispatch($user, $plainPassword);
+
+            return back()->with('success', __('Owner account created — login details sent to :email.', ['email' => $email]));
+        } catch (\Throwable $e) {
+            DB::rollBack();
+            Log::error('Referral owner creation failed: ' . $e->getMessage(), ['referral_id' => $referralId]);
+            return back()->with('error', __('Could not create the owner account. Please try again.'));
+        }
     }
 
     /** Claw back a confirmed (not-yet-paid) reward — e.g. the referred owner churned or refunded. */

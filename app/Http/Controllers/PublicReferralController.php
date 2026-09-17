@@ -58,7 +58,9 @@ class PublicReferralController extends Controller
             'contact_person_name' => ['required', 'string', 'max:120'],
             'company_name'        => ['required', 'string', 'max:160'],
             'phone'               => ['required', 'string', 'max:32'],
-            'email'               => ['nullable', 'email', 'max:160'],
+            // Email is REQUIRED — the account is keyed on it and the one-click admin onboarding
+            // delivers the setup credentials there. No email would mean a lead admin can't convert.
+            'email'               => ['required', 'email', 'max:160'],
             'city'                => ['nullable', 'string', 'max:120'],
             'country'             => ['nullable', 'string', 'max:120'],
             'estimated_units'     => ['nullable', 'integer', 'min:0', 'max:100000'],
@@ -66,7 +68,7 @@ class PublicReferralController extends Controller
         ]);
 
         DB::transaction(function () use ($validated, $code) {
-            $lead = $this->leads->createReferralMarketplaceLead($validated);
+            $lead = $this->leads->createReferralLead($validated);
 
             $this->referrals->attachLead($code, $lead, [
                 'name'    => $validated['contact_person_name'],

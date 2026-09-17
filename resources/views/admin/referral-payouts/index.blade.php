@@ -64,6 +64,44 @@
             @endforeach
           </div>
 
+          {{-- ── Owner sign-up requests (one-click onboarding) ── --}}
+          <div class="rp-sec">
+            <h2>{{ __('Owner sign-up requests') }}</h2>
+            <p class="hint">{{ __('A referred landlord filled the invite form. Create their owner account in one click — a temporary password and login link go out by email and SMS, and they set their own password on first sign-in.') }}</p>
+            @if ($onboardRequests->isEmpty())
+              <div class="rp-empty">{{ __('No pending sign-up requests.') }}</div>
+            @else
+              <table class="rp-table">
+                <thead><tr><th>{{ __('Landlord') }}</th><th>{{ __('Contact') }}</th><th>{{ __('Property') }}</th><th>{{ __('Referred by') }}</th><th>{{ __('Action') }}</th></tr></thead>
+                <tbody>
+                  @foreach ($onboardRequests as $r)
+                    @php $co = optional($r->lead)->company; $hasEmail = $co && filter_var($co->email ?: $r->invitee_email, FILTER_VALIDATE_EMAIL); @endphp
+                    <tr>
+                      <td><div style="font-weight:600;color:#1b1e22;">{{ $r->invitee_name ?: optional($co)->company_name ?: __('Invited landlord') }}</div></td>
+                      <td>
+                        <div>{{ optional($co)->email ?: $r->invitee_email ?: '—' }}</div>
+                        <div style="font-size:12px;color:#9aa2ad;">{{ optional($co)->phone ?: $r->invitee_phone ?: '' }}</div>
+                      </td>
+                      <td>{{ optional($co)->company_name ?: '—' }}@if(optional($co)->estimated_units) <span style="color:#9aa2ad;">· {{ $co->estimated_units }} {{ __('units') }}</span>@endif</td>
+                      <td>{{ optional($r->referrer)->first_name }} {{ optional($r->referrer)->last_name }} <span style="color:#9aa2ad;">#{{ $r->referrer_user_id }}</span></td>
+                      <td>
+                        @if ($hasEmail)
+                          <form method="POST" action="{{ route('admin.referral-payouts.create-owner', $r->id) }}">
+                            @csrf
+                            <button type="submit" class="rp-btn rp-btn--pay"
+                              data-cs-confirm="{{ __('Create an owner account for :name and send their login details?', ['name' => $r->invitee_name ?: optional($co)->company_name]) }}">{{ __('Create owner') }}</button>
+                          </form>
+                        @else
+                          <span style="font-size:12px;color:#B42318;">{{ __('No valid email — cannot onboard') }}</span>
+                        @endif
+                      </td>
+                    </tr>
+                  @endforeach
+                </tbody>
+              </table>
+            @endif
+          </div>
+
           {{-- ── Eligible for payout ── --}}
           <div class="rp-sec">
             <h2>{{ __('Ready to pay') }}</h2>

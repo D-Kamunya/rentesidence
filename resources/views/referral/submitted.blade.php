@@ -8,7 +8,7 @@
 <style>
   /* Light design language — matches the marketing site. */
   .invok-page{background:#FAF9F6;}
-  .invok-wrap{max-width:640px;margin:0 auto;padding:120px 20px 110px;text-align:center;}
+  .invok-wrap{max-width:640px;margin:0 auto;padding:150px 20px 110px;text-align:center;}
   .invok-badge{width:72px;height:72px;border-radius:20px;margin:0 auto 24px;display:grid;place-items:center;
     background:#E3F3EC;border:1px solid #9AD9C4;font-size:34px;}
   .invok-wrap h1{font-size:clamp(26px,5vw,36px);font-weight:750;color:#1B1E22;margin:0 0 14px;}

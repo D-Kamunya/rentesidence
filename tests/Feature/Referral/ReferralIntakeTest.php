@@ -155,9 +155,9 @@ class ReferralIntakeTest extends TestCase
         $this->referrals = new LandlordReferralService();
     }
 
-    public function test_intake_creates_a_vetted_marketplace_lead(): void
+    public function test_intake_creates_an_admin_owned_lead_not_a_marketplace_one(): void
     {
-        $lead = $this->leads->createReferralMarketplaceLead([
+        $lead = $this->leads->createReferralLead([
             'contact_person_name' => 'Jane Wanjiru',
             'company_name'        => 'Wanjiru Apartments',
             'phone'               => '254700111000',
@@ -165,9 +165,9 @@ class ReferralIntakeTest extends TestCase
             'estimated_units'     => 12,
         ]);
 
-        $this->assertSame('admin', $lead->source, 'Referral leads enter the marketplace/vetting pool.');
-        $this->assertSame('marketplace', $lead->marketplace_status);
-        $this->assertNull($lead->affiliate_id, 'No affiliate is assigned yet — it is claimable.');
+        $this->assertSame('admin', $lead->source, 'A referral is a platform lead, not affiliate-sourced.');
+        $this->assertNull($lead->marketplace_status, 'It must NOT enter the affiliate marketplace to be claimed.');
+        $this->assertNull($lead->affiliate_id, 'No affiliate — it belongs to admin.');
         $this->assertSame('warm', $lead->temperature);
         $this->assertNull($lead->owner_id, 'Intake never creates an owner account.');
         $this->assertSame(1, Lead::count());
@@ -176,8 +176,8 @@ class ReferralIntakeTest extends TestCase
 
     public function test_intake_reuses_an_existing_active_lead_for_the_same_company(): void
     {
-        $first = $this->leads->createReferralMarketplaceLead(['company_name' => 'Kilimani Homes', 'phone' => '254700222000', 'contact_person_name' => 'A']);
-        $second = $this->leads->createReferralMarketplaceLead(['company_name' => 'Kilimani Homes', 'phone' => '254700222000', 'contact_person_name' => 'A']);
+        $first = $this->leads->createReferralLead(['company_name' => 'Kilimani Homes', 'phone' => '254700222000', 'contact_person_name' => 'A']);
+        $second = $this->leads->createReferralLead(['company_name' => 'Kilimani Homes', 'phone' => '254700222000', 'contact_person_name' => 'A']);
 
         $this->assertSame($first->id, $second->id, 'A second invite for the same company reuses the lead.');
         $this->assertSame(1, Lead::count());
@@ -191,7 +191,7 @@ class ReferralIntakeTest extends TestCase
         $this->referrals->startInvite($tenant, ['name' => 'Larry Landlord', 'phone' => '254711333222']);
 
         // Landlord submits the public intake form → lead created, referral attaches.
-        $lead = $this->leads->createReferralMarketplaceLead([
+        $lead = $this->leads->createReferralLead([
             'company_name' => 'Larry Estates', 'phone' => '254711333222', 'contact_person_name' => 'Larry Landlord',
         ]);
         $ref = $this->referrals->attachLead($code, $lead, ['name' => 'Larry Landlord', 'phone' => '254711333222']);
@@ -218,7 +218,7 @@ class ReferralIntakeTest extends TestCase
         $ownerUser = User::create(['first_name' => 'Owen', 'role' => USER_ROLE_OWNER]);
         $ownerId = DB::table('owners')->insertGetId(['user_id' => $ownerUser->id, 'created_at' => now(), 'updated_at' => now()]);
 
-        $lead = $this->leads->createReferralMarketplaceLead(['company_name' => 'Owen Rentals', 'phone' => '254700555000', 'contact_person_name' => 'Owen']);
+        $lead = $this->leads->createReferralLead(['company_name' => 'Owen Rentals', 'phone' => '254700555000', 'contact_person_name' => 'Owen']);
         $this->referrals->attachLead($code, $lead);
         $lead->update(['owner_id' => $ownerId, 'status' => 'converted']);
 
@@ -240,7 +240,7 @@ class ReferralIntakeTest extends TestCase
         $code = $this->referrals->codeForTenant($tenant->id);
         $ownerUser = User::create(['first_name' => 'Ray', 'role' => USER_ROLE_OWNER]);
         $ownerId = DB::table('owners')->insertGetId(['user_id' => $ownerUser->id, 'created_at' => now(), 'updated_at' => now()]);
-        $lead = $this->leads->createReferralMarketplaceLead(['company_name' => 'Ray Rentals', 'phone' => '254700666000', 'contact_person_name' => 'Ray']);
+        $lead = $this->leads->createReferralLead(['company_name' => 'Ray Rentals', 'phone' => '254700666000', 'contact_person_name' => 'Ray']);
         $this->referrals->attachLead($code, $lead);
         $lead->update(['owner_id' => $ownerId, 'status' => 'converted']);
 

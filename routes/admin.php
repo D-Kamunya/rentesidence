@@ -141,6 +141,7 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'middleware' => ['auth', 'a
     Route::get('/referral-payouts',                  [\App\Http\Controllers\Admin\ReferralPayoutController::class, 'index'])->name('referral-payouts.index');
     Route::post('/referral-payouts/{userId}/payout', [\App\Http\Controllers\Admin\ReferralPayoutController::class, 'payout'])->name('referral-payouts.payout');
     Route::post('/referral-payouts/{ownerId}/clawback', [\App\Http\Controllers\Admin\ReferralPayoutController::class, 'clawback'])->name('referral-payouts.clawback');
+    Route::post('/referral-payouts/{referralId}/create-owner', [\App\Http\Controllers\Admin\ReferralPayoutController::class, 'createOwner'])->name('referral-payouts.create-owner');
 
     Route::prefix('knowledge-base')->name('kb.')->group(function () {
         // Categories

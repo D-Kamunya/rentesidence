@@ -86,18 +86,17 @@ class LeadService
     }
 
     /**
-     * Create a marketplace lead from a tenant's invite-a-landlord submission.
+     * Create an ADMIN-owned lead from a tenant's invite-a-landlord submission.
      *
-     * The invited landlord filled the public intake form (owners can't self-register), so
-     * this feeds the SAME vetting + conversion pipeline as an admin-published marketplace
-     * lead — no affiliate yet, claimable from the marketplace, no expiry clock until claimed.
-     * The tenant-referral provenance lives in the landlord_referrals ledger (by lead_id), so
-     * the lead itself is a normal marketplace lead carrying only a provenance note.
+     * A tenant's referral is not a marketplace lead for any affiliate to claim — it belongs to
+     * the platform. So this creates a direct admin lead (no affiliate, NOT published to the
+     * affiliate marketplace) that admin onboards into an owner in one click. The tenant-referral
+     * provenance lives in the landlord_referrals ledger (by lead_id).
      *
-     * Returns the existing active marketplace lead when the company already has one (so a
-     * second invite for the same landlord never creates a duplicate listing).
+     * Returns the existing active lead when the company already has one (so a second invite for
+     * the same landlord never creates a duplicate).
      */
-    public function createReferralMarketplaceLead(array $data): Lead
+    public function createReferralLead(array $data): Lead
     {
         return DB::transaction(function () use ($data) {
             $normalized = $this->normalizeCompanyName($data['company_name']);
@@ -151,11 +150,10 @@ class LeadService
                 'contact_person_role'  => $data['contact_person_role'] ?? 'Owner',
                 'temperature'          => 'warm', // a named referral is warmer than a cold list
                 'status'               => 'active',
-                'source'               => 'admin', // enters the marketplace/vetting pool
-                'marketplace_status'   => 'marketplace',
-                'marketplace_at'       => now(),
-                'ownership_expires_at' => null, // set only when claimed
-                'notes'                => 'Referred by a tenant via the invite-a-landlord program.',
+                'source'               => 'admin',  // platform lead — NOT affiliate-sourced
+                'marketplace_status'   => null,     // deliberately NOT in the affiliate marketplace
+                'ownership_expires_at' => null,
+                'notes'                => 'Referred by a tenant via the invite-a-landlord program — awaiting admin onboarding.',
             ]);
 
             LeadActivity::create([
