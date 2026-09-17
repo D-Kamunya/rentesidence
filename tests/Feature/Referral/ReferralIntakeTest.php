@@ -137,6 +137,7 @@ class ReferralIntakeTest extends TestCase
             $t->string('status', 20)->default('pending');
             $t->unsignedBigInteger('lead_id')->nullable();
             $t->unsignedBigInteger('owner_id')->nullable();
+            $t->unsignedBigInteger('payout_id')->nullable();
             $t->string('reward_type', 12)->nullable();
             $t->decimal('reward_amount', 12, 2)->default(0);
             $t->string('currency', 8)->nullable();

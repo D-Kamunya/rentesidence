@@ -494,7 +494,15 @@ class MpesaController extends Controller
                 return $this->b2cAck();
             }
 
-            Log::warning('B2C result matched no withdrawal or refund', ['refs' => $refs, 'result_code' => $resultCode]);
+            // 4) Invite-a-landlord reward payout to a tenant?
+            $referralPayout = \App\Models\ReferralPayout::whereIn('mpesa_reference', $refs)->first();
+            if ($referralPayout) {
+                app(\App\Services\LandlordReferralService::class)
+                    ->reconcilePayout($referralPayout, $isSuccess, $transactionId, $resultDesc);
+                return $this->b2cAck();
+            }
+
+            Log::warning('B2C result matched no withdrawal, refund or payout', ['refs' => $refs, 'result_code' => $resultCode]);
         } catch (\Throwable $e) {
             // Never let a reconciliation error bubble - Safaricom retries, and the
             // idempotency guards make a retry safe.
@@ -550,6 +558,13 @@ class MpesaController extends Controller
             $refundOrder = \App\Models\ProductOrder::whereIn('refund_reference', $refs)->first();
             if ($refundOrder) {
                 app(\App\Services\CommissionService::class)->handleRefundResult($refundOrder, false);
+                return $this->b2cAck();
+            }
+
+            $referralPayout = \App\Models\ReferralPayout::whereIn('mpesa_reference', $refs)->first();
+            if ($referralPayout) {
+                app(\App\Services\LandlordReferralService::class)
+                    ->reconcilePayout($referralPayout, false, null, $timeoutDesc);
                 return $this->b2cAck();
             }
 

@@ -183,6 +183,14 @@
                                 <span>{{ __('Accounts & Withdrawals') }}</span>
                             </a>
                         </li>
+                        @if (config('referrals.enabled'))
+                        <li>
+                            <a class="{{ @$navReferralPayoutsMMShowClass }}" href="{{ route('admin.referral-payouts.index') }}">
+                            <i class="fa fa-handshake-o" aria-hidden="true"></i>
+                                <span>{{ __('Referral Payouts') }}</span>
+                            </a>
+                        </li>
+                        @endif
                     </ul>
                 </li>
                 <li>

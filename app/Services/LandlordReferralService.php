@@ -6,6 +6,7 @@ use App\Models\LandlordReferral;
 use App\Models\LandlordReferralCode;
 use App\Models\Lead;
 use App\Models\Owner;
+use App\Models\ReferralPayout;
 use App\Models\User;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
@@ -342,16 +343,161 @@ class LandlordReferralService
         ]);
     }
 
+    // -------------------------------------------------------------------------
+    // Payouts — batch a tenant's payable rewards and settle them (reuses the B2C rail)
+    // -------------------------------------------------------------------------
+
+    /**
+     * Open a payout for a tenant: atomically reserve their payable referrals (set payout_id so
+     * no concurrent payout can grab the same ones) and create a PENDING ReferralPayout. Returns
+     * null when the tenant has no registered phone or the payable balance is below the min-payout
+     * floor. The caller then initiates B2C (or settles manually) and transitions the payout.
+     */
+    public function openPayout(int $referrerUserId): ?ReferralPayout
+    {
+        return DB::transaction(function () use ($referrerUserId) {
+            $referrals = $this->payableReferralsQuery($referrerUserId)->lockForUpdate()->get();
+
+            $amount = (float) $referrals->sum('reward_amount');
+            if ($amount < (float) config('referrals.min_payout', 0) || $referrals->isEmpty()) {
+                return null;
+            }
+
+            $phone = optional(User::find($referrerUserId))->contact_number;
+            if (! $phone) {
+                return null;
+            }
+
+            $payout = ReferralPayout::create([
+                'referrer_user_id' => $referrerUserId,
+                'amount'           => $amount,
+                'currency'         => config('referrals.currency', 'KES'),
+                'phone'            => $phone,
+                'status'           => ReferralPayout::STATUS_PENDING,
+            ]);
+
+            LandlordReferral::whereIn('id', $referrals->pluck('id'))->update(['payout_id' => $payout->id]);
+
+            return $payout;
+        });
+    }
+
+    /** B2C accepted → in-flight; store the correlation ref for the callback. */
+    public function markPayoutProcessing(ReferralPayout $payout, ?string $reference): void
+    {
+        $payout->update([
+            'status'            => ReferralPayout::STATUS_PROCESSING,
+            'settlement_method' => 'b2c',
+            'mpesa_reference'   => $reference,
+        ]);
+    }
+
+    /** Abandon a payout before/at send failure → release its reserved referrals. */
+    public function cancelPayout(ReferralPayout $payout, string $reason = 'cancelled'): void
+    {
+        DB::transaction(function () use ($payout, $reason) {
+            LandlordReferral::where('payout_id', $payout->id)->update(['payout_id' => null]);
+            $payout->update([
+                'status' => ReferralPayout::STATUS_CANCELLED,
+                'notes'  => trim(($payout->notes ? $payout->notes . "\n" : '') . $reason),
+            ]);
+        });
+    }
+
+    /** Admin settled the payout out-of-band → mark it and its referrals paid immediately. */
+    public function settlePayoutManually(ReferralPayout $payout, ?string $notes = null): void
+    {
+        DB::transaction(function () use ($payout, $notes) {
+            $this->markReferralsPaid($payout);
+            $payout->update([
+                'status'            => ReferralPayout::STATUS_PAID,
+                'settlement_method' => 'manual',
+                'processed_at'      => now(),
+                'notes'             => trim(($payout->notes ? $payout->notes . "\n" : '') . ($notes ?? '')),
+            ]);
+        });
+    }
+
+    /**
+     * Reconcile a B2C result for a payout (from B2CResult / B2CTimeout). Idempotent — only an
+     * in-flight (processing) payout transitions. Success → payout + its referrals paid; failure
+     * → payout failed and its referrals released back to payable for a retry.
+     */
+    public function reconcilePayout(ReferralPayout $payout, bool $success, ?string $transactionId = null, ?string $resultDesc = null): void
+    {
+        if ($payout->status !== ReferralPayout::STATUS_PROCESSING) {
+            return;
+        }
+
+        if ($success) {
+            DB::transaction(function () use ($payout, $transactionId) {
+                $this->markReferralsPaid($payout);
+                $payout->update([
+                    'status'         => ReferralPayout::STATUS_PAID,
+                    'transaction_id' => $transactionId,
+                    'processed_at'   => now(),
+                ]);
+            });
+
+            return;
+        }
+
+        DB::transaction(function () use ($payout, $resultDesc) {
+            LandlordReferral::where('payout_id', $payout->id)->update(['payout_id' => null]);
+            $payout->update([
+                'status'       => ReferralPayout::STATUS_FAILED,
+                'processed_at' => now(),
+                'notes'        => trim(($payout->notes ? $payout->notes . "\n" : '') . 'M-Pesa failed: ' . ($resultDesc ?: 'unknown')),
+            ]);
+        });
+    }
+
+    private function markReferralsPaid(ReferralPayout $payout): void
+    {
+        LandlordReferral::where('payout_id', $payout->id)->update([
+            'status'  => LandlordReferral::STATUS_PAID,
+            'paid_at' => now(),
+        ]);
+    }
+
+    /** Tenants with a payable balance at or above the min-payout floor — the admin work-list. */
+    public function tenantsEligibleForPayout()
+    {
+        $min = (float) config('referrals.min_payout', 0);
+
+        return LandlordReferral::where('status', LandlordReferral::STATUS_CONFIRMED)
+            ->where('reward_type', LandlordReferral::REWARD_CASH)
+            ->where('needs_review', false)
+            ->whereNull('payout_id')
+            ->whereNotNull('held_until')
+            ->where('held_until', '<=', now())
+            ->groupBy('referrer_user_id')
+            ->selectRaw('referrer_user_id, SUM(reward_amount) as payable, COUNT(*) as reward_count')
+            // $min is a trusted config number; inline it so the comparison stays numeric across
+            // MySQL and sqlite (a bound value takes text affinity in sqlite and compares wrong).
+            ->havingRaw('SUM(reward_amount) >= ' . (float) $min)
+            ->get();
+    }
+
     /** Sum of a tenant's rewards that are confirmed, held-period elapsed, and clear to pay. */
     public function payableBalance(int $referrerUserId): float
     {
-        return (float) LandlordReferral::where('referrer_user_id', $referrerUserId)
+        return (float) $this->payableReferralsQuery($referrerUserId)->sum('reward_amount');
+    }
+
+    /**
+     * The referrals that make up a tenant's payable balance: confirmed cash rewards, past the
+     * hold, not flagged for review, and not already reserved to an in-flight/settled payout.
+     */
+    public function payableReferralsQuery(int $referrerUserId)
+    {
+        return LandlordReferral::where('referrer_user_id', $referrerUserId)
             ->where('status', LandlordReferral::STATUS_CONFIRMED)
             ->where('reward_type', LandlordReferral::REWARD_CASH)
             ->where('needs_review', false)
+            ->whereNull('payout_id')
             ->whereNotNull('held_until')
-            ->where('held_until', '<=', now())
-            ->sum('reward_amount');
+            ->where('held_until', '<=', now());
     }
 
     // -------------------------------------------------------------------------

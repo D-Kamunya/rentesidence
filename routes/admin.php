@@ -137,6 +137,11 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'middleware' => ['auth', 'a
     Route::post('/affiliate/withdrawal/{withdrawal}/reject',      [AffiliateWithdrawalController::class, 'reject'])->name('affiliate.withdrawal.reject');
     Route::get('/affiliate/{affiliate}/earnings', [AffiliateWithdrawalController::class, 'affiliateEarnings'])->name('affiliate.earnings');
 
+    // Invite-a-landlord reward payouts — admin-initiated, batched, reusing the B2C rail.
+    Route::get('/referral-payouts',                  [\App\Http\Controllers\Admin\ReferralPayoutController::class, 'index'])->name('referral-payouts.index');
+    Route::post('/referral-payouts/{userId}/payout', [\App\Http\Controllers\Admin\ReferralPayoutController::class, 'payout'])->name('referral-payouts.payout');
+    Route::post('/referral-payouts/{ownerId}/clawback', [\App\Http\Controllers\Admin\ReferralPayoutController::class, 'clawback'])->name('referral-payouts.clawback');
+
     Route::prefix('knowledge-base')->name('kb.')->group(function () {
         // Categories
         Route::get('/categories', [AdminKnowledgeBaseController::class, 'categories'])->name('categories');

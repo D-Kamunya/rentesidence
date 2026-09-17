@@ -35,7 +35,7 @@ class LandlordReferral extends Model
     protected $fillable = [
         'referrer_user_id', 'code',
         'invitee_name', 'invitee_phone', 'invitee_email', 'invitee_company',
-        'status', 'lead_id', 'owner_id',
+        'status', 'lead_id', 'owner_id', 'payout_id',
         'reward_type', 'reward_amount', 'currency', 'trigger_reason',
         'confirmed_at', 'held_until', 'paid_at', 'clawed_back_at',
         'needs_review', 'meta',
