@@ -211,6 +211,22 @@ class LandlordReferralService
     }
 
     /**
+     * Confirm from an owner's USER id (what the payment paths carry) rather than owners.id.
+     * Resolves the Owner record, then delegates. Safe to call on every payment — the
+     * once-only guard in confirmForOwner() means only the first real-money event rewards.
+     */
+    public function confirmForOwnerUser(int $ownerUserId, string $reason): ?LandlordReferral
+    {
+        if (! $this->enabled()) {
+            return null;
+        }
+
+        $ownerId = \App\Models\Owner::where('user_id', $ownerUserId)->value('id');
+
+        return $ownerId ? $this->confirmForOwner((int) $ownerId, $reason) : null;
+    }
+
+    /**
      * Reverse a confirmed (not-yet-paid) reward when the referred owner churns or refunds
      * inside the holding window. A reward already paid out is out of scope here (that's a
      * recovery decision, not an automatic clawback).

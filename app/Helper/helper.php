@@ -1004,6 +1004,16 @@ if (!function_exists('handleSubscriptionPaymentConfirmation')) {
 
                     DB::commit();
 
+                    // Invite-a-landlord: a paid subscription is the clearest "real customer"
+                    // signal, so confirm any pending tenant referral for this owner. Idempotent
+                    // (rewards once) and fail-safe — a referral hiccup must never break a payment.
+                    try {
+                        app(\App\Services\LandlordReferralService::class)
+                            ->confirmForOwnerUser((int) $order->user_id, 'first_subscription');
+                    } catch (\Throwable $e) {
+                        report($e);
+                    }
+
                     $invoiceUrl = route('owner.subscription.index');
                     $title = __("Subscription activated");
                     $body = __("Your subscription payment was received — your plan is now active.");

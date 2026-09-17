@@ -76,6 +76,13 @@ class ReferralIntakeTest extends TestCase
             $t->timestamps();
         });
 
+        Schema::create('owners', function ($t) {
+            $t->id();
+            $t->unsignedBigInteger('user_id')->index();
+            $t->softDeletes();
+            $t->timestamps();
+        });
+
         Schema::create('lead_activities', function ($t) {
             $t->id();
             $t->unsignedBigInteger('lead_id');
@@ -174,5 +181,29 @@ class ReferralIntakeTest extends TestCase
         $this->assertSame(LandlordReferral::STATUS_CONFIRMED, $confirmed->status);
         $this->assertSame(LandlordReferral::REWARD_CASH, $confirmed->reward_type);
         $this->assertEquals(200.0, (float) $confirmed->reward_amount);
+    }
+
+    public function test_confirm_via_owner_user_id_resolves_the_owner_record(): void
+    {
+        // The payment paths carry the owner's USER id; the referral links to owners.id.
+        $tenant = User::create(['first_name' => 'Tim', 'role' => USER_ROLE_TENANT]);
+        $code = $this->referrals->codeForTenant($tenant->id);
+
+        $ownerUser = User::create(['first_name' => 'Owen', 'role' => USER_ROLE_OWNER]);
+        $ownerId = DB::table('owners')->insertGetId(['user_id' => $ownerUser->id, 'created_at' => now(), 'updated_at' => now()]);
+
+        $lead = $this->leads->createReferralMarketplaceLead(['company_name' => 'Owen Rentals', 'phone' => '254700555000', 'contact_person_name' => 'Owen']);
+        $this->referrals->attachLead($code, $lead);
+        $lead->update(['owner_id' => $ownerId, 'status' => 'converted']);
+
+        // Confirm using the USER id — the service resolves owners.id and rewards once.
+        $confirmed = $this->referrals->confirmForOwnerUser($ownerUser->id, 'first_subscription');
+
+        $this->assertNotNull($confirmed, 'A paid subscription confirms the referral for the resolved owner.');
+        $this->assertSame(LandlordReferral::STATUS_CONFIRMED, $confirmed->status);
+        $this->assertSame($ownerId, $confirmed->owner_id);
+
+        // An unknown user id (no owner record) confirms nothing.
+        $this->assertNull($this->referrals->confirmForOwnerUser(999999, 'first_subscription'));
     }
 }
