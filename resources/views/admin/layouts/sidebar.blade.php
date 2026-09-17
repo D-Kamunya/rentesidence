@@ -55,7 +55,7 @@
                     <li>
                         <a href="{{ route('admin.message.index') }}">
                             <i class="ri-message-fill"></i>
-                            <span>{{ __('Enquiries') }}</span>
+                            <span>{{ __('Enquiries') }}@include('partials.nav-count', ['n' => $navBadges['enquiries'] ?? 0])</span>
                         </a>
                     </li>
                     <li>

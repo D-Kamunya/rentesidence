@@ -184,7 +184,7 @@
                     <ul class="sub-menu" aria-expanded="false">
                         <li><a href="{{ route('owner.maintainer.index') }}">{{ __('Maintainers') }}</a></li>
                         <li><a
-                                href="{{ route('owner.maintenance-request.index') }}">{{ __('Maintenance Request') }}</a>
+                                href="{{ route('owner.maintenance-request.index') }}">{{ __('Maintenance Request') }}@include('partials.nav-count', ['n' => $navBadges['maintenance'] ?? 0])</a>
                         </li>
                     </ul>
                 </li>

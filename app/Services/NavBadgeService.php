@@ -6,6 +6,9 @@ use App\Models\AffiliateWithdrawal;
 use App\Models\HouseHuntApplication;
 use App\Models\Invoice;
 use App\Models\LandlordReferral;
+use App\Models\MaintenanceRequest;
+use App\Models\Message;
+use App\Models\Property;
 
 /**
  * Sidebar count badges — the actionable "you have N things waiting" numbers on nav links,
@@ -28,6 +31,11 @@ class NavBadgeService
             )->where('status', HOUSE_HUNT_APPLICATION_PENDING)->count()),
 
             'deposits_due' => $this->safe(fn () => app(DepositService::class)->dueForSettlementCount($ownerUserId)),
+
+            'maintenance' => $this->safe(fn () => MaintenanceRequest::whereIn(
+                'property_id',
+                Property::where('owner_user_id', $ownerUserId)->pluck('id')
+            )->where('status', MAINTENANCE_REQUEST_STATUS_PENDING)->count()),
         ];
     }
 
@@ -48,6 +56,7 @@ class NavBadgeService
     {
         return [
             'affiliate_withdrawals' => $this->safe(fn () => AffiliateWithdrawal::where('status', AFFILIATE_WITHDRAWAL_PENDING)->count()),
+            'enquiries'             => $this->safe(fn () => Message::where('is_view', 0)->count()),
             'referral_payouts'      => $this->safe(function () {
                 $svc = app(LandlordReferralService::class);
                 if (! $svc->enabled()) {
