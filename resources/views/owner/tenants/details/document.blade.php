@@ -26,11 +26,13 @@
                     </aside>
 
                     <div class="td-content">
-                        {{-- Requested from THIS tenant (per-tenant requests, distinct from the tenant-wide policy in Settings) --}}
+                        {{-- KYC/verification review queue: per-tenant requests AND any config the tenant
+                             uploaded against (incl. proactive uploads against owner-wide defaults) — all
+                             share the accept/reject workflow, so "Verification Documents" fits both. --}}
                         <div class="td-card">
                             <div class="td-card__head">
                                 <span class="td-card__ic"><i class="ri-file-list-3-line"></i></span>
-                                <h3 class="td-card__title">{{ __('Requested Documents') }}</h3>
+                                <h3 class="td-card__title">{{ __('Verification Documents') }}</h3>
                                 <button type="button" class="td-card__action" data-bs-toggle="modal" data-bs-target="#requestDocModal" style="margin-left:auto;background:none;border:none;cursor:pointer;">
                                     <i class="ri-add-line"></i> {{ __('Request a Document') }}
                                 </button>
