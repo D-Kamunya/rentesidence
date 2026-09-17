@@ -106,6 +106,13 @@ Route::get('/get-filters', [HouseHuntController::class, 'getFiltersByType'])->na
 Route::get('/get-cities', [HouseHuntController::class, 'getCitiesByState'])->name('get.cities');
 Route::get('/house-hunt', [HouseHuntController::class, 'index'])->name('house.hunt');
 Route::get('/house-hunt/view/{propertyId}', [HouseHuntController::class, 'viewProperty'])->name('house-hunt.view');
+
+// Invite-a-landlord funnel — public landing an invited landlord opens + the intake form.
+// The submit is throttled so a leaked code can't be used to flood the lead pipeline.
+Route::get('/invite/{code}', [\App\Http\Controllers\PublicReferralController::class, 'landing'])->name('referral.invite');
+Route::post('/invite/{code}', [\App\Http\Controllers\PublicReferralController::class, 'submit'])
+    ->middleware('throttle:8,10')
+    ->name('referral.invite.submit');
 // Route::get('/owner/tenants/applications', function () {return view('owner.tenants.applications');})->name('owner.tenants.applications');
 Route::get('version-update', [VersionUpdateController::class, 'versionUpdate'])->name('version-update');
 Route::post('process-update', [VersionUpdateController::class, 'processUpdate'])->name('process-update');

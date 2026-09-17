@@ -224,6 +224,37 @@
                     @endif
                     {{-- End Summary Cards --}}
 
+                    {{-- Invite-a-landlord — the growth funnel. Shown to every tenant while the funnel is
+                         on; the earning line is only promised when the cash reward is actually enabled. --}}
+                    @if (config('referrals.enabled'))
+                    <div class="row g-3 mb-4">
+                        <div class="col-12">
+                            <a href="{{ route('tenant.invite-landlord.index') }}" style="text-decoration:none;display:block;">
+                                <div style="display:flex;gap:16px;align-items:center;flex-wrap:wrap;
+                                    background:linear-gradient(120deg,#123a63,#185FA5);border-radius:16px;
+                                    padding:18px 20px;color:#fff;box-shadow:0 6px 20px rgba(24,95,165,.18);">
+                                    <div style="flex:none;width:46px;height:46px;border-radius:13px;display:grid;place-items:center;
+                                        background:rgba(255,255,255,.14);font-size:24px;">🤝</div>
+                                    <div style="flex:1 1 240px;min-width:200px;">
+                                        <div style="font-size:16.5px;font-weight:700;line-height:1.25;">{{ __('Is your landlord not on Centresidence yet?') }}</div>
+                                        <div style="font-size:13.5px;color:#dbe7f4;margin-top:3px;">
+                                            @if (config('referrals.cash_enabled') && (float) config('referrals.cash_amount', 0) > 0)
+                                                {{ __('Invite them and earn') }}
+                                                <b style="color:#ffd784;">{{ config('referrals.currency', 'KES') }} {{ number_format((float) config('referrals.cash_amount', 0)) }}</b>
+                                                {{ __('when they come on board as a paying customer.') }}
+                                            @else
+                                                {{ __('Invite them to Centresidence and help build your rental world — track record, deposits and more.') }}
+                                            @endif
+                                        </div>
+                                    </div>
+                                    <div style="flex:none;background:#fff;color:#185FA5;font-weight:650;font-size:14px;
+                                        padding:10px 18px;border-radius:10px;">{{ __('Invite your landlord') }} →</div>
+                                </div>
+                            </a>
+                        </div>
+                    </div>
+                    @endif
+
                     {{-- Utilities (Centresidence) — a balance card per metered module on the unit, else nothing --}}
                     @if (empty($ownerless) && !empty($hasUtilities))
                         <div class="row g-3 mb-4">

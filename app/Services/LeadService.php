@@ -85,6 +85,90 @@ class LeadService
         });
     }
 
+    /**
+     * Create a marketplace lead from a tenant's invite-a-landlord submission.
+     *
+     * The invited landlord filled the public intake form (owners can't self-register), so
+     * this feeds the SAME vetting + conversion pipeline as an admin-published marketplace
+     * lead — no affiliate yet, claimable from the marketplace, no expiry clock until claimed.
+     * The tenant-referral provenance lives in the landlord_referrals ledger (by lead_id), so
+     * the lead itself is a normal marketplace lead carrying only a provenance note.
+     *
+     * Returns the existing active marketplace lead when the company already has one (so a
+     * second invite for the same landlord never creates a duplicate listing).
+     */
+    public function createReferralMarketplaceLead(array $data): Lead
+    {
+        return DB::transaction(function () use ($data) {
+            $normalized = $this->normalizeCompanyName($data['company_name']);
+
+            $company = Company::where(function ($q) use ($normalized, $data) {
+                $q->where(function ($q2) use ($normalized, $data) {
+                    $q2->where('normalized_name', $normalized)
+                        ->where('city', $data['city'] ?? null)
+                        ->where('country', $data['country'] ?? null);
+                })->orWhere('phone', $data['phone'] ?? null);
+            })->first();
+
+            if (! $company) {
+                $company = Company::create([
+                    'company_name'    => $data['company_name'],
+                    'normalized_name' => $normalized,
+                    'country'         => $data['country'] ?? null,
+                    'city'            => $data['city'] ?? null,
+                    'phone'           => $data['phone'] ?? null,
+                    'email'           => $data['email'] ?? null,
+                    'website'         => $data['website'] ?? null,
+                    'property_type'   => $data['property_type'] ?? null,
+                    'estimated_units' => $data['estimated_units'] ?? null,
+                ]);
+            } else {
+                $updates = array_filter([
+                    'email'           => $data['email'] ?? null,
+                    'property_type'   => $data['property_type'] ?? null,
+                    'estimated_units' => $data['estimated_units'] ?? null,
+                ], fn ($v) => ! is_null($v) && $v !== '');
+                if (! empty($updates)) {
+                    $company->update($updates);
+                }
+            }
+
+            // Reuse any active lead for this company — a marketplace listing, or one an
+            // affiliate already owns — so the referral attaches to it rather than duplicating.
+            $existing = Lead::where('company_id', $company->id)
+                ->whereIn('status', ['active', 'demo_scheduled', 'demo_completed', 'pending_conversion', 'trial'])
+                ->orderByDesc('id')
+                ->first();
+
+            if ($existing) {
+                return $existing;
+            }
+
+            $lead = Lead::create([
+                'company_id'           => $company->id,
+                'affiliate_id'         => null,
+                'contact_person_name'  => $data['contact_person_name'] ?? $data['company_name'],
+                'contact_person_role'  => $data['contact_person_role'] ?? 'Owner',
+                'temperature'          => 'warm', // a named referral is warmer than a cold list
+                'status'               => 'active',
+                'source'               => 'admin', // enters the marketplace/vetting pool
+                'marketplace_status'   => 'marketplace',
+                'marketplace_at'       => now(),
+                'ownership_expires_at' => null, // set only when claimed
+                'notes'                => 'Referred by a tenant via the invite-a-landlord program.',
+            ]);
+
+            LeadActivity::create([
+                'lead_id'     => $lead->id,
+                'user_id'     => null,
+                'type'        => 'lead_created',
+                'description' => 'Lead created from a tenant invite-a-landlord referral.',
+            ]);
+
+            return $lead;
+        });
+    }
+
     /** Update a lead's contact details + any non-empty company fields. */
     public function updateLead(Lead $lead, array $leadData, array $companyData): void
     {

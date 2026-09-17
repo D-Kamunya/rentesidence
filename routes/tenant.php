@@ -44,6 +44,13 @@ Route::group(['prefix' => 'tenant', 'as' => 'tenant.', 'middleware' => ['auth', 
         Route::post('/remind', [\App\Http\Controllers\Tenant\VacationNoticeController::class, 'remind'])->name('remind');
     });
 
+    // Invite-a-landlord funnel — available to every tenant (linked or ownerless), so it sits
+    // OUTSIDE the tenant.owned guard: inviting a landlord is a growth action, not owner-bound.
+    Route::group(['prefix' => 'invite-landlord', 'as' => 'invite-landlord.'], function () {
+        Route::get('/', [\App\Http\Controllers\Tenant\InviteLandlordController::class, 'index'])->name('index');
+        Route::post('/', [\App\Http\Controllers\Tenant\InviteLandlordController::class, 'store'])->name('store');
+    });
+
     // ── Owner-bound surfaces: blocked for an ownerless (Helper) tenant, whose tenancy is closed.
     //    The nav hides these; this stops direct hits (which would error on missing owner data). ──
     Route::group(['middleware' => 'tenant.owned'], function () {

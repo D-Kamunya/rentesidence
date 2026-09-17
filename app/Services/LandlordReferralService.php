@@ -138,6 +138,7 @@ class LandlordReferralService
                 'invitee_email'    => $email,
                 'invitee_company'  => $invitee['company'] ?? null,
                 'status'           => LandlordReferral::STATUS_PENDING,
+                'meta'             => ['self_referral' => $this->looksLikeSelfReferral($referrer, $invitee)],
             ]);
         }
 

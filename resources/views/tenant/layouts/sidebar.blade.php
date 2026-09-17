@@ -24,6 +24,16 @@
                         <span>{{ __('My Rental Score') }}</span>
                     </a>
                 </li>
+                {{-- Invite-a-landlord — available to every tenant (linked or ownerless); it's a growth
+                     surface, not owner-bound, so it stays outside the @if(empty($ownerless)) block. --}}
+                @if (config('referrals.enabled'))
+                <li class="{{ @$navInviteLandlordMMActiveClass }}">
+                    <a href="{{ route('tenant.invite-landlord.index') }}" class="{{ @$navInviteLandlordActiveClass }}">
+                        <i class="ri-user-shared-line"></i>
+                        <span>{{ __('Invite Your Landlord') }}</span>
+                    </a>
+                </li>
+                @endif
                 {{-- Owner-bound surfaces — hidden for an ownerless (standalone Helper) tenant so nothing
                      links back to the former owner. Data is preserved; these return as history later. --}}
                 @if (empty($ownerless))
