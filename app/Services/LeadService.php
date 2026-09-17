@@ -100,12 +100,15 @@ class LeadService
     {
         return DB::transaction(function () use ($data) {
             $normalized = $this->normalizeCompanyName($data['company_name']);
+            // companies.country is NOT nullable and the lean invite form doesn't ask for it,
+            // so default it (Kenya-first, config-overridable per market).
+            $country = ($data['country'] ?? null) ?: config('referrals.default_country', 'Kenya');
 
-            $company = Company::where(function ($q) use ($normalized, $data) {
-                $q->where(function ($q2) use ($normalized, $data) {
+            $company = Company::where(function ($q) use ($normalized, $data, $country) {
+                $q->where(function ($q2) use ($normalized, $data, $country) {
                     $q2->where('normalized_name', $normalized)
                         ->where('city', $data['city'] ?? null)
-                        ->where('country', $data['country'] ?? null);
+                        ->where('country', $country);
                 })->orWhere('phone', $data['phone'] ?? null);
             })->first();
 
@@ -113,7 +116,7 @@ class LeadService
                 $company = Company::create([
                     'company_name'    => $data['company_name'],
                     'normalized_name' => $normalized,
-                    'country'         => $data['country'] ?? null,
+                    'country'         => $country,
                     'city'            => $data['city'] ?? null,
                     'phone'           => $data['phone'] ?? null,
                     'email'           => $data['email'] ?? null,

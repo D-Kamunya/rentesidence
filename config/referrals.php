@@ -27,6 +27,10 @@ return [
     'cash_amount' => (float) env('LANDLORD_REFERRAL_CASH_AMOUNT', 500),
     'currency'    => env('LANDLORD_REFERRAL_CURRENCY', 'KES'),
 
+    // The lean invite form doesn't ask for country (Kenya-first launch), but the companies
+    // table requires one — so referral leads default to this. Override per market via env.
+    'default_country' => env('LANDLORD_REFERRAL_DEFAULT_COUNTRY', 'Kenya'),
+
     // The "real customer" bar — protects CAC and kills the farm-a-tiny-payment attack.
     // Cash confirms when the referred owner EITHER makes a first paid subscription, OR
     // their cumulative real platform revenue reaches this threshold across the 5 streams
