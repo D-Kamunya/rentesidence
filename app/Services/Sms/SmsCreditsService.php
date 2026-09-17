@@ -82,7 +82,7 @@ class SmsCreditsService
     public static function deductOne(int $ownerUserId, string $description = ''): bool
     {
         return CreditService::deductOne(self::BUCKET, $ownerUserId, $description, function ($owner, $before, $after) {
-            $threshold = (int) getOption('sms_low_credit_threshold', 50);
+            $threshold = (int) getOption('sms_low_credit_threshold', 30);
             if ($after <= $threshold && $before > $threshold) {
                 self::notifyLowCredits($owner, $after);
             }

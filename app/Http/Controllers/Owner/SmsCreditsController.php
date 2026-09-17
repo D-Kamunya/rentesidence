@@ -34,7 +34,7 @@ class SmsCreditsController extends Controller
 
         $failedMessages = SmsCreditsService::getRetryableFailed(auth()->id(), 30);
         $pricePerSms    = (float) getOption('sms_credit_price', 1.00);
-        $lowThreshold   = (int)   getOption('sms_low_credit_threshold', 50);
+        $lowThreshold   = (int)   getOption('sms_low_credit_threshold', 30);
 
         return view('owner.sms-credits.index', compact(
             'balance', 'creditPools', 'transactions', 'stats',

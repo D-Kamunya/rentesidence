@@ -55,7 +55,7 @@
                     <li>
                         <a href="{{ route('admin.message.index') }}">
                             <i class="ri-message-fill"></i>
-                            <span>{{ __('Messages') }}</span>
+                            <span>{{ __('Enquiries') }}</span>
                         </a>
                     </li>
                     <li>

@@ -73,6 +73,10 @@
                                             <td class="phone"></td>
                                         </tr>
                                         <tr>
+                                            <th class="w-25">{{ __('Subject') }}</th>
+                                            <td class="subject"></td>
+                                        </tr>
+                                        <tr>
                                             <th class="w-25">{{ __('Message') }}</th>
                                             <td class="message"></td>
                                         </tr>

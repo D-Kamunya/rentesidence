@@ -575,7 +575,7 @@
           <span class="csh-chip" style="color:var(--stone-700);background:var(--paper);border-color:var(--line)"><span class="csh-dot"></span>{{ __('Set up in a day') }}</span>
         </div>
       </div>
-      <form class="csh-form ajax" action="{{ route('contact.message.store') }}" method="POST" data-handler="getShowMessage">
+      <form class="csh-form ajax" action="{{ route('contact.message.store') }}" method="POST" data-handler="cshContactSuccess">
         @csrf
         <h3>{{ __('Talk to us') }}</h3>
         <p>{{ __('We will get back to you shortly.') }}</p>
@@ -593,6 +593,9 @@
           <option value="partner">{{ __('Partnership or affiliate') }}</option>
         </select>
         <textarea name="message" rows="4" placeholder="{{ __('Tell us about your properties') }}"></textarea>
+        <div id="cshSuccess" style="display:none;margin-top:14px;padding:12px 14px;border-radius:10px;background:#E3F3EC;border:1px solid #9AD9C4;color:#0F6E56;font-size:14px;line-height:1.5;">
+          {{ __('Thanks — your enquiry has been received. Our team will get back to you shortly.') }}
+        </div>
         <button type="submit" class="csh-btn csh-btn--blue" style="width:100%;justify-content:center;margin-top:14px">{{ __('Send inquiry') }}</button>
       </form>
     </div>
@@ -622,5 +625,23 @@
                 });
             });
         })();
+
+        /* Contact-form success handler: show a PERSISTENT inline confirmation (the shared
+           getShowMessage handler reloads the page, wiping the toastr before it can be read).
+           Validation errors still fall through to the shared field-error handler. */
+        function cshContactSuccess(response) {
+            if (response && response.status === true) {
+                var box = document.getElementById('cshSuccess');
+                if (box) {
+                    if (response.message) { box.textContent = response.message; }
+                    box.style.display = 'block';
+                    box.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }
+                var form = document.querySelector('.csh-form.ajax');
+                if (form) { form.reset(); }
+            } else if (typeof commonHandler === 'function') {
+                commonHandler(response);
+            }
+        }
     </script>
 @endpush

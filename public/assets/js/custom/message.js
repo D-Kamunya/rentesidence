@@ -8,6 +8,7 @@ function getDataViewRes(response) {
     selector.find('.name').text(response.first_name + ' ' + response.last_name);
     selector.find('.email').text(response.email);
     selector.find('.phone').text(response.phone);
+    selector.find('.subject').text(response.subject);
     selector.find('.message').text(response.message);
     if (response.reply != null) {
         selector.find('.reply-sec').removeClass('d-none');

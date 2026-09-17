@@ -87,7 +87,7 @@ class DashboardController extends Controller
     
         // ── SMS Credits ───────────────────────────────────────────
         $data['smsCredits']       = (int) $owner->sms_credits;
-        $data['smsLowThreshold']  = (int) getOption('sms_low_credit_threshold', 50);
+        $data['smsLowThreshold']  = (int) getOption('sms_low_credit_threshold', 30);
         $data['smsPricePerCredit'] = (float) getOption('sms_credit_price', 1.00);
     
         $data['smsFailedCount'] = \App\Models\SmsHistory::where('owner_user_id', auth()->id())

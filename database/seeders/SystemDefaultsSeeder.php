@@ -66,7 +66,7 @@ class SystemDefaultsSeeder extends Seeder
 
             // ── SMS behaviour / credit rail ──
             'sms_credit_price'          => 1.00, // price per SMS credit
-            'sms_low_credit_threshold'  => 50,   // when to fire the low-credit nudge
+            'sms_low_credit_threshold'  => 30,   // low-credit nudge — below the 50-credit trial grant so a fresh account isn't warned on day one
             'sms_reminder_cooldown_hours' => 24, // min gap between the same SMS reminder
             'sms_paused_digest_days'      => 7,  // look-back window for the paused-backlog re-engagement digest
             'sms_paused_digest_throttle_days' => 7, // min gap between paused-digest nudges per owner

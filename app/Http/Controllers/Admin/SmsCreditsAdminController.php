@@ -13,7 +13,7 @@ class SmsCreditsAdminController extends Controller
     public function index()
     {
         $pricePerSms  = getOption('sms_credit_price', 1.00);
-        $lowThreshold = getOption('sms_low_credit_threshold', 50);
+        $lowThreshold = getOption('sms_low_credit_threshold', 30);
 
         $recentPurchases = OwnerCreditTransaction::where('bucket', 'sms')
             ->whereIn('type', ['purchase', 'manual_topup', 'package_grant'])
