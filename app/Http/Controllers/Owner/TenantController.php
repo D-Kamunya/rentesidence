@@ -281,6 +281,9 @@ class TenantController extends Controller
             // so closing reflects the real ledger-backed figures instead of hand-typed guesses.
             $data['depositSettlement'] = \App\Models\DepositSettlement::where('tenant_id', (int) $id)
                 ->where('owner_user_id', auth()->id())->latest('id')->first();
+            // "Ready to close" reminder for owners who arrived via the view channel (where the close
+            // dialog is NOT auto-opened) — a persistent banner pointing them at Close Tenant.
+            $data['readyToClose'] = app(\App\Services\TenantAttentionService::class)->forTenant($id)['ready_close'];
             return view('owner.tenants.details.profile', $data);
         } elseif ($request->tab == 'home') {
             $data['pageTitle'] = __('Home Details');

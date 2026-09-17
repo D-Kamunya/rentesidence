@@ -63,6 +63,38 @@
                                 <i class="ri-edit-line"></i> {{ __('Edit Info') }}
                             </a>
                         </div>
+
+                        {{-- Ready-to-close reminder: shown for owners who reached the profile via the view
+                             channel (where the close dialog isn't auto-opened). Points them at Close Tenant. --}}
+                        @if (!empty($readyToClose) && $tenant->status != TENANT_STATUS_CLOSE)
+                            <div class="td-closehint">
+                                <span class="td-closehint__ic"><i class="ri-logout-box-r-line"></i></span>
+                                <div class="td-closehint__body">
+                                    <strong>{{ __('This tenant is ready to be closed') }}</strong>
+                                    <span>{{ __('Their move-out date has passed. Finalize the tenancy to free the unit and complete the move-out.') }}</span>
+                                </div>
+                                <button type="button" class="td-closehint__btn" data-bs-toggle="modal" data-bs-target="#tenantCloseModal">
+                                    {{ __('Close tenant') }}
+                                </button>
+                            </div>
+                            <style>
+                                .td-closehint { display:flex; align-items:center; gap:14px; margin:0 0 20px; padding:14px 16px;
+                                    background:#FDF4F1; border:0.5px solid #F5C4B3; border-radius:12px; }
+                                .td-closehint__ic { flex:none; width:38px; height:38px; border-radius:10px; background:#FAECE7;
+                                    color:#993C1D; display:flex; align-items:center; justify-content:center; font-size:19px; }
+                                .td-closehint__body { flex:1; min-width:0; display:flex; flex-direction:column; gap:2px; }
+                                .td-closehint__body strong { font-size:14px; color:#712B13; }
+                                .td-closehint__body span { font-size:12.5px; color:#993C1D; }
+                                .td-closehint__btn { flex:none; background:#993C1D; color:#fff; border:none; border-radius:8px;
+                                    font-size:12.5px; font-weight:600; padding:8px 16px; cursor:pointer; white-space:nowrap; transition:background .13s; }
+                                .td-closehint__btn:hover { background:#7c2f16; }
+                                @media (max-width:560px) {
+                                    .td-closehint { flex-wrap:wrap; }
+                                    .td-closehint__btn { flex:1 1 100%; }
+                                }
+                            </style>
+                        @endif
+
                         @if (config('app.debug') && session('dev_pw_' . $tenant->id))
                             <style>
                                 .td-devpw { display:inline-flex; align-items:center; gap:8px; background:#111827; color:#e5e7eb; border-radius:8px; padding:6px 8px 6px 10px; font-size:12px; }
