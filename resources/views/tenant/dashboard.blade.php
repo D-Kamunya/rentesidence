@@ -236,7 +236,7 @@
                                     <div style="flex:none;width:46px;height:46px;border-radius:13px;display:grid;place-items:center;
                                         background:rgba(255,255,255,.14);font-size:24px;">🤝</div>
                                     <div style="flex:1 1 240px;min-width:200px;">
-                                        <div style="font-size:16.5px;font-weight:700;line-height:1.25;">{{ __('Is your landlord not on Centresidence yet?') }}</div>
+                                        <div style="font-size:16.5px;font-weight:700;line-height:1.25;">{{ __('Know a landlord who isn\'t on Centresidence yet?') }}</div>
                                         <div style="font-size:13.5px;color:#dbe7f4;margin-top:3px;">
                                             @if (config('referrals.cash_enabled') && (float) config('referrals.cash_amount', 0) > 0)
                                                 {{ __('Invite them and earn') }}

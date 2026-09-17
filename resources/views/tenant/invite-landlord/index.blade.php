@@ -92,7 +92,7 @@
 
         <div class="il-card" style="margin-top:16px;">
           <h3>{{ __('Invite a landlord directly') }}</h3>
-          <p class="muted">{{ __('Add their details so we can track the invite. We\'ll still ask them to fill in a short form themselves — no one is signed up automatically.') }}</p>
+          <p class="muted">{{ __('Add their phone or email and we\'ll send them your invite by SMS and email. They still fill in a short form themselves — no one is signed up automatically.') }}</p>
           <form method="POST" action="{{ route('tenant.invite-landlord.store') }}">
             @csrf
             <div class="il-field">
