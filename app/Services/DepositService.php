@@ -186,11 +186,24 @@ class DepositService
             ->orderByDesc('held_at')
             ->orderByDesc('id');
 
-        if (!empty($filters['status'])) {
+        if (!empty($filters['due'])) {
+            // "Due for settlement" = still held, but the tenancy is already closed.
+            $q->where('status', TenantDeposit::STATUS_HELD)
+              ->whereHas('tenant', fn ($t) => $t->where('status', TENANT_STATUS_CLOSE));
+        } elseif (!empty($filters['status'])) {
             $q->where('status', $filters['status']);
         }
 
         return $q;
+    }
+
+    /** Held deposits whose tenancy is already CLOSED — should be settled/returned but haven't been. */
+    public function dueForSettlementCount(int $ownerId): int
+    {
+        return (int) TenantDeposit::where('owner_user_id', $ownerId)
+            ->where('status', TenantDeposit::STATUS_HELD)
+            ->whereHas('tenant', fn ($t) => $t->where('status', TENANT_STATUS_CLOSE))
+            ->count();
     }
 
     // ── Release transitions (Phase 4 settlement will drive these) ──────────────────────────────

@@ -15,10 +15,11 @@ class DepositController extends Controller
         $ownerId = auth()->id();
         $svc     = app(DepositService::class);
 
-        $status = in_array($request->status, [
+        $due    = $request->status === 'due';
+        $status = (!$due && in_array($request->status, [
             TenantDeposit::STATUS_HELD, TenantDeposit::STATUS_REFUNDED,
             TenantDeposit::STATUS_APPLIED, TenantDeposit::STATUS_SETTLED,
-        ], true) ? $request->status : null;
+        ], true)) ? $request->status : null;
 
         $data = [
             'pageTitle'                 => __('Deposits Held'),
@@ -27,8 +28,9 @@ class DepositController extends Controller
             'subNavDepositActiveClass'  => 'active',
             'totalHeld'                 => $svc->totalHeldForOwner($ownerId),
             'heldCount'                 => $svc->heldTenantCountForOwner($ownerId),
-            'statusFilter'              => $status,
-            'deposits'                  => $svc->ownerDepositsQuery($ownerId, ['status' => $status])
+            'dueCount'                  => $svc->dueForSettlementCount($ownerId),
+            'statusFilter'              => $due ? 'due' : $status,
+            'deposits'                  => $svc->ownerDepositsQuery($ownerId, $due ? ['due' => true] : ['status' => $status])
                                               ->paginate(15)->appends($request->query()),
         ];
 

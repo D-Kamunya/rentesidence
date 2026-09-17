@@ -29,15 +29,21 @@
                 </div>
             </div>
 
+            {{-- Due-for-settlement alert: tenancies closed but the deposit is still held. --}}
+            @if (($dueCount ?? 0) > 0)
+                <a href="{{ route('owner.deposit.index', ['status' => 'due']) }}" class="dep-due-alert">
+                    <i class="ri-alarm-warning-line"></i>
+                    <span><strong>{{ $dueCount }} {{ trans_choice('deposit is due for settlement|deposits are due for settlement', $dueCount) }}</strong> — {{ __('the tenancy has closed but the deposit is still held. Settle it to complete the tenant\'s record.') }}</span>
+                </a>
+            @endif
+
             {{-- Status filter --}}
             @php
-                $filters = [
-                    ''         => __('All'),
-                    'held'     => __('Held'),
-                    'settled'  => __('Settled'),
-                    'refunded' => __('Refunded'),
-                    'applied'  => __('Applied'),
-                ];
+                $filters = ['' => __('All'), 'held' => __('Held')];
+                if (($dueCount ?? 0) > 0 || ($statusFilter ?? '') === 'due') {
+                    $filters['due'] = __('Due for settlement');
+                }
+                $filters += ['settled' => __('Settled'), 'refunded' => __('Refunded'), 'applied' => __('Applied')];
             @endphp
             <div class="dep-filters">
                 @foreach ($filters as $val => $label)
@@ -58,6 +64,7 @@
                                     <th class="dep-num">{{ __('Amount') }}</th>
                                     <th>{{ __('Held On') }}</th>
                                     <th>{{ __('Status') }}</th>
+                                    <th></th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -67,6 +74,8 @@
                                         $unit  = optional($d->unit)->unit_name ?: ($d->property_unit_id ? '#' . $d->property_unit_id : '—');
                                         $badge = ['held' => 'dep-badge--held', 'settled' => 'dep-badge--refunded', 'refunded' => 'dep-badge--refunded', 'applied' => 'dep-badge--applied'][$d->status] ?? 'dep-badge--held';
                                         $sLabel = ['held' => __('Held'), 'settled' => __('Settled'), 'refunded' => __('Refunded'), 'applied' => __('Applied')][$d->status] ?? ucfirst($d->status);
+                                        // Held + tenancy already closed = due for settlement (should have been returned).
+                                        $isDue = $d->status === 'held' && (int) optional($d->tenant)->status === TENANT_STATUS_CLOSE;
                                     @endphp
                                     <tr>
                                         <td>
@@ -75,7 +84,18 @@
                                         <td><span class="dep-muted">{{ $unit }}</span></td>
                                         <td class="dep-num"><span class="dep-amt">{{ currencyPrice($d->amount) }}</span></td>
                                         <td><span class="dep-muted">{{ $d->held_at ? $d->held_at->format('d M Y') : '—' }}</span></td>
-                                        <td><span class="dep-badge {{ $badge }}">{{ $sLabel }}</span></td>
+                                        <td>
+                                            @if ($isDue)
+                                                <span class="dep-badge dep-badge--due" title="{{ __('Tenancy closed — deposit still held') }}">{{ __('Due') }}</span>
+                                            @else
+                                                <span class="dep-badge {{ $badge }}">{{ $sLabel }}</span>
+                                            @endif
+                                        </td>
+                                        <td class="text-end">
+                                            @if ($isDue)
+                                                <a href="{{ route('owner.tenant.details', [$d->tenant_id, 'tab' => 'payment']) }}" class="dep-settle-link">{{ __('Settle') }} <i class="ri-arrow-right-line"></i></a>
+                                            @endif
+                                        </td>
                                     </tr>
                                 @endforeach
                             </tbody>
@@ -145,6 +165,14 @@
     .dep-badge--held { background: #FAEEDA; color: #854F0B; }
     .dep-badge--refunded { background: #E1F5EE; color: #0F6E56; }
     .dep-badge--applied { background: #f3f4f6; color: #4b5563; }
+    .dep-badge--due { background: #FAECE7; color: #993C1D; }
+    .dep-due-alert { display: flex; align-items: flex-start; gap: 10px; margin-bottom: 14px; padding: 12px 14px;
+        background: #FDF6EC; border: 0.5px solid #F5D9A8; border-radius: 10px; text-decoration: none; color: #7A4A10; font-size: 12.5px; line-height: 1.5; transition: border-color .13s; }
+    .dep-due-alert i { flex: none; color: #993C1D; font-size: 18px; }
+    .dep-due-alert strong { color: #6B3E08; }
+    .dep-due-alert:hover { border-color: #993C1D; }
+    .dep-settle-link { font-size: 12.5px; font-weight: 600; color: #185FA5; text-decoration: none; white-space: nowrap; display: inline-flex; align-items: center; gap: 4px; }
+    .dep-settle-link:hover { color: #0F4A84; }
 
     .dep-empty { text-align: center; padding: 48px 20px; }
     .dep-empty__icon { font-size: 40px; color: #B5D4F4; margin-bottom: 6px; }
