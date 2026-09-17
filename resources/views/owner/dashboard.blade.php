@@ -177,7 +177,7 @@
                                                 $rcDate = \Carbon\Carbon::parse($rc->intended_move_out_date);
                                                 $rcPast = $rcDate->isPast();
                                             @endphp
-                                            <a href="{{ route('owner.tenant.details', [$rc->tenant_id, 'tab' => 'profile']) }}"
+                                            <a href="{{ route('owner.tenant.details', [$rc->tenant_id, 'tab' => 'profile', 'close' => 1]) }}"
                                                style="color:inherit;text-decoration:underline;margin-right:14px;white-space:nowrap;display:inline-block;">
                                                 {{ $rcName }} — {{ $rcDate->format('d M Y') }}@if ($rcPast) ({{ __('date passed') }})@endif
                                             </a>
@@ -189,7 +189,7 @@
                                 </div>
                             </div>
                             @if ($readyToClose->count() === 1)
-                                <a href="{{ route('owner.tenant.details', [$readyToClose->first()->tenant_id, 'tab' => 'profile']) }}" class="notice-bar__action">
+                                <a href="{{ route('owner.tenant.details', [$readyToClose->first()->tenant_id, 'tab' => 'profile', 'close' => 1]) }}" class="notice-bar__action">
                                     <svg width="10" height="10" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
                                     {{ __('Close tenant') }}
                                 </a>

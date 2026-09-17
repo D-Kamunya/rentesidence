@@ -277,4 +277,18 @@
 
 @push('script')
     <script src="{{ asset('assets/js/custom/tenant.js') }}"></script>
+    @if (request('close') && $tenant->status != TENANT_STATUS_CLOSE)
+        {{-- Arrived from a "ready to close" prompt — open the Close Tenant dialog straight away so
+             the owner isn't left hunting for the action on the profile page. --}}
+        <script>
+            (function () {
+                try {
+                    var el = document.getElementById('tenantCloseModal');
+                    if (el && window.bootstrap && bootstrap.Modal) {
+                        new bootstrap.Modal(el).show();
+                    }
+                } catch (e) {}
+            })();
+        </script>
+    @endif
 @endpush

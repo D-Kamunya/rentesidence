@@ -133,7 +133,7 @@ class VacationNoticeService
             $title = __('Ready to close');
             $body  = $tenantName . ' (' . $unitLabel . ') ' . __('says they have moved out') . ' (' . $moveOut . '). '
                 . __('Finalize the tenancy with Close Tenant when the move-out is complete.');
-            $url   = route('owner.tenant.details', [$tenant->id, 'tab' => 'profile']);
+            $url   = route('owner.tenant.details', [$tenant->id, 'tab' => 'profile', 'close' => 1]);
 
             addNotification($title, $body, $url, null, $notice->owner_user_id, $tenant->user_id ?? null);
 

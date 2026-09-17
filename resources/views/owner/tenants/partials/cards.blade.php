@@ -24,8 +24,11 @@
                                 } else {
                                     $attTab = 'document';
                                 }
+                                $attParams = [$tenant->id, 'tab' => $attTab];
+                                // Ready-to-close routes to Profile with the close dialog pre-opened.
+                                if ($attTab === 'profile') $attParams['close'] = 1;
                             @endphp
-                            <a href="{{ route('owner.tenant.details', [$tenant->id, 'tab' => $attTab]) }}" class="ow-attention" title="{{ implode(' · ', $attParts) }}">
+                            <a href="{{ route('owner.tenant.details', $attParams) }}" class="ow-attention" title="{{ implode(' · ', $attParts) }}">
                                 <span class="ow-attention__dot"></span>{{ __('Needs attention') }}
                             </a>
                         @endif
