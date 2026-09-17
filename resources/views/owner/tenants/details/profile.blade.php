@@ -191,6 +191,28 @@
                         </div>
                     </div>
 
+                    {{-- Non-blocking record-discipline warning: a held deposit isn't settled by closing.
+                         We don't block the close (Model A — the owner may have refunded off-system); we
+                         just make the consequence visible + point at the still-available settle action. --}}
+                    @if (($depositHeld ?? 0) > 0)
+                        <div class="td-close-warn">
+                            <i class="ri-safe-2-line"></i>
+                            <div>
+                                <strong>{{ __('A deposit of') }} {{ currencyPrice($depositHeld) }} {{ __('is still held for this tenant.') }}</strong>
+                                <span>{{ __('Closing won\'t settle it — record the settlement now or later from') }}
+                                    <a href="{{ route('owner.tenant.details', [$tenant->id, 'tab' => 'payment']) }}">{{ __('Payments & Deposit') }}</a>{{ __(', so the tenant\'s record is complete.') }}</span>
+                            </div>
+                        </div>
+                        <style>
+                            .td-close-warn { display:flex; align-items:flex-start; gap:10px; margin:0 0 14px; padding:12px 14px;
+                                background:#FDF6EC; border:0.5px solid #F5D9A8; border-radius:10px; }
+                            .td-close-warn > i { flex:none; color:#854F0B; font-size:19px; line-height:1.2; }
+                            .td-close-warn strong { display:block; font-size:13px; color:#6B3E08; }
+                            .td-close-warn span { font-size:12px; color:#7A4A10; line-height:1.5; }
+                            .td-close-warn a { color:#185FA5; font-weight:600; text-decoration:underline; }
+                        </style>
+                    @endif
+
                     @if (!empty($depositSettlement))
                         <p class="pf-hint" style="font-size:12px;color:#0F6E56;margin:0 0 10px;">
                             <i class="ri-checkbox-circle-line"></i>

@@ -284,6 +284,9 @@ class TenantController extends Controller
             // "Ready to close" reminder for owners who arrived via the view channel (where the close
             // dialog is NOT auto-opened) — a persistent banner pointing them at Close Tenant.
             $data['readyToClose'] = app(\App\Services\TenantAttentionService::class)->forTenant($id)['ready_close'];
+            // Held deposit still unsettled (held drops out once settled) — drives a soft, non-blocking
+            // warning in the Close Tenant dialog so a deposit isn't accidentally orphaned on close.
+            $data['depositHeld'] = app(\App\Services\DepositService::class)->totalHeldForTenant((int) $id);
             return view('owner.tenants.details.profile', $data);
         } elseif ($request->tab == 'home') {
             $data['pageTitle'] = __('Home Details');
