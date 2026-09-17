@@ -209,9 +209,9 @@
   .csh-form h3{font-size:22px;font-weight:750;color:var(--stone-900)}
   .csh-form p{margin-top:6px;color:var(--stone-500);font-size:15px}
   .csh-frow{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:16px}
-  .csh-form input,.csh-form textarea{width:100%;font-family:inherit;font-size:15px;padding:12px 14px;border-radius:10px;
+  .csh-form input,.csh-form textarea,.csh-form select{width:100%;font-family:inherit;font-size:15px;padding:12px 14px;border-radius:10px;
     border:1px solid var(--line);background:var(--paper);color:var(--stone-900);margin-top:12px}
-  .csh-form input:focus,.csh-form textarea:focus{outline:2px solid var(--cs-blue);outline-offset:1px;border-color:transparent}
+  .csh-form input:focus,.csh-form textarea:focus,.csh-form select:focus{outline:2px solid var(--cs-blue);outline-offset:1px;border-color:transparent}
   .csh-frow input{margin-top:0}
   /* NOTE: this element is `.csh-wrap.csh-cta-final`, and `.csh .csh-wrap{padding:0 24px}`
      (2 classes) outranks a bare `.csh-cta-final` (1 class), zeroing the vertical padding.
@@ -577,7 +577,6 @@
       </div>
       <form class="csh-form ajax" action="{{ route('contact.message.store') }}" method="POST" data-handler="getShowMessage">
         @csrf
-        <input type="hidden" name="intent" id="cshIntent" value="general">
         <h3>{{ __('Talk to us') }}</h3>
         <p>{{ __('We will get back to you shortly.') }}</p>
         <div class="csh-frow">
@@ -586,6 +585,13 @@
         </div>
         <input type="email" name="email" placeholder="{{ __('Email') }}">
         <input type="tel" name="phone" placeholder="{{ __('Phone number') }}">
+        {{-- Explicit context — always captured (the old hidden field was only set when a visitor
+             clicked a CTA; a direct visitor was always "general"). JS pre-selects from the CTA. --}}
+        <select name="intent" id="cshIntent">
+          <option value="general">{{ __('What\'s this about? — General enquiry') }}</option>
+          <option value="trial">{{ __('Getting started / free trial') }}</option>
+          <option value="partner">{{ __('Partnership or affiliate') }}</option>
+        </select>
         <input type="text" name="subject" placeholder="{{ __('Subject') }}">
         <textarea name="message" rows="4" placeholder="{{ __('Tell us about your properties') }}"></textarea>
         <button type="submit" class="csh-btn csh-btn--blue" style="width:100%;justify-content:center;margin-top:14px">{{ __('Send inquiry') }}</button>

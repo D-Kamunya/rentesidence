@@ -10,41 +10,47 @@
 --}}
 
 <style>
+  /* Light design language — matches the marketing site (paper ground, stone ink, amber accent).
+     The frontend layout paints a light background, so hero text must be dark to be readable. */
+  .inv-page{background:#FAF9F6;}
   .inv-wrap{max-width:1080px;margin:0 auto;padding:56px 20px 80px;}
-  .inv-hero{text-align:center;max-width:720px;margin:0 auto 40px;}
+  .inv-hero{text-align:center;max-width:740px;margin:0 auto 40px;}
   .inv-eyebrow{display:inline-block;font-size:12px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;
-    color:#4f9be0;background:rgba(24,95,165,.14);border:1px solid rgba(24,95,165,.35);
+    color:#185FA5;background:#E8F0F9;border:1px solid #CBDDF1;
     padding:6px 14px;border-radius:999px;margin-bottom:18px;}
-  .inv-hero h1{font-size:clamp(28px,5vw,42px);line-height:1.12;font-weight:700;margin:0 0 14px;color:#fff;}
-  .inv-hero h1 .amp{color:#f2b64c;}
-  .inv-hero p{font-size:17px;line-height:1.6;color:#c7cfda;margin:0;}
+  .inv-hero h1{font-size:clamp(28px,5vw,44px);line-height:1.12;font-weight:750;margin:0 0 16px;color:#1B1E22;letter-spacing:-.01em;}
+  .inv-hero h1 .amp{color:#E7A339;}
+  .inv-hero p{font-size:17px;line-height:1.65;color:#6B7280;margin:0;}
   .inv-grid{display:grid;grid-template-columns:1.05fr .95fr;gap:28px;align-items:start;}
   @media (max-width:820px){.inv-grid{grid-template-columns:1fr;}}
-  .inv-card{background:#12161c;border:1px solid #232b35;border-radius:18px;padding:26px 26px 30px;}
-  .inv-benefits li{list-style:none;display:flex;gap:12px;align-items:flex-start;padding:12px 0;border-top:1px solid #1e252e;color:#d5dbe4;font-size:15px;line-height:1.5;}
+  .inv-card{background:#FFFFFF;border:1px solid #E6E1D8;border-radius:18px;padding:26px 26px 30px;
+    box-shadow:0 1px 2px rgba(20,23,28,.04),0 10px 30px rgba(20,23,28,.05);}
+  .inv-benefits li{list-style:none;display:flex;gap:12px;align-items:flex-start;padding:13px 0;border-top:1px solid #EFEBE3;color:#3A3F47;font-size:15px;line-height:1.5;}
   .inv-benefits li:first-child{border-top:none;}
   .inv-benefits .ic{flex:none;width:34px;height:34px;border-radius:10px;display:grid;place-items:center;
-    background:rgba(24,95,165,.16);color:#5aa7ee;font-size:17px;}
-  .inv-benefits b{color:#fff;font-weight:650;}
-  .inv-formhead{margin:0 0 4px;font-size:20px;font-weight:700;color:#fff;}
-  .inv-formsub{margin:0 0 20px;font-size:13.5px;color:#93a0af;}
+    background:#E8F0F9;color:#185FA5;font-size:17px;}
+  .inv-benefits b{color:#1B1E22;font-weight:700;}
+  .inv-formhead{margin:0 0 4px;font-size:20px;font-weight:750;color:#1B1E22;}
+  .inv-formsub{margin:0 0 20px;font-size:13.5px;color:#6B7280;}
   .inv-field{margin-bottom:15px;}
-  .inv-field label{display:block;font-size:12.5px;font-weight:600;color:#aeb8c4;margin-bottom:6px;}
-  .inv-field label .req{color:#f2b64c;}
-  .inv-field input,.inv-field select{width:100%;background:#0d1116;border:1px solid #2a333e;border-radius:10px;
-    padding:11px 13px;color:#eef2f6;font-size:14.5px;outline:none;transition:border-color .15s,box-shadow .15s;}
-  .inv-field input:focus,.inv-field select:focus{border-color:#185FA5;box-shadow:0 0 0 3px rgba(24,95,165,.25);}
+  .inv-field label{display:block;font-size:12.5px;font-weight:600;color:#3A3F47;margin-bottom:6px;}
+  .inv-field label .req{color:#E7A339;}
+  .inv-field input,.inv-field select{width:100%;background:#FFFFFF;border:1px solid #E6E1D8;border-radius:10px;
+    padding:11px 13px;color:#1B1E22;font-size:14.5px;outline:none;transition:border-color .15s,box-shadow .15s;}
+  .inv-field input::placeholder{color:#9AA0A8;}
+  .inv-field input:focus,.inv-field select:focus{border-color:#185FA5;box-shadow:0 0 0 3px rgba(24,95,165,.15);}
   .inv-row{display:grid;grid-template-columns:1fr 1fr;gap:13px;}
   @media (max-width:480px){.inv-row{grid-template-columns:1fr;}}
   .inv-submit{width:100%;margin-top:8px;background:linear-gradient(180deg,#2074c4,#185FA5);border:none;border-radius:11px;
-    padding:14px;color:#fff;font-size:15.5px;font-weight:650;cursor:pointer;transition:filter .15s;}
-  .inv-submit:hover{filter:brightness(1.08);}
-  .inv-fineprint{margin-top:14px;font-size:12px;color:#7e8a97;line-height:1.5;text-align:center;}
-  .inv-err{background:rgba(180,35,24,.14);border:1px solid rgba(180,35,24,.4);color:#f0a99f;border-radius:10px;
+    padding:14px;color:#fff;font-size:15.5px;font-weight:650;cursor:pointer;transition:filter .15s;box-shadow:0 10px 24px -12px rgba(24,95,165,.7);}
+  .inv-submit:hover{filter:brightness(1.06);}
+  .inv-fineprint{margin-top:14px;font-size:12px;color:#9AA0A8;line-height:1.5;text-align:center;}
+  .inv-err{background:#FBE9E6;border:1px solid #F0B8B0;color:#B42318;border-radius:10px;
     padding:11px 14px;font-size:13.5px;margin-bottom:16px;}
   .inv-err ul{margin:6px 0 0;padding-left:18px;}
 </style>
 
+<div class="inv-page">
 <div class="inv-wrap">
   <div class="inv-hero">
     <span class="inv-eyebrow">{{ __('Invitation') }}</span>
@@ -124,5 +130,6 @@
       </form>
     </div>
   </div>
+</div>
 </div>
 @endsection
