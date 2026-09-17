@@ -37,6 +37,8 @@ class DatabaseSeeder extends Seeder
             OwnerKnowledgeBaseSeeder::class,
             AffiliateKnowledgeBaseSeeder::class,
             AffiliateAcademySeeder::class,
+            FaqSeeder::class,
+            BlogSeeder::class,
         ]);
     }
 }
