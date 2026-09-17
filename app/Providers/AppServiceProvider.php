@@ -38,6 +38,20 @@ class AppServiceProvider extends ServiceProvider
         \Illuminate\Support\Facades\View::composer('tenant.*', function ($view) {
             $view->with('ownerless', optional(auth()->user())->isOwnerlessTenant() ?? false);
         });
+
+        // Sidebar count badges — actionable "N waiting" numbers, computed once per request
+        // per role's sidebar (a count of 0 renders nothing).
+        \Illuminate\Support\Facades\View::composer('owner.layouts.sidebar', function ($view) {
+            $uid = auth()->id();
+            $view->with('navBadges', $uid ? app(\App\Services\NavBadgeService::class)->forOwner((int) $uid) : []);
+        });
+        \Illuminate\Support\Facades\View::composer('tenant.layouts.sidebar', function ($view) {
+            $tenant = optional(auth()->user())->tenant;
+            $view->with('navBadges', $tenant ? app(\App\Services\NavBadgeService::class)->forTenant((int) $tenant->id) : []);
+        });
+        \Illuminate\Support\Facades\View::composer('admin.layouts.sidebar', function ($view) {
+            $view->with('navBadges', app(\App\Services\NavBadgeService::class)->forAdmin());
+        });
         try {
             Builder::defaultStringLength(191);
             $connection = DB::connection()->getPdo();

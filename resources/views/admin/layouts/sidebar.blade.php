@@ -180,14 +180,14 @@
                         <li>
                             <a class="{{ @$navAffiliatesWithdrawAddMMShowClass }}" href="{{ route('admin.affiliate.withdrawals') }}">
                             <i class="fa fa-users" aria-hidden="true"></i>
-                                <span>{{ __('Accounts & Withdrawals') }}</span>
+                                <span>{{ __('Accounts & Withdrawals') }}@include('partials.nav-count', ['n' => $navBadges['affiliate_withdrawals'] ?? 0])</span>
                             </a>
                         </li>
                         @if (config('referrals.enabled'))
                         <li>
                             <a class="{{ @$navReferralPayoutsMMShowClass }}" href="{{ route('admin.referral-payouts.index') }}">
                             <i class="ri-hand-coin-line" aria-hidden="true"></i>
-                                <span>{{ __('Referral Payouts') }}</span>
+                                <span>{{ __('Referral Payouts') }}@include('partials.nav-count', ['n' => $navBadges['referral_payouts'] ?? 0])</span>
                             </a>
                         </li>
                         @endif

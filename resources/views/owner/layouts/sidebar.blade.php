@@ -97,11 +97,11 @@
                         </li>
                         <li class="{{ @$subNavTenantApplicationMMActiveClass }}">
                             <a href="{{ route('owner.tenant.applications.index') }}"
-                                class="{{ @$subNavTenantApplicationActiveClass }}">{{ __('Tenant Applications') }}</a>
+                                class="{{ @$subNavTenantApplicationActiveClass }}">{{ __('Tenant Applications') }}@include('partials.nav-count', ['n' => $navBadges['applications'] ?? 0])</a>
                         </li>
                         <li class="{{ @$subNavDepositMMActiveClass }}">
                             <a href="{{ route('owner.deposit.index') }}"
-                                class="{{ @$subNavDepositActiveClass }}">{{ __('Deposits Held') }}</a>
+                                class="{{ @$subNavDepositActiveClass }}">{{ __('Deposits Held') }}@include('partials.nav-count', ['n' => $navBadges['deposits_due'] ?? 0])</a>
                         </li>
                         <li class="{{ @$subNavScreeningMMActiveClass }}">
                             <a href="{{ route('owner.screening.index') }}"

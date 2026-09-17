@@ -15,7 +15,7 @@
                 <li class="{{ @$navInvoiceMMActiveClass }}">
                     <a href="{{ route('tenant.invoice.index') }}" class="{{ @$navInvoiceActiveClass }}">
                         <i class="ri-bill-line"></i>
-                        <span>{{ __('Invoices') }}</span>
+                        <span>{{ __('Invoices') }}@include('partials.nav-count', ['n' => $navBadges['invoices_unpaid'] ?? 0])</span>
                     </a>
                 </li>
                 <li class="{{ @$navRentalScoreMMActiveClass }}">
