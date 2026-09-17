@@ -81,6 +81,9 @@
             overflow-x: auto;
             -webkit-overflow-scrolling: touch;
         }
+
+        /* Flush the topbar hamburger to the left — its px-3 leaves an intrusive gap on phones. */
+        #vertical-menu-btn { padding-left: 6px !important; }
     }
 
     /* ── Shared brand mark (sidebar/topbar) — see common/layouts/_brand.blade.php ── */

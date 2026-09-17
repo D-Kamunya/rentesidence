@@ -14,9 +14,11 @@
   .invok-wrap h1{font-size:clamp(26px,5vw,36px);font-weight:750;color:#1B1E22;margin:0 0 14px;}
   .invok-wrap p{font-size:16.5px;line-height:1.65;color:#6B7280;margin:0 auto 26px;max-width:52ch;}
   .invok-actions{display:flex;gap:12px;justify-content:center;flex-wrap:wrap;}
+  /* Explicit colors with !important — button-styled anchors otherwise inherit the frontend's
+     global a:hover blue, which turns the primary button's text invisible on its blue ground. */
   .invok-btn{padding:12px 22px;border-radius:11px;font-size:14.5px;font-weight:650;text-decoration:none;}
-  .invok-btn--p{background:linear-gradient(180deg,#2074c4,#185FA5);color:#fff;box-shadow:0 10px 24px -12px rgba(24,95,165,.7);}
-  .invok-btn--g{background:#FFFFFF;border:1px solid #E6E1D8;color:#3A3F47;}
+  .invok-btn--p,.invok-btn--p:hover,.invok-btn--p:focus{background:linear-gradient(180deg,#2074c4,#185FA5);color:#fff !important;box-shadow:0 10px 24px -12px rgba(24,95,165,.7);}
+  .invok-btn--g,.invok-btn--g:hover,.invok-btn--g:focus{background:#FFFFFF;border:1px solid #E6E1D8;color:#3A3F47 !important;}
 </style>
 
 <div class="invok-page">

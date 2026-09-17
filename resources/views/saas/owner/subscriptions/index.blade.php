@@ -86,6 +86,11 @@
 @media (max-width: 1024px) {
     .sub-layout { grid-template-columns: 1fr; }
 }
+/* Phones: the app-wide gutter trim zeroes .page-content, so give the cards a little room
+   from the screen edges rather than sitting flush against them. */
+@media (max-width: 640px) {
+    .sub-page { padding-left: 12px; padding-right: 12px; }
+}
 
 /* ─── Card Base ───────────────────────────────────── */
 .sub-card {
