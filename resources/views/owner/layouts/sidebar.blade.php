@@ -193,7 +193,7 @@
                     <li>
                         <a href="{{ route('owner.ticket.index') }}">
                             <i class="ri-bookmark-2-line"></i>
-                            <span>{{ __('Tickets') }}</span>
+                            <span>{{ __('Tickets') }}</span>@include('partials.nav-count', ['n' => $navBadges['tickets'] ?? 0])
                         </a>
                     </li>
                 @endif

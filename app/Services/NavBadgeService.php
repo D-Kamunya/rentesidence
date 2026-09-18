@@ -9,6 +9,7 @@ use App\Models\LandlordReferral;
 use App\Models\MaintenanceRequest;
 use App\Models\Message;
 use App\Models\Property;
+use App\Models\Ticket;
 
 /**
  * Sidebar count badges — the actionable "you have N things waiting" numbers on nav links,
@@ -21,7 +22,7 @@ use App\Models\Property;
  */
 class NavBadgeService
 {
-    /** Owner sidebar: pending applications to review, deposits due for settlement. */
+    /** Owner sidebar: pending applications to review, deposits due, maintenance + tickets awaiting action. */
     public function forOwner(int $ownerUserId): array
     {
         return [
@@ -36,6 +37,10 @@ class NavBadgeService
                 'property_id',
                 Property::where('owner_user_id', $ownerUserId)->pluck('id')
             )->where('status', MAINTENANCE_REQUEST_STATUS_PENDING)->count()),
+
+            // Tenant-raised tickets that still need the owner: newly OPEN or REOPENed (not in-progress/resolved/closed).
+            'tickets' => $this->safe(fn () => Ticket::where('owner_user_id', $ownerUserId)
+                ->whereIn('status', [TICKET_STATUS_OPEN, TICKET_STATUS_REOPEN])->count()),
         ];
     }
 
