@@ -114,8 +114,12 @@ class InvoiceController extends Controller
         // }
         $data['invoices'] = $this->invoiceService->getByTenantId(auth()->user()->tenant->id);
         // Upcoming rent months (name + amount + state) for the "Pay Upcoming Rent" modal.
-        $data['upcomingRentMonths'] = app(\App\Services\InvoiceRecurringService::class)
-            ->upcomingRentMonths(auth()->user()->tenant);
+        // Authoritative gate: a tenant with no active landlord (ownerless/Helper) or a pending
+        // move-out has no business pre-paying future rent — offer no months in the first place.
+        $canPayAhead = ! auth()->user()->isOwnerlessTenant() && empty($activeNotice);
+        $data['upcomingRentMonths'] = $canPayAhead
+            ? app(\App\Services\InvoiceRecurringService::class)->upcomingRentMonths(auth()->user()->tenant)
+            : [];
         return view('tenant.invoices.index', $data);
     }
 
@@ -198,6 +202,12 @@ class InvoiceController extends Controller
         $tenant = auth()->user()->tenant;
         if (!$tenant || (int) $tenant->status !== TENANT_STATUS_ACTIVE) {
             return back()->with('error', __('No active tenancy found.'));
+        }
+
+        // A tenant who has given notice to vacate shouldn't pre-pay months they won't be around
+        // for — mirrors the hidden UI, and hard-stops a direct POST (money surface, defense in depth).
+        if (app(\App\Services\VacationNoticeService::class)->movingOutNotice((int) $tenant->id)) {
+            return back()->with('error', __('You have a pending move-out, so paying rent ahead isn\'t available right now.'));
         }
 
         $recurringService = app(\App\Services\InvoiceRecurringService::class);

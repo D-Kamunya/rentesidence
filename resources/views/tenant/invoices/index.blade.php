@@ -57,7 +57,11 @@
                                     {{ __('Give notice to vacate') }}
                                 </button>
                             @endif
-                            @if (empty($tenancyEnded))
+                            {{-- Paying ahead only makes sense with an active landlord and no pending
+                                 move-out — an ownerless/Helper tenant has no upcoming rent, and a tenant
+                                 who's given notice shouldn't pre-pay months they won't be here for
+                                 (mirrors the dashboard gating). --}}
+                            @if (empty($tenancyEnded) && empty($ownerless) && empty($activeNotice))
                                 <button type="button" class="inv-btn inv-btn--pay" data-bs-toggle="modal" data-bs-target="#payUpcomingModal">
                                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
                                         <rect x="3" y="5" width="18" height="16" rx="2" stroke="currentColor" stroke-width="1.8"/>
@@ -1041,7 +1045,9 @@
     </script>
 
     @if (empty($tenancyEnded))
-    {{-- Deep-link from the dashboard "Pay your rent ahead" pointer opens the modal straight away --}}
+    {{-- Deep-link from the dashboard "Pay your rent ahead" pointer opens the modal straight away —
+         but only when paying ahead is actually available (not ownerless, not moving out). --}}
+    @if (empty($tenancyEnded) && empty($ownerless) && empty($activeNotice))
     <script>
         (function () {
             try {
@@ -1054,6 +1060,7 @@
             } catch (e) {}
         })();
     </script>
+    @endif
     @endif
 
     {{-- Notice-to-vacate: flag an early date + submit --}}
