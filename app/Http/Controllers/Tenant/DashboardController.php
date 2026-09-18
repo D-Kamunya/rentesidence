@@ -27,7 +27,10 @@ class DashboardController extends Controller
         $data['tenant'] = $tenantUser;
         // Terminal state: a closed tenancy should read cleanly ("ended") rather than showing stale
         // live surfaces (rent, meters, give-notice). The full no-owner experience is the Tenant Helper.
-        $data['tenancyEnded'] = (int) $tenantUser->status === TENANT_STATUS_CLOSE;
+        // A self-registered Helper is ALSO a CLOSE row but never had a landlord (owner_user_id null) —
+        // it must NOT read as "your tenancy has ended", so gate on having actually had an owner.
+        $data['tenancyEnded'] = (int) $tenantUser->status === TENANT_STATUS_CLOSE
+            && ! is_null(auth()->user()->owner_user_id);
         $data['invoices'] = Invoice::where('tenant_id', $tenantUser->id)
             ->with(['invoiceItems.invoiceType'])
             ->latest()

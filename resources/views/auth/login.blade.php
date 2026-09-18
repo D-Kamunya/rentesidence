@@ -79,6 +79,10 @@
                         </div>
                     </div>
                 @endif
+
+                <p class="cs-auth__foot" style="margin-top:18px;text-align:center;font-size:13.5px;color:var(--muted);">
+                    {{ __('New tenant?') }} <a href="{{ route('tenant.join') }}" class="cs-auth__link">{{ __('Create a free account') }}</a>
+                </p>
             </div>
         </main>
     </div>

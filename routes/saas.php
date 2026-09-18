@@ -3,6 +3,7 @@
 use App\Http\Controllers\PaymentSubscriptionController;
 use App\Http\Controllers\Saas\Admin\ContactMessageController;
 use App\Http\Controllers\Saas\OwnerAuthController;
+use App\Http\Controllers\Saas\TenantSelfRegisterController;
 use App\Http\Controllers\Saas\SubscriptionController as SaasSubscriptionController;
 use App\Http\Controllers\Saas\Admin\CorePagesController;
 use App\Http\Controllers\Saas\Admin\FaqController;
@@ -21,6 +22,12 @@ Route::group(['middleware' => ['version.update', 'addon.update', 'isFrontend']],
     // register owner
     Route::get('owner-register', [OwnerAuthController::class, 'owner_register_form'])->name('owner.register.form');
     Route::post('owner-register', [OwnerAuthController::class, 'owner_register_store'])->name('owner.register.store');
+
+    // Tenant Helper self-signup — a FREE tenant with no (on-platform) landlord. Owners still can't
+    // self-register; tenants can (see controller). Throttled to blunt scripted account creation.
+    Route::get('join', [TenantSelfRegisterController::class, 'form'])->name('tenant.join');
+    Route::post('join', [TenantSelfRegisterController::class, 'store'])
+        ->middleware('throttle:8,60')->name('tenant.join.store');
 
     // policy
     Route::get('terms-conditions', [FrontendController::class, 'termsConditions'])->name('terms-conditions');

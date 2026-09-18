@@ -34,7 +34,9 @@
             linear-gradient(rgba(255,255,255,.03) 1px, transparent 1px) 0 0/46px 46px,
             linear-gradient(90deg, rgba(255,255,255,.03) 1px, transparent 1px) 0 0/46px 46px,
             linear-gradient(120deg, rgba(8,11,18,.92) 0%, rgba(8,11,18,.60) 52%, rgba(8,11,18,.88) 100%); }
-    .cs-auth__logo img { height:58px; width:auto; max-width:250px; object-fit:contain;
+    .cs-auth__logo { display:inline-block; line-height:0; transition:opacity .15s ease; }
+    .cs-auth__logo:hover { opacity:.85; }
+    .cs-auth__logo img { height:74px; width:auto; max-width:300px; object-fit:contain;
         filter:drop-shadow(0 6px 20px rgba(24,95,165,.38)); }
     .cs-auth__wordmark { font-size:27px; font-weight:700; letter-spacing:-.01em; color:#fff; }
     .cs-auth__wordmark--dark { color:#0f172a; }
@@ -55,8 +57,9 @@
         padding:48px 46px; backdrop-filter:blur(14px); box-shadow:0 30px 60px rgba(0,0,0,.4);
         animation:csRise .5s cubic-bezier(.2,.8,.3,1) both; }
     @keyframes csRise { from { opacity:0; transform:translateY(14px); } }
-    .cs-auth__cardlogo { display:none; margin-bottom:26px; }
-    .cs-auth__cardlogo img { height:52px; width:auto; max-width:230px; object-fit:contain;
+    .cs-auth__cardlogo { display:none; margin-bottom:26px; line-height:0; transition:opacity .15s ease; }
+    .cs-auth__cardlogo:hover { opacity:.85; }
+    .cs-auth__cardlogo img { height:64px; width:auto; max-width:260px; object-fit:contain;
         filter:drop-shadow(0 5px 16px rgba(24,95,165,.34)); }
     .cs-auth__title { font-size:34px; font-weight:700; letter-spacing:-.02em; color:#fff; margin:0 0 8px; }
     .cs-auth__hint { font-size:15px; color:var(--muted); margin:0 0 30px; }

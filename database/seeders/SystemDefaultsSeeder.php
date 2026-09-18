@@ -18,6 +18,13 @@ use Illuminate\Database\Seeder;
  * on every deploy, so overwriting here would silently reset an admin's tuned values (e.g.
  * a return window bumped to 3) back to the default on the next pull. Never do that.
  *
+ * ONE EXCEPTION — the $authoritative block at the end FORCES a tiny set of critical toggles ON
+ * every seed (the invoice + subscription reminder statuses). These are the getting-paid /
+ * retention backbone and the reminder commands hard-exit when they are off, so a stray "off" is
+ * a silent total outage with no legitimate upside. Only their ON/OFF status is asserted; the
+ * cadence/day-lists stay admin-tunable. Add to $authoritative only for the same kind of
+ * must-never-be-off safety switch.
+ *
  * Deliberately EXCLUDED:
  *   - Base-template general settings (app_name, frontend/email toggles) — owned by the
  *     admin General Settings UI + BrandingSeeder; not ours to seed here.
@@ -71,6 +78,14 @@ class SystemDefaultsSeeder extends Seeder
             'sms_paused_digest_days'      => 7,  // look-back window for the paused-backlog re-engagement digest
             'sms_paused_digest_throttle_days' => 7, // min gap between paused-digest nudges per owner
 
+            // ── Reminder day-lists (tunable — WHEN to remind; the ON/OFF status is forced below) ──
+            // These are only-if-absent so an admin can retune the cadence. The status flags that
+            // ACTIVATE reminders are authoritative (see $authoritative) — they must never sit OFF.
+            'reminder_days'                       => '3,1',   // invoice: days BEFORE due to remind
+            'OVERDUE_REMAINDER_DAYS'              => '1,3,7', // invoice: days AFTER due to remind
+            'subscription_reminder_days'          => '7,3,1', // subscription: days BEFORE renewal
+            'SUBSCRIPTION_OVERDUE_REMAINDER_DAYS' => '1,3,7', // subscription: days AFTER expiry
+
             // ── Subscription / plan notices ──
             'plan_expiry_notice_days' => 3, // days before expiry to warn the owner
 
@@ -92,11 +107,34 @@ class SystemDefaultsSeeder extends Seeder
             $planted++;
         }
 
+        // ── AUTHORITATIVE (force ON every seed) — the reminder backbone ─────────────────
+        // Unlike everything above, these are OVERWRITTEN on every deploy. Rationale (user, go-live):
+        // invoice + subscription reminders are the backbone of getting-paid and retention; the
+        // commands hard-exit when the status is inactive, so a single stray "off" (a fat-fingered
+        // toggle, a stale live value) becomes a SILENT, total reminder outage. There is no legitimate
+        // reason to run with them off, so we assert them ON authoritatively. Only the ON/OFF STATUS is
+        // forced — the day-lists and everyday-cadence flags remain admin-tunable (only-if-absent above).
+        $authoritative = [
+            'remainder_status'                      => REMAINDER_STATUS_ACTIVE,              // invoice due reminders
+            'OVERDUE_REMAINDER_STATUS'              => REMAINDER_STATUS_ACTIVE,              // invoice overdue reminders
+            'subscription_remainder_status'         => SUBSCRIPTION_REMAINDER_STATUS_ACTIVE, // subscription renewal reminders
+            'SUBSCRIPTION_OVERDUE_REMAINDER_STATUS' => SUBSCRIPTION_REMAINDER_STATUS_ACTIVE, // subscription post-expiry reminders
+        ];
+        $forced = 0;
+        foreach ($authoritative as $key => $value) {
+            $setting = Setting::firstOrNew(['option_key' => $key]);
+            if (! $setting->exists || (string) $setting->option_value !== (string) $value) {
+                $setting->option_value = (string) $value;
+                $setting->save();
+                $forced++;
+            }
+        }
+
         // Refresh the in-memory settings cache for the rest of this request.
         config(['settings' => Setting::pluck('option_value', 'option_key')->toArray()]);
 
         if ($this->command) {
-            $this->command->info("SystemDefaultsSeeder: planted {$planted} missing setting(s); existing values left untouched.");
+            $this->command->info("SystemDefaultsSeeder: planted {$planted} missing setting(s); forced {$forced} authoritative reminder toggle(s) ON; other existing values left untouched.");
         }
     }
 }

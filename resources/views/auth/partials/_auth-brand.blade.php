@@ -21,25 +21,35 @@
     @endif
 
     <div class="cs-auth__brandtop">
-        <span class="cs-auth__logo">
+        {{-- Logo links back to the marketing landing page. --}}
+        <a href="{{ route('frontend') }}" class="cs-auth__logo" title="{{ getOption('app_name') }}">
             @if ($hasLogo)
                 <img src="{{ $appLogo }}" alt="{{ getOption('app_name') }}" onerror="this.style.display='none';this.nextElementSibling.style.display='inline';">
                 <span class="cs-auth__wordmark" style="display:none;">{{ getOption('app_name') }}</span>
             @else
                 <span class="cs-auth__wordmark">{{ getOption('app_name') }}</span>
             @endif
-        </span>
+        </a>
     </div>
 
     <div class="cs-auth__brandmid">
-        <span class="cs-auth__eyebrow">{{ __('Infrastructure & Finance OS') }}</span>
-        <h1 class="cs-auth__headline">{{ $authTitle ? __($authTitle) : __('Run properties. Collect rent. Finance the essentials.') }}</h1>
-        <p class="cs-auth__sub">{{ $authSub ? __($authSub) : __('One secure platform for owners, tenants and partners — payments, agreements and infrastructure, end to end.') }}</p>
+        {{-- The audience can be overridden per page (e.g. the tenant-signup page passes tenant-facing
+             copy + feats) so the brand panel never shows owner-oriented words to a tenant. --}}
+        <span class="cs-auth__eyebrow">{{ $brandEyebrow ?? __('Infrastructure & Finance OS') }}</span>
+        <h1 class="cs-auth__headline">{{ $brandHeadline ?? ($authTitle ? __($authTitle) : __('Run properties. Collect rent. Finance the essentials.')) }}</h1>
+        <p class="cs-auth__sub">{{ $brandSub ?? ($authSub ? __($authSub) : __('One secure platform for owners, tenants and partners — payments, agreements and infrastructure, end to end.')) }}</p>
 
         <ul class="cs-auth__feats">
-            <li><span class="cs-auth__featic">{!! '<svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M3 9.5L12 4l9 5.5M5 11v8h14v-8" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>' !!}</span>{{ __('Properties & tenants, managed end-to-end') }}</li>
-            <li><span class="cs-auth__featic">{!! '<svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M4 7h16v10H4zM4 10h16M8 14h4" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>' !!}</span>{{ __('Payments & M-Pesa, built in') }}</li>
-            <li><span class="cs-auth__featic">{!! '<svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M12 3v18M5 8l7-5 7 5M5 8v8l7 5 7-5V8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>' !!}</span>{{ __('Infrastructure financing, repaid at source') }}</li>
+            @php
+                $defaultFeats = [
+                    ['<svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M3 9.5L12 4l9 5.5M5 11v8h14v-8" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>', __('Properties & tenants, managed end-to-end')],
+                    ['<svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M4 7h16v10H4zM4 10h16M8 14h4" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>', __('Payments & M-Pesa, built in')],
+                    ['<svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M12 3v18M5 8l7-5 7 5M5 8v8l7 5 7-5V8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>', __('Infrastructure financing, repaid at source')],
+                ];
+            @endphp
+            @foreach (($brandFeats ?? $defaultFeats) as [$featIcon, $featText])
+                <li><span class="cs-auth__featic">{!! $featIcon !!}</span>{{ $featText }}</li>
+            @endforeach
         </ul>
     </div>
 

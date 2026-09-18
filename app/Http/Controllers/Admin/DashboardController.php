@@ -26,7 +26,31 @@ class DashboardController extends Controller
         $data['totalOwner'] = User::where('role', USER_ROLE_OWNER)->count();
         $data['totalProperty'] = Property::count();
         $data['totalUnit'] = PropertyUnit::count();
-        $data['totalTenant'] = Tenant::count();
+        // Active TENANCIES only — Tenant::count() also counts moved-out (CLOSE) and the new
+        // self-registered ownerless "Helper" rows (no unit), which inflated the figure ABOVE
+        // total units. "Total tenants" should mean people currently occupying a unit.
+        $data['totalTenant'] = Tenant::where('status', TENANT_STATUS_ACTIVE)->count();
+        // Free "Tenant Helper" accounts — self-registered tenants with no landlord (owner_user_id null).
+        $data['freeTenant'] = User::where('role', USER_ROLE_TENANT)->whereNull('owner_user_id')->count();
+        // The rest of the user base, for uptake tracking across every account type.
+        $data['totalAffiliate']      = User::where('role', USER_ROLE_AFFILIATE)->count();
+        $data['totalMaintainer']     = User::where('role', USER_ROLE_MAINTAINER)->count();
+        $data['totalFinancePartner'] = User::where('role', USER_ROLE_FINANCE_PARTNER)->count();
+
+        // Owners by their CURRENT active plan (latest active owner_package per owner) — plan-mix uptake.
+        $data['ownersByPackage'] = \App\Models\OwnerPackage::query()
+            ->whereIn('owner_packages.id', function ($q) {
+                $q->selectRaw('MAX(id)')->from('owner_packages')->where('status', ACTIVE)->groupBy('user_id');
+            })
+            ->join('packages', 'owner_packages.package_id', '=', 'packages.id')
+            ->selectRaw('packages.name as name, COUNT(*) as c')
+            ->groupBy('packages.name')
+            ->orderByDesc('c')
+            ->get();
+
+        // Account growth over time — marketing-response signal.
+        $data['signups'] = $this->signupGrowth();
+
         $data['packages'] = Package::limit(10)->get();
         $data['hasPendingWithdrawals'] = WithdrawalRequest::where('status', 'pending')->exists();
         $data['affiliatePendingCount'] = AffiliateWithdrawal::where('status', AFFILIATE_WITHDRAWAL_PENDING)->count();
@@ -43,6 +67,54 @@ class DashboardController extends Controller
             ->get();
 
         return view('admin.dashboard')->with($data);
+    }
+
+    /**
+     * New-account growth: this month vs last (a delta), a per-role split for the current month, and a
+     * six-month trend — so uptake and marketing response are readable at a glance. Admins are excluded
+     * (staff, not adoption). Uses created_at; degrades to zeros on an empty table, never errors.
+     */
+    private function signupGrowth(): array
+    {
+        $roles = [
+            USER_ROLE_OWNER          => __('Owners'),
+            USER_ROLE_TENANT         => __('Tenants'),
+            USER_ROLE_AFFILIATE      => __('Affiliates'),
+            USER_ROLE_MAINTAINER     => __('Maintainers'),
+            USER_ROLE_FINANCE_PARTNER => __('Finance partners'),
+        ];
+        $monthStart     = now()->startOfMonth();
+        $lastMonthStart = now()->subMonthNoOverflow()->startOfMonth();
+
+        $notAdmin = fn ($q) => $q->where('role', '!=', USER_ROLE_ADMIN);
+
+        $thisMonth = User::where($notAdmin)->where('created_at', '>=', $monthStart)->count();
+        $lastMonth = User::where($notAdmin)->whereBetween('created_at', [$lastMonthStart, $monthStart])->count();
+
+        $byRole = [];
+        foreach ($roles as $role => $label) {
+            $byRole[] = [
+                'label' => $label,
+                'count' => User::where('role', $role)->where('created_at', '>=', $monthStart)->count(),
+            ];
+        }
+
+        $trend = [];
+        for ($i = 5; $i >= 0; $i--) {
+            $start = now()->subMonthsNoOverflow($i)->startOfMonth();
+            $end   = (clone $start)->endOfMonth();
+            $trend[] = [
+                'label' => $start->format('M'),
+                'count' => User::where($notAdmin)->whereBetween('created_at', [$start, $end])->count(),
+            ];
+        }
+
+        return [
+            'this_month' => $thisMonth,
+            'last_month' => $lastMonth,
+            'by_role'    => $byRole,
+            'trend'      => $trend,
+        ];
     }
 
     /**

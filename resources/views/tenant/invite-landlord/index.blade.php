@@ -54,6 +54,8 @@
   .il-flash--err{background:#FBE9E7;border:1px solid #f0b8b0;color:#B42318;}
   .il-how{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-top:12px;}
   @media (max-width:640px){.il-how{grid-template-columns:1fr;}}
+  .il-gradbar{height:7px;background:#e8ebef;border-radius:99px;overflow:hidden;margin-top:6px;}
+  .il-gradbar__fill{height:100%;background:linear-gradient(90deg,#0f5a44,#1D9E75);border-radius:99px;transition:width .5s ease;}
 </style>
 
 <div class="page-content">
@@ -84,6 +86,19 @@
             data-cs-confirm="{{ __('Become a Centresidence affiliate? You\'ll keep your tenant account and get a linked affiliate account you can switch to.') }}">{{ __('Become an affiliate') }} →</button>
         </form>
       </div>
+    @endif
+
+    @if (!$hasGraduated && !$canGraduate)
+      {{-- Lead with the FREE auto-upgrade rule (refer $graduationGoal landlords who become paying
+           customers → a linked affiliate account unlocks automatically) so tenants see the default,
+           preferred path first. The apply-now link is the clearly-secondary "don't want to wait"
+           option → the standard Contact Us partner door (separate credentials), keeping the
+           proven-referrer bar meaningful. --}}
+      <p style="margin:-4px 0 18px;font-size:12.8px;color:#9aa2ad;line-height:1.55;">
+        {{ __('Refer :goal landlords who become paying customers and a Centresidence affiliate account unlocks for you automatically — free, and linked to this one', ['goal' => $graduationGoal]) }}@if ($confirmedCount > 0) ({{ __(':n so far', ['n' => $confirmedCount]) }})@endif.
+        {{ __('Prefer not to wait?') }}
+        <a href="{{ route('frontend') }}?intent=partner#contact-us" style="color:#185FA5;font-weight:650;text-decoration:none;">{{ __('Apply to join the affiliate program') }} →</a>
+      </p>
     @endif
 
     <div class="il-grid">
@@ -150,7 +165,15 @@
             @endif
             <div class="il-stat"><span class="k">{{ __('Landlords confirmed') }}</span><span class="v">{{ $confirmedCount }}</span></div>
             @if (!$canGraduate && $graduationGoal > 0)
-              <div class="il-stat"><span class="k">{{ __('To unlock affiliate') }}</span><span class="v">{{ max(0, $graduationGoal - $confirmedCount) }} {{ __('more') }}</span></div>
+              @php $gradPct = min(100, round(($confirmedCount / max(1, $graduationGoal)) * 100)); @endphp
+              <div class="il-stat" style="border-bottom:none;padding-bottom:4px;"><span class="k">{{ __('To unlock affiliate') }}</span><span class="v">{{ max(0, $graduationGoal - $confirmedCount) }} {{ __('more') }}</span></div>
+              <div class="il-gradbar" title="{{ $confirmedCount }} / {{ $graduationGoal }}">
+                <div class="il-gradbar__fill" style="width:{{ $gradPct }}%;"></div>
+              </div>
+              <div style="display:flex;justify-content:space-between;margin-top:5px;font-size:11px;color:#9aa2ad;">
+                <span>{{ $confirmedCount }} / {{ $graduationGoal }} {{ __('confirmed') }}</span>
+                <span>{{ __('affiliate at') }} {{ $graduationGoal }} 🎉</span>
+              </div>
             @endif
 
             {{-- Withdrawal control: request → admin reviews & releases (mirrors affiliate withdrawals). --}}

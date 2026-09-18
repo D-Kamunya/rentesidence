@@ -94,7 +94,10 @@
                         </a>
                     @endif
 
-                    {{-- Always-visible pointer: paying rent ahead is easy to miss on the Invoices tab. --}}
+                    {{-- Always-visible pointer: paying rent ahead is easy to miss on the Invoices tab.
+                         Only meaningful with an active landlord — an ownerless/Helper tenant has no
+                         upcoming rent, so this is hidden for them. --}}
+                    @if (empty($ownerless))
                     <a href="{{ route('tenant.invoice.index', ['pay_ahead' => 1]) }}" class="tmo-nudge tmo-nudge--action">
                         <span class="tmo-nudge__ic"><i class="ri-calendar-check-line"></i></span>
                         <span class="tmo-nudge__body">
@@ -103,6 +106,7 @@
                         </span>
                         <span class="tmo-nudge__go"><i class="ri-arrow-right-line"></i></span>
                     </a>
+                    @endif
                     @endif {{-- /live-tenancy nudges (empty($tenancyEnded)) --}}
 
                     {{-- Summary Cards — owner-bound (unit/rent/tickets) only for an active tenancy. --}}
@@ -221,6 +225,32 @@
                             </a>
                         </div>
                     </div>
+
+                    {{-- Coming soon: the rent-record ledger — the Helper's headline feature (log your own
+                         rent, build a verified record even with no landlord on CS). Shown only to a
+                         self-registered Helper (never had a landlord); a moved-out tenant has real records. --}}
+                    @if (auth()->user()->isHelperTenant())
+                    <div class="row g-3 mb-4">
+                        <div class="col-12">
+                            <div style="display:flex;gap:15px;align-items:center;flex-wrap:wrap;
+                                background:#F4F9FF;border:1px solid #CFE2F6;border-radius:16px;padding:16px 20px;">
+                                <div style="flex:none;width:44px;height:44px;border-radius:12px;display:grid;place-items:center;
+                                    background:#E1EDFB;color:#185FA5;">
+                                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M4 7h16v10H4zM4 10h16M8 14h4" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                                </div>
+                                <div style="flex:1 1 240px;min-width:200px;">
+                                    <div style="font-size:15.5px;font-weight:700;color:#123a63;line-height:1.3;">
+                                        {{ __('Log your rent — coming soon') }}
+                                        <span style="display:inline-block;font-size:10.5px;font-weight:700;color:#185FA5;background:#E1EDFB;border-radius:999px;padding:2px 9px;margin-left:6px;vertical-align:middle;letter-spacing:.04em;">{{ __('SOON') }}</span>
+                                    </div>
+                                    <div style="font-size:13px;color:#4a5568;margin-top:3px;line-height:1.5;">
+                                        {{ __('Record your rent payments to build a verified rental record you own — even while your landlord isn\'t on Centresidence. We\'ll let you know the moment it\'s ready.') }}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    @endif
                     @endif
                     {{-- End Summary Cards --}}
 
@@ -416,7 +446,10 @@
                                         </div>
                                     @endif
 
-                                    {{-- Advance-pay whisper: teaches where to settle rent ahead of time, without a loud CTA --}}
+                                    {{-- Advance-pay whisper: teaches where to settle rent ahead of time, without a loud
+                                         CTA. Hidden for an ownerless/Helper tenant — their invoices are history, not
+                                         upcoming rent. --}}
+                                    @if (empty($ownerless))
                                     <div class="inv-advance-hint">
                                         <a href="{{ route('tenant.invoice.index') }}" class="inv-advance-hint__link">
                                             <span>{{ __('Paying ahead? Settle upcoming rent') }}</span>
@@ -425,6 +458,7 @@
                                             </svg>
                                         </a>
                                     </div>
+                                    @endif
                                 </div>
 
                             </div>

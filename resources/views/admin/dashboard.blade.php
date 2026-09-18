@@ -179,6 +179,36 @@
     .dash-stat__icon--amber svg  { stroke: var(--amber); fill: none; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
     .dash-stat__icon--purple { background: #EEEDF9; }
     .dash-stat__icon--purple svg { stroke: var(--purple); fill: none; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+    .dash-stat__icon--teal { background: #D5F0EC; }
+    .dash-stat__icon--teal svg { stroke: #0F766E; fill: none; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+    .dash-stat__icon--indigo { background: #E5E9FB; }
+    .dash-stat__icon--indigo svg { stroke: #3B4CB8; fill: none; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+
+    /* ── Growth & uptake ── */
+    .dash-growth { display: grid; grid-template-columns: 1.4fr 1fr; gap: 16px; margin-bottom: 22px; align-items: start; }
+    @media (max-width: 900px) { .dash-growth { grid-template-columns: 1fr; } }
+    .grow-body { padding: 18px 20px 20px; }
+    .grow-delta { font-size: 12px; font-weight: 600; }
+    .grow-delta.is-up { color: var(--green, #0F766E); }
+    .grow-delta.is-down { color: #B42318; }
+    .grow-head { display: flex; align-items: baseline; gap: 8px; margin: 6px 0 16px; }
+    .grow-big { font-size: 30px; font-weight: 800; color: var(--gray-900); line-height: 1; }
+    .grow-cap { font-size: 12px; color: var(--gray-400); text-transform: uppercase; letter-spacing: .05em; }
+    .grow-bars { display: flex; align-items: flex-end; gap: 10px; height: 108px; }
+    .grow-bar { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 4px; }
+    .grow-bar__track { width: 100%; flex: 1; display: flex; align-items: flex-end; background: var(--gray-100, #f1f2f4); border-radius: 6px; overflow: hidden; }
+    .grow-bar__fill { width: 100%; background: linear-gradient(180deg, #2b7fe0, #185FA5); border-radius: 6px 6px 0 0; transition: height .4s ease; }
+    .grow-bar__num { font-size: 11.5px; font-weight: 700; color: var(--gray-700, #3A3F47); font-variant-numeric: tabular-nums; }
+    .grow-bar__lbl { font-size: 10.5px; color: var(--gray-400); text-transform: uppercase; letter-spacing: .03em; }
+    .grow-roles { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 16px; padding-top: 14px; border-top: 0.5px solid var(--gray-100, #eee); }
+    .grow-role { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--gray-500); background: var(--gray-50, #f7f8fa); border: 0.5px solid var(--gray-100, #eee); border-radius: 999px; padding: 4px 11px; }
+    .grow-role b { color: var(--gray-900); font-variant-numeric: tabular-nums; }
+    .grow-plans { display: flex; flex-direction: column; gap: 13px; }
+    .grow-plan__top { display: flex; justify-content: space-between; font-size: 13px; color: var(--gray-700, #3A3F47); margin-bottom: 5px; }
+    .grow-plan__top b { color: var(--gray-900); font-variant-numeric: tabular-nums; }
+    .grow-plan__track { height: 7px; background: var(--gray-100, #f1f2f4); border-radius: 999px; overflow: hidden; }
+    .grow-plan__fill { height: 100%; background: linear-gradient(90deg, #1D9E75, #0F6E56); border-radius: 999px; transition: width .4s ease; }
+    .grow-empty { font-size: 13px; color: var(--gray-400); padding: 14px 0; }
 
     .dash-stat__badge {
         font-size: 10px; font-weight: 500;
@@ -503,10 +533,130 @@
             </div>
             <div>
                 <p class="dash-stat__value">{{ $totalTenant }}</p>
-                <p class="dash-stat__label">{{ __('Total Tenants') }}</p>
+                <p class="dash-stat__label">{{ __('Active Tenants') }}</p>
             </div>
         </div>
 
+        {{-- Free "Tenant Helper" accounts (self-registered, no landlord) --}}
+        <div class="dash-stat">
+            <div class="dash-stat__top">
+                <div class="dash-stat__icon dash-stat__icon--teal">
+                    <svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21v-1a6 6 0 0 1 12 0v1"/><path d="M19 8v6M22 11h-6"/></svg>
+                </div>
+                <span class="dash-stat__badge">{{ __('Free') }}</span>
+            </div>
+            <div>
+                <p class="dash-stat__value">{{ $freeTenant }}</p>
+                <p class="dash-stat__label">{{ __('Free Tenants (Helper)') }}</p>
+            </div>
+        </div>
+
+        {{-- Affiliates --}}
+        <div class="dash-stat">
+            <div class="dash-stat__top">
+                <div class="dash-stat__icon dash-stat__icon--purple">
+                    <svg viewBox="0 0 24 24"><path d="M18 8a3 3 0 1 0-2.83-4M6 8a3 3 0 1 1 2.83-4M12 22v-6M9 13l3 3 3-3M12 2v11"/></svg>
+                </div>
+                <span class="dash-stat__badge">{{ __('Affiliates') }}</span>
+            </div>
+            <div>
+                <p class="dash-stat__value">{{ $totalAffiliate }}</p>
+                <p class="dash-stat__label">{{ __('Total Affiliates') }}</p>
+            </div>
+        </div>
+
+        {{-- Maintainers --}}
+        <div class="dash-stat">
+            <div class="dash-stat__top">
+                <div class="dash-stat__icon dash-stat__icon--amber">
+                    <svg viewBox="0 0 24 24"><path d="M14.7 6.3a4 4 0 0 1-5.4 5.4L4 17l3 3 5.3-5.3a4 4 0 0 0 5.4-5.4l-2.3 2.3-2-2 2.3-2.3z"/></svg>
+                </div>
+                <span class="dash-stat__badge">{{ __('Maintainers') }}</span>
+            </div>
+            <div>
+                <p class="dash-stat__value">{{ $totalMaintainer }}</p>
+                <p class="dash-stat__label">{{ __('Total Maintainers') }}</p>
+            </div>
+        </div>
+
+        {{-- Finance partners --}}
+        <div class="dash-stat">
+            <div class="dash-stat__top">
+                <div class="dash-stat__icon dash-stat__icon--indigo">
+                    <svg viewBox="0 0 24 24"><path d="M3 21h18M4 21V10l8-6 8 6v11M9 21v-6h6v6"/></svg>
+                </div>
+                <span class="dash-stat__badge">{{ __('Finance') }}</span>
+            </div>
+            <div>
+                <p class="dash-stat__value">{{ $totalFinancePartner }}</p>
+                <p class="dash-stat__label">{{ __('Finance Partners') }}</p>
+            </div>
+        </div>
+
+    </div>
+
+    {{-- ── Growth & uptake ── --}}
+    @php $sg = $signups ?? ['this_month' => 0, 'last_month' => 0, 'by_role' => [], 'trend' => []]; @endphp
+    @php
+        $sgDelta = $sg['this_month'] - $sg['last_month'];
+        $sgMax = max(1, collect($sg['trend'])->max('count') ?? 1);
+        $obpMax = max(1, ($ownersByPackage ?? collect())->max('c') ?? 1);
+    @endphp
+    <div class="dash-growth">
+        {{-- New accounts (trend) --}}
+        <div class="dash-card">
+            <div class="dash-card__head">
+                <h4 class="dash-card__head-title">{{ __('New accounts') }}</h4>
+                <span class="grow-delta {{ $sgDelta >= 0 ? 'is-up' : 'is-down' }}">
+                    {{ $sgDelta >= 0 ? '▲' : '▼' }} {{ abs($sgDelta) }} {{ __('vs last month') }}
+                </span>
+            </div>
+            <div class="grow-body">
+                <div class="grow-head">
+                    <span class="grow-big">{{ number_format($sg['this_month']) }}</span>
+                    <span class="grow-cap">{{ __('this month') }}</span>
+                </div>
+                <div class="grow-bars">
+                    @foreach ($sg['trend'] as $t)
+                        <div class="grow-bar">
+                            <div class="grow-bar__track">
+                                <div class="grow-bar__fill" style="height:{{ max(4, round(($t['count'] / $sgMax) * 100)) }}%;" title="{{ $t['count'] }}"></div>
+                            </div>
+                            <span class="grow-bar__num">{{ $t['count'] }}</span>
+                            <span class="grow-bar__lbl">{{ $t['label'] }}</span>
+                        </div>
+                    @endforeach
+                </div>
+                @if (!empty($sg['by_role']))
+                    <div class="grow-roles">
+                        @foreach ($sg['by_role'] as $r)
+                            <div class="grow-role"><span>{{ $r['label'] }}</span><b>{{ $r['count'] }}</b></div>
+                        @endforeach
+                    </div>
+                @endif
+            </div>
+        </div>
+
+        {{-- Owners by package --}}
+        <div class="dash-card">
+            <div class="dash-card__head">
+                <h4 class="dash-card__head-title">{{ __('Owners by plan') }}</h4>
+            </div>
+            <div class="grow-body">
+            @if (($ownersByPackage ?? collect())->isEmpty())
+                <p class="grow-empty">{{ __('No active owner plans yet.') }}</p>
+            @else
+                <div class="grow-plans">
+                    @foreach ($ownersByPackage as $p)
+                        <div class="grow-plan">
+                            <div class="grow-plan__top"><span>{{ $p->name ?: __('Unnamed plan') }}</span><b>{{ $p->c }}</b></div>
+                            <div class="grow-plan__track"><div class="grow-plan__fill" style="width:{{ max(3, round(($p->c / $obpMax) * 100)) }}%;"></div></div>
+                        </div>
+                    @endforeach
+                </div>
+            @endif
+            </div>
+        </div>
     </div>
 
     {{-- ── Orders + Packages ── --}}

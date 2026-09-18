@@ -368,6 +368,17 @@
         <p>{{ __('Browse available units in real time and connect straight with the landlord. No middlemen, no guesswork. Every vacant unit on Centresidence is listed the moment it is free.') }}</p>
         <a href="{{ route('house.hunt') }}" class="csh-btn csh-btn--blue" style="margin-top:24px">{{ __('Browse vacant properties') }}
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
+        {{-- Self-signup for the Tenant Helper: value even when your landlord isn't on Centresidence. --}}
+        <p style="margin-top:22px;color:var(--stone-500);font-size:15.5px;line-height:1.6;">
+          {{ __('Already renting?') }}
+          <a href="{{ route('tenant.join') }}" class="csh-lnk" style="margin-top:0;display:inline-flex;">{{ __('Create your free account') }}
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="width:15px;height:15px"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
+          @if (config('referrals.enabled') && config('referrals.cash_enabled') && (float) config('referrals.cash_amount') > 0)
+          <br>{{ __('Invite your landlord and earn') }} {{ config('referrals.currency', 'KES') }} {{ number_format((float) config('referrals.cash_amount')) }} {{ __('when they come on board, keep your rent record, and build a rental history you own.') }}
+          @else
+          <br>{{ __('Invite your landlord, keep your rent record, and build a rental history you own — with or without your landlord on Centresidence.') }}
+          @endif
+        </p>
       </div>
     </div>
   </section>
@@ -624,6 +635,18 @@
                     if (intentEl) intentEl.value = intent;
                 });
             });
+
+            /* Cross-page entry: a link from elsewhere (e.g. a tenant applying to the affiliate
+               program) can arrive as ?intent=partner#contact-us. Honour it: preselect the intent
+               and bring the form into view so the visitor lands ready to send. */
+            try {
+                var qsIntent = new URLSearchParams(window.location.search).get('intent');
+                if (qsIntent && intentEl && intentEl.querySelector('option[value="' + qsIntent.replace(/[^a-z_]/gi, '') + '"]')) {
+                    intentEl.value = qsIntent;
+                    var target = document.getElementById('contact-us');
+                    if (target) { window.requestAnimationFrame(function () { target.scrollIntoView({ behavior: 'smooth', block: 'start' }); }); }
+                }
+            } catch (e) {}
         })();
 
         /* Contact-form success handler: show a PERSISTENT inline confirmation (the shared

@@ -4,14 +4,14 @@
 <div class="main-content">
   <div class="page-content">
     <div class="container-fluid">
-      <div class="page-content-wrapper bg-white p-30 radius-20">
+      <div class="page-content-wrapper p-30 radius-20" style="background:#f6f7f9;">
         <div class="container-fluid">
           @php $pageTitle = 'Referral Payouts'; @endphp
 
           <style>
             .rp-head h1{font-size:22px;font-weight:700;color:#1b1e22;margin:0 0 4px;}
             .rp-head p{color:#6b7280;font-size:13.5px;margin:0 0 22px;}
-            .rp-sec{margin-bottom:34px;}
+            .rp-sec{margin-bottom:22px;background:#fff;border:1px solid #ececec;border-radius:14px;padding:22px 24px;box-shadow:0 1px 3px rgba(16,24,40,.04);}
             .rp-sec h2{font-size:16px;font-weight:700;color:#1b1e22;margin:0 0 4px;}
             .rp-sec .hint{font-size:12.5px;color:#9aa2ad;margin:0 0 14px;}
             .rp-table{width:100%;border-collapse:collapse;}
