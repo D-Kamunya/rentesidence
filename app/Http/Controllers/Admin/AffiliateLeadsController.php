@@ -28,52 +28,80 @@ use Exception;
 
 class AffiliateLeadsController extends Controller
 {
+    /**
+     * Master list: one row PER AFFILIATE with their lead-count breakdown — so the page scales
+     * with the number of affiliates instead of listing every lead across everyone on one page.
+     * Drill into a single affiliate's leads via affiliateLeads().
+     */
     public function index(Request $request)
     {
-        $query = Lead::with(['company', 'affiliate']);
+        $affiliates = User::query()
+            ->where('users.role', USER_ROLE_AFFILIATE)
+            ->join('leads', 'leads.affiliate_id', '=', 'users.id')
+            ->when($request->filled('search'), function ($q) use ($request) {
+                $s = $request->search;
+                $q->where(function ($w) use ($s) {
+                    $w->where('users.first_name', 'like', "%{$s}%")
+                      ->orWhere('users.last_name', 'like', "%{$s}%")
+                      ->orWhere('users.email', 'like', "%{$s}%");
+                });
+            })
+            ->groupBy('users.id', 'users.first_name', 'users.last_name', 'users.email')
+            ->selectRaw("users.id, users.first_name, users.last_name, users.email,
+                COUNT(leads.id) as total_leads,
+                SUM(CASE WHEN leads.status = 'pending_conversion' THEN 1 ELSE 0 END) as pending_leads,
+                SUM(CASE WHEN leads.status = 'trial' THEN 1 ELSE 0 END) as trial_leads,
+                SUM(CASE WHEN leads.status = 'converted' THEN 1 ELSE 0 END) as converted_leads,
+                MAX(leads.updated_at) as last_activity")
+            ->orderByDesc('last_activity')
+            ->paginate(15)
+            ->withQueryString();
 
-        // Search
+        // Platform-wide summary (affiliate-attributed leads only, matching this page's scope).
+        $base           = Lead::whereNotNull('affiliate_id');
+        $pendingCount   = (clone $base)->where('status', 'pending_conversion')->count();
+        $trialCount     = (clone $base)->where('status', 'trial')->count();
+        $convertedCount = (clone $base)->where('status', 'converted')->count();
+        $totalLeads     = (clone $base)->count();
+        $conversionRate = $totalLeads > 0 ? round(($convertedCount / $totalLeads) * 100, 1) : 0;
+
+        return view('admin.affiliates.leads.index', compact(
+            'affiliates', 'pendingCount', 'trialCount', 'convertedCount', 'conversionRate', 'totalLeads'
+        ));
+    }
+
+    /**
+     * Drill-down: one affiliate's leads (the full lead table, scoped) with the same status /
+     * temperature / company-search filters as the flat list used to offer.
+     */
+    public function affiliateLeads(Request $request, User $affiliate)
+    {
+        abort_unless((int) $affiliate->role === USER_ROLE_AFFILIATE, 404);
+
+        $query = Lead::with(['company', 'affiliate'])->where('affiliate_id', $affiliate->id);
+
         if ($request->filled('search')) {
             $search = $request->search;
-            $query->where(function($q) use ($search) {
-                $q->whereHas('company', function($q) use ($search) {
-                    $q->where('company_name', 'like', "%{$search}%");
-                })
-                ->orWhereHas('affiliate', function($q) use ($search) {
-                    $q->where('first_name', 'like', "%{$search}%")
-                    ->orWhere('last_name', 'like', "%{$search}%");
-                });
-            });
+            $query->whereHas('company', fn ($q) => $q->where('company_name', 'like', "%{$search}%"));
         }
-
-        // Status Filter
         if ($request->filled('status')) {
             $query->where('status', $request->status);
         }
-
-        // Temperature Filter
         if ($request->filled('temperature')) {
             $query->where('temperature', $request->temperature);
         }
 
-        $leads = $query->whereNotNull('affiliate_id')
-               ->latest()
-               ->paginate(10)
-               ->withQueryString();
+        $leads = $query->latest()->paginate(15)->withQueryString();
 
-        // Summary Stats
-        $pendingCount = Lead::where('status', 'pending_conversion')->count();
-        $trialCount = Lead::where('status', 'trial')->count();
-        $convertedCount = Lead::where('status', 'converted')->count();
-        $totalLeads = Lead::count();
-        $conversionRate = $totalLeads > 0 ? round(($convertedCount / $totalLeads) * 100, 1) : 0;
+        $base           = Lead::where('affiliate_id', $affiliate->id);
+        $pendingCount   = (clone $base)->where('status', 'pending_conversion')->count();
+        $trialCount     = (clone $base)->where('status', 'trial')->count();
+        $convertedCount = (clone $base)->where('status', 'converted')->count();
+        $total          = (clone $base)->count();
+        $conversionRate = $total > 0 ? round(($convertedCount / $total) * 100, 1) : 0;
 
-        return view('admin.affiliates.leads.index', compact(
-            'leads',
-            'pendingCount',
-            'trialCount',
-            'convertedCount',
-            'conversionRate'
+        return view('admin.affiliates.leads.affiliate', compact(
+            'affiliate', 'leads', 'pendingCount', 'trialCount', 'convertedCount', 'conversionRate'
         ));
     }
 

@@ -22,8 +22,13 @@
                                             <a href="{{ route('admin.dashboard') }}">Dashboard</a>
                                         </li>
                                         <li class="breadcrumb-item">
-                                            <a href="{{ route('admin.leads.index') }}">Leads</a>
+                                            <a href="{{ route('admin.leads.index') }}">Affiliate Leads</a>
                                         </li>
+                                        @if($lead->affiliate_id)
+                                            <li class="breadcrumb-item">
+                                                <a href="{{ route('admin.leads.affiliate', $lead->affiliate_id) }}">{{ trim(($lead->affiliate->first_name ?? '') . ' ' . ($lead->affiliate->last_name ?? '')) ?: 'Affiliate' }}</a>
+                                            </li>
+                                        @endif
                                         <li class="breadcrumb-item active">{{ $lead->company->company_name }}</li>
                                     </ol>
                                 </div>
@@ -33,12 +38,12 @@
 
                     <div class="container">
 
-                        {{-- Back link --}}
-                        <a href="{{ route('admin.leads.index') }}" class="adm-back-link mb-4 d-inline-flex align-items-center gap-2">
+                        {{-- Back link → the affiliate's leads (or the master list if unattributed) --}}
+                        <a href="{{ $lead->affiliate_id ? route('admin.leads.affiliate', $lead->affiliate_id) : route('admin.leads.index') }}" class="adm-back-link mb-4 d-inline-flex align-items-center gap-2">
                             <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
                                 <path d="M10 3L5 8l5 5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
                             </svg>
-                            Back to Leads
+                            {{ $lead->affiliate_id ? __('Back to leads') : __('Back to Leads') }}
                         </a>
 
                         {{-- Flash messages --}}

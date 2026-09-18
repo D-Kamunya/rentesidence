@@ -83,8 +83,10 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'middleware' => ['auth', 'a
     Route::get('/affiliates/performance', [AcademyAdminController::class, 'affiliatesPerformance'])->name('affiliates.performance');
     // Reset failed module
     Route::post('/affiliate/admin/reset-module/{affiliate}/{module}', [AcademyAdminController::class, 'resetAffiliateModule'])->name('reset-module');
-    // Leads overview (index page)
+    // Leads overview — one row per affiliate (index page)
     Route::get('/leads', [AffiliateLeadsController::class, 'index']) ->name('leads.index');
+    // One affiliate's leads (drill-down). Registered BEFORE /leads/{lead} so it isn't shadowed.
+    Route::get('/leads/affiliate/{affiliate}', [AffiliateLeadsController::class, 'affiliateLeads'])->name('leads.affiliate');
     // Single lead view (details page)
     Route::get('/leads/{lead}', [AffiliateLeadsController::class, 'show'])->name('leads.show');
     // Approve conversion → starts trial
