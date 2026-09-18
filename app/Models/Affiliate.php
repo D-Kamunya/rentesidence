@@ -13,6 +13,12 @@ class Affiliate extends Model
     protected $fillable = [
         'user_id',
         'referral_code',
+        'origin_tenant_user_id',
+        'graduated_at',
+    ];
+
+    protected $casts = [
+        'graduated_at' => 'datetime',
     ];
     protected $table = 'affiliates';
 

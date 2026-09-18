@@ -69,10 +69,20 @@
     @if (session('success'))<div class="il-flash il-flash--ok">{{ session('success') }}</div>@endif
     @if (session('error'))<div class="il-flash il-flash--err">{{ session('error') }}</div>@endif
 
-    @if ($canGraduate)
+    @if ($hasGraduated)
+      <div class="il-grad">
+        <div style="flex:none;font-size:28px;">🎉</div>
+        <div class="g-txt"><b>{{ __('You\'re a Centresidence affiliate.') }}</b> {{ __('Switch to your affiliate account from the account menu (top right) to earn ongoing commission and use the full toolkit.') }}</div>
+      </div>
+    @elseif ($canGraduate)
       <div class="il-grad">
         <div style="flex:none;font-size:28px;">🚀</div>
-        <div class="g-txt"><b>{{ __('You\'re a natural at this.') }}</b> {{ __('You\'ve brought') }} {{ $confirmedCount }} {{ __('landlords on board. Ready to earn ongoing commission and unlock the full toolkit? You\'ve qualified to become a Centresidence affiliate — our team will reach out about the next step.') }}</div>
+        <div class="g-txt"><b>{{ __('You\'re a natural at this.') }}</b> {{ __('You\'ve brought') }} {{ $confirmedCount }} {{ __('landlords on board — you\'ve qualified to become a Centresidence affiliate and earn ongoing commission. You keep this tenant account and switch between the two whenever you like.') }}</div>
+        <form method="POST" action="{{ route('tenant.invite-landlord.graduate') }}" style="flex:none;">
+          @csrf
+          <button type="submit" class="il-btn" style="background:#fff;color:#0F6E56;border:none;"
+            data-cs-confirm="{{ __('Become a Centresidence affiliate? You\'ll keep your tenant account and get a linked affiliate account you can switch to.') }}">{{ __('Become an affiliate') }} →</button>
+        </form>
       </div>
     @endif
 

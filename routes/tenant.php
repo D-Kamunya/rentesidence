@@ -54,6 +54,8 @@ Route::group(['prefix' => 'tenant', 'as' => 'tenant.', 'middleware' => ['auth', 
             ->middleware('throttle:12,60')->name('store');
         Route::post('/request-payout', [\App\Http\Controllers\Tenant\InviteLandlordController::class, 'requestPayout'])
             ->middleware('throttle:6,60')->name('request-payout');
+        Route::post('/graduate', [\App\Http\Controllers\Tenant\InviteLandlordController::class, 'graduate'])
+            ->middleware('throttle:4,60')->name('graduate');
     });
 
     // ── Owner-bound surfaces: blocked for an ownerless (Helper) tenant, whose tenancy is closed.

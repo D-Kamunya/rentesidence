@@ -61,7 +61,34 @@ class InviteLandlordController extends Controller
             'currency'        => config('referrals.currency', 'KES'),
             'canGraduate'     => $this->referrals->graduationEligible($user->id),
             'graduationGoal'  => (int) config('referrals.graduation_threshold', 3),
+            'hasGraduated'    => app(\App\Services\AffiliateGraduationService::class)->hasGraduated($user->id),
         ]);
+    }
+
+    /**
+     * Opt into the affiliate program. A graduated tenant KEEPS their tenant account and gains a
+     * linked affiliate account (they move between the two with the account switch). Auto-granted
+     * — graduation (enough confirmed referrals) is the authenticity proof, so no admin gate.
+     */
+    public function graduate()
+    {
+        $user = auth()->user();
+
+        if (! $this->referrals->enabled() || ! $this->referrals->graduationEligible($user->id)) {
+            return back()->with('error', __('You\'re not eligible to become an affiliate yet.'));
+        }
+
+        $grad = app(\App\Services\AffiliateGraduationService::class);
+        if ($grad->hasGraduated($user->id)) {
+            return back()->with('success', __('You\'re already an affiliate — switch to your affiliate account from the menu.'));
+        }
+
+        $affiliate = $grad->graduate($user);
+        if (! $affiliate) {
+            return back()->with('error', __('We couldn\'t set up your affiliate account. Please make sure your profile has a valid email.'));
+        }
+
+        return back()->with('success', __('Congratulations — you\'re now a Centresidence affiliate! Switch to your affiliate account from the account menu to get started.'));
     }
 
     /**
