@@ -80,6 +80,20 @@ class ReferralPayoutController extends Controller
         $totalReferrers = (int) LandlordReferral::distinct('referrer_user_id')->count('referrer_user_id');
         $recent         = LandlordReferral::with('referrer')->latest()->limit(50)->get();
 
+        // Graduations — tenants who upgraded to affiliate (conversion tracking).
+        $graduationsCount = (int) \App\Models\Affiliate::whereNotNull('origin_tenant_user_id')->count();
+        $graduations = \App\Models\Affiliate::whereNotNull('origin_tenant_user_id')
+            ->orderByDesc('graduated_at')->limit(50)->get()
+            ->map(function ($a) {
+                $t = User::find($a->origin_tenant_user_id);
+                return (object) [
+                    'name'         => $t ? (trim($t->first_name . ' ' . $t->last_name) ?: ('#' . $a->origin_tenant_user_id)) : ('#' . $a->origin_tenant_user_id),
+                    'user_id'      => $a->origin_tenant_user_id,
+                    'code'         => $a->referral_code,
+                    'graduated_at' => $a->graduated_at,
+                ];
+            });
+
         return view('admin.referral-payouts.index', [
             'pageTitle'       => __('Referrals'),
             'eligible'        => $eligible,
@@ -90,6 +104,8 @@ class ReferralPayoutController extends Controller
             'statusCounts'    => $statusCounts,
             'totalReferrers'  => $totalReferrers,
             'recent'          => $recent,
+            'graduationsCount' => $graduationsCount,
+            'graduations'     => $graduations,
             'currency'        => config('referrals.currency', 'KES'),
             'minPayout'       => (float) config('referrals.min_payout', 0),
         ]);

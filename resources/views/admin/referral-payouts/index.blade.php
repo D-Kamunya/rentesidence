@@ -54,6 +54,7 @@
               [__('Confirmed'), $sc('confirmed'), '#0F6E56'],
               [__('Paid'), $sc('paid'), '#0F6E56'],
               [__('Clawed back'), $sc('clawed_back'), '#B42318'],
+              [__('Graduated'), $graduationsCount, '#0F6E56'],
             ];
           @endphp
           <div class="rp-kpis">
@@ -222,6 +223,28 @@
                       </td>
                       <td><span class="rp-chip rp-chip--{{ $cls }}">{{ $lbl }}</span>@if($r->needs_review)<span class="rp-chip rp-chip--pending" style="margin-left:5px;">{{ __('review') }}</span>@endif</td>
                       <td>{{ $r->created_at->format('M j, Y') }}</td>
+                    </tr>
+                  @endforeach
+                </tbody>
+              </table>
+            @endif
+          </div>
+
+          {{-- ── Graduations (tenant → affiliate) ── --}}
+          <div class="rp-sec">
+            <h2>{{ __('Graduations') }}</h2>
+            <p class="hint">{{ __('Tenants who converted to affiliates — proven referrers who upgraded to the full program.') }}</p>
+            @if ($graduations->isEmpty())
+              <div class="rp-empty">{{ __('No graduations yet.') }}</div>
+            @else
+              <table class="rp-table">
+                <thead><tr><th>{{ __('Tenant') }}</th><th>{{ __('Affiliate code') }}</th><th>{{ __('Graduated') }}</th></tr></thead>
+                <tbody>
+                  @foreach ($graduations as $g)
+                    <tr>
+                      <td>{{ $g->name }} <span style="color:#9aa2ad;">#{{ $g->user_id }}</span></td>
+                      <td style="font-family:monospace;font-size:12.5px;">{{ $g->code }}</td>
+                      <td>{{ $g->graduated_at ? $g->graduated_at->format('M j, Y') : '—' }}</td>
                     </tr>
                   @endforeach
                 </tbody>
