@@ -102,6 +102,25 @@
         el.addEventListener('click', function (e) { if (e.target === el) el.remove(); });
     }
 
+    // Desktop / other browsers where beforeinstallprompt hasn't fired (Firefox, or Chrome before
+    // its criteria are met) — instructional sheet mirroring the iOS one, so the Install button is
+    // never a dead end.
+    function manualHint() {
+        if (document.getElementById('cs-pwa-ios')) return;
+        ensureStyles();
+        var el = document.createElement('div');
+        el.id = 'cs-pwa-ios';
+        el.setAttribute('role', 'dialog');
+        el.innerHTML = '<div class="cs-pwa-ioscard">' +
+            '<img src="{{ asset('assets/pwa/icon-192.png') }}" alt="">' +
+            '<div class="cs-pwa-t">Install Centresidence</div>' +
+            '<div class="cs-pwa-s">Open your browser menu and choose <b>Install Centresidence</b> (or <b>Add to Home screen</b>). If you don\'t see it yet, keep using the app for a moment and try again.</div>' +
+            '<button type="button" class="cs-pwa-go">Got it</button></div>';
+        document.body.appendChild(el);
+        el.querySelector('.cs-pwa-go').addEventListener('click', function () { el.remove(); });
+        el.addEventListener('click', function (e) { if (e.target === el) el.remove(); });
+    }
+
     function showBanner(force) {
         if (alreadyStandalone()) return;
         if (document.getElementById('cs-pwa-install')) return;
@@ -127,6 +146,8 @@
                 deferred.userChoice.finally(function () { deferred = null; });
             } else if (isIOS()) {
                 iosHint();
+            } else {
+                manualHint(); // desktop/other where the native event hasn't fired — show how
             }
         });
         el.querySelector('.cs-pwa-x').addEventListener('click', function () {
@@ -136,18 +157,14 @@
     }
 
     // PERMANENT entry point — wire an "Install app" menu item anywhere to call this.
-    // Handles: already installed (no-op), Android/Chromium (native prompt), iOS (hint),
-    // and desktop where the event hasn't fired (surfaces the banner).
+    // STANDARDISED: always surface the same branded Centresidence banner first, whatever the
+    // account or browser state. The banner's own Install button then fires the native OS prompt
+    // when it's available, the iOS Add-to-Home-Screen hint on iOS, or browser-menu instructions
+    // otherwise — so every "Install app" tap looks and behaves identically (no more "sometimes a
+    // native dialog, sometimes a banner" depending on whether Chrome's event had fired).
     window.csPwaInstall = function () {
         if (alreadyStandalone()) return;
-        if (deferred) {
-            deferred.prompt();
-            deferred.userChoice.finally(function () { deferred = null; });
-        } else if (isIOS()) {
-            iosHint();
-        } else {
-            showBanner(true);
-        }
+        showBanner(true);
     };
     // So a menu item can hide itself once the app is installed / running standalone.
     window.csPwaInstallable = function () { return !alreadyStandalone(); };
