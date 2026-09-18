@@ -16,7 +16,6 @@
 @endphp
 
 <style>
-  .il-wrap{max-width:960px;}
   .il-head{margin:0 0 6px;font-size:22px;font-weight:700;color:#1b1e22;}
   .il-sub{margin:0 0 22px;color:#6b7280;font-size:14px;max-width:70ch;}
   .il-grid{display:grid;grid-template-columns:1.15fr .85fr;gap:18px;align-items:start;}
@@ -60,7 +59,8 @@
 
 <div class="main-content">
 <div class="page-content">
-  <div class="container-fluid il-wrap">
+  <div class="container-fluid">
+    <div class="page-content-wrapper bg-white p-30 radius-20">
 
     <h1 class="il-head">{{ !empty($isConnected) ? __('Refer a Landlord') : __('Invite Your Landlord') }}</h1>
     @if (!empty($isConnected))
@@ -294,6 +294,7 @@
           </p>
         @endif
       </div>
+    </div>
     </div>
   </div>
 </div>
