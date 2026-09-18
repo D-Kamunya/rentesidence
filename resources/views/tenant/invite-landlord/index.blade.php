@@ -58,6 +58,7 @@
   .il-gradbar__fill{height:100%;background:linear-gradient(90deg,#0f5a44,#1D9E75);border-radius:99px;transition:width .5s ease;}
 </style>
 
+<div class="main-content">
 <div class="page-content">
   <div class="container-fluid il-wrap">
 
@@ -295,6 +296,7 @@
       </div>
     </div>
   </div>
+</div>
 </div>
 
 <script>

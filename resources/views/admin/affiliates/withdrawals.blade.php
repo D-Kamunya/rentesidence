@@ -334,6 +334,7 @@
                                     <th>{{ __('Subscriptions') }}</th>
                                     <th>{{ __('Rent') }}</th>
                                     <th>{{ __('Marketplace') }}</th>
+                                    <th>{{ __('Other') }}</th>
                                     <th>{{ __('Total') }}</th>
                                 </tr>
                             </thead>
@@ -819,11 +820,12 @@
                     + '<td>' + (row.subscription_payout > 0 ? i18n.ksh + ' ' + formatNum(row.subscription_payout) : '—') + '</td>'
                     + '<td>' + (row.rent_payout > 0 ? i18n.ksh + ' ' + formatNum(row.rent_payout) : '—') + '</td>'
                     + '<td>' + (row.marketplace_payout > 0 ? i18n.ksh + ' ' + formatNum(row.marketplace_payout) : '—') + '</td>'
+                    + '<td>' + (row.other_payout > 0 ? i18n.ksh + ' ' + formatNum(row.other_payout) : '—') + '</td>'
                     + '<td style="font-weight:600;color:var(--green-dark)">' + i18n.ksh + ' ' + formatNum(row.total_payout) + '</td>'
                     + '</tr>';
             });
         } else {
-            monthlyBody.innerHTML = '<tr><td colspan="5" class="aep-empty-row">' + i18n.noCommissionHistory + '</td></tr>';
+            monthlyBody.innerHTML = '<tr><td colspan="6" class="aep-empty-row">' + i18n.noCommissionHistory + '</td></tr>';
         }
         
         // Recent withdrawals table

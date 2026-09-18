@@ -83,11 +83,18 @@ class AffiliateWithdrawalController extends Controller
             ->take(12)
             ->get()
             ->map(function ($row) {
+                // total_commission_payout also carries the usage lines (screening/agreement/financing),
+                // which have no dedicated column. Derive an "Other" bucket so the per-source columns
+                // always reconcile to the Total (mirrors the affiliate-facing ledger fix).
+                $subscription = $row->new_commission_payout + $row->recurring_commission_payout;
+                $other = max(0, $row->total_commission_payout
+                    - $subscription - $row->rent_commission_payout - $row->marketplace_commission_payout);
                 return [
                     'period' => \Carbon\Carbon::createFromDate($row->period_year, $row->period_month, 1)->format('M Y'),
-                    'subscription_payout' => $row->new_commission_payout + $row->recurring_commission_payout,
+                    'subscription_payout' => $subscription,
                     'rent_payout'         => $row->rent_commission_payout,
                     'marketplace_payout'  => $row->marketplace_commission_payout,
+                    'other_payout'        => $other,
                     'total_payout'        => $row->total_commission_payout,
                 ];
             });
