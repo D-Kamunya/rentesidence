@@ -159,7 +159,7 @@
               <p style="margin:12px 0 0;font-size:12px;color:#9aa2ad;">{{ __('You can request a payout once your ready balance reaches') }} {{ $currency }} {{ number_format($minPayout, 0) }}.</p>
             @endif
 
-            <p style="margin:12px 0 0;font-size:11.5px;color:#9aa2ad;line-height:1.5;">{{ __('Rewards clear after a short holding period. Once your ready balance is above the minimum, request a payout and we\'ll review it and send it to your M-Pesa.') }}</p>
+            <p style="margin:12px 0 0;font-size:11.5px;color:#9aa2ad;line-height:1.5;">{{ __('Rewards clear after a short holding period. You can request a payout once your ready balance reaches') }} <b style="color:#6b7280;">{{ $currency }} {{ number_format($minPayout, 0) }}</b> — {{ __('we then review it and send it to your M-Pesa.') }}</p>
           </div>
 
           {{-- Request-payout modal --}}
