@@ -142,7 +142,46 @@
             @if (!$canGraduate && $graduationGoal > 0)
               <div class="il-stat"><span class="k">{{ __('To unlock affiliate') }}</span><span class="v">{{ max(0, $graduationGoal - $confirmedCount) }} {{ __('more') }}</span></div>
             @endif
-            <p style="margin:12px 0 0;font-size:11.5px;color:#9aa2ad;line-height:1.5;">{{ __('Rewards clear after a short holding period, then are paid to your M-Pesa on our regular payout schedule once above the minimum — you don\'t need to request it.') }}</p>
+
+            {{-- Withdrawal control: request → admin reviews & releases (mirrors affiliate withdrawals). --}}
+            @if ($pendingPayout)
+              <div style="margin-top:14px;padding:11px 13px;border-radius:10px;background:#E6F1FB;border:1px solid #cbddf1;color:#185FA5;font-size:13px;">
+                {{ __('Payout of') }} <b>{{ $currency }} {{ number_format($pendingPayout->amount, 0) }}</b>
+                @if ($pendingPayout->status === 'processing') {{ __('is being sent to your M-Pesa.') }}
+                @else {{ __('requested — under review. You\'ll see it here once it\'s paid.') }}
+                @endif
+              </div>
+            @elseif ($payableBalance >= $minPayout && $payableBalance > 0)
+              <button type="button" class="il-btn il-btn--p" style="width:100%;justify-content:center;margin-top:14px;" onclick="document.getElementById('ilPayoutModal').style.display='flex';">
+                {{ __('Request payout') }} — {{ $currency }} {{ number_format($payableBalance, 0) }}
+              </button>
+            @elseif ($payableBalance > 0)
+              <p style="margin:12px 0 0;font-size:12px;color:#9aa2ad;">{{ __('You can request a payout once your ready balance reaches') }} {{ $currency }} {{ number_format($minPayout, 0) }}.</p>
+            @endif
+
+            <p style="margin:12px 0 0;font-size:11.5px;color:#9aa2ad;line-height:1.5;">{{ __('Rewards clear after a short holding period. Once your ready balance is above the minimum, request a payout and we\'ll review it and send it to your M-Pesa.') }}</p>
+          </div>
+
+          {{-- Request-payout modal --}}
+          <div id="ilPayoutModal" style="display:none;position:fixed;inset:0;z-index:1050;background:rgba(20,23,28,.5);align-items:center;justify-content:center;padding:20px;">
+            <div style="background:#fff;border-radius:16px;max-width:420px;width:100%;padding:24px;box-shadow:0 20px 60px rgba(0,0,0,.25);">
+              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
+                <h3 style="margin:0;font-size:17px;font-weight:700;color:#1b1e22;">{{ __('Request payout') }}</h3>
+                <button type="button" onclick="document.getElementById('ilPayoutModal').style.display='none';" style="border:none;background:transparent;font-size:22px;line-height:1;color:#9aa2ad;cursor:pointer;">&times;</button>
+              </div>
+              <p style="margin:0 0 16px;font-size:13px;color:#6b7280;">{{ __('We\'ll send') }} <b style="color:#0F6E56;">{{ $currency }} {{ number_format($payableBalance, 0) }}</b> {{ __('to your M-Pesa after a quick review.') }}</p>
+              <form method="POST" action="{{ route('tenant.invite-landlord.request-payout') }}">
+                @csrf
+                <label style="display:block;font-size:12.5px;font-weight:600;color:#4a4f57;margin-bottom:6px;">{{ __('M-Pesa number') }}</label>
+                <div style="display:flex;align-items:stretch;border:1px solid #e6e1d8;border-radius:10px;overflow:hidden;">
+                  <span style="background:#f7f5f1;padding:11px 12px;font-size:14px;color:#6b7280;border-right:1px solid #e6e1d8;">+254</span>
+                  <input type="text" name="phone" value="{{ old('phone', $defaultPhone) }}" required maxlength="9" pattern="[71]\d{8}" placeholder="712345678" style="flex:1;border:none;padding:11px 12px;font-size:14.5px;color:#1b1e22;outline:none;">
+                </div>
+                @error('phone')<div style="color:#B42318;font-size:12px;margin-top:6px;">{{ $message }}</div>@enderror
+                <div style="font-size:11.5px;color:#9aa2ad;margin-top:6px;">{{ __('Enter your number without the leading 0 (e.g. 712345678).') }}</div>
+                <button type="submit" class="il-btn il-btn--p" style="width:100%;justify-content:center;margin-top:16px;">{{ __('Submit request') }}</button>
+              </form>
+            </div>
           </div>
         @endif
 

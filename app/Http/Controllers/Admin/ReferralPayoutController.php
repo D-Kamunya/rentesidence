@@ -48,7 +48,15 @@ class ReferralPayoutController extends Controller
                 ];
             });
 
-        $history = ReferralPayout::with('referrer')->latest()->limit(100)->get();
+        // Tenant-initiated payout requests awaiting admin review/release (mirrors affiliate withdrawals).
+        $payoutRequests = ReferralPayout::with('referrer')
+            ->whereIn('status', [ReferralPayout::STATUS_PENDING, ReferralPayout::STATUS_PROCESSING])
+            ->latest()
+            ->get();
+
+        $history = ReferralPayout::with('referrer')
+            ->whereIn('status', [ReferralPayout::STATUS_PAID, ReferralPayout::STATUS_FAILED, ReferralPayout::STATUS_CANCELLED])
+            ->latest()->limit(100)->get();
 
         // Rewards held for review (self-referral / velocity) — the admin can clear or claw back.
         $flagged = LandlordReferral::where('status', LandlordReferral::STATUS_CONFIRMED)
@@ -75,6 +83,7 @@ class ReferralPayoutController extends Controller
         return view('admin.referral-payouts.index', [
             'pageTitle'       => __('Referrals'),
             'eligible'        => $eligible,
+            'payoutRequests'  => $payoutRequests,
             'onboardRequests' => $onboardRequests,
             'history'         => $history,
             'flagged'         => $flagged,
@@ -86,14 +95,17 @@ class ReferralPayoutController extends Controller
         ]);
     }
 
-    /** Pay a tenant's payable balance — via M-Pesa B2C, or record a manual out-of-band settlement. */
-    public function payout(Request $request, int $userId)
+    /**
+     * Release a tenant's payout REQUEST — via M-Pesa B2C, or record a manual out-of-band
+     * settlement. The tenant already requested it (a pending ReferralPayout with the reserved
+     * rewards + their M-Pesa number); this reviews and releases it, mirroring affiliate withdrawals.
+     */
+    public function approvePayout(Request $request, ReferralPayout $payout)
     {
         $request->validate(['method' => 'required|in:b2c,manual', 'notes' => 'nullable|string|max:500']);
 
-        $payout = $this->referrals->openPayout($userId);
-        if (! $payout) {
-            return back()->with('error', __('Nothing payable for this tenant (below the minimum, no phone, or already being paid).'));
+        if ($payout->status !== ReferralPayout::STATUS_PENDING) {
+            return back()->with('error', __('This payout is not awaiting release.'));
         }
 
         if ($request->method === 'manual') {
@@ -101,24 +113,38 @@ class ReferralPayoutController extends Controller
             return back()->with('success', __('Payout recorded as manually settled.'));
         }
 
-        // ── B2C: send BEFORE the state change and outside a transaction — an accepted request
-        //    must never be lost to a rollback. On reject, release the reserved referrals. ──
+        if (! $payout->phone) {
+            return back()->with('error', __('This request has no M-Pesa number — settle it manually.'));
+        }
+
+        // ── B2C: send BEFORE the state change and outside a transaction. On send-reject we leave
+        //    the request PENDING (referrals stay reserved) so it can be retried — mirrors affiliates. ──
         try {
             $result = app(MpesaB2CService::class)->send($payout->phone, (float) $payout->amount, 'Referral reward', 'ReferralReward');
         } catch (\Throwable $e) {
             Log::error('Referral payout B2C send threw: ' . $e->getMessage(), ['payout_id' => $payout->id]);
-            $this->referrals->cancelPayout($payout, 'B2C send error');
             return back()->with('error', __('M-Pesa payout could not be initiated. Please try again.'));
         }
 
         if (! ($result['success'] ?? false)) {
-            $this->referrals->cancelPayout($payout, 'B2C rejected on send');
             return back()->with('error', __('M-Pesa rejected the payout: ') . ($result['message'] ?? __('unknown error')));
         }
 
         $this->referrals->markPayoutProcessing($payout, $result['reference'] ?? null);
 
         return back()->with('success', __('M-Pesa payout initiated — it will confirm once M-Pesa completes the transfer.'));
+    }
+
+    /** Decline a payout request — releases the reserved rewards back to the tenant's payable balance. */
+    public function rejectPayout(Request $request, ReferralPayout $payout)
+    {
+        if ($payout->status !== ReferralPayout::STATUS_PENDING) {
+            return back()->with('error', __('Only a pending request can be declined.'));
+        }
+
+        $this->referrals->cancelPayout($payout, 'Declined by admin: ' . (string) $request->input('reason', ''));
+
+        return back()->with('success', __('Payout request declined — the rewards are back in the tenant\'s balance.'));
     }
 
     /**

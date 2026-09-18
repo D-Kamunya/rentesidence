@@ -138,9 +138,10 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'middleware' => ['auth', 'a
     Route::get('/affiliate/{affiliate}/earnings', [AffiliateWithdrawalController::class, 'affiliateEarnings'])->name('affiliate.earnings');
 
     // Invite-a-landlord reward payouts — admin-initiated, batched, reusing the B2C rail.
-    Route::get('/referral-payouts',                  [\App\Http\Controllers\Admin\ReferralPayoutController::class, 'index'])->name('referral-payouts.index');
-    Route::post('/referral-payouts/{userId}/payout', [\App\Http\Controllers\Admin\ReferralPayoutController::class, 'payout'])->name('referral-payouts.payout');
-    Route::post('/referral-payouts/{ownerId}/clawback', [\App\Http\Controllers\Admin\ReferralPayoutController::class, 'clawback'])->name('referral-payouts.clawback');
+    Route::get('/referral-payouts',                       [\App\Http\Controllers\Admin\ReferralPayoutController::class, 'index'])->name('referral-payouts.index');
+    Route::post('/referral-payouts/{payout}/approve',     [\App\Http\Controllers\Admin\ReferralPayoutController::class, 'approvePayout'])->name('referral-payouts.approve');
+    Route::post('/referral-payouts/{payout}/reject',      [\App\Http\Controllers\Admin\ReferralPayoutController::class, 'rejectPayout'])->name('referral-payouts.reject');
+    Route::post('/referral-payouts/{ownerId}/clawback',   [\App\Http\Controllers\Admin\ReferralPayoutController::class, 'clawback'])->name('referral-payouts.clawback');
     Route::post('/referral-payouts/{referralId}/create-owner', [\App\Http\Controllers\Admin\ReferralPayoutController::class, 'createOwner'])->name('referral-payouts.create-owner');
 
     Route::prefix('knowledge-base')->name('kb.')->group(function () {

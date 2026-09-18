@@ -69,7 +69,10 @@ class NavBadgeService
                     ->whereHas('lead', fn ($q) => $q->whereNull('owner_id'))
                     ->count();
 
-                return $onboard + $svc->tenantsEligibleForPayout()->count();
+                // Tenant-initiated payout requests awaiting admin release.
+                $payoutRequests = \App\Models\ReferralPayout::where('status', \App\Models\ReferralPayout::STATUS_PENDING)->count();
+
+                return $onboard + $payoutRequests;
             }),
         ];
     }

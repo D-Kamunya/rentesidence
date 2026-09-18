@@ -103,15 +103,53 @@
             @endif
           </div>
 
-          {{-- ── Eligible for payout ── --}}
+          {{-- ── Payout requests (tenant-initiated → admin releases) ── --}}
           <div class="rp-sec">
-            <h2>{{ __('Ready to pay') }}</h2>
-            <p class="hint">{{ __('Tenants whose confirmed rewards have cleared the holding period and the minimum floor.') }}</p>
-            @if ($eligible->isEmpty())
-              <div class="rp-empty">{{ __('No tenants are due a payout right now.') }}</div>
+            <h2>{{ __('Payout requests') }}</h2>
+            <p class="hint">{{ __('Tenants have requested these payouts. Review and release via M-Pesa, or record a manual settlement — or decline to return the rewards to their balance.') }}</p>
+            @if ($payoutRequests->isEmpty())
+              <div class="rp-empty">{{ __('No payout requests right now.') }}</div>
             @else
               <table class="rp-table">
-                <thead><tr><th>{{ __('Tenant') }}</th><th>{{ __('Phone') }}</th><th>{{ __('Rewards') }}</th><th>{{ __('Payable') }}</th><th>{{ __('Action') }}</th></tr></thead>
+                <thead><tr><th>{{ __('Tenant') }}</th><th>{{ __('Amount') }}</th><th>{{ __('M-Pesa') }}</th><th>{{ __('Requested') }}</th><th>{{ __('Status') }}</th><th>{{ __('Action') }}</th></tr></thead>
+                <tbody>
+                  @foreach ($payoutRequests as $p)
+                    <tr>
+                      <td>{{ optional($p->referrer)->first_name }} {{ optional($p->referrer)->last_name }} <span style="color:#9aa2ad;">#{{ $p->referrer_user_id }}</span></td>
+                      <td class="rp-amt">{{ $currency }} {{ number_format($p->amount, 0) }}</td>
+                      <td style="font-family:monospace;font-size:12.5px;">{{ $p->phone ?: '—' }}</td>
+                      <td>{{ $p->created_at->format('M j, Y') }}</td>
+                      <td><span class="rp-chip rp-chip--{{ $p->status }}">{{ ucfirst($p->status) }}</span></td>
+                      <td>
+                        @if ($p->status === 'pending')
+                          <div class="rp-actions">
+                            <button type="button" class="rp-btn rp-btn--pay"
+                              onclick="rpOpenApprove('{{ route('admin.referral-payouts.approve', $p->id) }}', @js(trim(optional($p->referrer)->first_name.' '.optional($p->referrer)->last_name)), '{{ $currency }} {{ number_format($p->amount,0) }}', '{{ $p->phone }}')">{{ __('Review & release') }}</button>
+                            <form method="POST" action="{{ route('admin.referral-payouts.reject', $p->id) }}">
+                              @csrf
+                              <button type="submit" class="rp-btn rp-btn--claw" data-cs-confirm="{{ __('Decline this payout request? The rewards return to the tenant\'s balance.') }}">{{ __('Decline') }}</button>
+                            </form>
+                          </div>
+                        @else
+                          <span style="font-size:12px;color:#185FA5;">{{ __('Sending…') }}</span>
+                        @endif
+                      </td>
+                    </tr>
+                  @endforeach
+                </tbody>
+              </table>
+            @endif
+          </div>
+
+          {{-- ── Ready to request (informational — the tenant requests from their side) ── --}}
+          <div class="rp-sec">
+            <h2>{{ __('Ready to request') }}</h2>
+            <p class="hint">{{ __('Tenants whose confirmed rewards have cleared the holding period and the minimum — they can request a payout from their invite page.') }}</p>
+            @if ($eligible->isEmpty())
+              <div class="rp-empty">{{ __('No tenants currently have a withdrawable balance.') }}</div>
+            @else
+              <table class="rp-table">
+                <thead><tr><th>{{ __('Tenant') }}</th><th>{{ __('Phone') }}</th><th>{{ __('Rewards') }}</th><th>{{ __('Withdrawable') }}</th></tr></thead>
                 <tbody>
                   @foreach ($eligible as $t)
                     <tr>
@@ -119,23 +157,6 @@
                       <td>{{ $t->phone ?: '—' }}</td>
                       <td>{{ $t->reward_count }}</td>
                       <td class="rp-amt">{{ $currency }} {{ number_format($t->payable, 0) }}</td>
-                      <td>
-                        <div class="rp-actions">
-                          <form method="POST" action="{{ route('admin.referral-payouts.payout', $t->user_id) }}">
-                            @csrf
-                            <input type="hidden" name="method" value="b2c">
-                            <button type="submit" class="rp-btn rp-btn--pay"
-                              data-cs-confirm="{{ __('Send :cur :amt to :name via M-Pesa?', ['cur' => $currency, 'amt' => number_format($t->payable,0), 'name' => $t->name]) }}"
-                              @if(!$t->phone) disabled title="{{ __('No phone on file') }}" @endif>{{ __('Pay via M-Pesa') }}</button>
-                          </form>
-                          <form method="POST" action="{{ route('admin.referral-payouts.payout', $t->user_id) }}">
-                            @csrf
-                            <input type="hidden" name="method" value="manual">
-                            <button type="submit" class="rp-btn rp-btn--manual"
-                              data-cs-confirm="{{ __('Record :cur :amt to :name as settled manually (paid out-of-band)?', ['cur' => $currency, 'amt' => number_format($t->payable,0), 'name' => $t->name]) }}">{{ __('Mark settled') }}</button>
-                          </form>
-                        </div>
-                      </td>
                     </tr>
                   @endforeach
                 </tbody>
@@ -237,4 +258,38 @@
     </div>
   </div>
 </div>
+
+{{-- Review & release modal (shared, populated per request) --}}
+<div id="rpApproveModal" style="display:none;position:fixed;inset:0;z-index:1050;background:rgba(20,23,28,.5);align-items:center;justify-content:center;padding:20px;">
+  <div style="background:#fff;border-radius:16px;max-width:440px;width:100%;padding:24px;box-shadow:0 20px 60px rgba(0,0,0,.25);">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
+      <h3 style="margin:0;font-size:17px;font-weight:700;color:#1b1e22;">{{ __('Release payout') }}</h3>
+      <button type="button" onclick="document.getElementById('rpApproveModal').style.display='none';" style="border:none;background:transparent;font-size:22px;line-height:1;color:#9aa2ad;cursor:pointer;">&times;</button>
+    </div>
+    <p style="margin:0 0 16px;font-size:13px;color:#6b7280;"><span id="rpApTenant"></span> — <b id="rpApAmount" style="color:#0F6E56;"></b> <span style="color:#9aa2ad;">→</span> <span id="rpApPhone" style="font-family:monospace;"></span></p>
+    <form method="POST" id="rpApproveForm" action="">
+      @csrf
+      <div style="display:flex;gap:8px;margin-bottom:14px;">
+        <label style="flex:1;border:1px solid #e6e1d8;border-radius:10px;padding:10px;text-align:center;cursor:pointer;font-size:13px;">
+          <input type="radio" name="method" value="b2c" checked style="margin-right:6px;">{{ __('M-Pesa B2C') }}
+        </label>
+        <label style="flex:1;border:1px solid #e6e1d8;border-radius:10px;padding:10px;text-align:center;cursor:pointer;font-size:13px;">
+          <input type="radio" name="method" value="manual" style="margin-right:6px;">{{ __('Manual') }}
+        </label>
+      </div>
+      <label style="display:block;font-size:12.5px;font-weight:600;color:#4a4f57;margin-bottom:6px;">{{ __('Notes (optional)') }}</label>
+      <textarea name="notes" rows="2" style="width:100%;border:1px solid #e6e1d8;border-radius:10px;padding:10px;font-size:13.5px;" placeholder="{{ __('e.g. M-Pesa ref, reason…') }}"></textarea>
+      <button type="submit" class="rp-btn rp-btn--pay" style="width:100%;margin-top:14px;">{{ __('Release payout') }}</button>
+    </form>
+  </div>
+</div>
+<script>
+  function rpOpenApprove(action, tenant, amount, phone){
+    document.getElementById('rpApproveForm').setAttribute('action', action);
+    document.getElementById('rpApTenant').textContent = tenant || '—';
+    document.getElementById('rpApAmount').textContent = amount || '';
+    document.getElementById('rpApPhone').textContent = phone || '—';
+    document.getElementById('rpApproveModal').style.display = 'flex';
+  }
+</script>
 @endsection

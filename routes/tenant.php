@@ -52,6 +52,8 @@ Route::group(['prefix' => 'tenant', 'as' => 'tenant.', 'middleware' => ['auth', 
         // invite SMS/email so the form can't be used to spam numbers.
         Route::post('/', [\App\Http\Controllers\Tenant\InviteLandlordController::class, 'store'])
             ->middleware('throttle:12,60')->name('store');
+        Route::post('/request-payout', [\App\Http\Controllers\Tenant\InviteLandlordController::class, 'requestPayout'])
+            ->middleware('throttle:6,60')->name('request-payout');
     });
 
     // ── Owner-bound surfaces: blocked for an ownerless (Helper) tenant, whose tenancy is closed.

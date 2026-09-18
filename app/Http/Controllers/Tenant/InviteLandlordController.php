@@ -52,6 +52,9 @@ class InviteLandlordController extends Controller
             'pendingBalance'  => max(0, $confirmed - $payable), // confirmed but still within the hold window
             'paidBalance'     => $paid,
             'totalEarned'     => $confirmed + $paid,
+            'minPayout'       => (float) config('referrals.min_payout', 0),
+            'pendingPayout'   => $this->referrals->pendingPayout($user->id),
+            'defaultPhone'    => preg_replace('/^(?:\+?254|0)/', '', (string) ($user->contact_number ?? '')),
             'confirmedCount'  => $this->referrals->confirmedCount($user->id),
             'cashEnabled'     => $this->referrals->cashEnabled(),
             'cashAmount'      => (float) config('referrals.cash_amount', 0),
@@ -59,6 +62,36 @@ class InviteLandlordController extends Controller
             'canGraduate'     => $this->referrals->graduationEligible($user->id),
             'graduationGoal'  => (int) config('referrals.graduation_threshold', 3),
         ]);
+    }
+
+    /**
+     * Tenant requests a payout of their withdrawable balance. Mirrors the affiliate withdrawal:
+     * the tenant asks, admin reviews and releases. Creates a pending ReferralPayout (reserving the
+     * ready rewards); the min-payout + holding period already gate whether they can even request.
+     */
+    public function requestPayout(Request $request)
+    {
+        if (! $this->referrals->enabled() || ! $this->referrals->cashEnabled()) {
+            return back()->with('error', __('Payouts are not available right now.'));
+        }
+
+        $validated = $request->validate([
+            // 9-digit Kenyan number without the country code / leading 0 (e.g. 712345678).
+            'phone' => ['required', 'string', 'regex:/^[71]\d{8}$/'],
+        ]);
+
+        $user = auth()->user();
+
+        if ($this->referrals->hasPendingPayout($user->id)) {
+            return back()->with('error', __('You already have a payout request in progress.'));
+        }
+
+        $payout = $this->referrals->openPayout($user->id, '+254' . $validated['phone']);
+        if (! $payout) {
+            return back()->with('error', __('Your balance is below the minimum for a payout right now.'));
+        }
+
+        return back()->with('success', __('Payout requested. We\'ll review it and send it to your M-Pesa — you\'ll see it here once it\'s paid.'));
     }
 
     /** Record a landlord the tenant is inviting (velocity-capped in the service). */

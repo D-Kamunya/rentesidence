@@ -378,9 +378,14 @@ class LandlordReferralService
      * null when the tenant has no registered phone or the payable balance is below the min-payout
      * floor. The caller then initiates B2C (or settles manually) and transitions the payout.
      */
-    public function openPayout(int $referrerUserId): ?ReferralPayout
+    public function openPayout(int $referrerUserId, ?string $phone = null): ?ReferralPayout
     {
-        return DB::transaction(function () use ($referrerUserId) {
+        return DB::transaction(function () use ($referrerUserId, $phone) {
+            // One in-flight request at a time (mirrors the affiliate withdrawal guard).
+            if ($this->hasPendingPayout($referrerUserId)) {
+                return null;
+            }
+
             $referrals = $this->payableReferralsQuery($referrerUserId)->lockForUpdate()->get();
 
             $amount = (float) $referrals->sum('reward_amount');
@@ -388,7 +393,7 @@ class LandlordReferralService
                 return null;
             }
 
-            $phone = optional(User::find($referrerUserId))->contact_number;
+            $phone = $phone ?: optional(User::find($referrerUserId))->contact_number;
             if (! $phone) {
                 return null;
             }
@@ -405,6 +410,23 @@ class LandlordReferralService
 
             return $payout;
         });
+    }
+
+    /** Whether the tenant already has a payout awaiting release or in flight. */
+    public function hasPendingPayout(int $referrerUserId): bool
+    {
+        return ReferralPayout::where('referrer_user_id', $referrerUserId)
+            ->whereIn('status', [ReferralPayout::STATUS_PENDING, ReferralPayout::STATUS_PROCESSING])
+            ->exists();
+    }
+
+    /** The tenant's current in-flight payout request, if any. */
+    public function pendingPayout(int $referrerUserId): ?ReferralPayout
+    {
+        return ReferralPayout::where('referrer_user_id', $referrerUserId)
+            ->whereIn('status', [ReferralPayout::STATUS_PENDING, ReferralPayout::STATUS_PROCESSING])
+            ->latest()
+            ->first();
     }
 
     /** B2C accepted → in-flight; store the correlation ref for the callback. */
