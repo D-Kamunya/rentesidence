@@ -137,7 +137,21 @@ class CentresidenceController extends Controller
             ? FinanceFacility::with('partner', 'owner', 'property')->latest()->paginate(20)
             : collect();
 
-        return view('admin.centresidence.facilities', compact('facilities') + ['pageTitle' => 'Finance Facilities']);
+        // Which (property, module) pairs already have infrastructure on the ground — so the row can
+        // read "Deployed" instead of offering a Deploy button for infra that's already installed
+        // (mirrors the self-financed page's status-aware action). Keyed "property_id-module_id".
+        $deployedPairs = [];
+        if ($this->migrated() && $facilities->isNotEmpty()) {
+            $deployedPairs = PropertyModule::query()
+                ->whereIn('property_id', $facilities->pluck('property_id')->unique()->all())
+                ->get(['property_id', 'module_id'])
+                ->reduce(function (array $set, $pm) {
+                    $set[$pm->property_id . '-' . $pm->module_id] = true;
+                    return $set;
+                }, []);
+        }
+
+        return view('admin.centresidence.facilities', compact('facilities', 'deployedPairs') + ['pageTitle' => 'Finance Facilities']);
     }
 
     /** Confirm a partner-recorded disbursement (Centresidence is the payee for installer modules). */

@@ -75,7 +75,11 @@
                                             <button class="cs-btn cs-btn--ghost cs-btn--sm" type="submit" title="{{ __('Manual lever: record an out-of-system disbursement and release the facility') }}">{{ __('Mark disbursed') }}</button>
                                         </form>
                                     @endif
-                                    <a class="cs-btn cs-btn--ghost cs-btn--sm" href="{{ route('admin.centresidence.deploy', ['property_id' => $f->property_id, 'module_id' => $f->module_id]) }}">{{ __('Deploy') }}</a>
+                                    @if (!empty($deployedPairs[$f->property_id . '-' . $f->module_id]))
+                                        <span class="cs-badge is-paid" title="{{ __('Infrastructure already deployed on this property') }}">✓ {{ __('Deployed') }}</span>
+                                    @else
+                                        <a class="cs-btn cs-btn--ghost cs-btn--sm" href="{{ route('admin.centresidence.deploy', ['property_id' => $f->property_id, 'module_id' => $f->module_id]) }}">{{ __('Deploy') }}</a>
+                                    @endif
                                 </td>
                             </tr>
                         @empty
