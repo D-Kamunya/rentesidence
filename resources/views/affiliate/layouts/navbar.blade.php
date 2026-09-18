@@ -103,6 +103,12 @@
                     <!-- item-->
                     <a class="dropdown-item" href="{{ route('profile') }}"><i
                             class="ri-user-line align-middle me-1"></i> {{ __('Profile') }}</a>
+                    @if (!empty($accountSwitch))
+                    <form method="POST" action="{{ route('account.switch') }}" style="margin:0;">
+                        @csrf
+                        <button type="submit" class="dropdown-item" style="border:none;background:none;width:100%;text-align:left;"><i class="ri-arrow-left-right-line align-middle me-1"></i> {{ $accountSwitch['label'] }}</button>
+                    </form>
+                    @endif
                     <a class="dropdown-item" href="{{ route('change-password') }}"><i
                             class="ri-lock-password-line align-middle me-1"></i> {{ __('Change Password') }}</a>
                     <div class="dropdown-divider"></div>

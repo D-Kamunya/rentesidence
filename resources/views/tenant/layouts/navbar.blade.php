@@ -105,6 +105,12 @@
                     aria-labelledby="page-header-user-dropdown">
                     <a class="dropdown-item" href="{{ route('profile') }}"><i
                             class="ri-user-line align-middle me-1"></i>{{ __('Profile') }}</a>
+                    @if (!empty($accountSwitch))
+                    <form method="POST" action="{{ route('account.switch') }}" style="margin:0;">
+                        @csrf
+                        <button type="submit" class="dropdown-item" style="border:none;background:none;width:100%;text-align:left;"><i class="ri-arrow-left-right-line align-middle me-1"></i> {{ $accountSwitch['label'] }}</button>
+                    </form>
+                    @endif
                     <div class="dropdown-divider"></div>
                     <a class="dropdown-item" href="{{ route('logout') }}"><i
                             class="ri-shut-down-line align-middle me-1"></i> {{ __('Logout') }}</a>

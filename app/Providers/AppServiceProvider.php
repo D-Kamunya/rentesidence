@@ -52,6 +52,12 @@ class AppServiceProvider extends ServiceProvider
         \Illuminate\Support\Facades\View::composer('admin.layouts.sidebar', function ($view) {
             $view->with('navBadges', app(\App\Services\NavBadgeService::class)->forAdmin());
         });
+
+        // Graduation account switch — offer the "Switch to tenant/affiliate" control in the
+        // navbar only when the current user has a linked counterpart account.
+        \Illuminate\Support\Facades\View::composer(['tenant.layouts.navbar', 'affiliate.layouts.navbar'], function ($view) {
+            $view->with('accountSwitch', app(\App\Services\AffiliateGraduationService::class)->switchTargetFor(auth()->user()));
+        });
         try {
             Builder::defaultStringLength(191);
             $connection = DB::connection()->getPdo();

@@ -34,6 +34,36 @@ class AffiliateGraduationService
     }
 
     /**
+     * The linked account the current user can switch INTO, or null. Tenant → their affiliate;
+     * affiliate → the origin tenant. Only ever resolves the same person's two linked accounts.
+     *
+     * @return array{user: User, route: string, label: string}|null
+     */
+    public function switchTargetFor(?User $user): ?array
+    {
+        if (! $user) {
+            return null;
+        }
+        $role = (int) $user->role;
+
+        if ($role === USER_ROLE_TENANT) {
+            $aff = $this->affiliateForTenant($user->id);
+            $target = $aff ? User::find($aff->user_id) : null;
+            if ($target) {
+                return ['user' => $target, 'route' => 'affiliate.dashboard', 'label' => __('Switch to affiliate')];
+            }
+        } elseif ($role === USER_ROLE_AFFILIATE) {
+            $aff = Affiliate::where('user_id', $user->id)->whereNotNull('origin_tenant_user_id')->first();
+            $target = $aff ? User::find($aff->origin_tenant_user_id) : null;
+            if ($target) {
+                return ['user' => $target, 'route' => 'tenant.dashboard', 'label' => __('Switch to tenant')];
+            }
+        }
+
+        return null;
+    }
+
+    /**
      * Graduate a tenant into a linked affiliate account. Idempotent: returns the existing
      * affiliate if they've already graduated. Returns null only if the tenant has no email
      * (the alias is derived from it). Notifies admin so conversions are tracked.
