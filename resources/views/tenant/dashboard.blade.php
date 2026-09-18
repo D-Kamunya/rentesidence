@@ -95,9 +95,10 @@
                     @endif
 
                     {{-- Always-visible pointer: paying rent ahead is easy to miss on the Invoices tab.
-                         Only meaningful with an active landlord — an ownerless/Helper tenant has no
-                         upcoming rent, so this is hidden for them. --}}
-                    @if (empty($ownerless))
+                         Only meaningful with an active landlord AND no pending move-out — an ownerless/
+                         Helper tenant has no upcoming rent, and a tenant who's given notice to vacate
+                         shouldn't be nudged to pre-pay months they won't be around for. --}}
+                    @if (empty($ownerless) && empty($activeNotice))
                     <a href="{{ route('tenant.invoice.index', ['pay_ahead' => 1]) }}" class="tmo-nudge tmo-nudge--action">
                         <span class="tmo-nudge__ic"><i class="ri-calendar-check-line"></i></span>
                         <span class="tmo-nudge__body">
@@ -447,9 +448,10 @@
                                     @endif
 
                                     {{-- Advance-pay whisper: teaches where to settle rent ahead of time, without a loud
-                                         CTA. Hidden for an ownerless/Helper tenant — their invoices are history, not
-                                         upcoming rent. --}}
-                                    @if (empty($ownerless))
+                                         CTA. Hidden for an ownerless/Helper tenant (invoices are history, not upcoming
+                                         rent) and for a tenant with a pending move-out (they're leaving — don't nudge
+                                         pre-payment of months they won't be here for). --}}
+                                    @if (empty($ownerless) && empty($activeNotice))
                                     <div class="inv-advance-hint">
                                         <a href="{{ route('tenant.invoice.index') }}" class="inv-advance-hint__link">
                                             <span>{{ __('Paying ahead? Settle upcoming rent') }}</span>
