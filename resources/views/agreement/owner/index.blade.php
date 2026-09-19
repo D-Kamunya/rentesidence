@@ -75,10 +75,18 @@
                                         <td class="ag-muted">{{ optional($a->sent_at)->format('d M Y') }}</td>
                                         <td>@include('agreement.partials.status-badge', ['status' => $a->status])</td>
                                         <td style="text-align:right;">
-                                            <a href="{{ route('owner.agreement.show', $a->id) }}" class="ag-link">{{ __('View') }}</a>
-                                            @if ($a->status === 'signed' && $a->signed_file_id)
-                                                &middot; <a href="{{ route('owner.agreement.download', $a->id) }}" class="ag-link">{{ __('Download') }}</a>
-                                            @endif
+                                            <span style="display:inline-flex;gap:6px;justify-content:flex-end;flex-wrap:wrap;">
+                                                <a href="{{ route('owner.agreement.show', $a->id) }}" class="ag-btn ag-btn--ghost" style="padding:5px 12px;font-size:12.5px;">
+                                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z" stroke="currentColor" stroke-width="1.7"/><circle cx="12" cy="12" r="2.6" stroke="currentColor" stroke-width="1.7"/></svg>
+                                                    {{ __('View') }}
+                                                </a>
+                                                @if ($a->status === 'signed' && $a->signed_file_id)
+                                                    <a href="{{ route('owner.agreement.download', $a->id) }}" class="ag-btn ag-btn--ghost" style="padding:5px 12px;font-size:12.5px;">
+                                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M12 3v12M7 11l5 5 5-5M5 21h14" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                                                        {{ __('Download') }}
+                                                    </a>
+                                                @endif
+                                            </span>
                                         </td>
                                     </tr>
                                 @empty
