@@ -102,7 +102,7 @@
                                     @if ($r->isQuoted())
                                         <form method="POST" action="{{ route('owner.financing.surveys.proceed', $r->id) }}" style="display:inline;">
                                             @csrf
-                                            <button type="submit" class="cs-btn cs-btn--primary cs-btn--sm">{{ __('Accept & finance') }}</button>
+                                            <button type="submit" class="cs-btn cs-btn--primary cs-btn--sm">{{ __('Review quote') }}</button>
                                         </form>
                                     @endif
                                 </td>

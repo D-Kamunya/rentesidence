@@ -401,11 +401,11 @@ class FinancingController extends Controller
             return back()->with('error', __('This request has not been quoted yet.'));
         }
 
-        // Reveal the financiers for this module, carrying the accepted quote (fsr) so the chosen
-        // financier's application is pre-filled with the quoted amount. Status flips to 'applied'
-        // only when the finance application is actually submitted (store()).
+        // Reveal the financiers for this module, carrying the quote (fsr) so the chosen financier's
+        // application is pre-filled with the quoted amount. Nothing is committed here — the owner is
+        // reviewing; status flips to 'applied' only when a finance application is actually submitted.
         return redirect()->route('owner.financing.module', ['moduleId' => $request->module_id, 'fsr' => $request->id])
-            ->with('success', __('Quote of KES :amt accepted — choose a financier below to apply for it.', ['amt' => number_format((float) $request->quoted_amount, 2)]));
+            ->with('success', __('Your quote is KES :amt — review the financing options below and apply when you\'re ready.', ['amt' => number_format((float) $request->quoted_amount, 2)]));
     }
 
     /** The accepted, owner-scoped field-study request referenced by ?fsr= (or null). */
