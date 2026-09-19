@@ -23,7 +23,7 @@
                 <li>
                     <a href="{{ route('owner.order.index') }}" >
                         <i class="ri-bill-line"></i>
-                        <span>{{ __('Product Orders') }}</span>
+                        <span>{{ __('Product Orders') }}@include('partials.nav-count', ['n' => $navBadges['orders_dispatch'] ?? 0])</span>
                     </a>
                 </li>
 

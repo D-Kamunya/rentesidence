@@ -11,6 +11,8 @@ use App\Models\Lead;
 use App\Models\LeadSuggestion;
 use App\Models\MaintenanceRequest;
 use App\Models\Message;
+use App\Models\Owner;
+use App\Models\ProductOrder;
 use App\Models\Property;
 use App\Models\Ticket;
 
@@ -44,6 +46,19 @@ class NavBadgeService
             // Tenant-raised tickets that still need the owner: newly OPEN or REOPENed (not in-progress/resolved/closed).
             'tickets' => $this->safe(fn () => Ticket::where('owner_user_id', $ownerUserId)
                 ->whereIn('status', [TICKET_STATUS_OPEN, TICKET_STATUS_REOPEN])->count()),
+
+            // Paid marketplace orders awaiting dispatch (fulfilment not yet started) — mirrors the
+            // owner Product Orders page scoping (products.owner_user_id = the Owner RECORD id).
+            'orders_dispatch' => $this->safe(function () use ($ownerUserId) {
+                $ownerId = Owner::where('user_id', $ownerUserId)->value('id');
+                if (! $ownerId) {
+                    return 0;
+                }
+                return ProductOrder::whereHas('orderItems.product', fn ($q) => $q->where('owner_user_id', $ownerId))
+                    ->where('payment_status', PRODUCT_ORDER_STATUS_PAID)
+                    ->where('fulfilment_status', FULFILMENT_NONE)
+                    ->count();
+            }),
         ];
     }
 
