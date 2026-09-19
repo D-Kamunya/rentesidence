@@ -81,14 +81,14 @@
                 <li>
                     <a href="{{ route('tenant.document.index') }}">
                         <i class="ri-article-line"></i>
-                        <span>{{ __('Documents') }}</span>
+                        <span>{{ __('Documents') }}@include('partials.nav-count', ['n' => $navBadges['documents'] ?? 0])</span>
                     </a>
                 </li>
                 @if (isAddonInstalled('PROTYAGREEMENT') > 0)
                     <li>
                         <a href="{{ route('tenant.agreement.index') }}">
                             <i class="ri-contacts-line"></i>
-                            <span>{{ __('Agreement') }}</span>
+                            <span>{{ __('Agreement') }}@include('partials.nav-count', ['n' => $navBadges['agreements'] ?? 0])</span>
                         </a>
                     </li>
                 @endif

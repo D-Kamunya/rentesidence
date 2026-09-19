@@ -46,8 +46,15 @@ class AppServiceProvider extends ServiceProvider
             $view->with('navBadges', $uid ? app(\App\Services\NavBadgeService::class)->forOwner((int) $uid) : []);
         });
         \Illuminate\Support\Facades\View::composer('tenant.layouts.sidebar', function ($view) {
-            $tenant = optional(auth()->user())->tenant;
-            $view->with('navBadges', $tenant ? app(\App\Services\NavBadgeService::class)->forTenant((int) $tenant->id) : []);
+            $user = auth()->user();
+            $tenant = optional($user)->tenant;
+            $view->with('navBadges', $tenant
+                ? app(\App\Services\NavBadgeService::class)->forTenant((int) $tenant->id, (int) $user->id)
+                : []);
+        });
+        \Illuminate\Support\Facades\View::composer('affiliate.layouts.sidebar', function ($view) {
+            $uid = auth()->id();
+            $view->with('navBadges', $uid ? app(\App\Services\NavBadgeService::class)->forAffiliate((int) $uid) : []);
         });
         \Illuminate\Support\Facades\View::composer('admin.layouts.sidebar', function ($view) {
             $view->with('navBadges', app(\App\Services\NavBadgeService::class)->forAdmin());

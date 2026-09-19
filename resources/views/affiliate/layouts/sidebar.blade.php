@@ -16,13 +16,13 @@
                 <li>
                     <a href="{{ route('affiliate.marketplace.index') }}">
                         <i class="fa fa-shopping-basket" aria-hidden="true"></i>
-                        <span>{{ __('Lead Marketplace') }}</span>
+                        <span>{{ __('Lead Marketplace') }}@include('partials.nav-count', ['n' => $navBadges['marketplace_leads'] ?? 0])</span>
                     </a>
                 </li>
                 <li>
                     <a href="{{ route('affiliate.leads') }}">
                         <i class="fa fa-cog" aria-hidden="true"></i>
-                        <span>{{ __('My Leads') }}</span>
+                        <span>{{ __('My Leads') }}@include('partials.nav-count', ['n' => $navBadges['lead_suggestions'] ?? 0])</span>
                     </a>
                 </li>
                 <li>

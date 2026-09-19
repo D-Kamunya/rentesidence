@@ -3,9 +3,12 @@
 namespace App\Services;
 
 use App\Models\AffiliateWithdrawal;
+use App\Models\Agreement;
 use App\Models\HouseHuntApplication;
 use App\Models\Invoice;
 use App\Models\LandlordReferral;
+use App\Models\Lead;
+use App\Models\LeadSuggestion;
 use App\Models\MaintenanceRequest;
 use App\Models\Message;
 use App\Models\Property;
@@ -44,12 +47,44 @@ class NavBadgeService
         ];
     }
 
-    /** Tenant sidebar: unpaid invoices. */
-    public function forTenant(int $tenantRecordId): array
+    /**
+     * Tenant sidebar: unpaid invoices, landlord-requested documents still outstanding, and
+     * agreements awaiting the tenant's signature. (invoices/docs key on the tenant RECORD id;
+     * agreements key on the tenant's USER id.)
+     */
+    public function forTenant(int $tenantRecordId, int $userId): array
     {
         return [
             'invoices_unpaid' => $this->safe(fn () => Invoice::where('tenant_id', $tenantRecordId)
                 ->where('status', INVOICE_STATUS_PENDING)->count()),
+
+            // Documents the landlord requested that the tenant hasn't provided (or must re-submit).
+            'documents' => $this->safe(fn () => app(KycConfigService::class)
+                ->outstandingRequestCountForTenant($tenantRecordId)),
+
+            // Agreements sent to this tenant and still awaiting their signature.
+            'agreements' => $this->safe(fn () => Agreement::where('tenant_user_id', $userId)
+                ->where('status', Agreement::STATUS_SENT)->count()),
+        ];
+    }
+
+    /**
+     * Affiliate sidebar: unclaimed leads available in the marketplace (the pool anyone can claim),
+     * and pending suggested actions the engine has raised on THIS affiliate's own leads.
+     */
+    public function forAffiliate(int $affiliateUserId): array
+    {
+        return [
+            'marketplace_leads' => $this->safe(fn () => Lead::where('marketplace_status', 'marketplace')
+                ->whereNull('affiliate_id')->count()),
+
+            'lead_suggestions' => $this->safe(function () use ($affiliateUserId) {
+                $leadIds = Lead::where('affiliate_id', $affiliateUserId)->pluck('id');
+                if ($leadIds->isEmpty()) {
+                    return 0;
+                }
+                return LeadSuggestion::where('status', 'pending')->whereIn('lead_id', $leadIds)->count();
+            }),
         ];
     }
 
