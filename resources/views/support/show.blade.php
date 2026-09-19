@@ -32,14 +32,32 @@
         @if ($ticket->isClosed())
           <div class="sup-closed-note">{{ __('This request is closed. Open a new one if you still need help.') }}</div>
         @else
+          @if ($ticket->status === \App\Models\SupportTicket::STATUS_RESOLVED)
+            <div class="sup-closed-note" style="color:#0F6E56;border-top:none;">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" style="vertical-align:-2px;"><path d="M20 6L9 17l-5-5" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              {{ __('This request is marked resolved. Need more help? Just reply below to reopen it.') }}
+            </div>
+          @endif
           <form method="POST" action="{{ route('support.reply', $ticket->id) }}" class="sup-reply">
             @csrf
-            <textarea name="body" rows="3" maxlength="5000" required placeholder="{{ __('Type your reply…') }}">{{ old('body') }}</textarea>
+            <textarea name="body" rows="3" maxlength="5000" required placeholder="{{ $ticket->status === \App\Models\SupportTicket::STATUS_RESOLVED ? __('Reply to reopen this request…') : __('Type your reply…') }}">{{ old('body') }}</textarea>
             @error('body')<div class="err" style="color:#B42318;font-size:12px;margin-top:5px;">{{ $message }}</div>@enderror
             <div class="sup-reply__row">
-              <button type="submit" class="sup-btn sup-btn--primary">{{ __('Send reply') }}</button>
+              <button type="submit" class="sup-btn sup-btn--primary">{{ $ticket->status === \App\Models\SupportTicket::STATUS_RESOLVED ? __('Reply & reopen') : __('Send reply') }}</button>
             </div>
           </form>
+          @if ($ticket->status !== \App\Models\SupportTicket::STATUS_RESOLVED)
+            <div class="sup-closed-note" style="border-top:1px solid #eef0f3;">
+              {{ __('All sorted?') }}
+              <form method="POST" action="{{ route('support.resolve', $ticket->id) }}" style="display:inline;">
+                @csrf
+                <button type="submit" class="sup-btn sup-btn--ghost" style="margin-left:8px;padding:6px 12px;">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M20 6L9 17l-5-5" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                  {{ __('Mark as resolved') }}
+                </button>
+              </form>
+            </div>
+          @endif
         @endif
       </div>
 

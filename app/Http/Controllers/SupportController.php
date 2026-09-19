@@ -83,4 +83,18 @@ class SupportController extends Controller
 
         return back()->with('success', __('Reply sent.'));
     }
+
+    /** Requester marks their own solved ticket resolved. Still reopenable — a later reply flips it back. */
+    public function resolve(SupportTicket $ticket)
+    {
+        abort_unless((int) $ticket->requester_user_id === (int) auth()->id(), 404);
+
+        if ($ticket->isClosed()) {
+            return back();
+        }
+
+        $this->support->setStatus($ticket, SupportTicket::STATUS_RESOLVED);
+
+        return back()->with('success', __('Marked as resolved. If it comes up again, just reply below to reopen it.'));
+    }
 }

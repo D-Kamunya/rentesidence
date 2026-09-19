@@ -70,6 +70,7 @@ Route::group(['middleware' => ['auth', 'version.update']], function () {
             Route::post('/', [\App\Http\Controllers\SupportController::class, 'store'])->middleware('throttle:20,60')->name('store');
             Route::get('/{ticket}', [\App\Http\Controllers\SupportController::class, 'show'])->name('show');
             Route::post('/{ticket}/reply', [\App\Http\Controllers\SupportController::class, 'reply'])->middleware('throttle:40,60')->name('reply');
+            Route::post('/{ticket}/resolve', [\App\Http\Controllers\SupportController::class, 'resolve'])->name('resolve');
         });
     });
 });
