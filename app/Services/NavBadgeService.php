@@ -59,6 +59,9 @@ class NavBadgeService
                     ->where('fulfilment_status', FULFILMENT_NONE)
                     ->count();
             }),
+
+            // Support tickets with an unread reply from admin.
+            'support' => $this->safe(fn () => app(SupportTicketService::class)->requesterUnreadCount($ownerUserId)),
         ];
     }
 
@@ -129,6 +132,9 @@ class NavBadgeService
 
                 return $onboard + $payoutRequests;
             }),
+
+            // Support tickets from any account type awaiting an admin reply.
+            'support' => $this->safe(fn () => app(SupportTicketService::class)->adminOpenCount()),
         ];
     }
 

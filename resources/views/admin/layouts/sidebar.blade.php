@@ -59,6 +59,12 @@
                         </a>
                     </li>
                     <li>
+                        <a href="{{ route('admin.support.index') }}">
+                            <i class="ri-customer-service-2-line"></i>
+                            <span>{{ __('Support') }}@include('partials.nav-count', ['n' => $navBadges['support'] ?? 0])</span>
+                        </a>
+                    </li>
+                    <li>
                         <a href="javascript: void(0);" class="has-arrow">
                             <i class="ri-lock-2-line"></i>
                             <span>{{ __('Manage Policy') }}</span>

@@ -139,6 +139,14 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'middleware' => ['auth', 'a
     Route::post('/affiliate/withdrawal/{withdrawal}/reject',      [AffiliateWithdrawalController::class, 'reject'])->name('affiliate.withdrawal.reject');
     Route::get('/affiliate/{affiliate}/earnings', [AffiliateWithdrawalController::class, 'affiliateEarnings'])->name('affiliate.earnings');
 
+    // Support (reusable rail) — admin inbox for tickets from every account type.
+    Route::group(['prefix' => 'support', 'as' => 'support.'], function () {
+        Route::get('/', [\App\Http\Controllers\Admin\SupportController::class, 'index'])->name('index');
+        Route::get('/{ticket}', [\App\Http\Controllers\Admin\SupportController::class, 'show'])->name('show');
+        Route::post('/{ticket}/reply', [\App\Http\Controllers\Admin\SupportController::class, 'reply'])->name('reply');
+        Route::post('/{ticket}/status', [\App\Http\Controllers\Admin\SupportController::class, 'updateStatus'])->name('status');
+    });
+
     // Invite-a-landlord reward payouts — admin-initiated, batched, reusing the B2C rail.
     Route::get('/referral-payouts',                       [\App\Http\Controllers\Admin\ReferralPayoutController::class, 'index'])->name('referral-payouts.index');
     Route::post('/referral-payouts/{payout}/approve',     [\App\Http\Controllers\Admin\ReferralPayoutController::class, 'approvePayout'])->name('referral-payouts.approve');
