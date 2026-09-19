@@ -103,6 +103,13 @@
                         <li><a href="{{ route('change-password') }}">{{ __('Change Password') }}</a></li>
                     </ul>
                 </li>
+                {{-- Support — reach our team (reusable support rail). --}}
+                <li>
+                    <a href="{{ route('support.index') }}">
+                        <i class="ri-customer-service-2-line"></i>
+                        <span>{{ __('Support') }}@include('partials.nav-count', ['n' => $navBadges['support'] ?? 0])</span>
+                    </a>
+                </li>
                 {{-- Install app — app-like experience for tenants (auto-hides once installed). --}}
                 <li>
                     <a href="#" data-cs-install onclick="return window.csPwaInstall ? (window.csPwaInstall(), false) : true;">

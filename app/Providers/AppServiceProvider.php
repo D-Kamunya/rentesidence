@@ -56,6 +56,11 @@ class AppServiceProvider extends ServiceProvider
             $uid = auth()->id();
             $view->with('navBadges', $uid ? app(\App\Services\NavBadgeService::class)->forAffiliate((int) $uid) : []);
         });
+        // Finance-partner sidebar is inline in its app layout, so the badges attach to that view.
+        \Illuminate\Support\Facades\View::composer('finance-partner.layouts.app', function ($view) {
+            $uid = auth()->id();
+            $view->with('navBadges', $uid ? app(\App\Services\NavBadgeService::class)->forFinancePartner((int) $uid) : []);
+        });
         \Illuminate\Support\Facades\View::composer('admin.layouts.sidebar', function ($view) {
             $view->with('navBadges', app(\App\Services\NavBadgeService::class)->forAdmin());
         });

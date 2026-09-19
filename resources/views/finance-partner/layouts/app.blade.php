@@ -88,6 +88,7 @@
                 <a href="{{ route('finance-partner.payout-account') }}" class="{{ str_starts_with($r, 'finance-partner.payout-account') ? 'is-active' : '' }}"><i class="ri-wallet-3-line"></i> {{ __('Payout account') }}</a>
                 <a href="{{ route('finance-partner.profile') }}" class="{{ str_starts_with($r, 'finance-partner.profile') ? 'is-active' : '' }}"><i class="ri-user-settings-line"></i> {{ __('My profile') }}</a>
                 <a href="{{ route('finance-partner.learn.modules') }}" class="{{ str_starts_with($r, 'finance-partner.learn') ? 'is-active' : '' }}"><i class="ri-book-open-line"></i> {{ __('Modules') }}</a>
+                <a href="{{ route('support.index') }}" class="{{ str_starts_with($r, 'support.') ? 'is-active' : '' }}"><i class="ri-customer-service-2-line"></i> {{ __('Support') }}@include('partials.nav-count', ['n' => $navBadges['support'] ?? 0])</a>
                 <a href="{{ route('finance-partner.kb.index') }}" class="{{ str_starts_with($r, 'finance-partner.kb') ? 'is-active' : '' }}"><i class="ri-graduation-cap-line"></i> {{ __('Knowledge base') }}</a>
             </nav>
             <div class="fp-side__foot">

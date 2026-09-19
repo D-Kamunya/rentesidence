@@ -66,6 +66,13 @@
                     </a>
                 </li>
 
+                {{-- Support — reach our team (reusable support rail). --}}
+                <li>
+                    <a href="{{ route('support.index') }}">
+                        <i class="ri-customer-service-2-line"></i>
+                        <span>{{ __('Support') }}@include('partials.nav-count', ['n' => $navBadges['support'] ?? 0])</span>
+                    </a>
+                </li>
                 {{-- Install app (auto-hides once installed). --}}
                 <li>
                     <a href="#" data-cs-install onclick="return window.csPwaInstall ? (window.csPwaInstall(), false) : true;">

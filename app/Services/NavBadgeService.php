@@ -83,6 +83,9 @@ class NavBadgeService
             // Agreements sent to this tenant and still awaiting their signature.
             'agreements' => $this->safe(fn () => Agreement::where('tenant_user_id', $userId)
                 ->where('status', Agreement::STATUS_SENT)->count()),
+
+            // Support tickets with an unread reply from admin.
+            'support' => $this->safe(fn () => app(SupportTicketService::class)->requesterUnreadCount($userId)),
         ];
     }
 
@@ -103,6 +106,16 @@ class NavBadgeService
                 }
                 return LeadSuggestion::where('status', 'pending')->whereIn('lead_id', $leadIds)->count();
             }),
+
+            'support' => $this->safe(fn () => app(SupportTicketService::class)->requesterUnreadCount($affiliateUserId)),
+        ];
+    }
+
+    /** Finance-partner sidebar: unread support replies (the rest of their surfaces are their own pass). */
+    public function forFinancePartner(int $userId): array
+    {
+        return [
+            'support' => $this->safe(fn () => app(SupportTicketService::class)->requesterUnreadCount($userId)),
         ];
     }
 
