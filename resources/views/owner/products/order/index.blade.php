@@ -38,7 +38,7 @@
                         <div class="inv-strip__item">
                             <span class="inv-strip__dot inv-strip__dot--green"></span>
                             <div>
-                                <p class="inv-strip__label">{{ __('Completed') }}</p>
+                                <p class="inv-strip__label">{{ __('Delivered') }}</p>
                                 <p class="inv-strip__val inv-strip__val--green">{{ $totalCompleteProductOrders }}</p>
                             </div>
                         </div>
@@ -73,7 +73,7 @@
                                 <div class="inv-filter-tabs">
                                     @foreach ([
                                         'all'              => __('All'),
-                                        'order_completed'  => __('Completed'),
+                                        'order_completed'  => __('Delivered'),
                                         'order_pending'    => __('Pending'),
                                         'order_cancelled'  => __('Cancelled'),
                                     ] as $value => $label)
@@ -282,11 +282,11 @@
                                                     {{-- Complete — greyed/disabled if cancelled by tenant --}}
                                                     @if (!$isOrderCompleted && !$isOrderCancelled)
                                                         @if ($isCancelledByTenant)
-                                                            <button type="button" class="inv-btn inv-btn--complete inv-btn--disabled" disabled title="{{ __('Cannot complete a cancelled order') }}">
+                                                            <button type="button" class="inv-btn inv-btn--complete inv-btn--disabled" disabled title="{{ __('Cannot deliver a cancelled order') }}">
                                                                 <svg width="13" height="13" viewBox="0 0 24 24" fill="none">
                                                                     <path d="M20 6L9 17l-5-5" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
                                                                 </svg>
-                                                                {{ __('Complete') }}
+                                                                {{ __('Mark delivered') }}
                                                             </button>
                                                         @else
                                                             <button type="button" class="inv-btn inv-btn--complete po-complete-btn"
@@ -294,7 +294,7 @@
                                                                 <svg width="13" height="13" viewBox="0 0 24 24" fill="none">
                                                                     <path d="M20 6L9 17l-5-5" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
                                                                 </svg>
-                                                                {{ __('Complete') }}
+                                                                {{ __('Mark delivered') }}
                                                             </button>
                                                         @endif
                                                     @endif
@@ -312,7 +312,7 @@
                                                     @if ($isOrderCompleted)
                                                         <span class="inv-badge inv-badge--completed">
                                                             <svg width="10" height="10" viewBox="0 0 16 16" fill="none"><path d="M3 8l4 4 6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                                                            {{ __('Completed') }}
+                                                            {{ __('Delivered') }}
                                                         </span>
                                                     @endif
                                             
@@ -832,11 +832,11 @@
         
             const actionConfigs = {
                 complete: {
-                    title:     '{{ __("Mark as Completed?") }}',
-                    body:      '{{ __("This will notify the tenant that their order is ready. This action cannot be undone.") }}',
+                    title:     '{{ __("Mark as delivered?") }}',
+                    body:      '{{ __("This marks the order as delivered and notifies the tenant. This action cannot be undone.") }}',
                     iconClass: 'confirm-modal__icon--green',
                     btnClass:  'confirm-btn--green',
-                    btnLabel:  '{{ __("Yes, Complete") }}',
+                    btnLabel:  '{{ __("Yes, mark delivered") }}',
                     icon:      `<svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M20 6L9 17l-5-5" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>`,
                 },
                 cancel: {
