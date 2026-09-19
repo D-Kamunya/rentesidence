@@ -5,10 +5,7 @@
     $pillClass = ['open' => 'sup-pill--open', 'answered' => 'sup-pill--answered', 'resolved' => 'sup-pill--resolved', 'closed' => 'sup-pill--closed'];
     $pillLabel = ['open' => __('Awaiting reply'), 'answered' => __('Replied'), 'resolved' => __('Resolved'), 'closed' => __('Closed')];
 @endphp
-<div class="main-content">
-<div class="page-content">
-  <div class="container-fluid">
-    <div class="page-content-wrapper p-30 radius-20" style="background:#f6f7f9;">
+@include('support._chrome-open')
 
       <a href="{{ route('support.index') }}" class="sup-btn sup-btn--ghost" style="margin-bottom:16px;">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M15 6l-6 6 6 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
@@ -61,10 +58,7 @@
         @endif
       </div>
 
-    </div>
-  </div>
-</div>
-</div>
+@include('support._chrome-close')
 
 @include('support._styles')
 @endsection

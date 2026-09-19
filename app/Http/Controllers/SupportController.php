@@ -29,6 +29,16 @@ class SupportController extends Controller
         ][(int) auth()->user()->role] ?? 'owner.layouts.app';
     }
 
+    /**
+     * Content chrome mode. owner/tenant/affiliate layouts expect the page to supply the standard
+     * main-content > page-content-wrapper card; the finance-partner layout already pads its own
+     * content area (.fp-content), so the shared view renders "plain" there to look native.
+     */
+    private function chrome(): string
+    {
+        return (int) auth()->user()->role === USER_ROLE_FINANCE_PARTNER ? 'plain' : 'standard';
+    }
+
     public function index()
     {
         $tickets = SupportTicket::where('requester_user_id', auth()->id())
@@ -38,6 +48,7 @@ class SupportController extends Controller
 
         return view('support.index', [
             'layout'    => $this->layout(),
+            'chrome'    => $this->chrome(),
             'tickets'   => $tickets,
             'pageTitle' => __('Support'),
         ]);
@@ -65,6 +76,7 @@ class SupportController extends Controller
 
         return view('support.show', [
             'layout'    => $this->layout(),
+            'chrome'    => $this->chrome(),
             'ticket'    => $ticket->load('replies.author'),
             'pageTitle' => __('Support'),
         ]);

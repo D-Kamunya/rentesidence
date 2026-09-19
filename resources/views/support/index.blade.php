@@ -11,14 +11,12 @@
         'resolved' => __('Resolved'), 'closed' => __('Closed'),
     ];
 @endphp
-<div class="main-content">
-<div class="page-content">
-  <div class="container-fluid">
-    <div class="page-content-wrapper p-30 radius-20" style="background:#f6f7f9;">
+@php $isTenant = (int) auth()->user()->role === USER_ROLE_TENANT; @endphp
+@include('support._chrome-open')
 
       <div class="sup-head">
         <div>
-          <h1>{{ __('Support') }}</h1>
+          <h1>{{ __('Centresidence Support') }}</h1>
           <p>{{ __('Need a hand? Send us a message and we\'ll reply right here.') }}</p>
         </div>
         <button type="button" class="sup-btn sup-btn--primary" onclick="document.getElementById('supNewModal').classList.add('is-open')">
@@ -26,6 +24,13 @@
           {{ __('New request') }}
         </button>
       </div>
+
+      @if ($isTenant)
+        <div class="sup-brandnote">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M12 2l7 3v6c0 4.5-3 8-7 9-4-1-7-4.5-7-9V5l7-3z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/><path d="M9 12l2 2 4-4" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          <span>{{ __('This is Centresidence support — the platform team, not your landlord. We help with your account, payments and using the app.') }}</span>
+        </div>
+      @endif
 
       @if (session('success'))<div class="sup-flash sup-flash--ok">{{ session('success') }}</div>@endif
       @if (session('error'))<div class="sup-flash sup-flash--err">{{ session('error') }}</div>@endif
@@ -57,10 +62,7 @@
         @if ($tickets->hasPages())<div class="mt-4">{{ $tickets->links() }}</div>@endif
       @endif
 
-    </div>
-  </div>
-</div>
-</div>
+@include('support._chrome-close')
 
 {{-- New request modal --}}
 <div class="sup-modal" id="supNewModal">

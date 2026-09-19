@@ -7,7 +7,12 @@
         USER_ROLE_OWNER => __('Owner'), USER_ROLE_TENANT => __('Tenant'), USER_ROLE_MAINTAINER => __('Maintainer'),
         USER_ROLE_AFFILIATE => __('Affiliate'), USER_ROLE_FINANCE_PARTNER => __('Finance partner'),
     ];
+    $roleSlug = [
+        USER_ROLE_OWNER => 'owner', USER_ROLE_TENANT => 'tenant', USER_ROLE_MAINTAINER => 'maintainer',
+        USER_ROLE_AFFILIATE => 'affiliate', USER_ROLE_FINANCE_PARTNER => 'finance',
+    ];
     $req = $ticket->requester;
+    $reqSlug = $roleSlug[$ticket->requester_role] ?? 'maintainer';
 @endphp
 <div class="main-content">
   <div class="page-content">
@@ -23,8 +28,8 @@
           <div>
             <h1 style="font-size:19px;">{{ $ticket->subject }}</h1>
             <p>
+              <span class="sup-role sup-role--{{ $reqSlug }}">{{ $roleLabel[$ticket->requester_role] ?? __('User') }}</span>
               {{ trim(optional($req)->first_name . ' ' . optional($req)->last_name) ?: __('User') }}
-              <span style="color:#c3c6cb;">·</span> {{ $roleLabel[$ticket->requester_role] ?? __('User') }}
               @if (optional($req)->email)<span style="color:#c3c6cb;">·</span> {{ $req->email }}@endif
             </p>
           </div>

@@ -30,6 +30,28 @@
 
     .sup-empty { padding:40px 20px; text-align:center; color:#9aa2ad; font-size:14px; background:#fff; border:1px solid #ececec; border-radius:14px; }
 
+    /* Finance-partner (plain) mode wrapper — its layout already pads .fp-content. */
+    .sup-plain { }
+
+    /* Tenant clarity: this is Centresidence support, not their landlord. */
+    .sup-brandnote { display:flex; align-items:flex-start; gap:9px; background:#E8F0F9; border:1px solid #cbddf1;
+        color:#0F4A84; border-radius:12px; padding:12px 15px; font-size:13px; line-height:1.5; margin-bottom:18px; }
+    .sup-brandnote svg { flex:none; margin-top:1px; color:#185FA5; }
+
+    /* Admin role colour-coding — quick differentiation of who a ticket is from. */
+    .sup-item--role { border-left:4px solid #d1d5db; }
+    .sup-item--owner   { border-left-color:#185FA5; }
+    .sup-item--tenant  { border-left-color:#B45309; }
+    .sup-item--affiliate { border-left-color:#534AB7; }
+    .sup-item--finance { border-left-color:#0F766E; }
+    .sup-item--maintainer { border-left-color:#6b7280; }
+    .sup-role { display:inline-block; font-size:10.5px; font-weight:700; padding:2px 8px; border-radius:999px; text-transform:uppercase; letter-spacing:.03em; margin-right:2px; }
+    .sup-role--owner   { background:#E6F1FB; color:#185FA5; }
+    .sup-role--tenant  { background:#FEF3E7; color:#B45309; }
+    .sup-role--affiliate { background:#EEEDFE; color:#534AB7; }
+    .sup-role--finance { background:#D5F0EC; color:#0F766E; }
+    .sup-role--maintainer { background:#f3f4f6; color:#6b7280; }
+
     /* Thread */
     .sup-card { background:#fff; border:1px solid #ececec; border-radius:16px; overflow:hidden; box-shadow:0 1px 3px rgba(16,24,40,.04); }
     .sup-thread { padding:20px; display:flex; flex-direction:column; gap:16px; max-height:60vh; overflow-y:auto; }

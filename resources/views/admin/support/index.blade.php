@@ -7,6 +7,10 @@
         USER_ROLE_OWNER => __('Owner'), USER_ROLE_TENANT => __('Tenant'), USER_ROLE_MAINTAINER => __('Maintainer'),
         USER_ROLE_AFFILIATE => __('Affiliate'), USER_ROLE_FINANCE_PARTNER => __('Finance partner'),
     ];
+    $roleSlug = [
+        USER_ROLE_OWNER => 'owner', USER_ROLE_TENANT => 'tenant', USER_ROLE_MAINTAINER => 'maintainer',
+        USER_ROLE_AFFILIATE => 'affiliate', USER_ROLE_FINANCE_PARTNER => 'finance',
+    ];
     $tabs = ['' => __('All'), 'open' => __('Awaiting reply'), 'answered' => __('Replied'), 'resolved' => __('Resolved'), 'closed' => __('Closed')];
 @endphp
 <div class="main-content">
@@ -40,15 +44,16 @@
         @else
           <div class="sup-list">
             @foreach ($tickets as $t)
-              <a href="{{ route('admin.support.show', $t->id) }}" class="sup-item">
+              @php $slug = $roleSlug[$t->requester_role] ?? ''; @endphp
+              <a href="{{ route('admin.support.show', $t->id) }}" class="sup-item sup-item--role {{ $slug ? 'sup-item--' . $slug : '' }}">
                 <div class="sup-item__body">
                   <div class="sup-item__subject">
                     @if ($t->admin_unread && $t->status !== 'closed')<span class="sup-unread-dot" title="{{ __('Needs a reply') }}"></span>@endif
                     {{ $t->subject }}
                   </div>
                   <div class="sup-item__meta">
+                    <span class="sup-role sup-role--{{ $slug ?: 'maintainer' }}">{{ $roleLabel[$t->requester_role] ?? __('User') }}</span>
                     {{ trim(optional($t->requester)->first_name . ' ' . optional($t->requester)->last_name) ?: __('User') }}
-                    <span style="color:#c3c6cb;">·</span> {{ $roleLabel[$t->requester_role] ?? __('User') }}
                     <span style="color:#c3c6cb;">·</span> {{ optional($t->last_reply_at)->diffForHumans() ?? $t->created_at->diffForHumans() }}
                   </div>
                 </div>
