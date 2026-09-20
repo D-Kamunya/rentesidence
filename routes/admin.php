@@ -139,6 +139,15 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'middleware' => ['auth', 'a
     Route::post('/affiliate/withdrawal/{withdrawal}/reject',      [AffiliateWithdrawalController::class, 'reject'])->name('affiliate.withdrawal.reject');
     Route::get('/affiliate/{affiliate}/earnings', [AffiliateWithdrawalController::class, 'affiliateEarnings'])->name('affiliate.earnings');
 
+    // Feature announcements — "what's new" CRUD.
+    Route::group(['prefix' => 'feature-announcements', 'as' => 'feature-announcements.'], function () {
+        Route::get('/', [\App\Http\Controllers\Admin\FeatureAnnouncementController::class, 'index'])->name('index');
+        Route::post('/', [\App\Http\Controllers\Admin\FeatureAnnouncementController::class, 'store'])->name('store');
+        Route::put('{announcement}', [\App\Http\Controllers\Admin\FeatureAnnouncementController::class, 'update'])->name('update');
+        Route::post('{announcement}/toggle', [\App\Http\Controllers\Admin\FeatureAnnouncementController::class, 'toggle'])->name('toggle');
+        Route::delete('{announcement}', [\App\Http\Controllers\Admin\FeatureAnnouncementController::class, 'destroy'])->name('destroy');
+    });
+
     // Support (reusable rail) — admin inbox for tickets from every account type.
     Route::group(['prefix' => 'support', 'as' => 'support.'], function () {
         Route::get('/', [\App\Http\Controllers\Admin\SupportController::class, 'index'])->name('index');

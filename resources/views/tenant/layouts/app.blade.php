@@ -56,6 +56,7 @@
         @include('tenant.layouts.navbar')
         @include('tenant.layouts.sidebar')
         @yield('content')
+    @include('partials.feature-announcement')
     </div>
 
     @include('common.layouts.script')

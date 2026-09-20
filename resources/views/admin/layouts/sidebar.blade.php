@@ -65,6 +65,13 @@
                         </a>
                     </li>
                     <li>
+                        <a href="{{ route('admin.feature-announcements.index') }}">
+                            <i class="ri-megaphone-line"></i>
+                            <span>{{ __('Announcements') }}</span>
+                        </a>
+                    </li>
+
+                    <li>
                         <a href="javascript: void(0);" class="has-arrow">
                             <i class="ri-lock-2-line"></i>
                             <span>{{ __('Manage Policy') }}</span>

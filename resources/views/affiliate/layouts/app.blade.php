@@ -49,6 +49,7 @@
         @include('affiliate.layouts.navbar')
         @include('affiliate.layouts.sidebar')
         @yield('content')
+    @include('partials.feature-announcement')
     </div>
 
     @include('common.layouts.script')

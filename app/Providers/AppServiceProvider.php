@@ -65,6 +65,16 @@ class AppServiceProvider extends ServiceProvider
             $view->with('navBadges', app(\App\Services\NavBadgeService::class)->forAdmin());
         });
 
+        // "What's new" feature-announcement modal — the unseen announcements for the current user
+        // (role-targeted). Schema-guarded so it degrades cleanly on a bare/pre-migration install.
+        \Illuminate\Support\Facades\View::composer('partials.feature-announcement', function ($view) {
+            $user = auth()->user();
+            $unseen = ($user && \Illuminate\Support\Facades\Schema::hasTable('feature_announcements'))
+                ? \App\Models\FeatureAnnouncement::unseenFor($user)
+                : collect();
+            $view->with('featureAnnouncements', $unseen);
+        });
+
         // Graduation account switch — offer the "Switch to tenant/affiliate" control in the
         // navbar only when the current user has a linked counterpart account.
         \Illuminate\Support\Facades\View::composer(['tenant.layouts.navbar', 'affiliate.layouts.navbar'], function ($view) {

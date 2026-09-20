@@ -1,0 +1,56 @@
+{{-- "What's new" modal — reusable across every role. Shows the newest unseen announcement;
+     "Got it" marks it seen (so it never nags again). $featureAnnouncements is shared by a composer. --}}
+@php $fa = ($featureAnnouncements ?? collect())->first(); @endphp
+@if ($fa)
+<div id="csFaModal" class="cs-fa" role="dialog" aria-modal="true" aria-labelledby="csFaTitle">
+  <div class="cs-fa__card">
+    <div class="cs-fa__badge">{{ $fa->icon ?: '✨' }}</div>
+    <div class="cs-fa__new">{{ __("What's new") }}</div>
+    <h3 id="csFaTitle" class="cs-fa__title">{{ $fa->title }}</h3>
+    <div class="cs-fa__body">{!! nl2br(e($fa->body)) !!}</div>
+    <div class="cs-fa__actions">
+      @if ($fa->link_url)
+        <a href="{{ $fa->link_url }}" target="_blank" rel="noopener" class="cs-fa__btn cs-fa__btn--ghost" data-cs-fa-dismiss>
+          {{ $fa->link_label ?: __('Learn more') }}
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M5 12h14M13 6l6 6-6 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </a>
+      @endif
+      <button type="button" class="cs-fa__btn cs-fa__btn--primary" data-cs-fa-dismiss>{{ __('Got it') }}</button>
+    </div>
+  </div>
+</div>
+<style>
+  .cs-fa { position:fixed; inset:0; z-index:1200; background:rgba(15,23,34,.55); display:flex; align-items:center; justify-content:center; padding:20px; }
+  .cs-fa__card { background:#fff; border-radius:20px; max-width:420px; width:100%; padding:30px 28px 26px; text-align:center;
+    box-shadow:0 24px 70px rgba(0,0,0,.32); animation:csFaIn .35s cubic-bezier(.2,.8,.3,1) both; }
+  @keyframes csFaIn { from { opacity:0; transform:translateY(16px) scale(.97); } }
+  .cs-fa__badge { width:64px; height:64px; border-radius:18px; margin:0 auto 16px; display:grid; place-items:center; font-size:32px;
+    background:linear-gradient(135deg,#E6F1FB,#EEEDFE); }
+  .cs-fa__new { font-size:11.5px; font-weight:700; letter-spacing:.14em; text-transform:uppercase; color:#185FA5; margin-bottom:8px; }
+  .cs-fa__title { font-size:21px; font-weight:800; color:#1b1e22; margin:0 0 12px; line-height:1.25; letter-spacing:-.01em; }
+  .cs-fa__body { font-size:14.5px; color:#4a4f57; line-height:1.6; margin:0 0 22px; }
+  .cs-fa__actions { display:flex; flex-direction:column; gap:9px; }
+  .cs-fa__btn { display:inline-flex; align-items:center; justify-content:center; gap:7px; border:none; border-radius:12px;
+    padding:13px 18px; font-size:14.5px; font-weight:700; cursor:pointer; text-decoration:none; transition:.15s; }
+  .cs-fa__btn--primary { background:#185FA5; color:#fff !important; box-shadow:0 10px 24px -12px rgba(24,95,165,.8); }
+  .cs-fa__btn--primary:hover { background:#0F4A84; }
+  .cs-fa__btn--ghost { background:#f3f4f6; color:#374151 !important; }
+  .cs-fa__btn--ghost:hover { background:#e5e7eb; }
+</style>
+<script>
+  (function () {
+    var modal = document.getElementById('csFaModal');
+    if (!modal) return;
+    var url = '{{ route('feature-announcement.seen', $fa->id) }}';
+    var token = '{{ csrf_token() }}';
+    function dismiss() {
+      modal.style.display = 'none';
+      try {
+        fetch(url, { method: 'POST', headers: { 'X-CSRF-TOKEN': token, 'X-Requested-With': 'XMLHttpRequest' }, credentials: 'same-origin' });
+      } catch (e) {}
+    }
+    modal.querySelectorAll('[data-cs-fa-dismiss]').forEach(function (el) { el.addEventListener('click', dismiss); });
+    modal.addEventListener('click', function (e) { if (e.target === modal) dismiss(); });
+  })();
+</script>
+@endif

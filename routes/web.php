@@ -72,6 +72,9 @@ Route::group(['middleware' => ['auth', 'version.update']], function () {
             Route::post('/{ticket}/reply', [\App\Http\Controllers\SupportController::class, 'reply'])->middleware('throttle:40,60')->name('reply');
             Route::post('/{ticket}/resolve', [\App\Http\Controllers\SupportController::class, 'resolve'])->name('resolve');
         });
+
+        // Feature announcements — mark one seen (dismiss the "what's new" modal).
+        Route::post('feature-announcement/{announcement}/seen', [\App\Http\Controllers\FeatureAnnouncementController::class, 'seen'])->name('feature-announcement.seen');
     });
 });
 

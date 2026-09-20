@@ -48,6 +48,7 @@
         @include('maintainer.layouts.navbar')
         @include('maintainer.layouts.sidebar')
         @yield('content')
+    @include('partials.feature-announcement')
     </div>
 
     @include('common.layouts.script')

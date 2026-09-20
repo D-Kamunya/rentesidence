@@ -53,6 +53,7 @@
         @include('owner.layouts.header')
         @include('owner.layouts.sidebar')
         @yield('content')
+    @include('partials.feature-announcement')
     </div>
     @include('owner.layouts.modal')
     @include('common.layouts.script')

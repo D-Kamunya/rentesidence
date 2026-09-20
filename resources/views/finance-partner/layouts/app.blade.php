@@ -149,6 +149,7 @@
                 @if (session('error')) <div class="cs-alert is-danger">{{ session('error') }}</div> @endif
                 @if ($errors->any()) <div class="cs-alert is-danger">{{ $errors->first() }}</div> @endif
                 @yield('content')
+    @include('partials.feature-announcement')
             </div>
         </div>
     </div>
