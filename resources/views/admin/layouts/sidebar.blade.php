@@ -172,6 +172,12 @@
                             </a>
                         </li>
                         <li>
+                            <a class="{{ @$navAffiliatesAddMMShowClass }}" href="{{ route('admin.affiliates.applications.index') }}">
+                                <i class="fa fa-user-plus" aria-hidden="true"></i>
+                                <span>{{ __('Applications') }}@include('partials.nav-count', ['n' => $navBadges['affiliate_applications'] ?? 0])</span>
+                            </a>
+                        </li>
+                        <li>
                             <a class="{{ @$navAffiliatesAddMMShowClass }}" href="{{ route('admin.leads.index') }}">
                                 <i class="fa fa-cog" aria-hidden="true"></i>
                                 <span>{{ __('Leads') }}</span>

@@ -29,6 +29,12 @@ Route::group(['middleware' => ['version.update', 'addon.update', 'isFrontend']],
     Route::post('join', [TenantSelfRegisterController::class, 'store'])
         ->middleware('throttle:8,60')->name('tenant.join.store');
 
+    // Become an affiliate — public application page (shareable link for prospects). Creates an
+    // application only; admin turns it into an account in one click.
+    Route::get('become-an-affiliate', [\App\Http\Controllers\Saas\AffiliateApplicationController::class, 'create'])->name('affiliate.apply');
+    Route::post('become-an-affiliate', [\App\Http\Controllers\Saas\AffiliateApplicationController::class, 'store'])
+        ->middleware('throttle:8,60')->name('affiliate.apply.store');
+
     // policy
     Route::get('terms-conditions', [FrontendController::class, 'termsConditions'])->name('terms-conditions');
     Route::get('privacy-policy', [FrontendController::class, 'privacyPolicy'])->name('privacy-policy');

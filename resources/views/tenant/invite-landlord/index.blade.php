@@ -98,7 +98,7 @@
       <p style="margin:-4px 0 18px;font-size:12.8px;color:#9aa2ad;line-height:1.55;">
         {{ __('Refer :goal landlords who become paying customers and a Centresidence affiliate account unlocks for you automatically — free, and linked to this one', ['goal' => $graduationGoal]) }}@if ($confirmedCount > 0) ({{ __(':n so far', ['n' => $confirmedCount]) }})@endif.
         {{ __('Prefer not to wait?') }}
-        <a href="{{ route('frontend') }}?intent=partner#contact-us" style="color:#185FA5;font-weight:650;text-decoration:none;">{{ __('Apply to join the affiliate program') }} →</a>
+        <a href="{{ route('affiliate.apply') }}" style="color:#185FA5;font-weight:650;text-decoration:none;">{{ __('Apply to join the affiliate program') }} →</a>
       </p>
     @endif
 

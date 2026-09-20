@@ -148,6 +148,9 @@ class NavBadgeService
 
             // Support tickets from any account type awaiting an admin reply.
             'support' => $this->safe(fn () => app(SupportTicketService::class)->adminOpenCount()),
+
+            // Prospective-affiliate applications awaiting review (from the public apply page).
+            'affiliate_applications' => $this->safe(fn () => \App\Models\AffiliateApplication::where('status', \App\Models\AffiliateApplication::STATUS_PENDING)->count()),
         ];
     }
 

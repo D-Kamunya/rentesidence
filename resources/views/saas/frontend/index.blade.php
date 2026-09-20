@@ -470,7 +470,7 @@
           <div class="csh-picon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3"/><path d="M2 21c0-3.5 3-6 7-6s7 2.5 7 6"/><path d="M17 8h5M19.5 5.5v5"/></svg></div>
           <h3>{{ __('Affiliates and agents') }}</h3>
           <p>{{ __('Earn by bringing property owners onboard. Simple tools, real training, and commissions you can count on.') }}</p>
-          <a href="#contact-us" data-intent="partner" class="csh-lnk">{{ __('Join the program') }}
+          <a href="{{ route('affiliate.apply') }}" class="csh-lnk">{{ __('Apply to join') }}
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
         </div>
         <div class="csh-pcard csh-p-soft">
