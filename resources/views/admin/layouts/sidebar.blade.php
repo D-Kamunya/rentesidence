@@ -66,7 +66,7 @@
                     </li>
                     <li>
                         <a href="{{ route('admin.feature-announcements.index') }}">
-                            <i class="ri-megaphone-line"></i>
+                            <i class="ri-volume-up-line"></i>
                             <span>{{ __('Announcements') }}</span>
                         </a>
                     </li>

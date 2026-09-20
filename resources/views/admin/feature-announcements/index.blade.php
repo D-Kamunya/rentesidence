@@ -104,6 +104,13 @@
                     @php
                       $audLabels = $a->audience === 'all' ? [__('Everyone')] : collect(explode(',', $a->audience))->map(fn($r) => $audiences[(int)$r] ?? $r)->all();
                       $isLive = $a->is_active && $a->published_at;
+                      // Build the edit payload here (not inline in @json — a long inline array trips
+                      // Blade's directive parser and emits invalid PHP).
+                      $editData = [
+                        'id' => $a->id, 'icon' => $a->icon, 'title' => $a->title, 'body' => $a->body,
+                        'link_url' => $a->link_url, 'link_label' => $a->link_label, 'audience' => $a->audience,
+                        'is_active' => (bool) $a->is_active, 'published' => (bool) $a->published_at,
+                      ];
                     @endphp
                     <tr>
                       <td>
@@ -120,7 +127,7 @@
                       <td>
                         <div style="display:flex;gap:6px;flex-wrap:wrap;">
                           <button type="button" class="fam-btn fam-btn--ghost fam-btn--sm fam-edit"
-                            data-a='@json(['id'=>$a->id,'icon'=>$a->icon,'title'=>$a->title,'body'=>$a->body,'link_url'=>$a->link_url,'link_label'=>$a->link_label,'audience'=>$a->audience,'is_active'=>$a->is_active,'published'=>(bool)$a->published_at])'>{{ __('Edit') }}</button>
+                            data-a='@json($editData)'>{{ __('Edit') }}</button>
                           <form method="POST" action="{{ route('admin.feature-announcements.toggle', $a->id) }}">@csrf
                             <button type="submit" class="fam-btn fam-btn--ghost fam-btn--sm">{{ $a->is_active ? __('Pause') : __('Activate') }}</button>
                           </form>
