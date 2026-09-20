@@ -14,35 +14,48 @@ class AffiliateService
 {
 
 
-    public function registerAffiliate($data)
+    /**
+     * The SINGLE source of truth for affiliate creation — used by the admin add form AND the
+     * one-click "approve application" path. Self-contained (owns its own transaction), so any
+     * caller can use it safely: creates the user + affiliate with a system-generated temporary
+     * password, then (after commit) delivers the credentials by email + SMS. The affiliate must
+     * set their own password on first login (must_change_password → ForcePasswordChange).
+     * Returns the created User.
+     */
+    public function registerAffiliate($data): User
     {
-        // 1️⃣ Generate random password
-        $plainPassword = Str::random(10); // e.g., 10 characters long
-        $user = new User();
-        $user->first_name = $data['first_name'];
-        $user->last_name =  $data['last_name'];
-        $user->contact_number =  $data['contact_number'];
-        $user->email =  $data['email'];
-        $user->password = Hash::make($plainPassword);
-        $user->status = USER_STATUS_UNVERIFIED;
-        $user->role = USER_ROLE_AFFILIATE;
-        // System-generated password → force the affiliate to set their own on first
-        // login (same onboarding rule as owner-created tenants). Cleared in
-        // ProfileController::changePasswordUpdate; enforced by ForcePasswordChange.
-        $user->must_change_password = 1;
-        $user->verify_token = str_replace('-', '', Str::uuid()->toString());
-        $user->save();
+        $plainPassword = Str::random(10);
 
-        $affiliate = new Affiliate();
-        $referralCode = strtoupper(Str::random(12));
-        $affiliate->user_id = $user->id;
-        $affiliate->referral_code = $referralCode;
-        $affiliate->save();
+        DB::beginTransaction();
+        try {
+            $user = new User();
+            $user->first_name = $data['first_name'];
+            $user->last_name =  $data['last_name'];
+            $user->contact_number =  $data['contact_number'];
+            $user->email =  $data['email'];
+            $user->password = Hash::make($plainPassword);
+            $user->status = USER_STATUS_UNVERIFIED;
+            $user->role = USER_ROLE_AFFILIATE;
+            $user->must_change_password = 1;
+            $user->verify_token = str_replace('-', '', Str::uuid()->toString());
+            $user->save();
 
-        DB::commit();
+            $affiliate = new Affiliate();
+            $affiliate->user_id = $user->id;
+            $affiliate->referral_code = strtoupper(Str::random(12));
+            $affiliate->save();
 
+            DB::commit();
+        } catch (\Throwable $e) {
+            DB::rollBack();
+            throw $e;
+        }
+
+        // After the commit: welcome/verification mail + credential delivery (email + SMS).
         $this->handlePostRegistration($user);
         sendLoginDetails($user, $plainPassword);
+
+        return $user;
     }
 
     protected function handlePostRegistration(User $user)

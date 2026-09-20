@@ -90,6 +90,13 @@
                                                         @enderror
                                                         </div>
                                                     </div>
+                                                    <div class="row">
+                                                        <div class="col-md-12 mb-25">
+                                                            <div class="alert alert-info" style="margin:0;font-size:13.5px;">
+                                                                {{ __('No password needed — the affiliate gets a system-generated temporary password by email and SMS, and is asked to set their own on first login.') }}
+                                                            </div>
+                                                        </div>
+                                                    </div>
                                                 </div>
                                             </div>
                                         </div>

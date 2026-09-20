@@ -43,12 +43,12 @@ class AffiliateController extends Controller
 
     public function affiliate_register_store(AffiliateRegisterRequest $request)
     {
-        DB::beginTransaction();
+        // registerAffiliate owns its own transaction now (single source of truth), so the
+        // controller just surfaces the outcome.
         try {
             $this->affiliateService->registerAffiliate($request->validated());
             return back()->with('success', __("AFFILIATE REGISTERED SUCCESSFULLY"));
         } catch (Exception $e) {
-            DB::rollBack();
             return back()->with('error', $e->getMessage());
         }
     }
