@@ -62,6 +62,11 @@
                             <a href="{{ route('owner.tenant.edit', $tenant->id) }}" class="td-hero__edit" title="{{ __('Edit Info') }}">
                                 <i class="ri-edit-line"></i> {{ __('Edit Info') }}
                             </a>
+                            @if ((int) $tenant->status === TENANT_STATUS_ACTIVE)
+                                <a href="{{ route('owner.tenant.transfer', $tenant->id) }}" class="td-hero__edit" title="{{ __('Move this tenant to another unit in the same property') }}">
+                                    <i class="ri-arrow-left-right-line"></i> {{ __('Transfer unit') }}
+                                </a>
+                            @endif
                         </div>
 
                         {{-- Ready-to-close reminder: shown for owners who reached the profile via the view

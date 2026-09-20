@@ -242,6 +242,50 @@ class TenantController extends Controller
         return view('owner.tenants.edit', $data);
     }
 
+    /** In-place unit transfer — pick a vacant unit in the same property; surface standing invoices. */
+    public function transferForm($id)
+    {
+        $tenant = \App\Models\Tenant::where('owner_user_id', auth()->id())->findOrFail($id);
+        if ((int) $tenant->status !== TENANT_STATUS_ACTIVE) {
+            return redirect()->route('owner.tenant.details', $id)->with('error', __('Only an active tenant can be transferred.'));
+        }
+
+        $occupiedUnitIds = \App\Models\Tenant::where('property_id', $tenant->property_id)
+            ->where('status', TENANT_STATUS_ACTIVE)->pluck('unit_id')->all();
+
+        $data['tenant'] = $tenant->load('property', 'unit', 'user');
+        $data['vacantUnits'] = \App\Models\PropertyUnit::where('property_id', $tenant->property_id)
+            ->whereNotIn('id', $occupiedUnitIds)->orderBy('unit_name')->get();
+        $data['standingInvoices'] = \App\Models\Invoice::where('tenant_id', $tenant->id)
+            ->where('status', INVOICE_STATUS_PENDING)->latest()->get();
+        $data['outstandingTotal'] = (float) $data['standingInvoices']->sum('total');
+        $data['pageTitle'] = __('Transfer Tenant');
+
+        return view('owner.tenants.transfer', $data);
+    }
+
+    public function transferStore(Request $request, $id)
+    {
+        $request->validate([
+            'to_unit_id' => 'required|integer',
+            'note'       => 'nullable|string|max:1000',
+        ]);
+
+        $tenant = \App\Models\Tenant::where('owner_user_id', auth()->id())->findOrFail($id);
+        // The target unit must belong to one of the owner's properties (scoped via the tenant's property).
+        $newUnit = \App\Models\PropertyUnit::where('property_id', $tenant->property_id)
+            ->findOrFail($request->to_unit_id);
+
+        try {
+            $this->tenantService->transferUnit($tenant, $newUnit, $request->input('note'));
+        } catch (\Throwable $e) {
+            return back()->with('error', $e->getMessage());
+        }
+
+        return redirect()->route('owner.tenant.details', $id)
+            ->with('success', __('Tenant transferred to :unit. Any standing invoices remain on their account.', ['unit' => $newUnit->unit_name ?? ('#' . $newUnit->id)]));
+    }
+
     public function store(Request $request)
     {
          // Determine which validation rules to apply

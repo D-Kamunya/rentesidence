@@ -777,6 +777,99 @@ class TenantService
         }
     }
 
+    /**
+     * IN-PLACE unit transfer: move an ACTIVE tenant to a different VACANT unit in the SAME property
+     * WITHOUT closing the tenancy (preserves continuity + rental-score history — the old
+     * close-and-reassign lost both). The new unit's terms (rent/deposit/due) apply going forward and
+     * recurring rent re-points to it; the old unit frees automatically. Standing/unpaid invoices stay
+     * with the tenant (they still owe them) — the owner decides how to handle those (settle / carry /
+     * off-system), we only surface + snapshot the total. Returns the transfer record.
+     */
+    public function transferUnit(\App\Models\Tenant $tenant, \App\Models\PropertyUnit $newUnit, ?string $note = null): \App\Models\TenantUnitTransfer
+    {
+        if ((int) $tenant->status !== TENANT_STATUS_ACTIVE) {
+            throw new Exception(__('Only an active tenant can be transferred.'));
+        }
+        if ((int) $newUnit->property_id !== (int) $tenant->property_id) {
+            throw new Exception(__('You can only transfer within the same property.'));
+        }
+        if ((int) $newUnit->id === (int) $tenant->unit_id) {
+            throw new Exception(__('The tenant is already in that unit.'));
+        }
+        $occupied = \App\Models\Tenant::where('unit_id', $newUnit->id)
+            ->where('status', TENANT_STATUS_ACTIVE)->exists();
+        if ($occupied) {
+            throw new Exception(__('That unit already has an active tenant.'));
+        }
+
+        // Snapshot what's outstanding NOW (informed-decision record; not auto-settled). Matches the
+        // canonical "due" used across TenantService = SUM(amount) of pending invoices.
+        $outstanding = (float) \App\Models\Invoice::where('tenant_id', $tenant->id)
+            ->where('status', INVOICE_STATUS_PENDING)->sum('amount');
+
+        $fromUnitId = (int) $tenant->unit_id;
+
+        if ($newUnit->rent_type == PROPERTY_UNIT_RENT_TYPE_MONTHLY) {
+            $dueDate = $newUnit->monthly_due_day;
+        } elseif ($newUnit->rent_type == PROPERTY_UNIT_RENT_TYPE_YEARLY) {
+            $dueDate = $newUnit->yearly_due_day;
+        } else {
+            $dueDate = $newUnit->lease_payment_due_date ?? $tenant->due_date;
+        }
+
+        DB::beginTransaction();
+        try {
+            $tenant->update([
+                'unit_id'               => $newUnit->id,
+                'property_id'           => $newUnit->property_id,
+                'rent_type'             => $newUnit->rent_type,
+                'due_date'              => $dueDate,
+                'lease_start_date'      => $newUnit->lease_start_date,
+                'lease_end_date'        => $newUnit->lease_end_date,
+                'general_rent'          => $newUnit->general_rent,
+                'security_deposit_type' => $newUnit->security_deposit_type,
+                'security_deposit'      => $newUnit->security_deposit,
+                'late_fee_type'         => $newUnit->late_fee_type,
+                'late_fee'              => $newUnit->late_fee,
+                'incident_receipt'      => $newUnit->incident_receipt,
+            ]);
+
+            $transfer = \App\Models\TenantUnitTransfer::create([
+                'tenant_id'            => $tenant->id,
+                'property_id'          => $newUnit->property_id,
+                'from_unit_id'         => $fromUnitId,
+                'to_unit_id'           => $newUnit->id,
+                'outstanding_snapshot' => $outstanding,
+                'note'                 => $note,
+                'transferred_by'       => auth()->id(),
+            ]);
+
+            DB::commit();
+        } catch (Exception $e) {
+            DB::rollBack();
+            throw $e;
+        }
+
+        // Point recurring rent at the new unit (safe/idempotent), then notify the tenant in-app.
+        try {
+            app(\App\Services\InvoiceRecurringService::class)->ensureUnitRecurringSetting($tenant->fresh());
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::warning('Transfer: recurring setting refresh failed: ' . $e->getMessage(), ['tenant_id' => $tenant->id]);
+        }
+        if ($tenant->user_id) {
+            addNotification(
+                __('You\'ve moved units'),
+                __('Your unit has been updated to :unit.', ['unit' => $newUnit->unit_name ?? ('#' . $newUnit->id)]),
+                route('tenant.dashboard'),
+                null,
+                $tenant->user_id,
+                auth()->id()
+            );
+        }
+
+        return $transfer;
+    }
+
 }
 
        

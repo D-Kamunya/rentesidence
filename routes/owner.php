@@ -140,6 +140,9 @@ Route::group(['prefix' => 'owner', 'as' => 'owner.', 'middleware' => ['auth', 'o
         Route::get('/', [TenantController::class, 'index'])->name('index');
         Route::get('create', [TenantController::class, 'create'])->name('create');
         Route::get('edit/{id}', [TenantController::class, 'edit'])->name('edit');
+        // In-place unit transfer (move within the same property, no close).
+        Route::get('transfer/{id}', [TenantController::class, 'transferForm'])->name('transfer');
+        Route::post('transfer/{id}', [TenantController::class, 'transferStore'])->name('transfer.store');
         Route::post('store', [TenantController::class, 'store'])->name('store');
         Route::get('document/delete/{id}', [TenantController::class, 'documentDestroy'])->name('document.destroy');
         Route::get('details/{id}', [TenantController::class, 'details'])->name('details');
