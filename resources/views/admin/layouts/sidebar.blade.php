@@ -65,6 +65,12 @@
                         </a>
                     </li>
                     <li>
+                        <a href="{{ route('admin.incidents.index') }}">
+                            <i class="ri-error-warning-line"></i>
+                            <span>{{ __('System Health') }}@include('partials.nav-count', ['n' => $navBadges['incidents'] ?? 0])</span>
+                        </a>
+                    </li>
+                    <li>
                         <a href="{{ route('admin.feature-announcements.index') }}">
                             <i class="ri-volume-up-line"></i>
                             <span>{{ __('Announcements') }}</span>
