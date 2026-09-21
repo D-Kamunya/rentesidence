@@ -15,8 +15,9 @@
           .fam-card h2{font-size:15px;font-weight:700;color:#1b1e22;margin:0 0 14px;}
           .fam-field{margin-bottom:13px;}
           .fam-field label{display:block;font-size:12.5px;font-weight:650;color:#4a4f57;margin-bottom:5px;}
-          .fam-field input[type=text],.fam-field input[type=url],.fam-field textarea{width:100%;border:1px solid #e6e1d8;border-radius:10px;padding:10px 12px;font-size:14px;color:#1b1e22;outline:none;}
-          .fam-field input:focus,.fam-field textarea:focus{border-color:#185FA5;box-shadow:0 0 0 3px rgba(24,95,165,.12);}
+          .fam-field input[type=text],.fam-field input[type=url],.fam-field textarea,.fam-field select{width:100%;max-width:100%;box-sizing:border-box;border:1px solid #e6e1d8;border-radius:10px;padding:10px 12px;font-size:14px;color:#1b1e22;outline:none;}
+          .fam-field select{text-overflow:ellipsis;}
+          .fam-field input:focus,.fam-field textarea:focus,.fam-field select:focus{border-color:#185FA5;box-shadow:0 0 0 3px rgba(24,95,165,.12);}
           .fam-aud{display:flex;flex-wrap:wrap;gap:6px;}
           .fam-aud label{display:inline-flex;align-items:center;gap:5px;font-size:12.5px;font-weight:600;color:#4a4f57;background:#f6f7f9;border:1px solid #e6e1d8;border-radius:999px;padding:5px 11px;cursor:pointer;margin:0;}
           .fam-aud input{margin:0;}
