@@ -1,6 +1,9 @@
 {{-- "What's new" modal — reusable across every role. Shows the newest unseen announcement;
      "Got it" marks it seen (so it never nags again). $featureAnnouncements is shared by a composer. --}}
-@php $fa = ($featureAnnouncements ?? collect())->first(); @endphp
+@php
+  $fa = ($featureAnnouncements ?? collect())->first();
+  $faLink = $fa ? $fa->resolvedLink((int) auth()->user()->role) : null;
+@endphp
 @if ($fa)
 <div id="csFaModal" class="cs-fa" role="dialog" aria-modal="true" aria-labelledby="csFaTitle">
   <div class="cs-fa__card">
@@ -9,8 +12,8 @@
     <h3 id="csFaTitle" class="cs-fa__title">{{ $fa->title }}</h3>
     <div class="cs-fa__body">{!! nl2br(e($fa->body)) !!}</div>
     <div class="cs-fa__actions">
-      @if ($fa->link_url)
-        <a href="{{ $fa->link_url }}" target="_blank" rel="noopener" class="cs-fa__btn cs-fa__btn--ghost" data-cs-fa-dismiss>
+      @if ($faLink)
+        <a href="{{ $faLink }}" target="_blank" rel="noopener" class="cs-fa__btn cs-fa__btn--ghost" data-cs-fa-dismiss>
           {{ $fa->link_label ?: __('Learn more') }}
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M5 12h14M13 6l6 6-6 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
         </a>

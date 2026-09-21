@@ -67,10 +67,20 @@
                 <label>{{ __('Message') }}</label>
                 <textarea name="body" id="fa_body" rows="4" maxlength="2000" required>{{ old('body') }}</textarea>
               </div>
+              <div class="fam-field">
+                <label>{{ __('Link a Knowledge Base article') }} <span style="color:#9aa2ad;font-weight:500;">({{ __('optional — no URL hunting') }})</span></label>
+                <select name="kb_article_id" id="fa_kb">
+                  <option value="">{{ __('— None —') }}</option>
+                  @foreach ($kbArticles as $art)
+                    <option value="{{ $art->id }}">{{ $art->title }}@if($art->audience) · {{ ucfirst(str_replace('_',' ',$art->audience)) }}@endif</option>
+                  @endforeach
+                </select>
+                <div style="font-size:11.5px;color:#9aa2ad;margin-top:4px;">{{ __('The right per-role link is built automatically for whoever sees the announcement.') }}</div>
+              </div>
               <div class="fam-row2">
                 <div class="fam-field" style="flex:1;">
-                  <label>{{ __('Link URL') }} <span style="color:#9aa2ad;font-weight:500;">({{ __('optional') }})</span></label>
-                  <input type="url" name="link_url" id="fa_link_url" maxlength="500" placeholder="https://…/knowledge-base/…" value="{{ old('link_url') }}">
+                  <label>{{ __('…or paste a link') }} <span style="color:#9aa2ad;font-weight:500;">({{ __('external / video') }})</span></label>
+                  <input type="url" name="link_url" id="fa_link_url" maxlength="500" placeholder="https://…" value="{{ old('link_url') }}">
                 </div>
                 <div class="fam-field" style="width:120px;">
                   <label>{{ __('Link label') }}</label>
@@ -108,15 +118,16 @@
                       // Blade's directive parser and emits invalid PHP).
                       $editData = [
                         'id' => $a->id, 'icon' => $a->icon, 'title' => $a->title, 'body' => $a->body,
-                        'link_url' => $a->link_url, 'link_label' => $a->link_label, 'audience' => $a->audience,
-                        'is_active' => (bool) $a->is_active, 'published' => (bool) $a->published_at,
+                        'link_url' => $a->link_url, 'link_label' => $a->link_label, 'kb_article_id' => $a->kb_article_id,
+                        'audience' => $a->audience, 'is_active' => (bool) $a->is_active, 'published' => (bool) $a->published_at,
                       ];
                     @endphp
                     <tr>
                       <td>
                         <div style="font-weight:650;color:#1b1e22;">{{ $a->icon }} {{ $a->title }}</div>
                         <div style="font-size:12px;color:#9aa2ad;margin-top:2px;max-width:44ch;">{{ \Illuminate\Support\Str::limit($a->body, 90) }}</div>
-                        @if ($a->link_url)<div style="font-size:11.5px;color:#185FA5;margin-top:3px;">🔗 {{ $a->link_label ?: __('Learn more') }}</div>@endif
+                        @if ($a->kb_article_id && $a->kbArticle)<div style="font-size:11.5px;color:#185FA5;margin-top:3px;">📚 {{ $a->kbArticle->title }}</div>
+                        @elseif ($a->link_url)<div style="font-size:11.5px;color:#185FA5;margin-top:3px;">🔗 {{ $a->link_label ?: __('Learn more') }}</div>@endif
                       </td>
                       <td style="font-size:12.5px;color:#6b7280;">{{ implode(', ', $audLabels) }}</td>
                       <td>
@@ -162,7 +173,14 @@
       document.getElementById('famCancelEdit').style.display = 'none';
       form.reset();
     }
-    document.getElementById('famCancelEdit').addEventListener('click', resetToCreate);
+    // KB article and a manual link are mutually exclusive — picking one disables the other.
+    var kb = document.getElementById('fa_kb'), linkUrl = document.getElementById('fa_link_url');
+    function syncLinkFields() {
+      if (kb.value) { linkUrl.value = ''; linkUrl.disabled = true; linkUrl.style.opacity = .5; }
+      else { linkUrl.disabled = false; linkUrl.style.opacity = 1; }
+    }
+    kb.addEventListener('change', syncLinkFields);
+    document.getElementById('famCancelEdit').addEventListener('click', function () { resetToCreate(); syncLinkFields(); });
     document.querySelectorAll('.fam-edit').forEach(function (btn) {
       btn.addEventListener('click', function () {
         var a = JSON.parse(btn.getAttribute('data-a'));
@@ -174,6 +192,8 @@
         document.getElementById('fa_body').value = a.body || '';
         document.getElementById('fa_link_url').value = a.link_url || '';
         document.getElementById('fa_link_label').value = a.link_label || '';
+        document.getElementById('fa_kb').value = a.kb_article_id || '';
+        syncLinkFields();
         document.getElementById('fa_active').checked = !!a.is_active;
         document.getElementById('fa_publish').checked = !!a.published;
         var aud = (a.audience === 'all') ? ['all'] : String(a.audience).split(',');

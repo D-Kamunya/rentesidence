@@ -22,8 +22,9 @@ class FeatureAnnouncementController extends Controller
     public function index()
     {
         return view('admin.feature-announcements.index', [
-            'announcements' => FeatureAnnouncement::latest()->paginate(20),
+            'announcements' => FeatureAnnouncement::with('kbArticle')->latest()->paginate(20),
             'audiences'     => self::AUDIENCES,
+            'kbArticles'    => \App\Models\KnowledgeBaseArticle::orderBy('title')->get(['id', 'title', 'audience']),
             'pageTitle'     => __('Feature Announcements'),
         ]);
     }
@@ -67,28 +68,34 @@ class FeatureAnnouncementController extends Controller
     private function validated(Request $request): array
     {
         $data = $request->validate([
-            'title'      => 'required|string|max:120',
-            'body'       => 'required|string|max:2000',
-            'icon'       => 'nullable|string|max:8',
-            'link_url'   => 'nullable|url|max:500',
-            'link_label' => 'nullable|string|max:40',
-            'audience'   => 'required|array|min:1',
-            'audience.*' => 'string',
-            'is_active'  => 'nullable|boolean',
-            'publish'    => 'nullable|boolean',
+            'title'         => 'required|string|max:120',
+            'body'          => 'required|string|max:2000',
+            'icon'          => 'nullable|string|max:8',
+            'kb_article_id' => 'nullable|integer|exists:knowledge_base_articles,id',
+            'link_url'      => 'nullable|url|max:500',
+            'link_label'    => 'nullable|string|max:40',
+            'audience'      => 'required|array|min:1',
+            'audience.*'    => 'string',
+            'is_active'     => 'nullable|boolean',
+            'publish'       => 'nullable|boolean',
         ]);
 
         // "all" wins if selected; otherwise a comma-separated list of role ids.
         $audience = in_array('all', $data['audience'], true) ? 'all' : implode(',', $data['audience']);
 
+        // A picked KB article takes precedence over a pasted URL (resolvedLink prefers it anyway;
+        // clear link_url so the two don't drift).
+        $kbId = $data['kb_article_id'] ?? null;
+
         return [
-            'title'      => $data['title'],
-            'body'       => $data['body'],
-            'icon'       => $data['icon'] ?? null,
-            'link_url'   => $data['link_url'] ?? null,
-            'link_label' => $data['link_label'] ?? null,
-            'audience'   => $audience,
-            'is_active'  => (bool) ($data['is_active'] ?? false),
+            'title'         => $data['title'],
+            'body'          => $data['body'],
+            'icon'          => $data['icon'] ?? null,
+            'kb_article_id' => $kbId,
+            'link_url'      => $kbId ? null : ($data['link_url'] ?? null),
+            'link_label'    => $data['link_label'] ?? null,
+            'audience'      => $audience,
+            'is_active'     => (bool) ($data['is_active'] ?? false),
         ];
     }
 }
