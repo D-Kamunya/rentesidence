@@ -20,10 +20,16 @@
   </div>
 </div>
 <style>
-  .cs-fa { position:fixed; inset:0; z-index:1200; background:rgba(15,23,34,.55); display:flex; align-items:center; justify-content:center; padding:20px; }
+  /* Softened: a light, blurred backdrop (frosted glass) instead of a heavy dark scrim, and a
+     gentle fade + rise — keeps the guaranteed-see reach of a modal without the "slam". */
+  .cs-fa { position:fixed; inset:0; z-index:1200; background:rgba(17,24,34,.28);
+    backdrop-filter:blur(5px); -webkit-backdrop-filter:blur(5px);
+    display:flex; align-items:center; justify-content:center; padding:20px; animation:csFaFade .45s ease both; }
   .cs-fa__card { background:#fff; border-radius:20px; max-width:420px; width:100%; padding:30px 28px 26px; text-align:center;
-    box-shadow:0 24px 70px rgba(0,0,0,.32); animation:csFaIn .35s cubic-bezier(.2,.8,.3,1) both; }
-  @keyframes csFaIn { from { opacity:0; transform:translateY(16px) scale(.97); } }
+    box-shadow:0 18px 52px rgba(20,23,28,.20); animation:csFaIn .5s cubic-bezier(.2,.75,.3,1) .08s both; }
+  @keyframes csFaFade { from { opacity:0; } }
+  @keyframes csFaIn { from { opacity:0; transform:translateY(10px) scale(.985); } }
+  @media (prefers-reduced-motion: reduce) { .cs-fa, .cs-fa__card { animation:none; } }
   .cs-fa__badge { width:64px; height:64px; border-radius:18px; margin:0 auto 16px; display:grid; place-items:center; font-size:32px;
     background:linear-gradient(135deg,#E6F1FB,#EEEDFE); }
   .cs-fa__new { font-size:11.5px; font-weight:700; letter-spacing:.14em; text-transform:uppercase; color:#185FA5; margin-bottom:8px; }
