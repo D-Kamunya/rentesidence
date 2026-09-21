@@ -71,7 +71,7 @@ class FeatureAnnouncementController extends Controller
             'title'         => 'required|string|max:120',
             'body'          => 'required|string|max:2000',
             'icon'          => 'nullable|string|max:8',
-            'kb_article_id' => 'nullable|integer|exists:knowledge_base_articles,id',
+            'kb_article_id' => 'nullable|integer|exists:' . (new \App\Models\KnowledgeBaseArticle)->getTable() . ',id',
             'link_url'      => 'nullable|url|max:500',
             'link_label'    => 'nullable|string|max:40',
             'audience'      => 'required|array|min:1',
