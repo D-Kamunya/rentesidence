@@ -7,8 +7,9 @@ use App\Models\Lead;
 class SendDemoScheduledMail extends BaseMailJob
 {
     public function __construct(
-        public int    $leadId,
-        public string $demoDate,
+        public int     $leadId,
+        public string  $demoDate,
+        public ?string $meetingLink = null,
     ) {}
 
     public function handle(): void
@@ -16,65 +17,79 @@ class SendDemoScheduledMail extends BaseMailJob
         $lead      = Lead::with('company')->findOrFail($this->leadId);
         $company   = $lead->company;
         $affiliate = Affiliate::where('user_id', $lead->affiliate_id)->with('user')->first();
-        $appName   = getOption('app_name');
-        $demoDate  = $this->demoDate;
+        $appName   = getOption('app_name'); // trusted admin config
+        $demoDate  = $this->demoDate;       // server-formatted (Carbon), safe
+
+        // Only treat a real http(s) URL as a usable link (defence-in-depth on top of the
+        // controller's `url` validation — never render javascript:/other schemes in an href).
+        $hasLink = $this->meetingLink && preg_match('#^https?://#i', $this->meetingLink);
+        $link    = $hasLink ? $this->meetingLink : null;
+
+        // Escape only values interpolated into free-text (text/note) blocks; panel rows are
+        // auto-escaped by the panel part, so raw model values are passed straight in there.
+        $companyName = e($company->company_name);
 
         // 1. Client
         if ($company?->email) {
-            $this->send(
+            $blocks = [
+                ['type' => 'text', 'html' => __('Hello :name,', ['name' => "<strong>{$companyName}</strong>"])
+                    . ' ' . __('Great news — your demo for :app has been scheduled.', ['app' => "<strong>{$appName}</strong>"])],
+                ['type' => 'panel', 'variant' => 'green', 'title' => __('Demo details'), 'rows' => [
+                    ['k' => __('Date & time'), 'v' => $demoDate],
+                    ['k' => __('Format'),      'v' => __('Live walkthrough with your account manager')],
+                ]],
+            ];
+            if ($hasLink) {
+                $blocks[] = ['type' => 'button', 'url' => $link, 'label' => __('Join the demo'), 'color' => '#0F6E56'];
+                $blocks[] = ['type' => 'text', 'html' => "<span style='color:#6b7280;font-size:13px;'>"
+                    . __('Or copy this link:') . ' ' . e($link) . '</span>'];
+            } else {
+                $blocks[] = ['type' => 'note', 'text' => __('Your account manager will share the meeting details with you directly.')];
+            }
+            $blocks[] = ['type' => 'text', 'html' => "<span style='color:#6b7280;font-size:13px;'>"
+                . __('We look forward to showing you what :app can do for your business.', ['app' => $appName]) . '</span>'];
+
+            $this->sendCs(
                 [$company->email],
-                'Your Demo Has Been Scheduled – ' . $appName,
-                "
-                    <div style='font-family:Arial,sans-serif;max-width:600px;margin:0 auto;'>
-                        <h2 style='color:#185FA5;'>📅 Your Demo Is Confirmed</h2>
-                        <p>Hello <strong>{$company->company_name}</strong>,</p>
-                        <p>Great news — your demo for <strong>{$appName}</strong> has been scheduled.</p>
-                        <div style='background:#EFF6FF;border:1px solid #93C5FD;border-radius:8px;padding:16px;margin:20px 0;'>
-                            <p style='margin:0 0 8px;font-weight:600;color:#1D4ED8;'>📋 Demo Details:</p>
-                            <p style='margin:4px 0;'><strong>Date & Time:</strong> {$demoDate}</p>
-                            <p style='margin:4px 0;'><strong>Format:</strong> Live walkthrough with your account manager</p>
-                        </div>
-                        <p>Your account manager will be in touch shortly with the meeting link.</p>
-                        <p style='color:#6b7280;font-size:13px;margin-top:30px;'>
-                            We look forward to showing you what {$appName} can do for your business.
-                        </p>
-                    </div>
-                "
+                __('Your demo has been scheduled') . ' – ' . $appName,
+                [
+                    'eyebrow' => __('Demo confirmed'), 'eyebrowColor' => '#0F6E56',
+                    'title'   => __('Your demo is confirmed'),
+                    'blocks'  => $blocks,
+                ]
             );
         }
 
         // 2. Affiliate
         if ($affiliate?->user) {
-            $this->send(
+            $firstName = e($affiliate->user->first_name);
+            $linkBlock = $hasLink
+                ? ['type' => 'text', 'html' => "<span style='color:#6b7280;font-size:13px;'>"
+                    . __('Meeting link shared with the client:') . ' ' . e($link) . '</span>']
+                : ['type' => 'note', 'text' => __('Remember to share your meeting link with the client before the demo.')];
+
+            $this->sendCs(
                 [$affiliate->user->email],
-                'Demo Scheduled – ' . $company->company_name . ' | ' . $appName,
-                "
-                    <div style='font-family:Arial,sans-serif;max-width:600px;margin:0 auto;'>
-                        <h2 style='color:#185FA5;'>📅 Demo Scheduled Successfully</h2>
-                        <p>Hello <strong>{$affiliate->user->first_name}</strong>,</p>
-                        <p>You have scheduled a demo for <strong>{$company->company_name}</strong>.</p>
-                        <div style='background:#E1F5EE;border:1px solid #9FE1CB;border-radius:8px;padding:16px;margin:20px 0;'>
-                            <p style='margin:0 0 8px;font-weight:600;color:#0F6E56;'>📋 Demo Details:</p>
-                            <p style='margin:4px 0;'><strong>Date & Time:</strong> {$demoDate}</p>
-                        </div>
-                        <div style='background:#EFF6FF;border:1px solid #93C5FD;border-radius:8px;padding:16px;margin:20px 0;'>
-                            <p style='margin:0 0 8px;font-weight:600;color:#1D4ED8;'>📋 Lead Details:</p>
-                            <p style='margin:4px 0;'><strong>Company:</strong> {$company->company_name}</p>
-                            <p style='margin:4px 0;'><strong>Contact:</strong> {$lead->contact_person_name}</p>
-                            <p style='margin:4px 0;'><strong>Email:</strong> {$company->email}</p>
-                            <p style='margin:4px 0;'><strong>Phone:</strong> {$company->phone}</p>
-                        </div>
-                        <p style='color:#6b7280;font-size:13px;'>
-                            Remember to share your meeting link with the client before the demo.
-                        </p>
-                        <div style='text-align:center;margin:30px 0;'>
-                            <a href='" . route('affiliate.leads.show', $this->leadId) . "'
-                               style='background:#185FA5;color:#fff;padding:12px 28px;text-decoration:none;border-radius:8px;display:inline-block;'>
-                               View Lead
-                            </a>
-                        </div>
-                    </div>
-                "
+                __('Demo scheduled') . ' – ' . $company->company_name . ' | ' . $appName,
+                [
+                    'eyebrow' => __('Demo scheduled'), 'eyebrowColor' => '#185FA5',
+                    'title'   => __('Demo scheduled successfully'),
+                    'blocks'  => [
+                        ['type' => 'text', 'html' => __('Hello :name,', ['name' => "<strong>{$firstName}</strong>"])
+                            . ' ' . __('You have scheduled a demo for :company.', ['company' => "<strong>{$companyName}</strong>"])],
+                        ['type' => 'panel', 'variant' => 'green', 'title' => __('Demo details'), 'rows' => [
+                            ['k' => __('Date & time'), 'v' => $demoDate],
+                        ]],
+                        ['type' => 'panel', 'variant' => 'blue', 'title' => __('Lead details'), 'rows' => [
+                            ['k' => __('Company'), 'v' => $company->company_name],
+                            ['k' => __('Contact'), 'v' => $lead->contact_person_name],
+                            ['k' => __('Email'),   'v' => $company->email],
+                            ['k' => __('Phone'),   'v' => $company->phone],
+                        ]],
+                        $linkBlock,
+                        ['type' => 'button', 'url' => route('affiliate.leads.show', $this->leadId), 'label' => __('View lead')],
+                    ],
+                ]
             );
         }
     }

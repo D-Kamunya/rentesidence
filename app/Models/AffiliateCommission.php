@@ -12,10 +12,10 @@ class AffiliateCommission extends Model
     use HasFactory;
 
     protected $fillable = [
-        'affiliate_id', 'owner_id',
+        'affiliate_id', 'owner_id', 'product',
         'subscription_id', 'subscription_payment_id', 'subscription_amount',
-        'type', 'source', 'order_id',
-        'commission_amount', 'commission_rate',
+        'type', 'source', 'order_id', 'external_ref',
+        'commission_amount', 'commission_rate', 'currency', 'cadence',
         'period_month', 'period_year',
     ];
 

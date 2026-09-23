@@ -8,6 +8,7 @@ const USER_ROLE_TENANT = 2;
 const USER_ROLE_MAINTAINER = 3;
 const USER_ROLE_ADMIN = 4;
 const USER_ROLE_AFFILIATE = 5;
+const USER_ROLE_FINANCE_PARTNER = 6; // Centresidence finance partner (marketplace lender)
 
 // Gateway
 const GATEWAY_MODE_LIVE = 1;
@@ -41,6 +42,23 @@ const PRODUCT_ORDER_STATUS_PENDING = 0;
 const PRODUCT_ORDER_STATUS_PAID = 1;
 const PRODUCT_ORDER_STATUS_CANCELLED = 2;
 const PRODUCT_ORDER_STATUS_REFUND_PENDING = 3;
+
+// Marketplace fulfilment (dispatch) lifecycle — product_orders.fulfilment_status
+const FULFILMENT_NONE = 0;       // paid, awaiting dispatch
+const FULFILMENT_DISPATCHED = 1; // out for delivery / with the caretaker
+const FULFILMENT_DELIVERED = 2;  // handed to the tenant
+
+// Marketplace escrow (settlement) — product_orders.settlement_status. The platform HOLDS
+// a paid order's proceeds until DELIVERED, then RELEASES the net to the owner's wallet.
+const SETTLEMENT_STATUS_HELD     = 'held';     // paid, platform holds; owner not yet credited
+const SETTLEMENT_STATUS_RELEASED = 'released'; // delivered, owner credited
+const SETTLEMENT_STATUS_REFUNDED = 'refunded'; // buyer refunded; no owner credit stands
+
+// Marketplace refund — product_orders.refund_status. Money only leaves on ADMIN green-light.
+const REFUND_STATUS_REQUESTED  = 'requested';  // awaiting admin approval
+const REFUND_STATUS_PROCESSING = 'processing'; // B2C to the buyer in flight
+const REFUND_STATUS_REFUNDED   = 'refunded';   // buyer paid back (B2C confirmed)
+const REFUND_STATUS_FAILED     = 'failed';     // B2C failed — admin can retry
 
 const DURATION_TYPE_MONTHLY = 1;
 const DURATION_TYPE_YEARLY = 2;
@@ -262,10 +280,23 @@ const PACKAGE_TYPE_TENANT = 3;
 const NEW_CLIENT = 1;
 const RECURRING_CLIENT = 2;
 
-const AFFILIATE_WITHDRAWAL_PENDING = 0; 
+const AFFILIATE_WITHDRAWAL_PENDING = 0;
 const AFFILIATE_WITHDRAWAL_APPROVED = 1;
 const AFFILIATE_WITHDRAWAL_REJECTED = 2;
+// B2C payout accepted by Daraja, awaiting async settlement confirmation on the
+// ResultURL. Money is in-flight — reserved like PENDING/APPROVED, not yet delivered.
+const AFFILIATE_WITHDRAWAL_PROCESSING = 3;
+// B2C payout confirmed FAILED by Daraja (or timed out). Money never left, so the
+// reservation is released and the affiliate's balance is restored automatically.
+const AFFILIATE_WITHDRAWAL_FAILED = 4;
 
 const AFFILIATE_COMMISSION_SOURCE_SUBSCRIPTION = 'subscription';
 const AFFILIATE_COMMISSION_SOURCE_RENT         = 'rent';
 const AFFILIATE_COMMISSION_SOURCE_MARKETPLACE  = 'marketplace';
+// Usage lines added 2026-09-13 — the affiliate shares a first-time/recurring cut of
+// OUR take on each event (screening credit, agreement credit, gas token commission,
+// financing origination fee). Gas ONLY on tokens (water/other infra rides the rent line).
+const AFFILIATE_COMMISSION_SOURCE_SCREENING    = 'screening';
+const AFFILIATE_COMMISSION_SOURCE_AGREEMENT    = 'agreement';
+const AFFILIATE_COMMISSION_SOURCE_GAS_TOKEN    = 'gas_token';
+const AFFILIATE_COMMISSION_SOURCE_FINANCING    = 'financing';

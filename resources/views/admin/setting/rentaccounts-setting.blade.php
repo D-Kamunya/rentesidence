@@ -5,6 +5,8 @@
     <div class="page-content">
         <div class="container-fluid">
             <div class="page-content-wrapper bg-white p-30 radius-20">
+                    @include('centresidence._design')
+
 
                 {{-- Page Header --}}
                 <div class="row">
@@ -33,7 +35,7 @@
                         @include('admin.setting.sidebar')
 
                         <div class="col-md-12 col-lg-12 col-xl-8 col-xxl-9">
-                            <div class="account-settings-rightside bg-off-white theme-border radius-4 p-25">
+                            <div class="account-settings-rightside cs-card cs-card--pad cs-controls">
 
                                 {{-- Section header --}}
                                 <div class="account-settings-title border-bottom mb-20 pb-20">
@@ -81,8 +83,8 @@
                                                 </svg>
                                             </div>
                                             <div>
-                                                <h5 class="mkt-setting-card__title">{{ __('Rent Payment Account') }}</h5>
-                                                <p class="mkt-setting-card__sub">{{ __('All transaction package rent payments will be received by this account') }}</p>
+                                                <h5 class="mkt-setting-card__title">{{ __('Company M-Pesa Account') }}</h5>
+                                                <p class="mkt-setting-card__sub">{{ __('Receives transaction-package rent payments and finance disbursements/settlements. Its paybill is shown to partners as the M-Pesa destination.') }}</p>
                                             </div>
                                         </div>
 
@@ -148,6 +150,26 @@
                                                     </p>
                                                 @endif
                                             @endif
+                                        </div>
+                                    </div>
+
+                                    {{-- Disbursement bank details — surfaced to finance partners so they
+                                         know where to send facility disbursements without contacting anyone. --}}
+                                    <div class="mkt-setting-card" style="margin-top:24px;">
+                                        <div class="mkt-setting-card__header">
+                                            <div class="mkt-setting-card__icon">
+                                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                                                    <path d="M3 21h18M3 10h18M5 6l7-3 7 3M4 10v11m16-11v11M8 14v3m4-3v3m4-3v3" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+                                                </svg>
+                                            </div>
+                                            <div>
+                                                <h5 class="mkt-setting-card__title">{{ __('Disbursement Bank Account') }}</h5>
+                                                <p class="mkt-setting-card__sub">{{ __('The bank destination shown to finance partners for disbursements sent by bank transfer (the M-Pesa paybill above is shown automatically). Leave blank if you only accept M-Pesa.') }}</p>
+                                            </div>
+                                        </div>
+                                        <div class="mkt-setting-card__body" style="padding-top:16px;">
+                                            <textarea name="centresidence_disbursement_bank_details" rows="4" class="form-control" style="margin-top:4px;"
+                                                      placeholder="{{ __('e.g. Centresidence Ltd · A/C 0123456789 · KCB Bank · Westlands branch · SWIFT KCBLKENX') }}">{{ getOption('centresidence_disbursement_bank_details') }}</textarea>
                                         </div>
                                     </div>
 

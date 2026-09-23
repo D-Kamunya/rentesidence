@@ -124,7 +124,8 @@
                                             $isCancelled   = $order->payment_status === PRODUCT_ORDER_STATUS_CANCELLED;
                                             $isOrderCancelled = $order->order_status === ORDER_STATUS_CANCELLED;
                                             $isCompleted   = $order->order_status   === ORDER_STATUS_COMPLETED;
-                                            $isRefund      = $order->payment_status   === PRODUCT_ORDER_STATUS_REFUND_PENDING; 
+                                            $isRefund      = $order->payment_status   === PRODUCT_ORDER_STATUS_REFUND_PENDING;
+                                            $isDispatched  = (int) $order->fulfilment_status === FULFILMENT_DISPATCHED;
                                             $statusClass   = $isCompleted ? 'completed' : ($isCancelled ? 'cancelled' : 'pending');
 
                                            
@@ -217,6 +218,11 @@
                                                         <svg width="9" height="9" viewBox="0 0 16 16" fill="none"><path d="M4 4l8 8M12 4l-8 8" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
                                                         {{ __('Cancelled') }}
                                                     </span>
+                                                @elseif ($isDispatched)
+                                                    <span class="inv-badge inv-badge--transit">
+                                                        <svg width="9" height="9" viewBox="0 0 16 16" fill="none"><path d="M1 4h9v7H1zM10 6h3l2 2v3h-5" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/><circle cx="4" cy="12.5" r="1.4" stroke="currentColor" stroke-width="1.2"/><circle cx="12" cy="12.5" r="1.4" stroke="currentColor" stroke-width="1.2"/></svg>
+                                                        {{ __('On the way') }}
+                                                    </span>
                                                 @else
                                                     <span class="inv-badge inv-badge--order-pending">
                                                         <svg width="9" height="9" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="5.5" stroke="currentColor" stroke-width="1.6"/><path d="M8 5v3.5l2 1.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
@@ -238,10 +244,12 @@
                                                         data-date="{{ $order->created_at->format('d M Y') }}"
                                                         data-payment-status="{{ $order->payment_status }}"
                                                         data-order-status="{{ $order->order_status }}"
+                                                        data-fulfilment-status="{{ $order->fulfilment_status }}"
                                                         data-image="{{ $imageUrl }}"
                                                         data-item-count="{{ $allItems->count() }}"
                                                         data-gateway="{{ $order->gateway?->title ?? '—' }}"
-                                                        data-cancel-url="{{ $order->payment_status == PRODUCT_ORDER_STATUS_PAID && $order->order_status != ORDER_STATUS_COMPLETED && $order->order_status != ORDER_STATUS_CANCELLED ? route('tenant.product_order.cancel', $order->id) : '' }}"
+                                                        data-mpesa-code="{{ $order->mpesa_transaction_code ?: '' }}"
+                                                        data-cancel-url="{{ $order->payment_status == PRODUCT_ORDER_STATUS_PAID && $order->order_status != ORDER_STATUS_COMPLETED && $order->order_status != ORDER_STATUS_CANCELLED && ! $isDispatched ? route('tenant.product_order.cancel', $order->id) : '' }}"
                                                         data-receipt-url="{{ route('tenant.product.order.receipt', $order->id) }}"
                                                         title="{{ __('View Order') }}">
                                                         <svg width="13" height="13" viewBox="0 0 24 24" fill="none">
@@ -250,7 +258,7 @@
                                                         </svg>
                                                         {{ __('View') }}
                                                     </button>
-                                                    @if ($order->payment_status === PRODUCT_ORDER_STATUS_PAID && $order->order_status !== ORDER_STATUS_COMPLETED && $order->order_status != ORDER_STATUS_CANCELLED)
+                                                    @if ($order->payment_status === PRODUCT_ORDER_STATUS_PAID && $order->order_status !== ORDER_STATUS_COMPLETED && $order->order_status != ORDER_STATUS_CANCELLED && ! $isDispatched)
                                                         <button type="button"
                                                                 class="inv-btn inv-btn--cancel po-cancel-btn"
                                                                 data-order-id="{{ $order->id }}"
@@ -261,6 +269,31 @@
                                                             </svg>
                                                             {{ __('Cancel') }}
                                                         </button>
+                                                    @endif
+                                                    @php $refundInPlay = in_array($order->refund_status, [REFUND_STATUS_REQUESTED, REFUND_STATUS_PROCESSING, REFUND_STATUS_REFUNDED], true); @endphp
+                                                    {{-- Confirm receipt — the escrow fast-path: releases the seller's payment immediately --}}
+                                                    @if ($order->settlement_status === SETTLEMENT_STATUS_HELD && (int) $order->fulfilment_status >= FULFILMENT_DELIVERED && ! $refundInPlay)
+                                                        <form method="POST" action="{{ route('tenant.product_order.confirm-receipt', $order->id) }}" style="display:inline;">
+                                                            @csrf
+                                                            <button type="submit" class="inv-btn inv-btn--complete"
+                                                                    data-cs-confirm="{{ __('Confirm you received order #:id in good order? This releases the payment to the seller.', ['id' => $order->order_id]) }}"
+                                                                    title="{{ __('Confirm Receipt') }}">
+                                                                <svg width="11" height="11" viewBox="0 0 24 24" fill="none"><path d="M20 6L9 17l-5-5" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                                                                {{ __('Confirm receipt') }}
+                                                            </button>
+                                                        </form>
+                                                    @endif
+                                                    @if ($order->payment_status === PRODUCT_ORDER_STATUS_PAID && $order->order_status != ORDER_STATUS_CANCELLED && ! $refundInPlay && ($isDispatched || ($isCompleted && $order->withinReturnWindow())))
+                                                        <form method="POST" action="{{ route('tenant.product_order.request-refund', $order->id) }}" style="display:inline;">
+                                                            @csrf
+                                                            <button type="submit" class="inv-btn inv-btn--ghost"
+                                                                    data-cs-confirm="{{ __('Request a refund for order #:id? An admin will review it and, if approved, send the money to your M-Pesa.', ['id' => $order->order_id]) }}"
+                                                                    title="{{ __('Request Refund') }}">
+                                                                {{ __('Request refund') }}
+                                                            </button>
+                                                        </form>
+                                                    @elseif ($refundInPlay)
+                                                        <span class="inv-btn inv-btn--ghost" style="opacity:.7;cursor:default;">{{ __('Refund requested') }}</span>
                                                     @endif
                                                 </div>
                                             </td>
@@ -350,6 +383,10 @@
                 <div class="po-modal__field">
                     <span class="po-modal__label">{{ __('Payment Method') }}</span>
                     <span class="po-modal__value" id="poModalGateway">—</span>
+                </div>
+                <div class="po-modal__field" id="poModalMpesaCodeField" style="display:none;">
+                    <span class="po-modal__label">{{ __('M-Pesa Code') }}</span>
+                    <span class="po-modal__value" id="poModalMpesaCode" style="font-family:monospace;">—</span>
                 </div>
                 <div class="po-modal__field" id="poModalItemCountField" style="display:none;">
                     <span class="po-modal__label">{{ __('Line Items') }}</span>
@@ -473,6 +510,7 @@
 
         .inv-badge--order-completed { background:#E1F5EE; color:#0F6E56; }
         .inv-badge--order-pending   { background:#EEF2FF; color:#3730A3; border:0.5px solid #C7D2FE; }
+        .inv-badge--transit         { background:#E6F1FB; color:#185FA5; border:0.5px solid #B8D4F0; }
         .inv-badge--order-cancelled { background:#FDECEC; color:#6b7280; border:0.5px solid #e5e7eb; }
 
         .inv-filter-tabs { display:flex; background:#f3f4f6; border-radius:8px; padding:3px; gap:2px; }
@@ -489,7 +527,7 @@
         .inv-btn--ghost:hover { background:#e5e7eb; color:#111827; text-decoration:none; }
         .inv-actions .inv-btn { width: 100%; justify-content: flex-start;}
         .inv-btn--receipt {background: #E6F1FB; color: #185FA5; border: 0.5px solid #B8D4F0; margin-left:15px; }
-        .inv-btn--receipt:hover { background: #185FA5; color: #fff;border-color: #185FA5; text-decoration: none;}
+        .inv-btn--receipt:hover { background: #185FA5; color: #fff !important;border-color: #185FA5; text-decoration: none;}
 
         .inv-empty { text-align:center; padding:3rem 1rem; color:#9ca3af; }
 
@@ -783,6 +821,7 @@
         const CANCELLED = '{{ PRODUCT_ORDER_STATUS_CANCELLED }}';
         const INREFUND = '{{ PRODUCT_ORDER_STATUS_REFUND_PENDING }}';
         const ORDER_COMPLETED = '{{ ORDER_STATUS_COMPLETED }}';
+        const FULFIL_DISPATCHED = '{{ FULFILMENT_DISPATCHED }}';
  
         let currentCancelUrl = '';
  
@@ -793,7 +832,17 @@
             document.getElementById('poModalDate').textContent    = data.date    || '—';
             document.getElementById('poModalAmount').textContent  = data.amount  || '—';
             document.getElementById('poModalGateway').textContent = data.gateway || '—';
- 
+
+            // Surface the M-Pesa transaction code for STK-paid orders; hide the row when there's none
+            // (cash / non-M-Pesa, or older orders that never captured a code).
+            const mpesaField = document.getElementById('poModalMpesaCodeField');
+            if (data.mpesaCode) {
+                document.getElementById('poModalMpesaCode').textContent = data.mpesaCode;
+                mpesaField.style.display = '';
+            } else {
+                mpesaField.style.display = 'none';
+            }
+
             const itemCountField = document.getElementById('poModalItemCountField');
             const itemCount = parseInt(data.itemCount || 1);
             if (itemCount > 1) {
@@ -836,6 +885,9 @@
             } else if (String(data.orderStatus) === CANCELLED) {
                 orderBadge.className = 'po-modal__status-badge inv-badge inv-badge--cancelled';
                 orderBadge.innerHTML = checkIcon() + '{{ __("Cancelled") }}';
+            } else if (String(data.fulfilmentStatus) === FULFIL_DISPATCHED) {
+                orderBadge.className = 'po-modal__status-badge inv-badge inv-badge--transit';
+                orderBadge.innerHTML = truckIcon() + '{{ __("On the way") }}';
             } else {
                 orderBadge.className = 'po-modal__status-badge inv-badge inv-badge--order-pending';
                 orderBadge.innerHTML = clockIcon() + '{{ __("Processing") }}';
@@ -875,9 +927,11 @@
                 date          : btn.dataset.date,
                 paymentStatus : btn.dataset.paymentStatus,
                 orderStatus   : btn.dataset.orderStatus,
+                fulfilmentStatus : btn.dataset.fulfilmentStatus,
                 image         : btn.dataset.image || '',
                 itemCount     : btn.dataset.itemCount || 1,
                 gateway       : btn.dataset.gateway || '—',
+                mpesaCode     : btn.dataset.mpesaCode || '',
                 cancelUrl     : btn.dataset.cancelUrl || '',
                 receiptUrl    : btn.dataset.receiptUrl || '#',
             });
@@ -896,6 +950,7 @@
         function checkIcon() { return '<svg width="9" height="9" viewBox="0 0 16 16" fill="none" style="margin-right:3px"><path d="M3 8l4 4 6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>'; }
         function crossIcon() { return '<svg width="9" height="9" viewBox="0 0 16 16" fill="none" style="margin-right:3px"><path d="M4 4l8 8M12 4l-8 8" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>'; }
         function clockIcon() { return '<svg width="9" height="9" viewBox="0 0 16 16" fill="none" style="margin-right:3px"><circle cx="8" cy="8" r="5.5" stroke="currentColor" stroke-width="1.6"/><path d="M8 5v3.5l2 1.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>'; }
+        function truckIcon() { return '<svg width="9" height="9" viewBox="0 0 16 16" fill="none" style="margin-right:3px"><path d="M1 4h9v7H1zM10 6h3l2 2v3h-5" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/><circle cx="4" cy="12.5" r="1.4" stroke="currentColor" stroke-width="1.2"/><circle cx="12" cy="12.5" r="1.4" stroke="currentColor" stroke-width="1.2"/></svg>'; }
     })();
     </script>
 @endpush

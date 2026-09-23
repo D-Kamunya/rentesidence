@@ -117,7 +117,7 @@
                                                         <form action="{{ route('admin.academy.destroy', $module->id) }}"
                                                               method="POST"
                                                               class="d-inline"
-                                                              onsubmit="return confirm('Delete this module?')">
+                                                              data-cs-confirm="Delete this module?" data-cs-confirm-tone="danger">
                                                             @csrf
                                                             @method('DELETE')
                                                             <button type="submit"

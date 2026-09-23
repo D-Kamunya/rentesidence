@@ -54,20 +54,34 @@ class ProductOrderController extends Controller
 
     public function cancel(Request $request, $id)
     {
-        $order = ProductOrder::where('user_id', auth()->id())
-            ->whereIn('payment_status', [ORDER_PAYMENT_STATUS_PENDING, ORDER_PAYMENT_STATUS_PAID])
-            ->where('order_status', '!=', ORDER_STATUS_COMPLETED)
-            ->where('order_status', '!=', ORDER_STATUS_CANCELLED)
-            ->findOrFail($id);
-    
+        $order = ProductOrder::where('user_id', auth()->id())->findOrFail($id);
+
+        // A tenant can self-cancel only while the order is still open, unpaid-or-paid, and NOT yet
+        // dispatched. Once it's on its way, cancellation must go through the owner/caretaker.
+        $cancellable = in_array($order->payment_status, [ORDER_PAYMENT_STATUS_PENDING, ORDER_PAYMENT_STATUS_PAID])
+            && $order->order_status !== ORDER_STATUS_COMPLETED
+            && $order->order_status !== ORDER_STATUS_CANCELLED
+            && (int) $order->fulfilment_status < FULFILMENT_DISPATCHED;
+
+        if (! $cancellable) {
+            $message = (int) $order->fulfilment_status >= FULFILMENT_DISPATCHED
+                ? __('This order is already on its way and can no longer be cancelled here. Please contact your property manager to arrange it.')
+                : __('This order can no longer be cancelled.');
+
+            if ($request->wantsJson()) {
+                return response()->json(['success' => false, 'message' => $message], 422);
+            }
+            return redirect()->back()->with('error', $message);
+        }
+
         if ($order->payment_status === ORDER_PAYMENT_STATUS_PAID) {
-            // Money already moved — flag for refund
-            $order->payment_status = PRODUCT_ORDER_STATUS_REFUND_PENDING;
+            // Paid → queue a refund for admin green-light (the B2C payout moves on approval).
+            app(\App\Services\CommissionService::class)->requestRefund($order);
         } else {
-            // Unpaid — cancel cleanly
+            // Unpaid — cancel cleanly, nothing to refund.
             $order->payment_status = PRODUCT_ORDER_STATUS_CANCELLED;
         }
-    
+
         $order->save();
     
         // Notify owner that tenant has cancelled
@@ -106,5 +120,106 @@ class ProductOrderController extends Controller
         }
     
         return redirect()->back()->with('success', __('Order cancelled.'));
+    }
+
+    /**
+     * Buyer-initiated refund request — for a PAID order that's already on its way or delivered (so
+     * self-cancel no longer applies). Queues it for admin green-light; the owner is notified. Does
+     * NOT move money — an admin approves the B2C payout.
+     */
+    public function requestRefund(Request $request, $id)
+    {
+        $order = ProductOrder::where('user_id', auth()->id())->findOrFail($id);
+
+        $completed  = (int) $order->order_status === ORDER_STATUS_COMPLETED;
+        $refundable = $order->payment_status === ORDER_PAYMENT_STATUS_PAID
+            && (int) $order->order_status !== ORDER_STATUS_CANCELLED
+            && ! in_array($order->refund_status, [REFUND_STATUS_REQUESTED, REFUND_STATUS_PROCESSING, REFUND_STATUS_REFUNDED], true)
+            && (! $completed || $order->withinReturnWindow());
+
+        if (! $refundable) {
+            // Distinguish "the return window has closed" from a generic block.
+            $message = ($completed && ! $order->withinReturnWindow())
+                ? __('The return window for this order has closed, so it can no longer be refunded.')
+                : __('This order can\'t be refunded right now.');
+            return $request->wantsJson()
+                ? response()->json(['success' => false, 'message' => $message], 422)
+                : redirect()->back()->with('error', $message);
+        }
+
+        app(\App\Services\CommissionService::class)->requestRefund($order);
+
+        // Let the OWNER know a buyer wants a refund (overrideUserId — the job defaults to the buyer).
+        SendOrderStatusNotificationJob::dispatch(
+            $order,
+            (object) [
+                'subject' => __('Refund requested for order #:id', ['id' => $order->order_id]),
+                'title'   => __('Refund requested'),
+                'message' => __('The buyer has requested a refund for order #:id. It is queued for review.', ['id' => $order->order_id]),
+            ],
+            (object) [
+                'title' => __('Refund requested'),
+                'body'  => __('A refund was requested for order #:id.', ['id' => $order->order_id]),
+                'url'   => route('owner.order.index'),
+            ],
+            $this->ownerUserId($order),
+        );
+
+        $message = __('Your refund request has been submitted and is being reviewed.');
+        return $request->wantsJson()
+            ? response()->json(['success' => true, 'message' => $message])
+            : redirect()->back()->with('success', $message);
+    }
+
+    /**
+     * ESCROW FAST-PATH — buyer confirms they received the order in good order, so the held proceeds
+     * release to the owner IMMEDIATELY instead of waiting for the return window to close. Only a
+     * delivered, still-held order with no refund in play qualifies.
+     */
+    public function confirmReceipt(Request $request, $id)
+    {
+        $order = ProductOrder::where('user_id', auth()->id())->with('orderItems.product')->findOrFail($id);
+
+        $confirmable = (int) $order->fulfilment_status >= FULFILMENT_DELIVERED
+            && $order->settlement_status === SETTLEMENT_STATUS_HELD
+            && ! in_array($order->refund_status, [REFUND_STATUS_REQUESTED, REFUND_STATUS_PROCESSING, REFUND_STATUS_REFUNDED], true);
+
+        if (! $confirmable) {
+            $message = __('This order can\'t be confirmed right now.');
+            return $request->wantsJson()
+                ? response()->json(['success' => false, 'message' => $message], 422)
+                : redirect()->back()->with('error', $message);
+        }
+
+        app(\App\Services\CommissionService::class)->releaseSettlement($order);
+
+        // Tell the OWNER their payment was released (overrideUserId).
+        SendOrderStatusNotificationJob::dispatch(
+            $order,
+            (object) [
+                'subject' => __('Payment released for order #:id', ['id' => $order->order_id]),
+                'title'   => __('Payment released'),
+                'message' => __('The buyer confirmed receipt of order #:id, so its payment has been released to your wallet.', ['id' => $order->order_id]),
+            ],
+            (object) [
+                'title' => __('Payment released'),
+                'body'  => __('Order #:id — the buyer confirmed receipt; payment released to your wallet.', ['id' => $order->order_id]),
+                'url'   => route('owner.order.index'),
+            ],
+            $this->ownerUserId($order),
+        );
+
+        $message = __('Thank you for confirming receipt.');
+        return $request->wantsJson()
+            ? response()->json(['success' => true, 'message' => $message])
+            : redirect()->back()->with('success', $message);
+    }
+
+    /** Resolve the owner's USER id for an order (products.owner_user_id = owners.id → users.id). */
+    private function ownerUserId(ProductOrder $order): ?int
+    {
+        $order->loadMissing('orderItems.product');
+        $ownerRecord = \App\Models\Owner::find($order->orderItems->first()?->product?->owner_user_id);
+        return $ownerRecord?->user_id;
     }
 }

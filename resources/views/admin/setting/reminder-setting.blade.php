@@ -5,6 +5,8 @@
         <div class="page-content">
             <div class="container-fluid">
                 <div class="page-content-wrapper bg-white p-30 radius-20">
+                    @include('centresidence._design')
+
                     <div class="row">
                         <div class="col-12">
                             <div
@@ -29,8 +31,8 @@
                         <div class="row">
                             @include('admin.setting.sidebar')
                             <div class="col-md-12 col-lg-12 col-xl-8 col-xxl-9">
-                                <div class="account-settings-rightside bg-off-white">
-                                    <div class="language-settings-page-area theme-border radius-4 p-25">
+                                <div class="account-settings-rightside cs-controls">
+                                    <div class="language-settings-page-area cs-card cs-card--pad">
                                         <div class="account-settings-content-box">
                                             <div class="account-settings-title border-bottom mb-20 pb-20">
                                                 <div class="row align-items-center">
@@ -88,7 +90,7 @@
                                         </div>
                                     </div>
 
-                                    <div class="language-settings-page-area theme-border radius-4 p-25 mt-4">
+                                    <div class="language-settings-page-area cs-card cs-card--pad mt-4">
                                         <div class="account-settings-content-box">
                                             <div class="account-settings-title border-bottom mb-20 pb-20">
                                                 <div class="row align-items-center">

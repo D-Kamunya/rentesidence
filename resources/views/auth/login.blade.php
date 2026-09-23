@@ -3,150 +3,94 @@
     {{ __('Login') }} -
 @endpush
 @section('content')
-    <div id="headless-wrapper">
-        <section class="sign-up-page bg-white">
-            <div class="container-fluid p-0">
-                <div class="row sign-up-page-wrap-row">
-                    <div class="col-md-6">
-                        <div class="sign-up-right-content bg-white">
-                            <form action="{{ route('login') }}" method="post">
-                                @csrf
-                                <div class="mb-25 sign-up-top-logo">
-                                    <a href="/">
-                                        <span class="logo-lg">
-                                            <img src="{{ getSettingImage('app_logo') }}">
-                                        </span>
-                                    </a>
-                                </div>
-                                <h1 class="mb-25">{{ __('Sign in') }}</h1>
-                                @if (isAddonInstalled('PROTYSAAS') > 1)
-                                    <!-- <p class="font-16 mb-30">{{ __('New owner?') }} <a
-                                            href="{{ route('owner.register.form') }}"
-                                            class="secondary-color font-medium">{{ __('Sign Up') }}</a></p> -->
-                                @endif
-                                <div class="row mb-25">
-                                    <div class="col-md-12">
-                                        <label
-                                            class="label-text-title color-heading font-medium mb-2">{{ __('Email') }}</label>
-                                        <input type="text" name="email" class="form-control email"
-                                            placeholder="{{ __('Email') }}">
-                                    </div>
-                                </div>
-                                <div class="row mb-25">
-                                    <div class="col-md-12">
-                                        <label
-                                            class="label-text-title color-heading font-medium mb-2">{{ __('Password') }}</label>
-                                        <div class="form-group mb-0 position-relative">
-                                            <input class="form-control password" name="password"
-                                                placeholder="{{ __('Password') }}" type="password">
-                                            <span class="toggle cursor fas fa-eye pass-icon"></span>
-                                        </div>
-                                    </div>
-                                </div>
-                                @if (getOption('GOOGLE_RECAPTCHA_MAIL_STATUS', 0) == ACTIVE)
-                                    <div class="row mb-25">
-                                        <div class="col-md-12">
-                                            <div class="g-recaptcha"
-                                                data-sitekey="{{ getOption('GOOGLE_RECAPTCHA_KEY') }}">
-                                            </div>
-                                            @if ($errors->has('g-recaptcha-response'))
-                                                <span
-                                                    class="text-danger">{{ $errors->first('g-recaptcha-response') }}</span>
-                                            @endif
-                                        </div>
-                                    </div>
-                                @endif
-                                <div class="row mb-25">
-                                    <div class="col-md-6">
-                                        <div>
-                                            <div class="form-group custom-checkbox" title="{{ __('Remember Me') }}">
-                                                <input type="checkbox" id="rememberMe" name="remember" value="1">
-                                                <label class="fw-normal" for="rememberMe">{{ __('Remember Me') }}</label>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div class="col-md-6"><a href="{{ route('password.request') }}"
-                                            class="theme-link d-block text-start text-md-end"
-                                            title="{{ __('Forgot Password?') }}">{{ __('Forgot Password?') }}</a></div>
-                                </div>
-                                <div class="row mb-25">
-                                    <div class="col-md-12">
-                                        <button type="submit"
-                                            class="theme-btn theme-button1 theme-button3 font-15 fw-bold w-100"
-                                            title="{{ __('Sign In') }}">{{ __('Sign In') }}</button>
-                                    </div>
-                                </div>
-                                <div class="row">
-                                    <div class="col-md-12">
-                                        @if (env('LOGIN_HELP') == 'active')
-                                            <div class="table-responsive login-info-table mt-3">
-                                                <table class="table table-bordered">
-                                                    <tbody>
-                                                        <tr>
-                                                            <td colspan="2" id="adminCredentialShow" class="login-info">
-                                                                <b>Admin:</b> admin@gmail.com | 123456 <span
-                                                                    class="badge bg-danger">{{ __('Addon') }}</span>
-                                                            </td>
-                                                        </tr>
-                                                        <tr>
-                                                            <td colspan="2" id="ownerCredentialShow" class="login-info">
-                                                                <b>Owner:</b> owner@gmail.com | 123456
-                                                            </td>
-                                                        </tr>
-                                                        <tr>
-                                                            <td colspan="2" id="tenantCredentialShow" class="login-info">
-                                                                <b>Tenant:</b> tenant@gmail.com | 123456
-                                                            </td>
-                                                        </tr>
-                                                        <tr>
-                                                            <td colspan="2" id="maintainerCredentialShow"
-                                                                class="login-info">
-                                                                <b>Maintainer:</b> maintainer@gmail.com | 123456
-                                                            </td>
-                                                        </tr>
-                                                    </tbody>
-                                                </table>
-                                            </div>
-                                        @endif
-                                    </div>
-                                </div>
-                            </form>
+@php
+    $appLogo = getSettingImage('app_logo');
+    $hasLogo = $appLogo && !\Illuminate\Support\Str::contains($appLogo, 'empty-user');
+@endphp
+<div class="cs-auth">
+    @include('auth.partials._auth-bg')
+
+    <div class="cs-auth__inner">
+        @include('auth.partials._auth-brand')
+
+        {{-- Form panel --}}
+        <main class="cs-auth__panel">
+            <div class="cs-auth__card">
+                @include('auth.partials._auth-cardlogo')
+
+                <h2 class="cs-auth__title">{{ __('Welcome back') }}</h2>
+                <p class="cs-auth__hint">{{ __('Sign in to your account to continue.') }}</p>
+
+                <form action="{{ route('login') }}" method="post" class="cs-auth__form" autocomplete="off">
+                    @csrf
+
+                    <div class="cs-fld">
+                        <label class="cs-fld__label">{{ __('Email') }}</label>
+                        <div class="cs-fld__wrap">
+                            <span class="cs-fld__ic">{!! '<svg width="17" height="17" viewBox="0 0 24 24" fill="none"><path d="M4 6h16v12H4zM4 7l8 6 8-6" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>' !!}</span>
+                            <input type="text" name="email" value="{{ old('email') }}" class="cs-fld__input email @error('email') is-bad @enderror" placeholder="{{ __('you@company.com') }}" autofocus>
+                        </div>
+                        @error('email')<span class="cs-fld__err">{{ $message }}</span>@enderror
+                    </div>
+
+                    <div class="cs-fld">
+                        <label class="cs-fld__label">{{ __('Password') }}</label>
+                        <div class="cs-fld__wrap">
+                            <span class="cs-fld__ic">{!! '<svg width="17" height="17" viewBox="0 0 24 24" fill="none"><rect x="5" y="10" width="14" height="10" rx="2" stroke="currentColor" stroke-width="1.6"/><path d="M8 10V7a4 4 0 018 0v3" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>' !!}</span>
+                            <input type="password" name="password" class="cs-fld__input password @error('password') is-bad @enderror" placeholder="{{ __('••••••••') }}">
+                            <button type="button" class="cs-fld__eye" id="csPwToggle" aria-label="{{ __('Show password') }}">
+                                {!! '<svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7-10-7-10-7z" stroke="currentColor" stroke-width="1.6"/><circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="1.6"/></svg>' !!}
+                            </button>
+                        </div>
+                        @error('password')<span class="cs-fld__err">{{ $message }}</span>@enderror
+                    </div>
+
+                    @if (getOption('GOOGLE_RECAPTCHA_MAIL_STATUS', 0) == ACTIVE)
+                        <div class="cs-fld">
+                            <div class="g-recaptcha" data-sitekey="{{ getOption('GOOGLE_RECAPTCHA_KEY') }}"></div>
+                            @if ($errors->has('g-recaptcha-response'))
+                                <span class="cs-fld__err">{{ $errors->first('g-recaptcha-response') }}</span>
+                            @endif
+                        </div>
+                    @endif
+
+                    <div class="cs-auth__row">
+                        <label class="cs-check">
+                            <input type="checkbox" id="rememberMe" name="remember" value="1">
+                            <span>{{ __('Remember me') }}</span>
+                        </label>
+                        <a href="{{ route('password.request') }}" class="cs-auth__link">{{ __('Forgot password?') }}</a>
+                    </div>
+
+                    <button type="submit" class="cs-auth__submit">
+                        <span>{{ __('Sign in') }}</span>
+                        {!! '<svg width="17" height="17" viewBox="0 0 24 24" fill="none"><path d="M5 12h14M13 6l6 6-6 6" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/></svg>' !!}
+                    </button>
+                </form>
+
+                @if (env('LOGIN_HELP') == 'active')
+                    <div class="cs-auth__demo">
+                        <span class="cs-auth__demolabel">{{ __('Demo accounts — click to fill') }}</span>
+                        <div class="cs-auth__demogrid">
+                            <button type="button" id="adminCredentialShow" class="cs-auth__demobtn">Admin</button>
+                            <button type="button" id="ownerCredentialShow" class="cs-auth__demobtn">Owner</button>
+                            <button type="button" id="tenantCredentialShow" class="cs-auth__demobtn">Tenant</button>
+                            <button type="button" id="maintainerCredentialShow" class="cs-auth__demobtn">Maintainer</button>
                         </div>
                     </div>
-                    <div class="col-md-6">
-                        <div class="sign-up-left-content position-relative text-center">
-                            <div class="sign-up-bottom-img mb-25">
-                                <img src="{{ getSettingImage('sign_in_image') }}" alt="{{ getOption('app_name') }}"
-                                    class="img-fluid">
-                            </div>
-                            <h1 class="text-white">{{ __(getOption('sign_in_text_title')) }}</h1>
-                            <p class="mt-25 w-75 mx-auto">{{ __(getOption('sign_in_text_subtitle')) }}</p>
-                        </div>
-                    </div>
-                </div>
+                @endif
+
+                <p class="cs-auth__foot" style="margin-top:18px;text-align:center;font-size:13.5px;color:var(--muted);">
+                    {{ __('New tenant?') }} <a href="{{ route('tenant.join') }}" class="cs-auth__link">{{ __('Create a free account') }}</a>
+                </p>
             </div>
-        </section>
+        </main>
     </div>
+</div>
+
+@include('auth.partials._auth-styles')
 @endsection
 @push('script')
 <script src="https://www.google.com/recaptcha/api.js" async defer></script>
-    <script>
-        "use strict"
-        $('#adminCredentialShow').on('click', function() {
-            $('.email').val('admin@gmail.com');
-            $('.password').val('123456');
-        });
-        $('#ownerCredentialShow').on('click', function() {
-            $('.email').val('owner@gmail.com');
-            $('.password').val('123456');
-        });
-        $('#tenantCredentialShow').on('click', function() {
-            $('.email').val('tenant@gmail.com');
-            $('.password').val('123456');
-        });
-        $('#maintainerCredentialShow').on('click', function() {
-            $('.email').val('maintainer@gmail.com');
-            $('.password').val('123456');
-        });
-    </script>
+@include('auth.partials._auth-scripts')
 @endpush

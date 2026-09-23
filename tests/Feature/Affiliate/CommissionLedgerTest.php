@@ -1,0 +1,197 @@
+<?php
+
+namespace Tests\Feature\Affiliate;
+
+use App\Models\AffiliateCommission;
+use App\Services\AffiliateCommissionService;
+use App\Services\Commission\CommissionEventData;
+use App\Services\Commission\PropertyManagementCommissionStrategy;
+
+/**
+ * Affiliate OS WP-B — the commission-event ledger. Two guarantees:
+ *  1. the property-sales strategy computes the SAME numbers the old handlers did;
+ *  2. recordEvent is idempotent on (product, source, external_ref) — no double-credit.
+ */
+class CommissionLedgerTest extends AffiliateDatabaseTestCase
+{
+    private function svc(): AffiliateCommissionService
+    {
+        return app(AffiliateCommissionService::class);
+    }
+
+    private function strategy(): PropertyManagementCommissionStrategy
+    {
+        return new PropertyManagementCommissionStrategy();
+    }
+
+    // ── Strategy math (behaviour preserved char-for-char) ──────────────────
+
+    public function test_subscription_new_client_uses_first_time_rate(): void
+    {
+        config(['settings.FIRST_TIME_COMMISSION_RATE' => 10, 'settings.RECURRING_COMMISSION_RATE' => 4]);
+
+        $out = $this->strategy()->compute(new CommissionEventData(
+            product: 'property_management', source: AFFILIATE_COMMISSION_SOURCE_SUBSCRIPTION,
+            grossAmount: 1000, clientType: NEW_CLIENT,
+        ));
+
+        $this->assertSame(10.0, $out['rate']);
+        $this->assertSame(100.0, $out['commission_amount']);
+        $this->assertSame('recurring', $out['cadence']);
+    }
+
+    public function test_subscription_recurring_client_uses_recurring_rate(): void
+    {
+        config(['settings.FIRST_TIME_COMMISSION_RATE' => 10, 'settings.RECURRING_COMMISSION_RATE' => 4]);
+
+        $out = $this->strategy()->compute(new CommissionEventData(
+            product: 'property_management', source: AFFILIATE_COMMISSION_SOURCE_SUBSCRIPTION,
+            grossAmount: 1000, clientType: RECURRING_CLIENT,
+        ));
+
+        $this->assertSame(4.0, $out['rate']);
+        $this->assertSame(40.0, $out['commission_amount']);
+    }
+
+    public function test_rent_is_point_15_percent_of_gross(): void
+    {
+        $out = $this->strategy()->compute(new CommissionEventData(
+            product: 'property_management', source: AFFILIATE_COMMISSION_SOURCE_RENT,
+            grossAmount: 100000,
+        ));
+
+        $this->assertSame(0.15, $out['rate']);
+        $this->assertSame(150.0, $out['commission_amount']); // 0.15% of 100,000
+    }
+
+    public function test_marketplace_is_a_share_of_our_commission(): void
+    {
+        // 15% of our 200 commission = 30 (never a % of gross).
+        $out = $this->strategy()->compute(new CommissionEventData(
+            product: 'property_management', source: AFFILIATE_COMMISSION_SOURCE_MARKETPLACE,
+            grossAmount: 5000, ourCommission: 200, ratePercent: 15,
+        ));
+
+        $this->assertSame(15.0, $out['rate']);
+        $this->assertSame(30.0, $out['commission_amount']);
+        $this->assertSame('one_time', $out['cadence']);
+    }
+
+    /**
+     * Usage lines (screening / agreement / gas token / financing) all funnel through
+     * usageCut(): a first-time/recurring CUT of OUR take on the event — never a % of the
+     * owner's gross, so a payout can never exceed what we earned.
+     *
+     * @dataProvider usageSources
+     */
+    public function test_usage_line_new_client_is_first_time_cut_of_our_take(string $source): void
+    {
+        config(['settings.FIRST_TIME_COMMISSION_RATE' => 30, 'settings.RECURRING_COMMISSION_RATE' => 10]);
+
+        $out = $this->strategy()->compute(new CommissionEventData(
+            product: 'property_management', source: $source,
+            grossAmount: 0, ourCommission: 200, clientType: NEW_CLIENT,
+        ));
+
+        $this->assertSame(30.0, $out['rate']);
+        $this->assertSame(60.0, $out['commission_amount']); // 30% of OUR 200
+        $this->assertSame('recurring', $out['cadence']);
+    }
+
+    /** @dataProvider usageSources */
+    public function test_usage_line_recurring_client_is_recurring_cut_of_our_take(string $source): void
+    {
+        config(['settings.FIRST_TIME_COMMISSION_RATE' => 30, 'settings.RECURRING_COMMISSION_RATE' => 10]);
+
+        $out = $this->strategy()->compute(new CommissionEventData(
+            product: 'property_management', source: $source,
+            grossAmount: 0, ourCommission: 200, clientType: RECURRING_CLIENT,
+        ));
+
+        $this->assertSame(10.0, $out['rate']);
+        $this->assertSame(20.0, $out['commission_amount']); // 10% of OUR 200
+    }
+
+    public static function usageSources(): array
+    {
+        return [
+            'screening' => [AFFILIATE_COMMISSION_SOURCE_SCREENING],
+            'agreement' => [AFFILIATE_COMMISSION_SOURCE_AGREEMENT],
+            'gas_token' => [AFFILIATE_COMMISSION_SOURCE_GAS_TOKEN],
+            'financing' => [AFFILIATE_COMMISSION_SOURCE_FINANCING],
+        ];
+    }
+
+    // ── Ledger idempotency ─────────────────────────────────────────────────
+
+    private function event(string $ref, float $amount): array
+    {
+        return [
+            'product' => 'property_management', 'affiliate_id' => 1, 'owner_id' => 1,
+            'source' => AFFILIATE_COMMISSION_SOURCE_RENT, 'external_ref' => $ref,
+            'commission_rate' => 0.15, 'commission_amount' => $amount,
+            'currency' => 'KES', 'cadence' => 'recurring',
+            'period_month' => 3, 'period_year' => 2026,
+        ];
+    }
+
+    public function test_record_event_persists_once_and_recalcs(): void
+    {
+        $this->svc()->recordEvent($this->event('order-1', 150));
+
+        $this->assertSame(1, AffiliateCommission::count());
+        $this->assertSame(150.0, $this->svc()->getLifeTimeGrossCommissions(1));
+    }
+
+    public function test_record_event_is_idempotent_on_external_ref(): void
+    {
+        $this->svc()->recordEvent($this->event('order-1', 150));
+        $this->svc()->recordEvent($this->event('order-1', 150)); // same money event re-fired
+
+        $this->assertSame(1, AffiliateCommission::count());       // no double row
+        $this->assertSame(150.0, $this->svc()->getLifeTimeGrossCommissions(1)); // no double-credit
+    }
+
+    public function test_distinct_external_refs_each_record(): void
+    {
+        $this->svc()->recordEvent($this->event('order-1', 150));
+        $this->svc()->recordEvent($this->event('order-2', 90));
+
+        $this->assertSame(2, AffiliateCommission::count());
+        $this->assertSame(240.0, $this->svc()->getLifeTimeGrossCommissions(1));
+    }
+
+    // ── Usage-line payability (regression) ──────────────────────────────────
+
+    private function usageEvent(string $source, string $ref, float $amount): array
+    {
+        return [
+            'product' => 'property_management', 'affiliate_id' => 1, 'owner_id' => 1,
+            'source' => $source, 'external_ref' => $ref,
+            'commission_rate' => 30, 'commission_amount' => $amount,
+            'currency' => 'KES', 'cadence' => 'recurring',
+            'period_month' => 3, 'period_year' => 2026,
+        ];
+    }
+
+    /**
+     * Regression: the period rollup once summed only subscription+rent+marketplace, so a
+     * usage-line commission (screening/agreement/gas/financing) was earned but never entered
+     * total_commission_payout — i.e. recorded yet un-withdrawable. It must be payable.
+     */
+    public function test_usage_line_commission_is_payable_in_the_period_total(): void
+    {
+        $this->svc()->recordEvent($this->usageEvent(AFFILIATE_COMMISSION_SOURCE_SCREENING, 'screening-1', 45));
+
+        $this->assertSame(45.0, $this->svc()->getLifeTimeGrossCommissions(1));
+    }
+
+    public function test_period_total_combines_bucketed_and_usage_lines(): void
+    {
+        $this->svc()->recordEvent($this->event('order-1', 150));                                        // rent (bucketed)
+        $this->svc()->recordEvent($this->usageEvent(AFFILIATE_COMMISSION_SOURCE_AGREEMENT, 'agreement-1', 30));
+        $this->svc()->recordEvent($this->usageEvent(AFFILIATE_COMMISSION_SOURCE_FINANCING, 'financing-1', 120));
+
+        $this->assertSame(300.0, $this->svc()->getLifeTimeGrossCommissions(1)); // 150 + 30 + 120
+    }
+}

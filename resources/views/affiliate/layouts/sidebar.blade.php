@@ -1,3 +1,4 @@
+@include('common.layouts._kb-nav-style')
 <div class="vertical-menu">
     <div data-simplebar class="h-100">
 
@@ -15,13 +16,13 @@
                 <li>
                     <a href="{{ route('affiliate.marketplace.index') }}">
                         <i class="fa fa-shopping-basket" aria-hidden="true"></i>
-                        <span>{{ __('Lead Marketplace') }}</span>
+                        <span>{{ __('Lead Marketplace') }}@include('partials.nav-count', ['n' => $navBadges['marketplace_leads'] ?? 0])</span>
                     </a>
                 </li>
                 <li>
                     <a href="{{ route('affiliate.leads') }}">
                         <i class="fa fa-cog" aria-hidden="true"></i>
-                        <span>{{ __('My Leads') }}</span>
+                        <span>{{ __('My Leads') }}@include('partials.nav-count', ['n' => $navBadges['lead_suggestions'] ?? 0])</span>
                     </a>
                 </li>
                 <li>
@@ -65,8 +66,22 @@
                     </a>
                 </li>
 
+                {{-- Support — reach our team (reusable support rail). --}}
                 <li>
-                    <a href="{{ route('affiliate.kb.index') }}">
+                    <a href="{{ route('support.index') }}">
+                        <i class="ri-customer-service-2-line"></i>
+                        <span>{{ __('Support') }}@include('partials.nav-count', ['n' => $navBadges['support'] ?? 0])</span>
+                    </a>
+                </li>
+                {{-- Install app (auto-hides once installed). --}}
+                <li>
+                    <a href="#" data-cs-install onclick="return window.csPwaInstall ? (window.csPwaInstall(), false) : true;">
+                        <i class="ri-smartphone-line"></i>
+                        <span>{{ __('Install app') }}</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="{{ route('affiliate.kb.index') }}" class="kb-nav-highlight">
                         <i class="fa fa-book"></i>
                         <span>{{ __('Knowledge Base') }}</span>
                     </a>

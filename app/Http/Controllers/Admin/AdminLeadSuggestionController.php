@@ -5,7 +5,6 @@ use App\Http\Controllers\Controller;
 use App\Models\LeadSuggestion;
 use App\Models\Lead;
 use Illuminate\Http\Request;
-use App\Services\LeadSuggestionService;
 
 class AdminLeadSuggestionController extends Controller
 {

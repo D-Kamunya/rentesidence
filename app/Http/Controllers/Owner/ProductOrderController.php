@@ -53,6 +53,18 @@ class ProductOrderController extends Controller
     //     }
     // }
 
+    /** Owner toggle: does the on-site caretaker (maintainer) handle marketplace dispatch, or does
+     *  the owner organise it themselves? Surfaced on the shop dashboard. Default ON. */
+    public function updateDispatchSetting(Request $request)
+    {
+        $enabled = $request->boolean('caretaker_dispatch_enabled');
+        Owner::where('user_id', auth()->id())->update(['caretaker_dispatch_enabled' => $enabled]);
+
+        return back()->with('success', $enabled
+            ? __('Your caretaker will now handle dispatch for marketplace orders.')
+            : __('You\'ll organise dispatch yourself — your caretaker won\'t see the dispatch queue.'));
+    }
+
     public function markComplete(Request $request, $id)
     {
         // Scope to orders belonging to this owner only
@@ -68,18 +80,24 @@ class ProductOrderController extends Controller
     
         $order->order_status = ORDER_STATUS_COMPLETED;
         $order->payment_status = ORDER_PAYMENT_STATUS_PAID;
+        $order->fulfilment_status = FULFILMENT_DELIVERED; // completing = delivered; keeps it out of the caretaker dispatch queue
+        $order->delivered_at      = $order->delivered_at ?: now(); // starts the return window
         $order->save();
-    
+
+        // Escrow: completing (delivered) STARTS the return window — it does NOT release the money.
+        // Payout happens when the buyer confirms receipt or the window closes (held funds cover an
+        // in-window refund with no clawback).
+
         // ── Dispatch notification to tenant ──────────────────────────
         $emailData = (object) [
-            'subject' => __('Your order #') . $order->order_id . __(' has been completed'),
-            'title'   => __('Order Completed'),
-            'message' => __('Your order #') . $order->order_id . __(' has been marked as completed by the owner. Your product is on its way or ready for collection.'),
+            'subject' => __('Your order #:id is complete — please confirm receipt', ['id' => $order->order_id]),
+            'title'   => __('Order complete'),
+            'message' => __('Your order #:id has been completed. Once you have your product in good order, please tap "Confirm receipt" so the seller can be paid.', ['id' => $order->order_id]),
         ];
-    
+
         $notificationData = (object) [
-            'title' => __('Order Completed'),
-            'body'  => __('Order #') . $order->order_id . __(' has been completed.'),
+            'title' => __('Order complete'),
+            'body'  => __('Order #:id complete — tap Confirm receipt to close it out.', ['id' => $order->order_id]),
             'url'   => route('tenant.order.index'),
         ];
     
@@ -100,24 +118,25 @@ class ProductOrderController extends Controller
             ->findOrFail($id);
         
         if ($order->payment_status === ORDER_PAYMENT_STATUS_PAID) {
-            // Money already moved — flag for refund
-            $order->payment_status = PRODUCT_ORDER_STATUS_REFUND_PENDING;
+            // Paid → the buyer is owed a refund. Queue it for admin green-light (no money moves
+            // yet); the actual B2C payout to the buyer happens on admin approval.
+            app(\App\Services\CommissionService::class)->requestRefund($order);
         } else {
-            // Unpaid — cancel cleanly
+            // Unpaid — cancel cleanly, nothing to refund.
             $order->payment_status = PRODUCT_ORDER_STATUS_CANCELLED;
         }
         $order->order_status = ORDER_STATUS_CANCELLED;
-        
+
         $order->save();
     
         $emailData = (object) [
-            'subject' => __('Your order #') . $order->order_id . __(' has been cancelled'),
-            'title'   => __('Order Cancelled'),
-            'message' => __('Your order #') . $order->order_id . __(' has been cancelled by the owner.'),
+            'subject' => __('Your order #:id has been cancelled', ['id' => $order->order_id]),
+            'title'   => __('Order cancelled'),
+            'message' => __('Your order #:id has been cancelled by the owner.', ['id' => $order->order_id]),
         ];
         $notificationData = (object) [
-            'title' => __('Order Cancelled'),
-            'body'  => __('Order #') . $order->order_id . __(' has been cancelled.'),
+            'title' => __('Order cancelled'),
+            'body'  => __('Order #:id has been cancelled.', ['id' => $order->order_id]),
             'url'   => route('tenant.order.index'),
         ];
         SendOrderStatusNotificationJob::dispatch($order, $emailData, $notificationData);
@@ -134,24 +153,25 @@ class ProductOrderController extends Controller
             })
             ->where('payment_status', PRODUCT_ORDER_STATUS_REFUND_PENDING)
             ->findOrFail($id);
-    
-        $order->payment_status = PRODUCT_ORDER_STATUS_CANCELLED; // refund issued — close the loop
-        $order->order_status   = ORDER_STATUS_CANCELLED;
-        $order->save();
-    
+
+        // The owner approves the refund → it enters the ADMIN queue for a green-lit B2C payout to
+        // the buyer. Money moves only on admin approval + M-Pesa confirmation (no more manual "3–5
+        // days", and the ledger is reversed at payout-confirm, not here). Idempotent.
+        app(\App\Services\CommissionService::class)->requestRefund($order);
+
         $emailData = (object) [
-            'subject' => __('Refund confirmed for order #') . $order->order_id,
-            'title'   => __('Refund Confirmed'),
-            'message' => __('The owner has confirmed your refund for order #') . $order->order_id . __('. Please allow 3–5 business days for funds to reflect.'),
+            'subject' => __('Refund approved for order #:id', ['id' => $order->order_id]),
+            'title'   => __('Refund approved'),
+            'message' => __('Your refund for order #:id has been approved and is being processed. You will receive the money on your M-Pesa shortly.', ['id' => $order->order_id]),
         ];
         $notificationData = (object) [
-            'title' => __('Refund Confirmed'),
-            'body'  => __('Your refund for order #') . $order->order_id . __(' has been confirmed.'),
+            'title' => __('Refund approved'),
+            'body'  => __('Your refund for order #:id is being processed.', ['id' => $order->order_id]),
             'url'   => route('tenant.order.index'),
         ];
         SendOrderStatusNotificationJob::dispatch($order, $emailData, $notificationData);
-    
-        return $this->success([], __('Refund confirmed and tenant notified.'));
+
+        return $this->success([], __('Refund approved and queued for payout to the buyer.'));
     }
 
     // public function overDueInvoiceIndex(Request $request)

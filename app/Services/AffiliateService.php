@@ -14,31 +14,48 @@ class AffiliateService
 {
 
 
-    public function registerAffiliate($data)
+    /**
+     * The SINGLE source of truth for affiliate creation — used by the admin add form AND the
+     * one-click "approve application" path. Self-contained (owns its own transaction), so any
+     * caller can use it safely: creates the user + affiliate with a system-generated temporary
+     * password, then (after commit) delivers the credentials by email + SMS. The affiliate must
+     * set their own password on first login (must_change_password → ForcePasswordChange).
+     * Returns the created User.
+     */
+    public function registerAffiliate($data): User
     {
-        // 1️⃣ Generate random password
-        $plainPassword = Str::random(10); // e.g., 10 characters long
-        $user = new User();
-        $user->first_name = $data['first_name'];
-        $user->last_name =  $data['last_name'];
-        $user->contact_number =  $data['contact_number'];
-        $user->email =  $data['email'];
-        $user->password = Hash::make($plainPassword);
-        $user->status = USER_STATUS_UNVERIFIED;
-        $user->role = USER_ROLE_AFFILIATE;
-        $user->verify_token = str_replace('-', '', Str::uuid()->toString());
-        $user->save();
+        $plainPassword = Str::random(10);
 
-        $affiliate = new Affiliate();
-        $referralCode = strtoupper(Str::random(12));
-        $affiliate->user_id = $user->id;
-        $affiliate->referral_code = $referralCode;
-        $affiliate->save();
+        DB::beginTransaction();
+        try {
+            $user = new User();
+            $user->first_name = $data['first_name'];
+            $user->last_name =  $data['last_name'];
+            $user->contact_number =  $data['contact_number'];
+            $user->email =  $data['email'];
+            $user->password = Hash::make($plainPassword);
+            $user->status = USER_STATUS_UNVERIFIED;
+            $user->role = USER_ROLE_AFFILIATE;
+            $user->must_change_password = 1;
+            $user->verify_token = str_replace('-', '', Str::uuid()->toString());
+            $user->save();
 
-        DB::commit();
+            $affiliate = new Affiliate();
+            $affiliate->user_id = $user->id;
+            $affiliate->referral_code = strtoupper(Str::random(12));
+            $affiliate->save();
 
+            DB::commit();
+        } catch (\Throwable $e) {
+            DB::rollBack();
+            throw $e;
+        }
+
+        // After the commit: welcome/verification mail + credential delivery (email + SMS).
         $this->handlePostRegistration($user);
         sendLoginDetails($user, $plainPassword);
+
+        return $user;
     }
 
     protected function handlePostRegistration(User $user)
@@ -78,7 +95,7 @@ class AffiliateService
     {
         $affiliates = Affiliate::query()
             ->join('users', 'affiliates.user_id', '=', 'users.id')
-            ->select('users.*', 'affiliates.referral_code')
+            ->select('users.*', 'affiliates.referral_code', 'affiliates.status as affiliate_status', 'affiliates.id as affiliate_id')
             ->orderBy('affiliates.id', 'desc');
 
         return datatables($affiliates)
@@ -96,11 +113,54 @@ class AffiliateService
                 return $affiliate->referral_code;
             })
             ->addColumn('status', function ($affiliate) {
-                if ($affiliate->status == ACTIVE) {
-                    return '<div class="status-btn status-btn-green font-13 radius-4">Active</div>';
-                } else {
-                    return '<div class="status-btn status-btn-orange font-13 radius-4">Deactivate</div>';
+                if ($affiliate->affiliate_status == AFFILIATE_STATUS_ACTIVE) {
+                    return '
+                        <div style="display:inline-flex; align-items:center; gap:8px; flex-wrap:wrap;">
+                            <span class="status-btn status-btn-green font-13 radius-4">Active</span>
+                            <form action="' . route('admin.affiliates.suspend', $affiliate->affiliate_id) . '" method="POST" style="display:inline;"
+                                data-cs-confirm="' . __('Suspend this affiliate? They immediately lose access to their account until you reinstate them. Earned commissions, referrals and history are kept.') . '"
+                                data-cs-confirm-title="' . __('Suspend affiliate?') . '"
+                                data-cs-confirm-ok="' . __('Yes, suspend') . '"
+                                data-cs-confirm-tone="danger">
+                                ' . csrf_field() . '
+                                <button type="submit" class="btn deactivate"
+                                    style="display: inline-flex; align-items: center; gap: 5px;
+                                        background: #FDF4F1; border: 0.5px solid #F5C4B3;
+                                        color: #712B13; border-radius: 99px;
+                                        font-size: 11px; font-weight: 500;
+                                        padding: 4px 11px; white-space: nowrap;
+                                        cursor: pointer; line-height: 1.4;">
+                                    <svg width="10" height="10" viewBox="0 0 16 16" fill="none">
+                                        <path d="M4 4l8 8M12 4l-8 8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                                    </svg>
+                                    Suspend
+                                </button>
+                            </form>
+                        </div>';
                 }
+
+                return '
+                    <div style="display:inline-flex; align-items:center; gap:8px; flex-wrap:wrap;">
+                        <span class="status-btn status-btn-orange font-13 radius-4">Suspended</span>
+                        <form action="' . route('admin.affiliates.reinstate', $affiliate->affiliate_id) . '" method="POST" style="display:inline;"
+                            data-cs-confirm="' . __('Reinstate this affiliate and restore their access to the platform?') . '"
+                            data-cs-confirm-title="' . __('Reinstate affiliate?') . '"
+                            data-cs-confirm-ok="' . __('Yes, reinstate') . '">
+                            ' . csrf_field() . '
+                            <button type="submit" class="btn activate"
+                                style="display: inline-flex; align-items: center; gap: 5px;
+                                    background: #F0F9F4; border: 0.5px solid #9FE1CB;
+                                    color: #085041; border-radius: 99px;
+                                    font-size: 11px; font-weight: 500;
+                                    padding: 4px 11px; white-space: nowrap;
+                                    cursor: pointer; line-height: 1.4;">
+                                <svg width="10" height="10" viewBox="0 0 16 16" fill="none">
+                                    <path d="M3 8.5l3.5 3.5 6.5-7" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                                </svg>
+                                Reinstate
+                            </button>
+                        </form>
+                    </div>';
             })
             ->rawColumns(['name', 'status', 'trail', 'action'])
             ->make(true);

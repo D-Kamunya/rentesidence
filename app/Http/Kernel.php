@@ -31,6 +31,7 @@ class Kernel extends HttpKernel
         \Illuminate\Foundation\Http\Middleware\ValidatePostSize::class,
         \App\Http\Middleware\TrimStrings::class,
         \Illuminate\Foundation\Http\Middleware\ConvertEmptyStringsToNull::class,
+        \App\Http\Middleware\SecurityHeaders::class,
     ];
 
     /**
@@ -46,6 +47,7 @@ class Kernel extends HttpKernel
             \Illuminate\View\Middleware\ShareErrorsFromSession::class,
             \App\Http\Middleware\VerifyCsrfToken::class,
             \Illuminate\Routing\Middleware\SubstituteBindings::class,
+            \App\Http\Middleware\ForcePasswordChange::class,
         ],
 
         'api' => [
@@ -75,10 +77,13 @@ class Kernel extends HttpKernel
         'throttle' => \Illuminate\Routing\Middleware\ThrottleRequests::class,
         'verified' => \Illuminate\Auth\Middleware\EnsureEmailIsVerified::class,
         'owner.active' => \App\Http\Middleware\CheckOwnerActive::class,
+        'infra.standing' => \App\Http\Middleware\EnforceInfraStanding::class,
+        'terms.accepted' => \App\Http\Middleware\EnsureTermsAccepted::class,
         'admin' => Admin::class,
         'isDemo' => IsDemo::class,
         'owner' => Owner::class,
         'tenant' => Tenant::class,
+        'tenant.owned' => \App\Http\Middleware\BlockOwnerlessTenant::class,
         'tenancy' => TenancyMiddleware::class,
         'maintainer' => Maintainer::class,
         'common' => CommonMiddleware::class,
@@ -86,5 +91,6 @@ class Kernel extends HttpKernel
         'addon.update' => SaasModuleMiddleware::class,
         'isFrontend' => IsFrontend::class,
         'affiliate' => Affiliate::class,
+        'finance_partner' => \App\Http\Middleware\FinancePartner::class,
     ];
 }

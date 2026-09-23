@@ -88,8 +88,6 @@
     </div>
 
     <input type="hidden" id="property_id" value="{{ @$property->id }}">
-    <input type="hidden" id="getStateListRoute" value="{{ route('owner.location.state.list') }}">
-    <input type="hidden" id="getCityListRoute" value="{{ route('owner.location.city.list') }}">
     <input type="hidden" id="imageStoreRoute" value="{{ route('owner.property.image.store') }}">
     <input type="hidden" id="getPropertyInformationRoute" value="{{ route('owner.property.getPropertyInformation') }}">
     <input type="hidden" id="getLocationRoute" value="{{ route('owner.property.getLocation') }}">

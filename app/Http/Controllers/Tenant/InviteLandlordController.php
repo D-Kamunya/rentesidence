@@ -1,0 +1,170 @@
+<?php
+
+namespace App\Http\Controllers\Tenant;
+
+use App\Http\Controllers\Controller;
+use App\Models\LandlordReferral;
+use App\Services\LandlordReferralService;
+use Illuminate\Http\Request;
+
+/**
+ * The tenant-side of the invite-a-landlord funnel: a tenant's shareable invite link, the
+ * landlords they've invited and where each stands, their reward balance, and the graduation
+ * offer once they've proven they're a channel.
+ *
+ * Available to every tenant (linked or ownerless) — it sits OUTSIDE the tenant.owned guard,
+ * because inviting a landlord is a growth action, not an owner-bound surface.
+ */
+class InviteLandlordController extends Controller
+{
+    public function __construct(private LandlordReferralService $referrals)
+    {
+    }
+
+    public function index()
+    {
+        if (! $this->referrals->enabled()) {
+            return redirect()->route('tenant.dashboard');
+        }
+
+        $user = auth()->user();
+        $code = $this->referrals->codeForTenant($user->id);
+
+        // Connected tenants (landlord already on CS) refer OTHER landlords; ownerless tenants
+        // invite their own. The heading/nav/title differ so "Invite your landlord" never misleads.
+        $isConnected = ! $user->isOwnerlessTenant();
+
+        $referralList = LandlordReferral::where('referrer_user_id', $user->id)
+            ->latest()
+            ->get();
+
+        $payable   = $this->referrals->payableBalance($user->id);
+        $confirmed = $this->referrals->confirmedCashTotal($user->id);
+        $paid      = $this->referrals->paidTotal($user->id);
+
+        return view('tenant.invite-landlord.index', [
+            'pageTitle'       => $isConnected ? __('Refer a Landlord') : __('Invite Your Landlord'),
+            'isConnected'     => $isConnected,
+            'code'            => $code,
+            'inviteUrl'       => route('referral.invite', $code),
+            'referralList'    => $referralList,
+            'payableBalance'  => $payable,
+            'pendingBalance'  => max(0, $confirmed - $payable), // confirmed but still within the hold window
+            'paidBalance'     => $paid,
+            'totalEarned'     => $confirmed + $paid,
+            'minPayout'       => (float) config('referrals.min_payout', 0),
+            'pendingPayout'   => $this->referrals->pendingPayout($user->id),
+            'defaultPhone'    => preg_replace('/^(?:\+?254|0)/', '', (string) ($user->contact_number ?? '')),
+            'confirmedCount'  => $this->referrals->confirmedCount($user->id),
+            'cashEnabled'     => $this->referrals->cashEnabled(),
+            'cashAmount'      => (float) config('referrals.cash_amount', 0),
+            'currency'        => config('referrals.currency', 'KES'),
+            'canGraduate'     => $this->referrals->graduationEligible($user->id),
+            'graduationGoal'  => (int) config('referrals.graduation_threshold', 3),
+            'hasGraduated'    => app(\App\Services\AffiliateGraduationService::class)->hasGraduated($user->id),
+        ]);
+    }
+
+    /**
+     * Opt into the affiliate program. A graduated tenant KEEPS their tenant account and gains a
+     * linked affiliate account (they move between the two with the account switch). Auto-granted
+     * — graduation (enough confirmed referrals) is the authenticity proof, so no admin gate.
+     */
+    public function graduate()
+    {
+        $user = auth()->user();
+
+        if (! $this->referrals->enabled() || ! $this->referrals->graduationEligible($user->id)) {
+            return back()->with('error', __('You\'re not eligible to become an affiliate yet.'));
+        }
+
+        $grad = app(\App\Services\AffiliateGraduationService::class);
+        if ($grad->hasGraduated($user->id)) {
+            return back()->with('success', __('You\'re already an affiliate — switch to your affiliate account from the menu.'));
+        }
+
+        $affiliate = $grad->graduate($user);
+        if (! $affiliate) {
+            return back()->with('error', __('We couldn\'t set up your affiliate account. Please make sure your profile has a valid email.'));
+        }
+
+        return back()->with('success', __('Congratulations — you\'re now a Centresidence affiliate! Switch to your affiliate account from the account menu to get started.'));
+    }
+
+    /**
+     * Tenant requests a payout of their withdrawable balance. Mirrors the affiliate withdrawal:
+     * the tenant asks, admin reviews and releases. Creates a pending ReferralPayout (reserving the
+     * ready rewards); the min-payout + holding period already gate whether they can even request.
+     */
+    public function requestPayout(Request $request)
+    {
+        if (! $this->referrals->enabled() || ! $this->referrals->cashEnabled()) {
+            return back()->with('error', __('Payouts are not available right now.'));
+        }
+
+        $validated = $request->validate([
+            // 9-digit Kenyan number without the country code / leading 0 (e.g. 712345678).
+            'phone' => ['required', 'string', 'regex:/^[71]\d{8}$/'],
+        ]);
+
+        $user = auth()->user();
+
+        if ($this->referrals->hasPendingPayout($user->id)) {
+            return back()->with('error', __('You already have a payout request in progress.'));
+        }
+
+        $payout = $this->referrals->openPayout($user->id, '+254' . $validated['phone']);
+        if (! $payout) {
+            return back()->with('error', __('Your balance is below the minimum for a payout right now.'));
+        }
+
+        return back()->with('success', __('Payout requested. We\'ll review it and send it to your M-Pesa — you\'ll see it here once it\'s paid.'));
+    }
+
+    /** Record a landlord the tenant is inviting (velocity-capped in the service). */
+    public function store(Request $request)
+    {
+        if (! $this->referrals->enabled()) {
+            return redirect()->route('tenant.dashboard');
+        }
+
+        $validated = $request->validate([
+            'invitee_name'  => ['nullable', 'string', 'max:120'],
+            'invitee_phone' => ['nullable', 'string', 'max:32'],
+            'invitee_email' => ['nullable', 'email', 'max:160'],
+        ]);
+
+        if (empty($validated['invitee_phone']) && empty($validated['invitee_email'])) {
+            return back()->with('error', __('Add your landlord\'s phone or email so we can track the invite.'));
+        }
+
+        $referral = $this->referrals->startInvite(auth()->user(), [
+            'name'  => $validated['invitee_name'] ?? null,
+            'phone' => $validated['invitee_phone'] ?? null,
+            'email' => $validated['invitee_email'] ?? null,
+        ]);
+
+        if (! $referral) {
+            return back()->with('error', __('You\'ve sent a lot of invites today — please try again tomorrow.'));
+        }
+
+        // Dedupe guard: an existing invite for this landlord comes back not-recently-created —
+        // don't re-notify (prevents repeat SMS/email to the same person).
+        if (! $referral->wasRecentlyCreated) {
+            return back()->with('success', __('You\'ve already invited this landlord — share your link to remind them.'));
+        }
+
+        // Reach the landlord on the tenant's behalf (platform-paid SMS + on-brand email).
+        // No account is created — they still fill the vetted public form at /invite/{code}.
+        $user = auth()->user();
+        \App\Jobs\SendLandlordInviteJob::dispatch(
+            trim(($user->first_name ?? '') . ' ' . ($user->last_name ?? '')) ?: null,
+            route('referral.invite', $referral->code),
+            $referral->invitee_phone,
+            $referral->invitee_email,
+            $referral->invitee_name,
+        );
+
+        return back()->with('success', __('Invite sent! We\'ve reached out to your landlord, and you can share your link too.'));
+    }
+}

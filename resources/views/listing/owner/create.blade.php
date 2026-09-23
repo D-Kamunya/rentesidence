@@ -65,7 +65,7 @@
                                                                     <select name="status" class="form-control">
                                                                         <option value="1"> {{ __('Active') }}
                                                                         </option>
-                                                                        <option value="2"> {{ __('Deactivate') }}
+                                                                        <option value="2"> {{ __('Inactive') }}
                                                                         </option>
                                                                         <option value="3"> {{ __('Close') }}
                                                                         </option>

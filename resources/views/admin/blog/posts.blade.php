@@ -150,7 +150,7 @@
                                                     <a href="{{ route('admin.blog.posts.edit', $post) }}" class="btn btn-sm" style="background: #f0f4fa; color: #185FA5; font-size: 11px; padding: 5px 10px; border-radius: 6px; text-decoration: none;">
                                                         <i class="fa fa-edit"></i>
                                                     </a>
-                                                    <form action="{{ route('admin.blog.posts.destroy', $post) }}" method="POST" onsubmit="return confirm('Delete this post?');" style="display: inline;">
+                                                    <form action="{{ route('admin.blog.posts.destroy', $post) }}" method="POST" data-cs-confirm="Delete this post?" data-cs-confirm-tone="danger" style="display: inline;">
                                                         @csrf
                                                         @method('DELETE')
                                                         <button type="submit" class="btn btn-sm" style="background: #185ea51c; color: #374151; border: none; font-size: 11px; padding: 5px 10px; border-radius: 6px; cursor: pointer;"

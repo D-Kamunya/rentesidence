@@ -58,7 +58,7 @@ class PackageService
                 if ($package->status == ACTIVE) {
                     return '<div class="status-btn status-btn-green font-13 radius-4">Active</div>';
                 } else {
-                    return '<div class="status-btn status-btn-orange font-13 radius-4">Deactivate</div>';
+                    return '<div class="status-btn status-btn-orange font-13 radius-4">Inactive</div>';
                 }
             })
             ->addColumn('trail', function ($package) {
@@ -218,11 +218,18 @@ class PackageService
             })->addColumn('end_date', function ($ownerPackage) {
                 return date('Y-m-d', strtotime($ownerPackage->end_date));
             })->addColumn('status', function ($ownerPackage) {
-                if ($ownerPackage->status == ACTIVE) {
-                    return '<div class="status-btn status-btn-blue font-13 radius-4">Active</div>';
-                } else {
-                    return '<div class="status-btn status-btn-orange font-13 radius-4">Deactivate</div>';
+                // Derive 3 states so an EXPIRED assignment isn't mislabelled "Active":
+                //   status != ACTIVE            → Inactive (deactivated / superseded)
+                //   status == ACTIVE + past end → Expired  (term lapsed)
+                //   status == ACTIVE + in-term  → Active
+                if ($ownerPackage->status != ACTIVE) {
+                    return '<div class="status-btn status-btn-orange font-13 radius-4">Inactive</div>';
                 }
+                $expired = ! empty($ownerPackage->end_date) && strtotime($ownerPackage->end_date) < time();
+                if ($expired) {
+                    return '<div class="status-btn status-btn-red font-13 radius-4">Expired</div>';
+                }
+                return '<div class="status-btn status-btn-green font-13 radius-4">Active</div>';
             })->addColumn('action', function ($ownerPackage) {
                 return '<div class="tbl-action-btns d-inline-flex">
                     <button type="button" class="p-1 tbl-action-btn edit" data-id="' . $ownerPackage->id . '" title="Edit"><span class="iconify" data-icon="clarity:note-edit-solid"></span></button>
@@ -277,7 +284,7 @@ class PackageService
             DB::commit();
 
             $invoiceUrl = route('owner.subscription.index');
-            $title      = __('Subscription Activated Successfully');
+            $title      = __('Subscription activated');
             $body       = __('Your subscription package has been successfully activated by the administrator.');
             addNotification($title, $body, $invoiceUrl, null, $ownerUser->id, $adminUser->id);
 

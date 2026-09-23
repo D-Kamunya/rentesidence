@@ -7,80 +7,46 @@
             <div class="container-fluid">
                 <!-- Page Content Wrapper Start -->
                 <div class="page-content-wrapper bg-white p-30 radius-20">
-                    <!-- start page title -->
-                    <div class="row">
-                        <div class="col-12">
-                            <div
-                                class="page-title-box d-sm-flex align-items-center justify-content-between border-bottom mb-20">
-                                <div class="page-title-left">
-                                    <h3 class="mb-sm-0">{{ $pageTitle }}</h3>
-                                </div>
-                                <div class="page-title-right">
-                                    <ol class="breadcrumb mb-0">
-                                        <li class="breadcrumb-item"><a href="{{ route('owner.dashboard') }}"
-                                                title="Dashboard">{{ __('Dashboard') }}</a></li>
-                                        <li class="breadcrumb-item active" aria-current="page">{{ $pageTitle }}</li>
-                                    </ol>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    <!-- Information Page Area row Start -->
-                    <div class="row">
-                        <!-- Property Top Search Bar Start -->
-                        <h4 class="mb-20">{{ __('All Maintanance') }}</h4>
-                        <div class="property-top-search-bar">
-                            <div class="property-search-inner-bg bg-off-white theme-border radius-4 p-25 pb-0 mb-25">
-                                <div class="row align-items-center">
-                                    <div class="col-md-6">
-                                        <div class="property-top-search-bar-left">
-                                            <div class="row">
-                                                <div class="col-md-6 col-lg-6 col-xl-4 mb-25">
-                                                    <select class="form-select flex-shrink-0 " id="search_property">
-                                                        <option value="" selected>{{ __('Select Property') }}</option>
-                                                        @foreach ($properties as $property)
-                                                            <option value="{{ $property->name }}">{{ $property->name }}
-                                                            </option>
-                                                        @endforeach
-                                                    </select>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div class="col-md-6">
-                                        <div class="property-top-search-bar-right text-end">
-                                            <button type="button" class="theme-btn mb-25" id="add"
-                                                title="{{ __('Add Maintenance Request') }}">{{ __('Add Maintenance Request') }}</button>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        <!-- Property Top Search Bar End -->
+                    @include('centresidence._design')
 
-                        <!-- All Maintainer Table Area Start -->
-                        <div class="all-maintainer-table-area">
-                            <!-- datatable Start -->
-                            <div class="bg-off-white theme-border radius-4 p-25">
-                                <table id="allMaintenanceDataTable" class="table bg-off-white aaa theme-border dt-responsive">
-                                    <thead>
-                                        <tr>
-                                            <th>{{ __('SL') }}</th>
-                                            <th>{{ __('Property') }}</th>
-                                            <th>{{ __('Unit Name') }}</th>
-                                            <th data-priority="1">{{ __('Issue Name') }}</th>
-                                            <th>{{ __('Details') }}</th>
-                                            <th>{{ __('Status') }}</th>
-                                            <th>{{ __('Action') }}</th>
-                                        </tr>
-                                    </thead>
-                                </table>
-                            </div>
-                            <!-- datatable End -->
+                    <div class="cs-titlebar">
+                        <div>
+                            <h1 class="cs-title">{{ $pageTitle }}</h1>
+                            <ol class="cs-crumb"><li><a href="{{ route('owner.dashboard') }}">{{ __('Dashboard') }}</a></li><li>›</li><li>{{ $pageTitle }}</li></ol>
                         </div>
-                        <!-- All Maintainer Table Area End -->
+                        <button type="button" class="cs-btn cs-btn--primary" id="add"
+                            title="{{ __('Add Maintenance Request') }}">
+                            <i class="ri-add-line"></i> {{ __('Add Maintenance Request') }}
+                        </button>
                     </div>
-                    <!-- Information Page Area row End -->
+
+                    <div class="cs-card cs-card--pad" style="margin-bottom:16px;">
+                        <label class="cs-label">{{ __('Filter by property') }}</label>
+                        <div style="max-width:320px;">
+                            <select class="cs-select" id="search_property">
+                                <option value="" selected>{{ __('All properties') }}</option>
+                                @foreach ($properties as $property)
+                                    <option value="{{ $property->name }}">{{ $property->name }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="cs-card"><div class="cs-card__body">
+                        <table id="allMaintenanceDataTable" class="table aaa dt-responsive" style="width:100%;">
+                            <thead>
+                                <tr>
+                                    <th>{{ __('SL') }}</th>
+                                    <th>{{ __('Property') }}</th>
+                                    <th>{{ __('Unit Name') }}</th>
+                                    <th data-priority="1">{{ __('Issue Name') }}</th>
+                                    <th>{{ __('Details') }}</th>
+                                    <th>{{ __('Status') }}</th>
+                                    <th>{{ __('Action') }}</th>
+                                </tr>
+                            </thead>
+                        </table>
+                    </div></div>
                 </div>
                 <!-- Page Content Wrapper End -->
             </div>
@@ -89,7 +55,7 @@
     </div>
 
     <!-- Add Information Modal Start -->
-    <div class="modal fade" id="addModal" tabindex="-1" aria-labelledby="addModalLabel" aria-hidden="true">
+    <div class="modal fade cs-modal" id="addModal" tabindex="-1" aria-labelledby="addModalLabel" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content">
                 <div class="modal-header">
@@ -170,7 +136,7 @@
         </div>
     </div>
 
-    <div class="modal fade" id="editModal" tabindex="-1" aria-labelledby="editModalLabel" aria-hidden="true">
+    <div class="modal fade cs-modal" id="editModal" tabindex="-1" aria-labelledby="editModalLabel" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content">
                 <div class="modal-header">
@@ -252,7 +218,7 @@
         </div>
     </div>
 
-    <div class="modal fade" id="viewModal" tabindex="-1" aria-labelledby="viewModalLabel" aria-hidden="true">
+    <div class="modal fade cs-modal" id="viewModal" tabindex="-1" aria-labelledby="viewModalLabel" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content">
                 <div class="modal-header">

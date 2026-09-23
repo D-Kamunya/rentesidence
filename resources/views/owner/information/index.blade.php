@@ -5,72 +5,56 @@
         <div class="page-content">
             <div class="container-fluid">
                 <div class="page-content-wrapper bg-white p-30 radius-20">
-                    <div class="row">
-                        <div class="col-12">
-                            <div
-                                class="page-title-box d-sm-flex align-items-center justify-content-between border-bottom mb-20">
-                                <div class="page-title-left">
-                                    <h3 class="mb-sm-0">{{ $pageTitle }}</h3>
-                                </div>
-                                <div class="page-title-right">
-                                    <ol class="breadcrumb mb-0">
-                                        <li class="breadcrumb-item"><a href="{{ route('owner.dashboard') }}"
-                                                title="{{ __('Dashboard') }}">{{ __('Dashboard') }}</a></li>
-                                        <li class="breadcrumb-item active" aria-current="page">{{ $pageTitle }}</li>
-                                    </ol>
-                                </div>
-                            </div>
+                    @include('centresidence._design')
+
+                    <div class="cs-titlebar">
+                        <div>
+                            <h1 class="cs-title">{{ $pageTitle }}</h1>
+                            <ol class="cs-crumb"><li><a href="{{ route('owner.dashboard') }}">{{ __('Dashboard') }}</a></li><li>›</li><li>{{ $pageTitle }}</li></ol>
+                        </div>
+                        <button type="button" class="cs-btn cs-btn--primary" id="add"
+                            title="{{ __('Add New Information') }}">
+                            <i class="ri-add-line"></i> {{ __('Add New Information') }}
+                        </button>
+                    </div>
+
+                    <p class="cs-muted" style="margin-bottom:18px;max-width:640px;">
+                        {{ __('Share nearby amenities — schools, hospitals, transport — so tenants know what surrounds each property.') }}
+                    </p>
+
+                    <div class="cs-card cs-card--pad" style="margin-bottom:16px;">
+                        <label class="cs-label">{{ __('Filter by property') }}</label>
+                        <div style="max-width:320px;">
+                            <select class="cs-select" id="search_property">
+                                <option value="">{{ __('All properties') }}</option>
+                                @foreach ($properties as $property)
+                                    <option value="{{ $property->name }}">{{ $property->name }}</option>
+                                @endforeach
+                            </select>
                         </div>
                     </div>
-                    <div class="row">
-                        <div class="property-top-search-bar">
-                            <div class="row align-items-end">
-                                <div class="col-md-6">
-                                    <div class="property-top-search-bar-left">
-                                        <div class="row">
-                                            <div class="col-md-6 col-lg-6 col-xl-4 mb-25">
-                                                <select class="form-select flex-shrink-0 " id="search_property">
-                                                    <option value="">--{{ __('Search Property') }}--</option>
-                                                    @foreach ($properties as $property)
-                                                        <option value="{{ $property->name }}">{{ $property->name }}</option>
-                                                    @endforeach
-                                                </select>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="col-md-6">
-                                    <div class="property-top-search-bar-right text-end">
-                                        <button type="button" class="theme-btn mb-25" id="add"
-                                            title="{{ __('Add New Information') }}">{{ __('Add New Information') }}</button>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="information-table-area">
-                            <div class="bg-off-white theme-border radius-4 p-25">
-                                <table id="allInfoDataTable" class="table bg-off-white theme-border dt-responsive">
-                                    <thead>
-                                        <tr>
-                                            <th>{{ __('SL') }}</th>
-                                            <th>{{ __('Image') }}</th>
-                                            <th data-priority="1">{{ __('Name') }}</th>
-                                            <th>{{ __('Property') }}</th>
-                                            <th>{{ __('Distance') }}</th>
-                                            <th>{{ __('Contact Number') }}</th>
-                                            <th>{{ __('Action') }}</th>
-                                        </tr>
-                                    </thead>
-                                </table>
-                            </div>
-                        </div>
-                    </div>
+
+                    <div class="cs-card"><div class="cs-card__body">
+                        <table id="allInfoDataTable" class="table dt-responsive" style="width:100%;">
+                            <thead>
+                                <tr>
+                                    <th>{{ __('SL') }}</th>
+                                    <th>{{ __('Image') }}</th>
+                                    <th data-priority="1">{{ __('Name') }}</th>
+                                    <th>{{ __('Property') }}</th>
+                                    <th>{{ __('Distance') }}</th>
+                                    <th>{{ __('Contact Number') }}</th>
+                                    <th>{{ __('Action') }}</th>
+                                </tr>
+                            </thead>
+                        </table>
+                    </div></div>
                 </div>
             </div>
         </div>
     </div>
 
-    <div class="modal fade" id="informationModal" tabindex="-1" aria-labelledby="informationModalLabel" aria-hidden="true">
+    <div class="modal fade cs-modal" id="informationModal" tabindex="-1" aria-labelledby="informationModalLabel" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content">
                 <div class="modal-header">
@@ -148,7 +132,7 @@
         </div>
     </div>
 
-    <div class="modal fade" id="editInformationModal" tabindex="-1" aria-labelledby="editInformationModalLabel"
+    <div class="modal fade cs-modal" id="editInformationModal" tabindex="-1" aria-labelledby="editInformationModalLabel"
         aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content">
@@ -232,7 +216,7 @@
         </div>
     </div>
 
-    <div class="modal fade" id="viewInformationModal" tabindex="-1" aria-labelledby="viewInformationModalLabel"
+    <div class="modal fade cs-modal" id="viewInformationModal" tabindex="-1" aria-labelledby="viewInformationModalLabel"
         aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content">

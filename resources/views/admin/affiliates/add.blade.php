@@ -6,7 +6,9 @@
         <div class="page-content">
             <div class="container-fluid">
                 <!-- Page Content Wrapper Start -->
-                <div class="page-content-wrapper bg-white p-30 radius-20">
+                <div class="page-content-wrapper bg-white p-30 radius-20 cs-controls">
+                    @include('centresidence._design')
+
                     <!-- start page title -->
                     <div class="row">
                         <div class="col-12">
@@ -33,9 +35,9 @@
                                     <form action="{{ route('admin.affiliates.register.store') }}" method="POST">
                                         @csrf
                                         <div
-                                            class="form-card bg-off-white theme-border radius-4 p-20">
+                                            class="form-card cs-card cs-card--pad">
                                             <div
-                                                class="bg-white theme-border radius-4 p-20 pb-0 mb-25">
+                                                class="pb-0 mb-25">
                                                 <div class="owners-inner-box-block">
                                                     <div class="add-property-title border-bottom pb-25 mb-25">
                                                         <h4>{{ __('Personal Information') }}</h4>
@@ -86,6 +88,13 @@
                                                         @error('email')
                                                             <span class="text-danger">{{ $message }}</span>
                                                         @enderror
+                                                        </div>
+                                                    </div>
+                                                    <div class="row">
+                                                        <div class="col-md-12 mb-25">
+                                                            <div class="alert alert-info" style="margin:0;font-size:13.5px;">
+                                                                {{ __('No password needed — the affiliate gets a system-generated temporary password by email and SMS, and is asked to set their own on first login.') }}
+                                                            </div>
                                                         </div>
                                                     </div>
                                                 </div>

@@ -56,26 +56,17 @@
                         <!-- Documents Area Start -->
                         <div class="documents-page-area">
                             @foreach ($kycConfigs->where('tenant_id', '!=', null) as $kycConfig)
-                                <div class="upload-nid-wrap radius-4 p-20 mb-25 alert alert-dismissible fade show"
-                                    role="alert">
-                                    <div class="d-flex align-items-center me-3">
-                                        <div class="flex-shrink-0">
-                                            <div
-                                                class="tenant-nid-icon text-white rounded-circle d-inline-flex align-items-center justify-content-center font-20">
-                                                <span class="iconify" data-icon="clarity:notification-line"></span>
-                                            </div>
-                                        </div>
-                                        <div class="flex-grow-1 ms-3">
-                                            <h5>{{ $kycConfig->name }}</h5>
-                                            <p class="font-13 mt-2">{{ $kycConfig->details }}
-                                                <button type="button" data-id="{{ $kycConfig->id }}"
-                                                    class="font-bold specialUploadFilesAdd"
-                                                    title="{{ __('Upload Now') }}">{{ __('Upload Now') }}</button>
-                                            </p>
-                                        </div>
+                                <div class="doc-request alert alert-dismissible fade show" role="alert">
+                                    <span class="doc-request__ic"><i class="ri-file-upload-line"></i></span>
+                                    <div class="doc-request__body">
+                                        <h5 class="doc-request__title">{{ $kycConfig->name }}</h5>
+                                        <p class="doc-request__text">{{ $kycConfig->details }}</p>
                                     </div>
-                                    <button type="button" class="btn-close" data-bs-dismiss="alert"
-                                        aria-label="Close"></button>
+                                    <button type="button" data-id="{{ $kycConfig->id }}"
+                                        class="doc-request__btn specialUploadFilesAdd" title="{{ __('Upload Now') }}">
+                                        <i class="ri-upload-2-line"></i> {{ __('Upload Now') }}
+                                    </button>
+                                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
                                 </div>
                             @endforeach
 
@@ -112,40 +103,8 @@
                                                             <tr class="kycVerificationRow">
                                                                 <td>{{ $loop->iteration }}</td>
                                                                 <td>{{ $kycVerification->config?->name }}</td>
-                                                                <td>
-                                                                    <div class="tenants-tbl-info-object d-flex align-items-center"
-                                                                        title="Download">
-                                                                        <div class="flex-shrink-0">
-                                                                            <a href="{{ $kycVerification->front }}"
-                                                                                download="">
-                                                                                @if (pathinfo($kycVerification->front, PATHINFO_EXTENSION) == 'pdf')
-                                                                                    <img
-                                                                                        src="{{ asset('assets/images/pdf-file-img.png') }}">
-                                                                                @else
-                                                                                    <img class="rounded avatar-md tbl-user-image"
-                                                                                        src="{{ $kycVerification->front }}">
-                                                                                @endif
-                                                                            </a>
-                                                                        </div>
-                                                                    </div>
-                                                                </td>
-                                                                <td>
-                                                                    <div class="tenants-tbl-info-object d-flex align-items-center"
-                                                                        title="Download">
-                                                                        <div class="flex-shrink-0">
-                                                                            <a href="{{ $kycVerification->back }}"
-                                                                                download="">
-                                                                                @if (pathinfo($kycVerification->back, PATHINFO_EXTENSION) == 'pdf')
-                                                                                    <img
-                                                                                        src="{{ asset('assets/images/pdf-file-img.png') }}">
-                                                                                @else
-                                                                                    <img class="rounded avatar-md tbl-user-image"
-                                                                                        src="{{ $kycVerification->back }}">
-                                                                                @endif
-                                                                            </a>
-                                                                        </div>
-                                                                    </div>
-                                                                </td>
+                                                                <td>{!! app(\App\Services\KycVerificationService::class)->docThumb($kycVerification->front) !!}</td>
+                                                                <td>{!! app(\App\Services\KycVerificationService::class)->docThumb($kycVerification->back) !!}</td>
                                                                 <td>
                                                                     @if ($kycVerification->status == KYC_STATUS_ACCEPTED)
                                                                         <div

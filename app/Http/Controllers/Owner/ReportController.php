@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Owner;
 use App\Http\Controllers\Controller;
 use App\Services\PropertyService;
 use App\Services\ReportService;
+use App\Services\ReportExportService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 
@@ -16,6 +17,54 @@ class ReportController extends Controller
     {
         $this->reportService =  new ReportService;
         $this->propertyService = new PropertyService;
+    }
+
+    /**
+     * Server-side export of a report — builds the COMPLETE dataset (honouring the
+     * current filters) and streams it as PDF or CSV, so exports are never truncated to
+     * the visible DataTables page. Owner-scoped inside ReportExportService.
+     */
+    public function export(Request $request, string $report)
+    {
+        $payload = app(ReportExportService::class)->build($report);
+        abort_if($payload === null, 404);
+
+        $appName   = getOption('app_name');
+        $ownerName = auth()->user()->getNameAttribute();
+
+        $filename = trim($ownerName . ' - ' . $appName . ' ' . $payload['title']);
+        $filename = preg_replace('/[^A-Za-z0-9 _-]/', '', $filename) ?: $report;
+
+        if (strtolower((string) $request->input('format', 'pdf')) === 'csv') {
+            return $this->exportCsv($payload, $filename);
+        }
+
+        $payload['logo']      = $this->convertToBase64(getSettingImage('app_logo'));
+        $payload['appName']   = $appName;
+        $payload['ownerName'] = $ownerName;
+
+        $pdf = \PDF::loadView('owner.report.pdf.table', $payload)->setPaper('a4', 'landscape');
+
+        return $pdf->download($filename . '.pdf');
+    }
+
+    /** Stream the report's full dataset as CSV (opens natively in Excel). */
+    private function exportCsv(array $payload, string $filename)
+    {
+        return response()->streamDownload(function () use ($payload) {
+            $out = fopen('php://output', 'w');
+            fputcsv($out, $payload['headers']);
+            foreach ($payload['rows'] as $row) {
+                // Strip any stray HTML/tags so the CSV holds clean values.
+                fputcsv($out, array_map(fn ($c) => trim(strip_tags((string) $c)), $row));
+            }
+            if (! empty($payload['totals'])) {
+                fputcsv($out, array_map(fn ($c) => trim(strip_tags((string) $c)), $payload['totals']));
+            }
+            fclose($out);
+        }, $filename . '.csv', [
+            'Content-Type' => 'text/csv; charset=UTF-8',
+        ]);
     }
 
     public function earning(Request $request)

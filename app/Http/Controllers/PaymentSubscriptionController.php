@@ -222,6 +222,17 @@ class PaymentSubscriptionController extends Controller
         }
         $total = $price + $perPrice;
 
+        // MERGE (B2 stage 4): bundle the owner's outstanding module-infra into the
+        // actual charge. Infra is KES, so only bundle when the transaction currency
+        // is KES (never add it across a currency conversion). Base-currency fields
+        // (amount/subtotal/total) stay plan-only; only the charged transaction_amount
+        // and the audit `infra_amount` reflect the bundle. Settled on payment success.
+        $infraAmount = 0.0;
+        if (strtoupper((string) $gatewayCurrency->currency) === 'KES') {
+            $infraAmount = (float) app(\App\Centresidence\Services\InfraBillPaymentService::class)
+                ->outstanding((int) auth()->id())['total'];
+        }
+
         return SubscriptionOrder::create([
             'user_id'               => auth()->id(),
             'package_id'            => $package->id,
@@ -234,7 +245,8 @@ class PaymentSubscriptionController extends Controller
             'amount'                => $price,
             'subtotal'              => $price,
             'total'                 => $price,
-            'transaction_amount'    => $price * $gatewayCurrency->conversion_rate,
+            'transaction_amount'    => ($price * $gatewayCurrency->conversion_rate) + $infraAmount,
+            'infra_amount'          => $infraAmount,
             'conversion_rate'       => $gatewayCurrency->conversion_rate,
             'payment_status'        => ORDER_PAYMENT_STATUS_PENDING,
             'bank_id'               => $bank_id,

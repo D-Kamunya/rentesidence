@@ -31,21 +31,32 @@ class PropertyController extends Controller
         $data['navPropertyMMShowClass'] = 'mm-show';
         $data['subNavAllPropertyMMActiveClass'] = 'mm-active';
         $data['subNavAllPropertyActiveClass'] = 'active';
+        $cardMode = getOption('app_card_data_show', 1) == 1;
+
         if ($request->ajax()) {
-            return $this->propertyService->getAllData();
-        } else {
-            $data['properties'] = $this->propertyService->getAll();
+            if ($cardMode) {
+                // Card view: server-side search — return the re-rendered cards + pagination.
+                $data['properties'] = $this->propertyService->getAll(true, $request);
+                return response()->json([
+                    'cards' => view('owner.property.partials.property-cards', $data)->render(),
+                ]);
+            }
+            return $this->propertyService->getAllData(); // table view: serverSide datatable
         }
+
+        $data['properties'] = $this->propertyService->getAll(true, $cardMode ? $request : null);
         return view('owner.property.all-property-list')->with($data);
     }
 
-    public function allUnit()
+    public function allUnit(Request $request)
     {
+        if ($request->ajax()) {
+            return $this->propertyService->getUnitDatatable();
+        }
         $data['pageTitle'] = __("All Unit");
         $data['navPropertyMMShowClass'] = 'mm-show';
         $data['subNavAllUnitMMActiveClass'] = 'mm-active';
         $data['subNavAllUnitActiveClass'] = 'active';
-        $data['units'] = $this->propertyService->allUnit();
         $data['properties'] = $this->propertyService->getAll(false);
         return view('owner.property.all-unit-list')->with($data);
     }
@@ -205,8 +216,9 @@ class PropertyController extends Controller
 
     public function unitDetails($id)
     {
-        $data['unit'] = $this->propertyService->getUnitById($id)['unit'];
-        $data['property'] = $this->propertyService->getUnitById($id)['property'];
+        $unit = $this->propertyService->getUnitById($id);
+        $data['unit'] = $unit['unit'];
+        $data['property'] = $unit['property'];
 
         return $this->success($data);
     }

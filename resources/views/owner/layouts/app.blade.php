@@ -22,12 +22,13 @@
     <meta name="msapplication-TileImage" content="{{ getSettingImage('app_logo') }}">
 
     <meta name="msapplication-TileColor" content="#F8F8F8">
-    <meta name="theme-color" content="#3686FC">
+    <meta name="theme-color" content="#185FA5">
     <meta name="csrf-token" content="{{ csrf_token() }}" />
     <title>{{ getOption('app_name') . ' - ' . @$pageTitle }}</title>
 
     @include('common.layouts.style')
     @stack('style')
+    @include('common.layouts.pwa-meta')
     <script src="https://js.pusher.com/8.2.0/pusher.min.js"></script>
     <script>
         window.Laravel = {!! json_encode([
@@ -52,6 +53,7 @@
         @include('owner.layouts.header')
         @include('owner.layouts.sidebar')
         @yield('content')
+    @include('partials.feature-announcement')
     </div>
     @include('owner.layouts.modal')
     @include('common.layouts.script')

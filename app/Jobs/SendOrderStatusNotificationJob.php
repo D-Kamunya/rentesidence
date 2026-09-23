@@ -11,11 +11,11 @@ use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Mail;
+use App\Mail\Concerns\SendsCsMail;
 
 class SendOrderStatusNotificationJob implements ShouldQueue
 {
-    use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
+    use Dispatchable, InteractsWithQueue, Queueable, SerializesModels, SendsCsMail;
 
     public function __construct(
         public ProductOrder $order,
@@ -43,27 +43,31 @@ class SendOrderStatusNotificationJob implements ShouldQueue
                 'updated_at' => now(),
             ]);
 
-            // ── Email notification ───────────────────────────────────────
+            // ── Email notification (CS lifecycle layout) ───────────────────
             if ($recipient->email) {
-                Mail::send([], [], function ($message) use ($recipient) {
-                    $message->to($recipient->email)
-                            ->subject($this->emailData->subject)
-                            ->html(
-                                '<p>Hello ' . e($recipient->name) . ',</p>' .
-                                '<p>' . e($this->emailData->message) . '</p>' .
-                                '<p><a href="' . $this->notificationData->url . '">View your orders</a></p>'
-                            );
-                });
+                $name = e($recipient->name);
+                $this->sendCs(
+                    [$recipient->email],
+                    $this->emailData->subject,
+                    [
+                        'eyebrow' => __('Order update'), 'eyebrowColor' => '#185FA5',
+                        'title'   => $this->notificationData->title ?? $this->emailData->subject,
+                        'blocks'  => [
+                            ['type' => 'text', 'html' => __('Hello :name,', ['name' => "<strong>{$name}</strong>"])
+                                . ' ' . e($this->emailData->message)],
+                            ['type' => 'button', 'url' => $this->notificationData->url, 'label' => __('View your orders')],
+                        ],
+                    ]
+                );
             }
 
-            // ── SMS notification ─────────────────────────────────────────
+            // ── SMS notification (link-free for cost) ────────────────────
+            // The CS email + the in-app notification above already carry the deep-link; appending
+            // a full URL here would push the message to multiple segments and burn extra credits.
             if (!empty($recipient->contact_number)) {
-                $smsMessage = $this->emailData->message .
-                    ' ' . __('View your orders: ') . $this->notificationData->url;
-
                 SendSmsJob::dispatch(
                     [$recipient->contact_number],
-                    $smsMessage,
+                    $this->emailData->message,
                     $this->order->user_id
                 );
             }

@@ -87,7 +87,7 @@ class DashboardController extends Controller
     
         // ── SMS Credits ───────────────────────────────────────────
         $data['smsCredits']       = (int) $owner->sms_credits;
-        $data['smsLowThreshold']  = (int) getOption('sms_low_credit_threshold', 50);
+        $data['smsLowThreshold']  = (int) getOption('sms_low_credit_threshold', 30);
         $data['smsPricePerCredit'] = (float) getOption('sms_credit_price', 1.00);
     
         $data['smsFailedCount'] = \App\Models\SmsHistory::where('owner_user_id', auth()->id())
@@ -110,6 +110,24 @@ class DashboardController extends Controller
             })
             ->where('status', HOUSE_HUNT_APPLICATION_PENDING)
             ->count();
+
+        // ── Notices to vacate (business-level — surfaced promptly) ──
+        $data['pendingVacationNotices'] = \App\Models\VacationNotice::with(['tenant.user', 'unit'])
+            ->where('owner_user_id', $ownerId)
+            ->where('status', \App\Models\VacationNotice::STATUS_PENDING)
+            ->orderBy('intended_move_out_date')
+            ->get();
+
+        // ── Reported deposit settlements awaiting the owner's response (outrank notices) ──
+        $data['disputedSettlements'] = \App\Models\DepositSettlement::with(['tenant.user'])
+            ->where('owner_user_id', $ownerId)
+            ->where('status', \App\Models\DepositSettlement::STATUS_DISPUTED)
+            ->whereNull('owner_responded_at')
+            ->latest('id')
+            ->get();
+
+        // ── Acknowledged notices at/near move-out: prompt the owner to CLOSE (never auto-closed) ──
+        $data['readyToClose'] = app(\App\Services\VacationNoticeService::class)->readyToCloseForOwner($ownerId);
 
         return view('owner.dashboard')->with($data);
     }

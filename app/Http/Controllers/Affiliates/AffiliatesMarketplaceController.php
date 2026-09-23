@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use App\Models\User;
 use App\Models\Lead;
 use App\Models\LeadActivity;
+use Illuminate\Support\Facades\DB;
 
 class AffiliatesMarketplaceController extends Controller
 {
@@ -82,14 +83,25 @@ class AffiliatesMarketplaceController extends Controller
         // so no previous affiliate's identity is exposed.
         // Temperature is also preserved — it is a useful signal from prior work.
 
-        $lead->update([
-            'affiliate_id'         => auth()->id(),
-            'marketplace_status'   => 'claimed',
-            'claimed_at'           => now(),
-            'status'               => 'active',
-            'ownership_expires_at' => now()->addDays(Lead::OWNERSHIP_DURATION_DAYS),
-            'marketplace_cycles'   => ($lead->marketplace_cycles ?? 0) + 1,
-        ]);
+        // Atomic claim: the WHERE guards the flip so only ONE concurrent request
+        // can move this lead from 'marketplace' → 'claimed'. Prevents a double-claim
+        // race where two affiliates both pass the check above and both write.
+        $claimed = Lead::whereKey($lead->id)
+            ->where('marketplace_status', 'marketplace')
+            ->update([
+                'affiliate_id'         => auth()->id(),
+                'marketplace_status'   => 'claimed',
+                'claimed_at'           => now(),
+                'status'               => 'active',
+                'ownership_expires_at' => now()->addDays(Lead::OWNERSHIP_DURATION_DAYS),
+                'marketplace_cycles'   => DB::raw('COALESCE(marketplace_cycles, 0) + 1'),
+            ]);
+
+        if (! $claimed) {
+            return back()->with('error', 'This lead is no longer available — it may have just been claimed by another affiliate.');
+        }
+
+        $lead->refresh(); // reflect the claim for the activity log below
 
         // Log the claim under the new affiliate's name
         LeadActivity::create([

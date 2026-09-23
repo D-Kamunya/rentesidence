@@ -8,8 +8,9 @@ use App\Http\Requests\TenantDeleteRequest;
 use App\Http\Requests\TenantRequest;
 use App\Http\Requests\TenantEditRequest;
 use App\Models\Property;
+use App\Models\Tenant;
+use App\Services\InvoiceRecurringService;
 use App\Services\InvoiceTypeService;
-use App\Services\SmsMail\AdvantaSmsService;
 use App\Services\LocationService;
 use App\Services\PropertyService;
 use App\Services\TenantService;
@@ -48,6 +49,10 @@ class TenantController extends Controller
             if (getOption('app_card_data_show', 1) == 1) {
             $data['tenants'] = $this->tenantService->getActiveAll($request); // pass $request
             }
+            // "Needs attention" signals for the visible tenants — one batch (no N+1), for the cards.
+            $data['attention'] = isset($data['tenants'])
+                ? app(\App\Services\TenantAttentionService::class)->forTenants($data['tenants']->pluck('id')->all())
+                : [];
             if ($request->ajax()) {
             return response()->json([
                     'cards'      => view('owner.tenants.partials.cards', $data)->render(),
@@ -58,22 +63,140 @@ class TenantController extends Controller
         }
     }
 
-    public function sendLoginDets(Request $request)
+    /**
+     * Move-in "first invoice" modal — the amounts to offer for a just-assigned tenant's current
+     * period (full / pro-rated / custom / skip). Owner-scoped; returns null context when move-in
+     * invoicing doesn't apply (no monthly/yearly auto-setting), so the UI stays silent.
+     */
+    public function firstInvoicePreview(Request $request, $id)
     {
-        $data['tenants'] = $this->tenantService->getAllTenantsLogins();
-           // Loop through tenants and send SMS
-        foreach ($data['tenants'] as $tenant) {
-            $message = "Dear {$tenant->first_name}, Welcome to Centresidence Property Management Technologies! Here are your account details:";
-            $message .= " Email: {$tenant->email}";
-            $message .= " Password: 123456";
-            $message .= " Please use these to access your account on centresidence.com and update your information. For any questions, contact your agent Mr. Wanjohi at 0720847025. We will also be on your property tomorrow for any assistance";
-            try {
-                AdvantaSmsService::sendSms([$tenant->contact_number], $message, auth()->id());
-            } catch (\Exception $e) {
-                \Log::error("SMS sending failed for {$tenant->contact_number}: " . $e->getMessage());
-            }
+        $tenant = Tenant::with(['user', 'unit'])
+            ->where('owner_user_id', auth()->id())
+            ->find($id);
+        if (!$tenant) {
+            return $this->error([], __('Tenant not found.'));
         }
-        return response()->json(['message' => 'SMS sent to all tenants.']);
+
+        $context = app(InvoiceRecurringService::class)->firstInvoiceContext($tenant);
+        // Currency presentation so the modal renders amounts consistently with the rest of the app.
+        $data = [
+            'context'          => $context,        // null = not applicable → UI won't show the modal
+            'currency_symbol'  => getCurrencySymbol(),
+            'currency_placement' => getCurrencyPlacement(),
+        ];
+        return $this->success($data, '');
+    }
+
+    /**
+     * Persist the owner's move-in invoice choice. Idempotent by billing period (never double-bills).
+     * Interactive path only — bulk import keeps its own opening-balance flow.
+     */
+    public function firstInvoiceStore(Request $request, $id)
+    {
+        $request->validate([
+            'mode'            => 'required|in:full,prorate,custom,skip',
+            'custom_amount'   => 'nullable|numeric|min:1',
+            'include_deposit' => 'nullable|boolean',
+            'deposit_amount'  => 'nullable|numeric|min:1',
+        ]);
+
+        $tenant = Tenant::where('owner_user_id', auth()->id())->find($id);
+        if (!$tenant) {
+            return $this->error([], __('Tenant not found.'));
+        }
+
+        $depositAmount = $request->boolean('include_deposit') && $request->deposit_amount > 0
+            ? (float) $request->deposit_amount
+            : null;
+
+        $res = app(InvoiceRecurringService::class)->generateFirstInvoice(
+            $tenant,
+            $request->mode,
+            $request->mode === 'custom' ? (float) $request->custom_amount : null,
+            $depositAmount
+        );
+
+        return $res['ok']
+            ? $this->success(['invoice_id' => $res['invoice_id']], $res['message'])
+            : $this->error([], $res['message']);
+    }
+
+    /**
+     * Generate the FINAL pro-rated rent invoice at move-out, anchored to the tenant's active
+     * notice-to-vacate date. Owner-scoped; the service guards against double-billing.
+     */
+    public function finalInvoiceStore(Request $request, $id)
+    {
+        $tenant = Tenant::where('owner_user_id', auth()->id())->find($id);
+        if (!$tenant) {
+            return $this->error([], __('Tenant not found.'));
+        }
+        $notice = app(\App\Services\VacationNoticeService::class)->activeNotice((int) $id);
+        if (!$notice) {
+            return $this->error([], __('This tenant has no active notice to vacate.'));
+        }
+
+        $request->validate([
+            'mode'          => 'nullable|in:prorate,custom',
+            'custom_amount' => 'nullable|numeric|min:1',
+        ]);
+        $custom = ($request->mode === 'custom' && $request->custom_amount > 0) ? (float) $request->custom_amount : null;
+
+        $res = app(InvoiceRecurringService::class)->generateFinalInvoice($tenant, $notice->intended_move_out_date, $custom);
+
+        return $res['ok']
+            ? $this->success(['invoice_id' => $res['invoice_id'] ?? null], $res['message'])
+            : $this->error([], $res['message']);
+    }
+
+    /** Reset one tenant's password and re-send their login details over email + SMS. */
+    public function resendLogin(Request $request)
+    {
+        $request->validate(['id' => 'required|integer']);
+        $res = $this->tenantService->resendLogin($request->id);
+
+        // DEV ONLY: reveal the generated password in the owner UI so the flow can be tested
+        // locally before go-live. config('app.debug') is false in production, so this never leaks.
+        $devSuffix = ($res['ok'] && config('app.debug') && ! empty($res['password']))
+            ? ' — [DEV] ' . __('Password') . ': ' . $res['password']
+            : '';
+
+        if (! $res['ok']) {
+            return back()->with('error', $res['message']);
+        }
+
+        // A "sent, but SMS couldn't go" outcome takes the warning channel, so it reads as
+        // partially-done on the current page rather than a plain success.
+        if (! empty($res['warning'])) {
+            return back()->with('warning', $res['warning'] . $devSuffix);
+        }
+
+        return back()->with('success', $res['message'] . $devSuffix);
+    }
+
+    /** Send login details to every tenant who hasn't signed in yet (e.g. a bulk import that
+     *  wasn't notified at import time). Regenerates each password since the original is hashed. */
+    public function bulkResendLogins(Request $request)
+    {
+        $res = $this->tenantService->bulkResendLogins();
+
+        if (($res['count'] ?? 0) === 0) {
+            return back()->with('info', __('No tenants are waiting for login details — everyone has already signed in.'));
+        }
+
+        $message = trans_choice(
+            '{1}Login details queued for 1 tenant.|[2,*]Login details queued for :count tenants.',
+            $res['count'],
+            ['count' => $res['count']]
+        );
+
+        // Surface the SMS-shortfall warning on this page instead of a clean success, so the
+        // owner knows some texts were paused for lack of credits.
+        if (! empty($res['warning'])) {
+            return back()->with('warning', $message . ' ' . $res['warning']);
+        }
+
+        return back()->with('success', $message);
     }
 
     public function create()
@@ -119,6 +242,50 @@ class TenantController extends Controller
         return view('owner.tenants.edit', $data);
     }
 
+    /** In-place unit transfer — pick a vacant unit in the same property; surface standing invoices. */
+    public function transferForm($id)
+    {
+        $tenant = \App\Models\Tenant::where('owner_user_id', auth()->id())->findOrFail($id);
+        if ((int) $tenant->status !== TENANT_STATUS_ACTIVE) {
+            return redirect()->route('owner.tenant.details', $id)->with('error', __('Only an active tenant can be transferred.'));
+        }
+
+        $occupiedUnitIds = \App\Models\Tenant::where('property_id', $tenant->property_id)
+            ->where('status', TENANT_STATUS_ACTIVE)->pluck('unit_id')->all();
+
+        $data['tenant'] = $tenant->load('property', 'unit', 'user');
+        $data['vacantUnits'] = \App\Models\PropertyUnit::where('property_id', $tenant->property_id)
+            ->whereNotIn('id', $occupiedUnitIds)->orderBy('unit_name')->get();
+        $data['standingInvoices'] = \App\Models\Invoice::where('tenant_id', $tenant->id)
+            ->where('status', INVOICE_STATUS_PENDING)->latest()->get();
+        $data['outstandingTotal'] = (float) $data['standingInvoices']->sum('total');
+        $data['pageTitle'] = __('Transfer Tenant');
+
+        return view('owner.tenants.transfer', $data);
+    }
+
+    public function transferStore(Request $request, $id)
+    {
+        $request->validate([
+            'to_unit_id' => 'required|integer',
+            'note'       => 'nullable|string|max:1000',
+        ]);
+
+        $tenant = \App\Models\Tenant::where('owner_user_id', auth()->id())->findOrFail($id);
+        // The target unit must belong to one of the owner's properties (scoped via the tenant's property).
+        $newUnit = \App\Models\PropertyUnit::where('property_id', $tenant->property_id)
+            ->findOrFail($request->to_unit_id);
+
+        try {
+            $this->tenantService->transferUnit($tenant, $newUnit, $request->input('note'));
+        } catch (\Throwable $e) {
+            return back()->with('error', $e->getMessage());
+        }
+
+        return redirect()->route('owner.tenant.details', $id)
+            ->with('success', __('Tenant transferred to :unit. Any standing invoices remain on their account.', ['unit' => $newUnit->unit_name ?? ('#' . $newUnit->id)]));
+    }
+
     public function store(Request $request)
     {
          // Determine which validation rules to apply
@@ -154,6 +321,16 @@ class TenantController extends Controller
             $data['navTenantProfileActiveClass'] = 'active';
             $data['tenant'] = $this->tenantService->getDetailsById($id);
             $data['paymentDueInvoiceCount'] = count($this->tenantService->paymentDue($id));
+            // Pre-fill the Close-Tenant modal's refund/charge from a recorded deposit settlement (if any),
+            // so closing reflects the real ledger-backed figures instead of hand-typed guesses.
+            $data['depositSettlement'] = \App\Models\DepositSettlement::where('tenant_id', (int) $id)
+                ->where('owner_user_id', auth()->id())->latest('id')->first();
+            // "Ready to close" reminder for owners who arrived via the view channel (where the close
+            // dialog is NOT auto-opened) — a persistent banner pointing them at Close Tenant.
+            $data['readyToClose'] = app(\App\Services\TenantAttentionService::class)->forTenant($id)['ready_close'];
+            // Held deposit still unsettled (held drops out once settled) — drives a soft, non-blocking
+            // warning in the Close Tenant dialog so a deposit isn't accidentally orphaned on close.
+            $data['depositHeld'] = app(\App\Services\DepositService::class)->totalHeldForTenant((int) $id);
             return view('owner.tenants.details.profile', $data);
         } elseif ($request->tab == 'home') {
             $data['pageTitle'] = __('Home Details');
@@ -161,10 +338,23 @@ class TenantController extends Controller
             $data['tenant'] = $this->tenantService->getDetailsById($id);
             return view('owner.tenants.details.home', $data);
         } elseif ($request->tab == 'payment') {
-            $data['pageTitle'] = __('Payment Details');
+            $data['pageTitle'] = __('Payments & Deposit');
             $data['navTenantPaymentActiveClass'] = 'active';
             $data['tenant'] = $this->tenantService->getById($id);
             $data['invoiceTypes'] = $this->invoiceTypeService->getAll();
+            // Security deposit currently held for THIS tenancy (refundable — surfaced, not income).
+            $data['depositHeld'] = app(\App\Services\DepositService::class)->totalHeldForTenant((int) $id);
+            // The latest recorded deposit settlement (if any), so a settled deposit shows its outcome.
+            $data['depositSettlement'] = \App\Models\DepositSettlement::with('items')
+                ->where('tenant_id', (int) $id)->where('owner_user_id', auth()->id())
+                ->latest('id')->first();
+            // Any live notice-to-vacate the tenant has filed (surfaced for the owner to acknowledge).
+            $data['activeNotice'] = app(\App\Services\VacationNoticeService::class)->activeNotice((int) $id);
+            // Final-invoice preview (pro-rated to the notice's move-out date) — drives the modal + the
+            // "generate final invoice first" nudge in the settle modal.
+            $data['finalCtx'] = ($data['activeNotice'] && $data['tenant'])
+                ? app(InvoiceRecurringService::class)->finalInvoiceContext($data['tenant'], $data['activeNotice']->intended_move_out_date)
+                : null;
             if ($request->ajax()) {
                 return $this->tenantService->payment($id);
             }
@@ -173,6 +363,7 @@ class TenantController extends Controller
             $data['pageTitle'] = __('Document');
             $data['navTenantDocumentActiveClass'] = 'active';
             $data['tenant'] = $this->tenantService->getById($id);
+            $data['requests'] = app(\App\Services\KycConfigService::class)->getTenantRequests($id);
             return view('owner.tenants.details.document', $data);
         } elseif ($request->tab == 'closing-history') {
             $data['pageTitle'] = __('Closing History');
@@ -195,5 +386,15 @@ class TenantController extends Controller
     public function delete(TenantDeleteRequest $request)
     {
         return $this->tenantService->delete($request);
+    }
+
+    /** Discard a half-built draft (owner decided not to proceed, e.g. after screening). */
+    public function discardDraft(Request $request)
+    {
+        $request->validate(['id' => 'required|integer']);
+        $this->tenantService->discardDraft($request->id);
+
+        return redirect()->route('owner.tenant.index', ['type' => 'all'])
+            ->with('success', __('Tenant discarded. You can start again whenever you\'re ready.'));
     }
 }

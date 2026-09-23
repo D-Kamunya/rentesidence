@@ -105,7 +105,7 @@
                                 
                                 <div class="d-flex align-items-center gap-3 mb-3">
                                     @if($category->icon)
-                                    <span style="font-size: 24px;">{!! $category->icon !!}</span>
+                                    @include('common.partials.kb-icon', ['icon' => $category->icon, 'size' => 24])
                                     @endif
                                     <h3 style="font-size: 15px; font-weight: 600; color: #111827; margin: 0;">{{ $category->name }}</h3>
                                 </div>

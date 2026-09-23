@@ -10,14 +10,14 @@
 <div style="padding-top: 80px;">
     
 {{-- Hero Section with Search --}}
-<div style="background: linear-gradient(135deg, #E6F1FB 0%, #FFFFFF 50%, #E6F1FB 100%); border-bottom: 0.5px solid #e5e7eb; padding: 60px 0;">
-    <div class="container">
+<div style="position: relative; background: linear-gradient(180deg, rgba(11,17,26,.52) 0%, rgba(11,17,26,.60) 55%, rgba(11,17,26,.72) 100%), url('{{ asset('assets/images/frontend/hero-dusk.jpg') }}'); background-size: cover; background-position: center; border-bottom: 0.5px solid rgba(255,255,255,.08); padding: 96px 0;">
+    <div class="container" style="position: relative; z-index: 2;">
         <div class="row justify-content-center">
             <div class="col-lg-8 text-center">
-                <h1 style="font-size: 36px; font-weight: 600; color: #111827; margin-bottom: 12px;">
-                    Insights & Resources
+                <h1 style="font-size: 38px; font-weight: 700; color: #F5F2EC; margin-bottom: 12px; text-shadow: 0 2px 16px rgba(0,0,0,.45);">
+                    Insights &amp; Resources
                 </h1>
-                <p style="font-size: 16px; color: #6b7280; margin-bottom: 32px;">
+                <p style="font-size: 16.5px; color: #E4DED2; margin-bottom: 32px; text-shadow: 0 1px 10px rgba(0,0,0,.4);">
                     Expert tips, industry insights, and best practices for property management
                 </p>
                 
@@ -40,7 +40,7 @@
 
                 {{-- Popular Tags --}}
                 <div style="display: flex; flex-wrap: wrap; gap: 8px; justify-content: center;">
-                    <span style="font-size: 12px; color: #9ca3af; margin-right: 4px;">Popular:</span>
+                    <span style="font-size: 12px; color: #d5dbe4; margin-right: 4px; text-shadow: 0 1px 6px rgba(0,0,0,.4);">Popular:</span>
                     @php
                         $popularTags = ['Property Management', 'Investment', 'Maintenance', 'Technology', 'Marketing'];
                     @endphp

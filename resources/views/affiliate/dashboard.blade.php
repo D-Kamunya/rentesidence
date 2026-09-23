@@ -209,6 +209,37 @@
 
                     </div>
 
+                    {{-- How your owners earn you — every activity line, not just subscriptions --}}
+                    <div class="dash-card mb-4">
+                        <div class="dash-card__head d-flex align-items-center justify-content-between">
+                            <span style="font-weight:500;font-size:14px;">What your owners generated for you</span>
+                            <span style="font-size:12px;color:#9ca3af;">This month</span>
+                        </div>
+                        <div class="dash-card__body" style="padding:1.25rem 1.5rem;">
+                            <p style="margin:0 0 4px;font-size:13px;color:#6b7280;">Your owners generated</p>
+                            <p style="margin:0 0 2px;font-weight:700;font-size:26px;color:#111827;line-height:1.1;">
+                                Ksh {{ number_format($ownersGeneratedThisMonth, 2) }}
+                            </p>
+                            <p style="margin:0 0 16px;font-size:12px;color:#9ca3af;">
+                                for you this month — you earn from what your owners <em>do</em>, not just their plan. Keep them active and this grows.
+                            </p>
+                            <div style="display:flex;flex-direction:column;gap:8px;">
+                                @foreach($earningsBySource as $line)
+                                    @php $active = $line['amount'] > 0; @endphp
+                                    <div class="d-flex align-items-center justify-content-between"
+                                         style="padding:8px 0;border-bottom:0.5px solid #f3f4f6;">
+                                        <span style="font-size:13px;{{ $active ? 'color:#374151;font-weight:500;' : 'color:#9ca3af;' }}">
+                                            {{ $line['label'] }}
+                                        </span>
+                                        <span style="font-size:13px;font-variant-numeric:tabular-nums;{{ $active ? 'color:#111827;font-weight:600;' : 'color:#c5c9d1;' }}">
+                                            Ksh {{ number_format($line['amount'], 2) }}
+                                        </span>
+                                    </div>
+                                @endforeach
+                            </div>
+                        </div>
+                    </div>
+
                     {{-- Chart --}}
                     <div class="dash-card mb-4">
                         <div class="dash-card__head">

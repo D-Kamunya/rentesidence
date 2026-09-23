@@ -18,7 +18,13 @@ class TicketService
     {
         $data = Ticket::query()
             ->where('owner_user_id', auth()->id())
-            ->with('topic')
+            // Eager-load the source context surfaced on the cards (property / unit / raiser
+            // tenant) + attachments, so the owner sees where + who each ticket is from. Avoids
+            // N+1 across the card list.
+            // NOTE: don't column-constrain `user` — the views use its `name` accessor
+            // (first_name+last_name) and `image`, which aren't single real columns.
+            ->with(['topic', 'property:id,name', 'unit:id,unit_name', 'user', 'attachments'])
+            ->latest()
             ->get();
         return $data?->makeHidden(['created_at', 'updated_at', 'deleted_at']);
     }

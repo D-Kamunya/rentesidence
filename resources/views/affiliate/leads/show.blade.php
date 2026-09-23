@@ -239,6 +239,13 @@
                                                 <span style="font-size:11px;font-weight:500;text-transform:uppercase;letter-spacing:.05em;opacity:.75;">Demo</span>
                                                 <div style="font-weight:500;font-size:13px;">{{ $lead->demo_scheduled_at->format('d M Y, H:i') }}</div>
                                                 <div style="font-size:11px;opacity:.75;">{{ $lead->demo_scheduled_at->diffForHumans() }}</div>
+                                                @if($lead->demo_meeting_link && \Illuminate\Support\Str::startsWith($lead->demo_meeting_link, ['http://', 'https://']))
+                                                    <a href="{{ $lead->demo_meeting_link }}" target="_blank" rel="noopener noreferrer"
+                                                       style="font-size:11px;font-weight:500;color:#185FA5;text-decoration:none;display:inline-flex;align-items:center;gap:3px;margin-top:2px;">
+                                                        <svg width="10" height="10" viewBox="0 0 16 16" fill="none"><path d="M6.5 9.5l3-3M7 4h4a1 1 0 0 1 1 1v4M9 12H5a1 1 0 0 1-1-1V7" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                                                        Join link
+                                                    </a>
+                                                @endif
                                             </div>
                                         </div>
                                     @endif
@@ -551,7 +558,8 @@
                                                     <p class="ls-action-label">Schedule a Demo</p>
                                                     <form method="POST" action="{{ route('affiliate.leads.scheduleDemo', $lead) }}" class="d-flex gap-2 flex-wrap">
                                                         @csrf
-                                                        <input type="datetime-local" name="demo_date" class="lc-input" style="flex:1;min-width:180px;">
+                                                        <input type="datetime-local" name="demo_date" class="lc-input" style="flex:1;min-width:180px;" required>
+                                                        <input type="url" name="demo_meeting_link" class="lc-input" style="flex:1;min-width:220px;" placeholder="Meeting link (optional) — e.g. https://meet.google.com/…">
                                                         <button type="submit" class="ls-btn ls-btn--blue">
                                                             <svg width="13" height="13" viewBox="0 0 16 16" fill="none">
                                                                 <rect x="2" y="3" width="12" height="11" rx="2" stroke="currentColor" stroke-width="1.5"/>
@@ -1030,16 +1038,23 @@
                                         @endif
 
                                         <div class="ls-card__body">
-                                            @forelse($suggestions as $suggestion)
+                                            @forelse($suggestionData as $row)
                                                 @php
-                                                    // Use pre-loaded templates — zero extra queries
-                                                    $categoryTemplates    = $templatesByCategory->get($suggestion->category, collect());
-                                                    $whatsappTemplates    = $categoryTemplates->where('action_type', 'whatsapp')->values();
-                                                    $emailTemplates       = $categoryTemplates->where('action_type', 'email')->values();
-                                                    $callTemplates        = $categoryTemplates->where('action_type', 'call')->values();
+                                                    // Prepared in LeadController::show via SuggestionService::channelsFor
+                                                    // (per-channel template splitting + the engine-recommended channel) —
+                                                    // no collection filtering happens in the view.
+                                                    $suggestion        = $row['suggestion'];
+                                                    $whatsappTemplates = $row['whatsapp'];
+                                                    $emailTemplates    = $row['email'];
+                                                    $callTemplates     = $row['call'];
+                                                    $recommended       = $row['recommended'];
 
                                                     // Ownership guard — affiliate should only act on their own lead's suggestions
-                                                    $canAct = $lead->affiliate_id === auth()->id();
+                                                    $canAct = $canActOnLead;
+
+                                                    // Emphasis: the recommended channel leads; the others stay accessible
+                                                    // but de-emphasised (hybrid, not single-channel).
+                                                    $emphasis = fn($channel) => $channel === $recommended ? ' is-recommended' : ' is-secondary';
                                                 @endphp
 
                                                 <div class="ls-suggestion-item {{ $suggestion->priority === 'high' ? 'ls-suggestion-item--urgent' : '' }}"
@@ -1110,8 +1125,8 @@
 
                                                                 {{-- WhatsApp --}}
                                                                 @if($whatsappTemplates->count() === 1)
-                                                                    <a href="{{ route('affiliate.action.whatsapp', [$lead->id, $whatsappTemplates->first()->id]) }}"
-                                                                    class="ls-action-btn ls-action-btn--whatsapp">
+                                                                    <a href="{{ route('affiliate.action.whatsapp', [$lead->id, $whatsappTemplates->first()->id, 'suggestion' => $suggestion->id]) }}"
+                                                                    class="ls-action-btn ls-action-btn--whatsapp{{ $emphasis('whatsapp') }}">
                                                                         <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
                                                                             <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L0 24l6.304-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
                                                                         </svg>
@@ -1119,7 +1134,7 @@
                                                                     </a>
                                                                 @elseif($whatsappTemplates->count() > 1)
                                                                     <div class="ls-action-dropdown">
-                                                                        <button type="button" class="ls-action-btn ls-action-btn--whatsapp" onclick="toggleDropdown(this)">
+                                                                        <button type="button" class="ls-action-btn ls-action-btn--whatsapp{{ $emphasis('whatsapp') }}" onclick="toggleDropdown(this)">
                                                                             <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
                                                                                 <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L0 24l6.304-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
                                                                             </svg>
@@ -1130,7 +1145,7 @@
                                                                         </button>
                                                                         <div class="ls-dropdown-menu">
                                                                             @foreach($whatsappTemplates as $tmpl)
-                                                                                <a href="{{ route('affiliate.action.whatsapp', [$lead->id, $tmpl->id]) }}" class="ls-dropdown-item">
+                                                                                <a href="{{ route('affiliate.action.whatsapp', [$lead->id, $tmpl->id, 'suggestion' => $suggestion->id]) }}" class="ls-dropdown-item">
                                                                                     <div class="ls-dropdown-item__title">{{ $tmpl->name }}</div>
                                                                                     <div class="ls-dropdown-item__desc">{{ Str::limit($tmpl->description ?? 'WhatsApp template', 50) }}</div>
                                                                                 </a>
@@ -1141,8 +1156,8 @@
 
                                                                 {{-- Email --}}
                                                                 @if($emailTemplates->count() === 1)
-                                                                    <a href="{{ route('affiliate.action.email', [$lead->id, $emailTemplates->first()->id]) }}"
-                                                                    class="ls-action-btn ls-action-btn--email">
+                                                                    <a href="{{ route('affiliate.action.email', [$lead->id, $emailTemplates->first()->id, 'suggestion' => $suggestion->id]) }}"
+                                                                    class="ls-action-btn ls-action-btn--email{{ $emphasis('email') }}">
                                                                         <svg width="12" height="12" viewBox="0 0 16 16" fill="none">
                                                                             <rect x="2" y="4" width="12" height="9" rx="1.5" stroke="currentColor" stroke-width="1.5"/>
                                                                             <path d="M2 5l6 4 6-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
@@ -1151,7 +1166,7 @@
                                                                     </a>
                                                                 @elseif($emailTemplates->count() > 1)
                                                                     <div class="ls-action-dropdown">
-                                                                        <button type="button" class="ls-action-btn ls-action-btn--email" onclick="toggleDropdown(this)">
+                                                                        <button type="button" class="ls-action-btn ls-action-btn--email{{ $emphasis('email') }}" onclick="toggleDropdown(this)">
                                                                             <svg width="12" height="12" viewBox="0 0 16 16" fill="none">
                                                                                 <rect x="2" y="4" width="12" height="9" rx="1.5" stroke="currentColor" stroke-width="1.5"/>
                                                                                 <path d="M2 5l6 4 6-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
@@ -1163,7 +1178,7 @@
                                                                         </button>
                                                                         <div class="ls-dropdown-menu">
                                                                             @foreach($emailTemplates as $tmpl)
-                                                                                <a href="{{ route('affiliate.action.email', [$lead->id, $tmpl->id]) }}" class="ls-dropdown-item">
+                                                                                <a href="{{ route('affiliate.action.email', [$lead->id, $tmpl->id, 'suggestion' => $suggestion->id]) }}" class="ls-dropdown-item">
                                                                                     <div class="ls-dropdown-item__title">{{ $tmpl->name }}</div>
                                                                                     <div class="ls-dropdown-item__desc">{{ Str::limit($tmpl->description ?? 'Email template', 50) }}</div>
                                                                                 </a>
@@ -1175,8 +1190,8 @@
                                                                 {{-- Call — script view if template exists, direct dial if not --}}
                                                                 @if($callTemplates->count() === 1)
                                                                     {{-- Has script: go to call blade first, activity logged when they actually dial --}}
-                                                                    <a href="{{ route('affiliate.action.call.view', [$lead->id, $callTemplates->first()->id]) }}"
-                                                                    class="ls-action-btn ls-action-btn--call">
+                                                                    <a href="{{ route('affiliate.action.call.view', [$lead->id, $callTemplates->first()->id, 'suggestion' => $suggestion->id]) }}"
+                                                                    class="ls-action-btn ls-action-btn--call{{ $emphasis('call') }}">
                                                                         <svg width="12" height="12" viewBox="0 0 16 16" fill="none">
                                                                             <path d="M3.5 1h3l1.5 3.5-2 1.5a9 9 0 0 0 4 4l1.5-2L15 9.5v3a2 2 0 0 1-2 2A12 12 0 0 1 1 3a2 2 0 0 1 2-2z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
                                                                         </svg>
@@ -1186,7 +1201,7 @@
                                                                 @elseif($callTemplates->count() > 1)
                                                                     {{-- Multiple scripts: dropdown, all go to call blade first --}}
                                                                     <div class="ls-action-dropdown">
-                                                                        <button type="button" class="ls-action-btn ls-action-btn--call" onclick="toggleDropdown(this)">
+                                                                        <button type="button" class="ls-action-btn ls-action-btn--call{{ $emphasis('call') }}" onclick="toggleDropdown(this)">
                                                                             <svg width="12" height="12" viewBox="0 0 16 16" fill="none">
                                                                                 <path d="M3.5 1h3l1.5 3.5-2 1.5a9 9 0 0 0 4 4l1.5-2L15 9.5v3a2 2 0 0 1-2 2A12 12 0 0 1 1 3a2 2 0 0 1 2-2z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
                                                                             </svg>
@@ -1197,7 +1212,7 @@
                                                                         </button>
                                                                         <div class="ls-dropdown-menu">
                                                                             @foreach($callTemplates as $tmpl)
-                                                                                <a href="{{ route('affiliate.action.call.view', [$lead->id, $tmpl->id]) }}" class="ls-dropdown-item">
+                                                                                <a href="{{ route('affiliate.action.call.view', [$lead->id, $tmpl->id, 'suggestion' => $suggestion->id]) }}" class="ls-dropdown-item">
                                                                                     <div class="ls-dropdown-item__title">{{ $tmpl->name }}</div>
                                                                                     <div class="ls-dropdown-item__desc">{{ Str::limit($tmpl->description ?? 'Call script', 50) }}</div>
                                                                                 </a>
@@ -1206,8 +1221,8 @@
                                                                     </div>
                                                                 @else
                                                                     {{-- No script: goes through controller, logs activity immediately --}}
-                                                                    <a href="{{ route('affiliate.action.call', $lead->id) }}"
-                                                                    class="ls-action-btn ls-action-btn--call">
+                                                                    <a href="{{ route('affiliate.action.call', ['lead' => $lead->id, 'suggestion' => $suggestion->id]) }}"
+                                                                    class="ls-action-btn ls-action-btn--call{{ $emphasis('call') }}">
                                                                         <svg width="12" height="12" viewBox="0 0 16 16" fill="none">
                                                                             <path d="M3.5 1h3l1.5 3.5-2 1.5a9 9 0 0 0 4 4l1.5-2L15 9.5v3a2 2 0 0 1-2 2A12 12 0 0 1 1 3a2 2 0 0 1 2-2z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
                                                                         </svg>
@@ -1672,6 +1687,40 @@
         .ls-action-btn--call { background: #374151; color: #fff; border-color: #1f2937; }
         .ls-action-btn--call:hover { background: #1f2937; color: #fff; box-shadow: 0 4px 12px rgba(55, 65, 81, 0.3); }
 
+        /* ── Channel emphasis ────────────────────────────────────
+           The engine recommends ONE channel per suggestion. It leads
+           (full colour + a "Suggested" tag); the other channels stay
+           fully clickable but recede to a ghost style, so the affiliate
+           is nudged without being boxed in (hybrid, not single-channel). */
+        .ls-action-btn.is-recommended {
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.14);
+            outline: 2px solid rgba(255, 255, 255, 0.6);
+            outline-offset: -3px;
+        }
+        .ls-action-btn.is-recommended::after {
+            content: "Suggested";
+            font-size: 9px;
+            font-weight: 600;
+            letter-spacing: .02em;
+            text-transform: uppercase;
+            padding: 1px 6px;
+            margin-left: 4px;
+            border-radius: 99px;
+            background: rgba(255, 255, 255, 0.22);
+            color: inherit;
+        }
+        .ls-action-btn.is-secondary {
+            background: #fff !important;
+            color: #6b7280 !important;
+            border-color: #e5e7eb !important;
+            box-shadow: none;
+        }
+        .ls-action-btn.is-secondary:hover {
+            color: #111827 !important;
+            border-color: #d1d5db !important;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06);
+        }
+
         /* ── Dropdown ────────────────────────────────────────── */
         .ls-action-dropdown {
             position: relative;
@@ -2019,6 +2068,37 @@
             white-space: pre-wrap;
             border-top: 0.5px solid #e5e7eb;
             background: #fff;
+        }
+        /* ══════════════════════════════════════════════════════
+           RESPONSIVE
+           The page content sits in a padded white box
+           (.page-content-wrapper.p-30). On phones that 30px of side
+           padding — plus flex rows that never wrapped — crushed the
+           suggestion chips into tall narrow columns (e.g. "Expires 12
+           hours from now" stacking one word per line). Let the chip rows
+           wrap, and trim the box + card padding on small screens so the
+           inner content actually gets the width.
+           ══════════════════════════════════════════════════════ */
+        .ls-card__head,
+        .ls-suggestion-header { flex-wrap: wrap; }
+
+        @media (max-width: 640px) {
+            /* (The box padding itself is trimmed globally in the affiliate layout.) */
+            .ls-card__head     { padding: .7rem .85rem; }
+            .ls-card__body     { padding: .85rem; }
+            .ls-suggestion-item { padding: .8rem; }
+
+            /* Chips flow onto their own lines instead of squeezing. */
+            .ls-suggestion-header { gap: 6px; row-gap: 6px; }
+            .ls-time-badge        { margin-left: 0 !important; } /* drop the desktop push-right */
+
+            /* Channel buttons fill the row (2-up, wrapping) instead of stranding
+               on tiny widths — works for both single buttons and dropdown wrappers. */
+            .ls-action-buttons { width: 100%; }
+            .ls-action-buttons > .ls-action-btn,
+            .ls-action-buttons > .ls-action-dropdown { flex: 1 1 40%; }
+            .ls-action-buttons > .ls-action-btn      { justify-content: center; }
+            .ls-action-dropdown > .ls-action-btn     { width: 100%; justify-content: center; }
         }
     </style>
 

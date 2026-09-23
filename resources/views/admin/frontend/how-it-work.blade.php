@@ -5,6 +5,8 @@
         <div class="page-content">
             <div class="container-fluid">
                 <div class="page-content-wrapper bg-white p-30 radius-20">
+                    @include('centresidence._design')
+
                     <div class="row">
                         <div class="col-12">
                             <div
@@ -28,7 +30,7 @@
                         <div class="row">
                             @include('admin.setting.sidebar')
                             <div class="col-md-12 col-lg-12 col-xl-8 col-xxl-9">
-                                <div class="account-settings-rightside bg-off-white theme-border radius-4 p-25">
+                                <div class="account-settings-rightside cs-card cs-card--pad cs-controls">
                                     <div class="currency-settings-page-area">
                                         <div class="account-settings-content-box">
                                             <div class="account-settings-title border-bottom mb-20 pb-20">
@@ -45,7 +47,7 @@
                                                 </div>
                                             </div>
                                             <div class="currency-list-table-area">
-                                                <div class="bg-off-white theme-border radius-4 p-25">
+                                                <div class="pt-2">
                                                     <table id="allDataTable"
                                                         class="table bg-off-white theme-border p-20 dt-responsive">
                                                         <thead>
@@ -70,7 +72,7 @@
                                                                         @else
                                                                             <div
                                                                                 class="status-btn status-btn-orange font-13 radius-4">
-                                                                                {{ __('Deactivate') }}</div>
+                                                                                {{ __('Inactive') }}</div>
                                                                         @endif
                                                                     </td>
                                                                     <td>
@@ -113,7 +115,7 @@
         </div>
     </div>
 
-    <div class="modal fade" id="addModal" tabindex="-1" aria-labelledby="addModalLabel" aria-hidden="true">
+    <div class="modal fade cs-modal" id="addModal" tabindex="-1" aria-labelledby="addModalLabel" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content">
                 <div class="modal-header">
@@ -154,7 +156,7 @@
                                         class="label-text-title color-heading font-medium mb-2">{{ __('Status') }}</label>
                                     <select name="status" class="form-select flex-shrink-0">
                                         <option value="1">{{ __('Active') }}</option>
-                                        <option value="0">{{ __('Deactivate') }}</option>
+                                        <option value="0">{{ __('Inactive') }}</option>
                                     </select>
                                 </div>
                             </div>
@@ -172,7 +174,7 @@
         </div>
     </div>
 
-    <div class="modal fade" id="editModal" tabindex="-1" aria-labelledby="editModalLabel" aria-hidden="true">
+    <div class="modal fade cs-modal" id="editModal" tabindex="-1" aria-labelledby="editModalLabel" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content">
                 <div class="modal-header">
@@ -214,7 +216,7 @@
                                         class="label-text-title color-heading font-medium mb-2">{{ __('Status') }}</label>
                                     <select name="status" class="form-select flex-shrink-0">
                                         <option value="1">{{ __('Active') }}</option>
-                                        <option value="0">{{ __('Deactivate') }}</option>
+                                        <option value="0">{{ __('Inactive') }}</option>
                                     </select>
                                 </div>
                             </div>

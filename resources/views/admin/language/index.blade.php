@@ -5,6 +5,8 @@
         <div class="page-content">
             <div class="container-fluid">
                 <div class="page-content-wrapper bg-white p-30 radius-20">
+                    @include('centresidence._design')
+
                     <div class="row">
                         <div class="col-12">
                             <div
@@ -26,7 +28,7 @@
                         <div class="row">
                             @include('admin.setting.sidebar')
                             <div class="col-md-12 col-lg-12 col-xl-8 col-xxl-9">
-                                <div class="account-settings-rightside bg-off-white theme-border radius-4 p-25">
+                                <div class="account-settings-rightside cs-card cs-card--pad cs-controls">
                                     <div class="language-settings-page-area">
                                         <div class="account-settings-content-box">
                                             <div class="account-settings-title border-bottom mb-20 pb-20">
@@ -45,7 +47,7 @@
                                                 </div>
                                             </div>
                                             <div class="language-list-table-area">
-                                                <div class="bg-off-white theme-border radius-4 p-25">
+                                                <div class="pt-2">
                                                     <table id="allDataTable"
                                                         class="table bg-off-white theme-border p-20 dt-responsive">
                                                         <thead>
@@ -142,7 +144,7 @@
     </div>
 
     {{-- modal  --}}
-    <div class="modal fade" id="addLanguageModal" tabindex="-1" aria-labelledby="addLanguageModalLabel" aria-hidden="true">
+    <div class="modal fade cs-modal" id="addLanguageModal" tabindex="-1" aria-labelledby="addLanguageModalLabel" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content">
                 <form action="{{ route('admin.language.store') }}" method="POST" enctype="multipart/form-data"
@@ -195,7 +197,7 @@
                                         class="label-text-title color-heading font-medium mb-2">{{ __('Status') }}</label>
                                     <select class="form-select flex-shrink-0" name="status">
                                         <option value="1">{{ __('Active') }}</option>
-                                        <option value="0">{{ __('Deactivate') }}</option>
+                                        <option value="0">{{ __('Inactive') }}</option>
                                     </select>
                                 </div>
                                 <div class="col-md-6 mb-25">
@@ -240,7 +242,7 @@
             </div>
         </div>
     </div>
-    <div class="modal fade" id="editLanguageModal" tabindex="-1" aria-labelledby="editLanguageModalLabel"
+    <div class="modal fade cs-modal" id="editLanguageModal" tabindex="-1" aria-labelledby="editLanguageModalLabel"
         aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content">
@@ -291,7 +293,7 @@
                                         class="label-text-title color-heading font-medium mb-2">{{ __('Status') }}</label>
                                     <select class="form-select flex-shrink-0" name="status">
                                         <option value="1">{{ __('Active') }}</option>
-                                        <option value="0">{{ __('Deactivate') }}</option>
+                                        <option value="0">{{ __('Inactive') }}</option>
                                     </select>
                                 </div>
                                 <div class="col-md-6 mb-25">

@@ -138,6 +138,10 @@ class NoticeBoardService
             $unit = PropertyUnit::find($noticeboard->unit_id);
             $noticeboard->unit_name = $unit->unit_name;
         }
+        // The `image` accessor always falls back to a no-image.jpg placeholder when no file
+        // was attached, so the view modal must decide from this real flag (not the URL)
+        // whether an attachment exists — otherwise it shows a Download link to the placeholder.
+        $noticeboard->has_attachment = (bool) $noticeboard->fileAttach;
         $noticeboard->image = $noticeboard->image;
         return $noticeboard?->makeHidden(['created_at', 'updated_at', 'deleted_at']);
     }

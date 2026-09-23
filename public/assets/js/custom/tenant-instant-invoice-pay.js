@@ -1,30 +1,8 @@
 "use strict";
 
-var timerInterval;
-function showMpesaPreloader() {
-    let countdown = 120; // 2 minutes (in seconds)
-    const timerElement = document.getElementById("mpesa-timer");
-    document.getElementById("mpesa-preloader").style.display = "block";
-    // Start countdown
-    timerInterval = setInterval(() => {
-        let minutes = Math.floor(countdown / 60);
-        let seconds = countdown % 60;
-        timerElement.textContent = `${minutes}:${
-            seconds < 10 ? "0" + seconds : seconds
-        }`;
-
-        if (countdown <= 0) {
-            clearInterval(timerInterval);
-        }
-
-        countdown--;
-    }, 1000);
-}
-
-function hideMpesaPreloader() {
-    clearInterval(timerInterval);
-    document.getElementById("mpesa-preloader").style.display = "none";
-}
+// Shared STK waiting overlay (common.partials.mpesa-stk-waiting).
+function showMpesaPreloader(amount) { if (window.mpesaWait) mpesaWait.show(amount ? { amount: amount } : {}); }
+function hideMpesaPreloader() { if (window.mpesaWait) mpesaWait.hide(); }
 
 $("#instantPayBtn").on("click", function () {
     var number = $("#mpesa_number").val();

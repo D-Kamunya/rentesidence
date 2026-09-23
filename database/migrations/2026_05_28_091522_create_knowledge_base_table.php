@@ -17,7 +17,7 @@ return new class extends Migration
             $table->text('description')->nullable();
             // Which audience sees this category
             // values: 'owners', 'affiliates', 'both'
-            $table->enum('audience', ['owners', 'affiliates', 'both'])->default('both');
+            $table->enum('audience', ['owners', 'affiliates', 'both', 'finance_partners'])->default('both');
             $table->unsignedInteger('sort_order')->default(0);
             $table->boolean('is_active')->default(true);
             $table->timestamps();
@@ -49,7 +49,7 @@ return new class extends Migration
 
             // Who can see this article
             // values: 'owners', 'affiliates', 'both'
-            $table->enum('audience', ['owners', 'affiliates', 'both'])->default('both');
+            $table->enum('audience', ['owners', 'affiliates', 'both', 'finance_partners'])->default('both');
 
             // published | draft | archived
             $table->enum('status', ['published', 'draft', 'archived'])->default('draft');

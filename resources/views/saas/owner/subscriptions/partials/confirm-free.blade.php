@@ -270,6 +270,16 @@
 <script>
 (function () {
 
+    // Billing cycle (Monthly/Yearly) is irrelevant for free & transaction plans — hide the
+    // toggle while this confirmation is shown. Target the ALWAYS-present #monthly-yearly-button
+    // and walk up to its row (works even if the page HTML predates the #planBillingToggleRow id).
+    var _sw  = document.getElementById('monthly-yearly-button');
+    var _billingToggle = document.getElementById('planBillingToggleRow')
+        || (_sw ? _sw.closest('.d-flex') : null);
+    // NB: the row carries Bootstrap's .d-flex (display:flex !important), so a plain
+    // style.display='none' is overridden — must set it !important to win.
+    if (_billingToggle) _billingToggle.style.setProperty('display', 'none', 'important');
+
     // ─────────────────────────────────────────────────────────────
     // Point definitions
     // ─────────────────────────────────────────────────────────────
@@ -286,6 +296,12 @@
             svg: '<circle cx="5.5" cy="5.5" r="4.5" stroke="currentColor" stroke-width="1.4"/><path d="M5.5 4V6.5M5.5 7.5v.5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>',
             title: 'Usage limits apply',
             desc:  'This plan has caps on properties, tenants, and invoices. You can upgrade at any time.'
+        },
+        {
+            icon: 'purple',
+            svg: '<path d="M2 9V2.5A.5.5 0 0 1 2.5 2h4L9 4.5V9a.5.5 0 0 1-.5.5h-6A.5.5 0 0 1 2 9Z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/><path d="M6 2v2.5h2.5" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/>',
+            title: 'e-Sign agreements included',
+            desc:  'Send up to 10 tenancy agreements a month for secure e-signature, free — top up credits to send more.'
         },
         {
             icon: 'green',
@@ -438,6 +454,7 @@
 
     // Back -> reload plan list into the modal
     document.getElementById('cfmBackBtn').addEventListener('click', function () {
+        if (_billingToggle) _billingToggle.style.display = ''; // restore the billing toggle
         commonAjax(
             'GET',
             document.getElementById('chooseAPanRoute').value,

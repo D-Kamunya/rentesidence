@@ -78,6 +78,21 @@
 
                                 {{-- Body --}}
                                 <div class="tk-card__body">
+                                    {{-- Source: which property/unit + which tenant raised it, so the
+                                         owner sees at a glance WHERE and WHO the ticket is from. --}}
+                                    <div class="tk-card__source">
+                                        <span class="tk-src" title="{{ __('Property / Unit') }}">
+                                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none"><path d="M3 21h18M5 21V8l7-5 7 5v13M10 21v-6h4v6" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                                            {{ $ticket->property->name ?? __('—') }}@if($ticket->unit)<span class="tk-src__sep">·</span>{{ $ticket->unit->unit_name }}@endif
+                                        </span>
+                                        @if($ticket->user)
+                                        <span class="tk-src tk-src--who" title="{{ __('Raised by') }}">
+                                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none"><path d="M20 21a8 8 0 0 0-16 0M12 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8z" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                                            {{ $ticket->user->name }}
+                                        </span>
+                                        @endif
+                                    </div>
+
                                     <div class="tk-card__field">
                                         <span class="tk-card__field-label">{{ __('Title') }}</span>
                                         <p class="tk-card__field-value">{{ Str::limit($ticket->title, 30, '...') }}</p>
@@ -112,21 +127,14 @@
 
                                 {{-- Footer CTA --}}
                                 <div class="tk-card__footer">
-                                    @if (in_array($ticket->status, [TICKET_STATUS_OPEN, TICKET_STATUS_INPROGRESS, TICKET_STATUS_RESOLVED]))
-                                        <a href="{{ route('owner.ticket.details', $ticket->id) }}"
-                                           class="tk-card__cta"
-                                           title="{{ __('Details') }}">
-                                            {{ __('View Details') }}
-                                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none"><polyline points="9 18 15 12 9 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                                        </a>
-                                    @else
-                                        <a href="{{ route('owner.ticket.details', $ticket->id) }}"
-                                           class="tk-card__cta tk-card__cta--closed"
-                                           title="{{ __('Close') }}">
-                                            {{ __('View Details') }}
-                                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none"><polyline points="9 18 15 12 9 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                                        </a>
-                                    @endif
+                                    {{-- "View Details" is a neutral action (status is shown by the badge above),
+                                         so it's always the on-brand blue CTA — no status-based red variant. --}}
+                                    <a href="{{ route('owner.ticket.details', $ticket->id) }}"
+                                       class="tk-card__cta"
+                                       title="{{ __('View Details') }}">
+                                        {{ __('View Details') }}
+                                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none"><polyline points="9 18 15 12 9 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                                    </a>
                                 </div>
 
                             </div>
@@ -277,6 +285,14 @@
     letter-spacing:.07em; color:var(--gray-400);
 }
 .tk-card__field-value { font-size:13px; color:var(--gray-700); font-weight:500; margin:0; line-height:1.5; }
+.tk-card__source { display:flex; flex-wrap:wrap; gap:6px; margin-bottom:2px; }
+.tk-src { display:inline-flex; align-items:center; gap:5px; max-width:100%;
+    font-size:11.5px; font-weight:500; color:#0C447C; background:#E6F1FB;
+    border:0.5px solid #B5D4F4; border-radius:99px; padding:3px 10px;
+    white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.tk-src svg { flex:none; }
+.tk-src__sep { margin:0 5px; opacity:.5; }
+.tk-src--who { color:#374151; background:#F3F4F6; border-color:#E5E7EB; }
 .tk-card__field-value--muted { color:var(--gray-500); font-weight:400; }
 
 /* Attachments */
@@ -304,9 +320,7 @@
     color:var(--blue); text-decoration:none;
     transition:background .15s, color .15s;
 }
-.tk-card__cta:hover { background:var(--blue); color:var(--white); }
-.tk-card__cta--closed { color:var(--red); }
-.tk-card__cta--closed:hover { background:var(--red); color:var(--white); }
+.tk-card__cta:hover { background:var(--blue); color:var(--white) !important; }
 
 /* ── Badges ───────────────────────────────────────────────────── */
 .ow-badge {

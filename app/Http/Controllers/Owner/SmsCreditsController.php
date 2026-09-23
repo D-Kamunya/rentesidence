@@ -6,7 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Jobs\RetrySmsJob;
 use App\Models\Owner;
 use App\Models\SmsHistory;
-use App\Models\SmsCreditTransaction;
+use App\Models\OwnerCreditTransaction;
 use App\Services\Sms\SmsCreditsService;
 use Illuminate\Http\Request;
 
@@ -14,14 +14,17 @@ class SmsCreditsController extends Controller
 {
     public function index()
     {
-        $owner   = Owner::where('user_id', auth()->id())->firstOrFail();
-        $balance = $owner->sms_credits;
+        $owner    = Owner::where('user_id', auth()->id())->firstOrFail();
+        $balance  = $owner->sms_credits;
+        $creditPools = SmsCreditsService::breakdown(auth()->id()); // granted (resets) + purchased (kept)
 
-        $transactions = SmsCreditTransaction::where('owner_user_id', auth()->id())
+        $transactions = OwnerCreditTransaction::where('owner_user_id', auth()->id())
+            ->where('bucket', 'sms')
             ->latest()
             ->paginate(15, ['*'], 'tx_page');
 
-        $stats = SmsCreditTransaction::where('owner_user_id', auth()->id())
+        $stats = OwnerCreditTransaction::where('owner_user_id', auth()->id())
+            ->where('bucket', 'sms')
             ->selectRaw("
                 SUM(CASE WHEN type = 'deduct'   AND status = 'success' THEN quantity ELSE 0 END) as total_sent,
                 SUM(CASE WHEN status = 'failed'                         THEN quantity ELSE 0 END) as total_failed,
@@ -31,10 +34,10 @@ class SmsCreditsController extends Controller
 
         $failedMessages = SmsCreditsService::getRetryableFailed(auth()->id(), 30);
         $pricePerSms    = (float) getOption('sms_credit_price', 1.00);
-        $lowThreshold   = (int)   getOption('sms_low_credit_threshold', 50);
+        $lowThreshold   = (int)   getOption('sms_low_credit_threshold', 30);
 
         return view('owner.sms-credits.index', compact(
-            'balance', 'transactions', 'stats',
+            'balance', 'creditPools', 'transactions', 'stats',
             'failedMessages', 'pricePerSms', 'lowThreshold'
         ));
     }
@@ -49,6 +52,13 @@ class SmsCreditsController extends Controller
             ->where('error', 'Insufficient SMS credits')
             ->firstOrFail();
 
+        // Don't let a retry fire while credits are still depleted — it would just
+        // fail again and re-log. Require at least one credit (the UI hides the
+        // button too, but guard server-side regardless).
+        if (SmsCreditsService::balance(auth()->id()) < 1) {
+            return back()->with('error', __('Top up your SMS credits first — retrying now would just fail again.'));
+        }
+
         RetrySmsJob::dispatch($record->id, auth()->id());
 
         return back()->with('success', __('SMS queued for retry.'));
@@ -62,13 +72,25 @@ class SmsCreditsController extends Controller
             return back()->with('info', __('No failed messages to retry.'));
         }
 
-        foreach ($failed as $record) {
+        $balance = SmsCreditsService::balance(auth()->id());
+        if ($balance < 1) {
+            return back()->with('error', __('Top up your SMS credits first — retrying now would just fail again.'));
+        }
+
+        // Only queue as many as the current balance can actually send, so the
+        // overflow doesn't immediately re-fail. The rest wait for the next top-up.
+        $toRetry = $failed->take($balance);
+        foreach ($toRetry as $record) {
             RetrySmsJob::dispatch($record->id, auth()->id());
         }
 
-        return back()->with('success', __(
-            ':count messages queued for retry.',
-            ['count' => $failed->count()]
-        ));
+        $queued    = $toRetry->count();
+        $remaining = $failed->count() - $queued;
+
+        $message = $remaining > 0
+            ? __(':queued message(s) queued for retry. Top up to retry the remaining :remaining.', ['queued' => $queued, 'remaining' => $remaining])
+            : __(':count message(s) queued for retry.', ['count' => $queued]);
+
+        return back()->with('success', $message);
     }
 }

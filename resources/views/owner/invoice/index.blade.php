@@ -74,12 +74,26 @@
                                 </svg>
                                 {{ __('Group reminder') }}
                             </button>
-                            <button type="button" class="ow-btn ow-btn--primary" id="add" title="{{ __('New Invoice') }}">
-                                <svg width="13" height="13" viewBox="0 0 24 24" fill="none">
-                                    <path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-                                </svg>
-                                {{ __('New invoice') }}
-                            </button>
+                            @if(!empty($infraReadonly))
+                                {{-- Infra bill overdue → invoicing is paused. Point the owner
+                                     to settle it rather than letting them fill a form that the
+                                     readonly gate will reject on submit. --}}
+                                <a href="{{ route('owner.subscription.index') }}" class="ow-btn ow-btn--primary"
+                                   style="opacity:.7;" title="{{ __('Settle your infrastructure bill to create invoices') }}">
+                                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none">
+                                        <rect x="4" y="10" width="16" height="11" rx="2" stroke="currentColor" stroke-width="1.8"/>
+                                        <path d="M8 10V7a4 4 0 0 1 8 0v3" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+                                    </svg>
+                                    {{ __('Settle to invoice') }}
+                                </a>
+                            @else
+                                <button type="button" class="ow-btn ow-btn--primary" id="add" title="{{ __('New Invoice') }}">
+                                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none">
+                                        <path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                                    </svg>
+                                    {{ __('New invoice') }}
+                                </button>
+                            @endif
                         </div>
                     </div>
 
@@ -612,6 +626,11 @@
                                 </tbody>
                             </table>
                         </div>
+                        {{-- Audit: caretaker-confirmed cash payments are attributed so a wrong one is traceable. --}}
+                        <p id="ipvConfirmedBy" style="display:none;margin:10px 0 0;font-size:12px;color:#92400E;background:#FEF3E7;border:0.5px solid #F5D9A8;border-radius:8px;padding:8px 12px;">
+                            <span style="font-weight:600;">{{ __('Cash confirmed by caretaker:') }}</span>
+                            <span class="ipvConfirmedByName"></span>
+                        </p>
                     </div>
 
                     {{-- Footer --}}
@@ -647,6 +666,17 @@
                                 <div class="col-md-12">
                                     <label class="ow-label">{{ __('Message') }}</label>
                                     <textarea class="form-control ow-input" name="body" placeholder="{{ __('Write your reminder message…') }}" rows="4"></textarea>
+                                </div>
+                                <div class="col-md-12 mt-3">
+                                    <label style="display:flex;align-items:flex-start;gap:10px;cursor:pointer;margin:0;">
+                                        <input type="checkbox" name="send_sms" value="1" style="margin-top:3px;flex:none;">
+                                        <span>
+                                            <span style="font-weight:500;color:#111827;">{{ __('Also send an SMS reminder') }}</span>
+                                            <span style="display:block;font-size:12px;color:#6b7280;margin-top:2px;">
+                                                {{ __('A secure, system-written text with a pay link — you can\'t edit its wording. Uses 1 SMS credit, at most once every 24 hours per invoice.') }}
+                                            </span>
+                                        </span>
+                                    </label>
                                 </div>
                             </div>
                         </div>
@@ -922,7 +952,11 @@
     .ow-badge--bank    { background:#EEEDFE; color:#534AB7; border:0.5px solid #CECBF6; }
 
     /* ── Row action buttons ──────────────────────────────────── */
-    .ow-row-actions { display:flex; align-items:center; justify-content:flex-end; gap:6px; flex-wrap:nowrap; }
+    /* Allow the button group to WRAP when the row is tight (it did on mobile only). With nowrap the
+       group forced a min-width of all-5-buttons; when the table couldn't fit that, the right-pinned
+       group overflowed LEFT onto the status/date column. Wrapping lets it drop to a second line
+       inside its own cell instead — no overlap at any width / invoice-label length. */
+    .ow-row-actions { display:flex; align-items:center; justify-content:flex-end; gap:6px; flex-wrap:wrap; }
 
     .ow-act {
         display:inline-flex; align-items:center; gap:4px;

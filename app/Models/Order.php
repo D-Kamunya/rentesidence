@@ -14,11 +14,22 @@ class Order extends Model
     
     public function invoice()
     {
-        return $this->hasOne(Invoice::class, 'order_id'); 
+        return $this->hasOne(Invoice::class, 'order_id');
+    }
+
+    public function user()
+    {
+        return $this->belongsTo(User::class, 'user_id');
     }
 
     public function gateway()
     {
         return $this->belongsTo(Gateway::class, 'gateway_id');
+    }
+
+    /** The caretaker (maintainer) who confirmed this cash payment, if any — audit attribution. */
+    public function confirmedBy()
+    {
+        return $this->belongsTo(User::class, 'confirmed_by_user_id');
     }
 }

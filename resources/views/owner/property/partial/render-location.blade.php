@@ -693,71 +693,10 @@ setTimeout(function () {
         };
     }
  
-    // ── Address search ──────────────────────────────────────────
-    var searchBtn = document.getElementById('search-address-btn');
-    if (searchBtn) {
-        searchBtn.onclick = function () {
-            var query = (document.getElementById('address_search') || {}).value || '';
-            if (!query.trim()) {
-                if (typeof toastr !== 'undefined') toastr.warning('Please enter an address to search');
-                return;
-            }
- 
-            var btn = this;
-            btn.disabled = true;
-            var origHtml = btn.innerHTML;
-            btn.innerHTML =
-                '<span class="spinner-border spinner-border-sm" ' +
-                'style="width:12px;height:12px;"></span> Searching…';
- 
-            var controller = new AbortController();
-            var tid = setTimeout(function () { controller.abort(); }, 15000);
- 
-            // FIXED: Use the SEARCH endpoint (not reverse) with the query string
-            fetch(
-                'https://nominatim.openstreetmap.org/search?format=json&q=' +
-                encodeURIComponent(query) + '&limit=1&addressdetails=1',
-                { signal: controller.signal }
-            )
-            .then(function (r) { return r.json(); })
-            .then(function (data) {
-                clearTimeout(tid);
-                btn.disabled = false;
-                btn.innerHTML = origHtml;
- 
-                if (data && data.length > 0) {
-                    var result = data[0];
-                    var addr   = result.address || {};
-                    var c  = document.getElementById('country_input');
-                    var s  = document.getElementById('state_input');
-                    var ci = document.getElementById('city_input');
-                    var z  = document.getElementById('zip_input');
-                    var a  = document.getElementById('address_input');
- 
-                    if (c)  c.value  = addr.country || '';
-                    if (s)  s.value  = addr.state || addr.region || '';
-                    if (ci) ci.value = addr.city || addr.town || addr.village || '';
-                    if (z)  z.value  = addr.postcode || '';
-                    if (a)  a.value  = result.display_name || '';
- 
-                    updateMap(result.lat, result.lon);
-                    if (typeof toastr !== 'undefined') toastr.success('Location found!');
-                } else {
-                    if (typeof toastr !== 'undefined') toastr.error('No results found. Try a different search.');
-                }
-            })
-            .catch(function (err) {
-                clearTimeout(tid);
-                btn.disabled = false;
-                btn.innerHTML = origHtml;
-                var msg = err.name === 'AbortError'
-                    ? 'Search timed out. Please try again.'
-                    : 'Search failed. Please try again.';
-                if (typeof toastr !== 'undefined') toastr.error(msg);
-            });
-        };
-    }
- 
+    // ── Address search: handler is defined once, below (doNominatimSearch,
+    //    with retry). The earlier duplicate assignment was removed — onclick is
+    //    a property, so only the last binding ran anyway. ──────────────────
+
     // Enter key triggers search
     var addressSearch = document.getElementById('address_search');
     if (addressSearch) {

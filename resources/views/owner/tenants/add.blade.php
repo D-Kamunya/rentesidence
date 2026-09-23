@@ -285,17 +285,20 @@
     .ten-input-group {
         display: flex;
         gap: 0;
+        flex-wrap: nowrap; /* never let the number input wrap away / collapse to its spinners */
     }
     .ten-input-group .ten-select {
         border-radius: 7px 0 0 7px;
         border-right: none;
         width: auto;
-        min-width: 100px;
+        min-width: 88px;
         flex-shrink: 0;
     }
     .ten-input-group .ten-input {
         border-radius: 0 7px 7px 0;
-        flex: 1;
+        flex: 1 1 auto;
+        min-width: 56px; /* floor so the typed amount is always visible next to the type select */
+        width: auto;
     }
 
     /* Datepicker */
@@ -658,6 +661,10 @@
                         <form class="ajax" action="{{ route('owner.tenant.store') }}" method="POST" data-handler="stepChange">
                             @csrf
                             <input type="hidden" name="step" class="d-none" value="1">
+                            {{-- Carries the tenant id once step 1 has created the draft, so going Back → Next
+                                 re-submits step 1 as an UPDATE (not a fresh create) and its own email/phone
+                                 don't collide with themselves. stepChange sets every input[name=id]. --}}
+                            <input type="hidden" name="id" value="">
 
                             <div class="ten-section">
                                 <div class="ten-section-title">{{ __('Tenant Information') }}</div>
@@ -727,8 +734,11 @@
                                         </div>
                                         <div class="col-md-6">
                                             <div class="ten-field">
-                                                <label class="ten-label">{{ __('Password') }} <span class="req">*</span></label>
-                                                <input type="password" name="password" class="ten-input form-control" placeholder="{{ __('Password') }}">
+                                                <label class="ten-label">{{ __('Password') }}</label>
+                                                <div style="padding:11px 12px;border:0.5px solid #d7e3f2;background:#F5F9FD;border-radius:8px;font-size:12px;color:#0C447C;line-height:1.45;display:flex;gap:7px;align-items:flex-start;">
+                                                    <i class="ri-shield-keyhole-line" style="margin-top:1px;"></i>
+                                                    <span>{{ __('Generated automatically and sent to the tenant by email & SMS. They set their own on first login.') }}</span>
+                                                </div>
                                             </div>
                                         </div>
                                     </div>
@@ -822,43 +832,10 @@
 
                     <!-- ====== FIELDSET 2: Screening & Home Details ====== -->
                     <fieldset>
-                        <!-- Tenant Screening (outside form, inside fieldset) -->
+                        <!-- Tenant Screening — cross-network objective lookup (Global Tenant ID) -->
                         <div class="ten-screening-section">
                             <div class="ten-section-title">{{ __('Tenant Screening') }}</div>
-                            @if(isset($tenant) && ($tenant->rent_payment_rating || $tenant->discipline_rating))
-                                <div class="ten-screening-row">
-                                    <span><strong>{{ __('Rent Payment Rating') }}:</strong></span>
-                                    <span>{{ $tenant->rent_payment_rating }}</span>
-                                    @if((int) $tenant->rent_payment_rating[0] >= 4)
-                                        <span class="ten-rating-badge good"><i class="ri-check-line"></i> Good</span>
-                                    @elseif((int) $tenant->rent_payment_rating[0] < 3)
-                                        <span class="ten-rating-badge warn"><i class="ri-alert-line"></i> Low</span>
-                                    @endif
-                                </div>
-                                <div class="ten-screening-row">
-                                    <span><strong>{{ __('Discipline Rating') }}:</strong></span>
-                                    <span>{{ $tenant->discipline_rating }}</span>
-                                    @if((int) $tenant->discipline_rating[0] >= 4)
-                                        <span class="ten-rating-badge good"><i class="ri-check-line"></i> Good</span>
-                                    @elseif((int) $tenant->discipline_rating[0] < 3)
-                                        <span class="ten-rating-badge warn"><i class="ri-alert-line"></i> Low</span>
-                                    @endif
-                                </div>
-                                @if((int) $tenant->rent_payment_rating[0] >= 4 || (int) $tenant->discipline_rating[0] >= 4)
-                                    <div class="ten-screening-alert positive">
-                                        <i class="ri-shield-check-line"></i>
-                                        <span><strong>Positive:</strong> This tenant is rated above average.</span>
-                                    </div>
-                                @endif
-                                @if((int) $tenant->rent_payment_rating[0] < 3 || (int) $tenant->discipline_rating[0] < 3)
-                                    <div class="ten-screening-alert caution">
-                                        <i class="ri-error-warning-line"></i>
-                                        <span><strong>Caution:</strong> This tenant is rated below average. Proceed with caution.</span>
-                                    </div>
-                                @endif
-                            @else
-                                <p class="ten-screening-none">There are no previous ratings available for this tenant. You may proceed with the unit allocation below.</p>
-                            @endif
+                            @include('owner.screening.partials.screen-modal', ['scmContext' => 'add'])
                         </div>
 
                         <form class="ajax" action="{{ route('owner.tenant.store') }}" method="POST" data-handler="stepChange">
@@ -949,13 +926,13 @@
                                     <div class="ten-inner-card">
                                         <div class="ten-inner-title">{{ __('Rent Information') }}</div>
                                         <div class="row">
-                                            <div class="col-md-6 col-lg-4 col-xl-3 col-xxl-2">
+                                            <div class="col-md-6 col-lg-4 col-xl-3">
                                                 <div class="ten-field">
                                                     <label class="ten-label">{{ __('General Rent') }} <span class="req">*</span></label>
                                                     <input type="number" step="any" class="ten-input form-control" id="general_rent" placeholder="{{ __('General Rent') }}" value="" name="general_rent">
                                                 </div>
                                             </div>
-                                            <div class="col-md-6 col-lg-4 col-xl-3 col-xxl-2">
+                                            <div class="col-md-6 col-lg-4 col-xl-3">
                                                 <div class="ten-field">
                                                     <label class="ten-label">{{ __('Security Deposit') }} <span class="req">*</span></label>
                                                     <div class="ten-input-group input-group custom-input-group">
@@ -967,7 +944,7 @@
                                                     </div>
                                                 </div>
                                             </div>
-                                            <div class="col-md-6 col-lg-4 col-xl-3 col-xxl-2">
+                                            <div class="col-md-6 col-lg-4 col-xl-3">
                                                 <div class="ten-field">
                                                     <label class="ten-label">{{ __('Late Fee') }} <span class="req">*</span></label>
                                                     <div class="ten-input-group input-group custom-input-group">
@@ -979,7 +956,7 @@
                                                     </div>
                                                 </div>
                                             </div>
-                                            <div class="col-md-6 col-lg-4 col-xl-3 col-xxl-2">
+                                            <div class="col-md-6 col-lg-4 col-xl-3">
                                                 <div class="ten-field">
                                                     <label class="ten-label">{{ __('Incident Receipt') }} <span class="req">*</span></label>
                                                     <input type="number" step="any" class="ten-input form-control" id="incident_receipt" placeholder="{{ __('Incident Receipt') }}" value="" name="incident_receipt">

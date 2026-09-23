@@ -121,6 +121,7 @@
                                             <option value="subscription">{{ __('Subscriptions') }}</option>
                                             <option value="rent">{{ __('Rent') }}</option>
                                             <option value="marketplace">{{ __('Marketplace') }}</option>
+                                            <option value="other">{{ __('Other') }}</option>
                                         </select>
                                     </div>
                                 </div>
@@ -133,17 +134,26 @@
                                                 <th>{{ __('Subscriptions') }}</th>
                                                 <th>{{ __('Rent') }}</th>
                                                 <th>{{ __('Marketplace') }}</th>
+                                                <th>{{ __('Other') }}</th>
                                                 <th>{{ __('Total Payout') }}</th>
                                                 <th>{{ __('Detail') }}</th>
                                             </tr>
                                         </thead>
                                         <tbody>
                                             @forelse($monthlySummaries as $row)
+                                            @php
+                                                // "Other" = usage lines (screening/agreement/financing/…): the total minus
+                                                // the three columns above, so the row's parts always sum to the Total.
+                                                $otherPayout = round($row->total_commission_payout
+                                                    - ($row->new_commission_payout + $row->recurring_commission_payout
+                                                       + $row->rent_commission_payout + $row->marketplace_commission_payout), 2);
+                                            @endphp
                                             <tr data-month="{{ $row->period_month }}"
                                                 data-year="{{ $row->period_year }}"
                                                 data-has-subscription="{{ $row->new_commission_payout + $row->recurring_commission_payout > 0 ? 'subscription' : '' }}"
                                                 data-has-rent="{{ $row->rent_commission_payout > 0 ? 'rent' : '' }}"
-                                                data-has-marketplace="{{ $row->marketplace_commission_payout > 0 ? 'marketplace' : '' }}">
+                                                data-has-marketplace="{{ $row->marketplace_commission_payout > 0 ? 'marketplace' : '' }}"
+                                                data-has-other="{{ $otherPayout > 0 ? 'other' : '' }}">
                                                 <td class="cmx-td-date">
                                                     {{ \Carbon\Carbon::createFromDate($row->period_year, $row->period_month, 1)->format('M Y') }}
                                                 </td>
@@ -171,6 +181,14 @@
                                                         <span class="cmx-na">—</span>
                                                     @endif
                                                 </td>
+                                                <td class="cmx-td-amount">
+                                                    @if($otherPayout > 0)
+                                                        KSh {{ number_format($otherPayout, 2) }}
+                                                        <span class="cmx-pill cmx-pill--marketplace">Other</span>
+                                                    @else
+                                                        <span class="cmx-na">—</span>
+                                                    @endif
+                                                </td>
                                                 <td class="cmx-td-amount cmx-td-amount--total">
                                                     KSh {{ number_format($row->total_commission_payout, 2) }}
                                                 </td>
@@ -186,7 +204,7 @@
                                             </tr>
                                             @empty
                                             <tr>
-                                                <td colspan="6" class="cmx-empty">
+                                                <td colspan="7" class="cmx-empty">
                                                     <div class="cmx-empty__icon">
                                                         <svg width="28" height="28" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="1.5"/></svg>
                                                     </div>
@@ -218,9 +236,11 @@
                                         <svg width="12" height="12" viewBox="0 0 24 24" fill="none"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
                                         <select id="cmxWithdrawalStatusFilter" class="cmx-filter-select">
                                             <option value="">{{ __('All Statuses') }}</option>
-                                            <option value="pending">{{ __('Pending') }}</option>
-                                            <option value="approved">{{ __('Approved') }}</option>
-                                            <option value="rejected">{{ __('Rejected') }}</option>
+                                            <option value="{{ AFFILIATE_WITHDRAWAL_PENDING }}">{{ __('Pending') }}</option>
+                                            <option value="{{ AFFILIATE_WITHDRAWAL_PROCESSING }}">{{ __('Processing') }}</option>
+                                            <option value="{{ AFFILIATE_WITHDRAWAL_APPROVED }}">{{ __('Approved') }}</option>
+                                            <option value="{{ AFFILIATE_WITHDRAWAL_FAILED }}">{{ __('Failed') }}</option>
+                                            <option value="{{ AFFILIATE_WITHDRAWAL_REJECTED }}">{{ __('Rejected') }}</option>
                                         </select>
                                     </div>
                                 </div>
@@ -252,35 +272,53 @@
                                                     <span class="cmx-mono">{{ $withdrawal->phone }}</span>
                                                 </td>
                                                 <td>
-                                                    @if($withdrawal->settlement_method === 'b2c')
-                                                        <span class="cmx-method-badge cmx-method-badge--mpesa">
-                                                            <img src="{{ asset('assets/images/gateway-icon/mpesa.jpg') }}" alt="M-Pesa" style="width:16px;height:16px;border-radius:4px;object-fit:cover;">
-                                                            M-Pesa B2C
-                                                        </span>
+                                                    @if(in_array($withdrawal->status, [AFFILIATE_WITHDRAWAL_APPROVED, AFFILIATE_WITHDRAWAL_PROCESSING, AFFILIATE_WITHDRAWAL_FAILED]))
+                                                        @if($withdrawal->settlement_method === 'b2c')
+                                                            <span class="cmx-method-badge cmx-method-badge--mpesa">
+                                                                <img src="{{ asset('assets/images/gateway-icon/mpesa.jpg') }}" alt="M-Pesa" style="width:16px;height:16px;border-radius:4px;object-fit:cover;">
+                                                                M-Pesa B2C
+                                                            </span>
+                                                        @else
+                                                            <span class="cmx-method-badge">{{ __('Manual') }}</span>
+                                                        @endif
                                                     @else
-                                                        <span class="cmx-method-badge">{{ __('Manual') }}</span>
+                                                        {{-- No payout initiated yet for pending/rejected. --}}
+                                                        <span class="cmx-method-badge" style="opacity:.55">—</span>
                                                     @endif
                                                 </td>
                                                 <td>
-                                                    <span class="cmx-status-badge cmx-status-badge--{{ $withdrawal->status }}">
-                                                        @if($withdrawal->status === AFFILIATE_WITHDRAWAL_PENDING)
+                                                    @php $cmxStatusClass = [AFFILIATE_WITHDRAWAL_PENDING=>'pending', AFFILIATE_WITHDRAWAL_PROCESSING=>'processing', AFFILIATE_WITHDRAWAL_APPROVED=>'approved', AFFILIATE_WITHDRAWAL_FAILED=>'failed', AFFILIATE_WITHDRAWAL_REJECTED=>'rejected'][$withdrawal->status] ?? 'pending'; @endphp
+                                                    <span class="cmx-status-badge cmx-status-badge--{{ $cmxStatusClass }}">
+                                                        @if($withdrawal->status == AFFILIATE_WITHDRAWAL_PENDING)
                                                             <svg width="12" height="12" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2"/><path d="M12 6v6l4 2" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
-                                                        @elseif($withdrawal->status === AFFILIATE_WITHDRAWAL_APPROVED)
+                                                            {{ __('Pending') }}
+                                                        @elseif($withdrawal->status == AFFILIATE_WITHDRAWAL_PROCESSING)
+                                                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none"><path d="M21 12a9 9 0 11-6.219-8.56" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+                                                            {{ __('Processing') }}
+                                                        @elseif($withdrawal->status == AFFILIATE_WITHDRAWAL_APPROVED)
                                                             <svg width="12" height="12" viewBox="0 0 24 24" fill="none"><path d="M22 11.08V12a10 10 0 11-5.93-9.14" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><polyline points="22 4 12 14.01 9 11.01" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                                                        @elseif($withdrawal->status === AFFILIATE_WITHDRAWAL_REJECTED)
+                                                            {{ __('Approved') }}
+                                                        @elseif($withdrawal->status == AFFILIATE_WITHDRAWAL_FAILED)
+                                                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2"/><line x1="12" y1="8" x2="12" y2="12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><line x1="12" y1="16" x2="12.01" y2="16" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+                                                            {{ __('Failed') }}
+                                                        @elseif($withdrawal->status == AFFILIATE_WITHDRAWAL_REJECTED)
                                                             <svg width="12" height="12" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2"/><line x1="15" y1="9" x2="9" y2="15" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><line x1="9" y1="9" x2="15" y2="15" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+                                                            {{ __('Rejected') }}
                                                         @endif
-                                                        {{ ucfirst($withdrawal->status) }}
                                                     </span>
                                                 </td>
                                                 <td class="cmx-td-date">
                                                     {{ $withdrawal->processed_at ? \Carbon\Carbon::parse($withdrawal->processed_at)->format('M d, Y H:i') : '—' }}
                                                 </td>
                                                 <td>
-                                                    @if($withdrawal->mpesa_reference)
-                                                        <span class="cmx-ref-badge" title="{{ $withdrawal->mpesa_reference }}">
+                                                    {{-- Show the M-Pesa RECEIPT (transaction_id), never the ConversationID
+                                                         (mpesa_reference): that reference authenticates the B2C result
+                                                         callback, so surfacing it to the beneficiary would let them forge
+                                                         a payout failure and reclaim their reserved balance. --}}
+                                                    @if($withdrawal->transaction_id)
+                                                        <span class="cmx-ref-badge" title="{{ $withdrawal->transaction_id }}">
                                                             <svg width="10" height="10" viewBox="0 0 24 24" fill="none" style="flex-shrink:0"><rect x="3" y="3" width="18" height="18" rx="3" stroke="currentColor" stroke-width="1.8"/><path d="M9 12l2 2 4-4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                                                            {{ Str::limit($withdrawal->mpesa_reference, 16) }}
+                                                            {{ Str::limit($withdrawal->transaction_id, 16) }}
                                                         </span>
                                                     @else
                                                         <span class="cmx-na">—</span>
@@ -423,6 +461,11 @@
                     {{ __('Marketplace') }}
                     <span class="cmx-detail-tab__count" id="cmxMarketCount">0</span>
                 </button>
+                <button class="cmx-detail-tab" data-tab="other">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="1.8"/><path d="M12 16v-4M12 8h.01" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+                    {{ __('Other') }}
+                    <span class="cmx-detail-tab__count" id="cmxOtherCount">0</span>
+                </button>
             </div>
 
             <div id="cmx-tab-subscription" class="cmx-detail-panel">
@@ -464,6 +507,20 @@
                     <tbody id="cmxMarketRows"></tbody>
                 </table>
                 <p class="cmx-detail-empty" id="cmxMarketEmpty" style="display:none;">{{ __('No marketplace commissions this month.') }}</p>
+            </div>
+
+            <div id="cmx-tab-other" class="cmx-detail-panel" style="display:none;">
+                <table class="cmx-detail-table">
+                    <thead><tr>
+                        <th>{{ __('Date') }}</th>
+                        <th>{{ __('Owner') }}</th>
+                        <th>{{ __('Source') }}</th>
+                        <th>{{ __('Rate') }}</th>
+                        <th>{{ __('Payout') }}</th>
+                    </tr></thead>
+                    <tbody id="cmxOtherRows"></tbody>
+                </table>
+                <p class="cmx-detail-empty" id="cmxOtherEmpty" style="display:none;">{{ __('No other commissions this month.') }}</p>
             </div>
         </div>
 
@@ -779,9 +836,11 @@
     padding:3px 10px; border-radius:99px;
     font-size:11px; font-weight:600; white-space:nowrap;
 }
-.cmx-status-badge--pending  { background:#FEF3C7; color:#92400E; }
-.cmx-status-badge--approved { background:var(--cmx-green-light); color:var(--cmx-green-dark); }
-.cmx-status-badge--rejected { background:var(--cmx-red-light); color:var(--cmx-red); }
+.cmx-status-badge--pending    { background:#FEF3C7; color:#92400E; }
+.cmx-status-badge--processing { background:var(--cmx-blue-light); color:var(--cmx-blue); }
+.cmx-status-badge--approved   { background:var(--cmx-green-light); color:var(--cmx-green-dark); }
+.cmx-status-badge--failed     { background:var(--cmx-red-light); color:var(--cmx-red); }
+.cmx-status-badge--rejected   { background:var(--cmx-red-light); color:var(--cmx-red); }
 
 .cmx-method-badge {
     display:inline-flex; align-items:center; gap:5px;
@@ -1217,6 +1276,15 @@
             });
         });
 
+        /* Deep-link a tab via ?tab=withdrawals (e.g. from a withdrawal notification) */
+        (function () {
+            var wanted = new URLSearchParams(window.location.search).get('tab');
+            if (wanted && /^[\w-]+$/.test(wanted)) {
+                var btn = document.querySelector('.cmx-tab-btn[data-tab="' + wanted + '"]');
+                if (btn) btn.click();
+            }
+        })();
+
         /* ═════════════════════════════════════════════════════
            COMMISSION SOURCE FILTER
            ═════════════════════════════════════════════════════ */
@@ -1228,7 +1296,8 @@
                     if (!val) { row.style.display = ''; return; }
                     var show = (val === 'subscription' && row.dataset.hasSubscription === 'subscription')
                             || (val === 'rent'         && row.dataset.hasRent         === 'rent')
-                            || (val === 'marketplace'  && row.dataset.hasMarketplace  === 'marketplace');
+                            || (val === 'marketplace'  && row.dataset.hasMarketplace  === 'marketplace')
+                            || (val === 'other'        && row.dataset.hasOther        === 'other');
                     row.style.display = show ? '' : 'none';
                 });
             });
@@ -1391,9 +1460,17 @@
         });
 
         function fmt(val) {
-            return 'KSh ' + parseFloat(val || 0).toLocaleString('en-KE', { 
-                minimumFractionDigits: 2, 
-                maximumFractionDigits: 2 
+            return 'KSh ' + parseFloat(val || 0).toLocaleString('en-KE', {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2
+            });
+        }
+
+        // Escape any value interpolated into innerHTML below — owner names are user-set,
+        // so rendering them raw would be a stored-XSS sink (owner → affiliate's browser).
+        function esc(s) {
+            return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
+                return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
             });
         }
 
@@ -1410,7 +1487,7 @@
                     data.subscription.forEach(function (r) {
                         subBody.innerHTML += '<tr>'
                             + '<td class="cmx-td-date">' + (r.date || '—') + '</td>'
-                            + '<td>' + (r.owner || '—') + '</td>'
+                            + '<td>' + esc(r.owner || '—') + '</td>'
                             + '<td><span class="cmx-type-badge cmx-type-badge--' + (r.type === 'New Client' ? 'new' : 'recurring') + '">' + (r.type || '—') + '</span></td>'
                             + '<td>' + fmt(r.subscription_amount) + '</td>'
                             + '<td>' + (r.rate || '—') + '%</td>'
@@ -1434,7 +1511,7 @@
                     data.rent.forEach(function (r) {
                         rentBody.innerHTML += '<tr>'
                             + '<td class="cmx-td-date">' + (r.date || '—') + '</td>'
-                            + '<td>' + (r.owner || '—') + '</td>'
+                            + '<td>' + esc(r.owner || '—') + '</td>'
                             + '<td>' + (r.rate || '—') + '%</td>'
                             + '<td style="font-weight:600;color:var(--cmx-green-dark)">' + fmt(r.commission_amount) + '</td>'
                             + '</tr>';
@@ -1456,7 +1533,7 @@
                     data.marketplace.forEach(function (r) {
                         marketBody.innerHTML += '<tr>'
                             + '<td class="cmx-td-date">' + (r.date || '—') + '</td>'
-                            + '<td>' + (r.owner || '—') + '</td>'
+                            + '<td>' + esc(r.owner || '—') + '</td>'
                             + '<td>' + (r.rate || '—') + '%</td>'
                             + '<td style="font-weight:600;color:var(--cmx-green-dark)">' + fmt(r.commission_amount) + '</td>'
                             + '</tr>';
@@ -1468,6 +1545,29 @@
             }
             var marketCount = document.getElementById('cmxMarketCount');
             if (marketCount) marketCount.textContent = data.marketplace ? data.marketplace.length : 0;
+
+            /* Other (usage lines — screening / agreement / financing / …) */
+            var otherBody  = document.getElementById('cmxOtherRows');
+            var otherEmpty = document.getElementById('cmxOtherEmpty');
+            if (otherBody) {
+                otherBody.innerHTML = '';
+                if (data.other && data.other.length) {
+                    data.other.forEach(function (r) {
+                        otherBody.innerHTML += '<tr>'
+                            + '<td class="cmx-td-date">' + (r.date || '—') + '</td>'
+                            + '<td>' + esc(r.owner || '—') + '</td>'
+                            + '<td>' + esc(r.source || '—') + '</td>'
+                            + '<td>' + (r.rate || '—') + '%</td>'
+                            + '<td style="font-weight:600;color:var(--cmx-green-dark)">' + fmt(r.commission_amount) + '</td>'
+                            + '</tr>';
+                    });
+                    if (otherEmpty) otherEmpty.style.display = 'none';
+                } else {
+                    if (otherEmpty) otherEmpty.style.display = 'block';
+                }
+            }
+            var otherCount = document.getElementById('cmxOtherCount');
+            if (otherCount) otherCount.textContent = data.other ? data.other.length : 0;
 
             /* Reset tabs to first */
             document.querySelectorAll('.cmx-detail-tab').forEach(function (t) { 

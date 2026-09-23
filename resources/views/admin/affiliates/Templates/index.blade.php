@@ -200,7 +200,7 @@
                                                     Edit
                                                 </a>
                                                 <form method="POST" action="{{ route('admin.templates.destroy', $t->id) }}" style="display:inline;"
-                                                      onsubmit="return confirm('Delete this template? This cannot be undone.')">
+                                                      data-cs-confirm="Delete this template? This cannot be undone." data-cs-confirm-tone="danger">
                                                     @csrf @method('DELETE')
                                                     <button type="submit" class="at-action-btn at-action-btn--delete">
                                                         <svg width="12" height="12" viewBox="0 0 16 16" fill="none">

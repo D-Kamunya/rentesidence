@@ -56,6 +56,33 @@ Route::group(['middleware' => ['auth:api']], function () {
 
 Route::post('payment/confirm', [MpesaController::class, 'MpesaPaymentConfirm'])->name('mpesa.payment.confirm');
 Route::post('v1/b2c/result',   [MpesaController::class, 'B2CResult'])->name('mpesa.b2c.result');
+Route::post('v1/b2c/timeout',  [MpesaController::class, 'B2CTimeout'])->name('mpesa.b2c.timeout');
+
+// Centresidence owner down-payment (partial financing) STK callback.
+Route::post('centresidence/down-payment/{facility}/callback', \App\Http\Controllers\Centresidence\DownPaymentCallbackController::class)
+    ->name('centresidence.down-payment.callback');
+
+// Centresidence partner remittance (M-Pesa B2B) result callback — confirms/fails a payout batch.
+Route::post('centresidence/remittance/{batch}/callback', \App\Http\Controllers\Centresidence\PartnerRemittanceCallbackController::class)
+    ->name('centresidence.remittance.callback');
+
+// Centresidence owner module-infrastructure bill (M-Pesa STK) callback — marks the bill paid.
+Route::post('centresidence/infra-bill/{owner}/callback', \App\Http\Controllers\Centresidence\InfraBillCallbackController::class)
+    ->name('centresidence.infra-bill.callback');
+
+// Centresidence tenant utility-token purchase (M-Pesa STK) callback — credits wallet units.
+Route::post('centresidence/token/{propertyModule}/{tenant}/callback', \App\Http\Controllers\Centresidence\TokenPurchaseCallbackController::class)
+    ->name('centresidence.token.callback');
+
+// Centresidence owner early-settlement payoff (M-Pesa STK) callback — completes the facility.
+Route::post('centresidence/settle/{facility}/callback', \App\Http\Controllers\Centresidence\SettleEarlyCallbackController::class)
+    ->name('centresidence.settle.callback');
+
+// Centresidence LoRaWAN inbound: ChirpStack HTTP integration posts device events
+// here (join → activate device, up → consumption drawdown, txack → downlink ack).
+// Fail-closed on the shared webhook secret (see ChirpStackUplinkController).
+Route::post('centresidence/chirpstack/uplink', \App\Http\Controllers\Centresidence\ChirpStackUplinkController::class)
+    ->name('centresidence.chirpstack.uplink');
 
 
 Route::match(array('GET', 'POST'), 'payment-subscription/verify', [PaymentSubscriptionController::class, 'verify']);

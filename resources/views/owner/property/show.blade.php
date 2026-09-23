@@ -334,7 +334,7 @@
     background:var(--gray-100); color:var(--gray-700);
     border:0.5px solid var(--gray-200);
 }
-.ps-btn--ghost:hover { background:var(--blue); color:var(--white); border-color:var(--blue); transform:translateY(-1px); }
+.ps-btn--ghost:hover { background:var(--blue); color:var(--white) !important; border-color:var(--blue); transform:translateY(-1px); }
 
 /* ── Hero ─────────────────────────────────────────────────────── */
 .ps-hero {

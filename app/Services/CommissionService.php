@@ -62,7 +62,62 @@ class CommissionService
     }
 
     /**
-     * Process commission for a completed product order.
+     * ESCROW — hold a paid order's proceeds with the platform. Called when the order is PAID:
+     * the owner is NOT credited yet (best-practice marketplace escrow), so a refund before
+     * delivery is trivial. Release happens on buyer-confirm or window-close via releaseSettlement().
+     * leaves legacy pre-escrow orders (already credited under the old immediate model) alone.
+     */
+    public function holdOnPayment(ProductOrder $order): void
+    {
+        if ($order->settlement_status === null && ! $this->alreadyCredited($order)) {
+            $order->forceFill(['settlement_status' => SETTLEMENT_STATUS_HELD])->save();
+
+            // Seller-side dispatch alert — fires exactly once here (the null→HELD transition is the
+            // single authoritative "paid & awaiting fulfilment" point across every payment path).
+            // Queued + self-contained; never let a notification failure disturb the money hold.
+            try {
+                \App\Jobs\SendSellerDispatchAlertJob::dispatch($order->id);
+            } catch (\Throwable $e) {
+                Log::error('Seller dispatch alert dispatch failed', ['order_id' => $order->id, 'error' => $e->getMessage()]);
+            }
+        }
+    }
+
+    /**
+     * ESCROW — release held proceeds to the owner: credit the wallet + book the platform/affiliate
+     * commission, exactly once, then stamp the order released. Delivery no longer releases directly;
+     * release happens when the buyer CONFIRMS receipt (fast-path) or the return window CLOSES
+     * (auto-release), so held funds cover an in-window refund with no clawback. A refunded or
+     * already-released order is a no-op. Legacy orders (settlement_status null) also release cleanly.
+     */
+    public function releaseSettlement(ProductOrder $order): ?WalletTransaction
+    {
+        if (in_array($order->settlement_status, [SETTLEMENT_STATUS_RELEASED, SETTLEMENT_STATUS_REFUNDED], true)) {
+            return null;
+        }
+
+        $wt = $this->processOrderCommission($order);
+
+        $order->forceFill([
+            'settlement_status'      => SETTLEMENT_STATUS_RELEASED,
+            'settlement_released_at' => now(),
+        ])->save();
+
+        return $wt;
+    }
+
+    /** Has this order already been credited to the owner's wallet? */
+    public function alreadyCredited(ProductOrder $order): bool
+    {
+        return WalletTransaction::where('product_order_id', $order->id)
+            ->where('type', 'credit')
+            ->where('transaction_source', 'marketplace')
+            ->exists();
+    }
+
+    /**
+     * Process commission for a completed product order — the RELEASE step (credit owner wallet
+     * net + book platform/affiliate commission). Called from releaseSettlement() on buyer-confirm / window-close.
      *
      * Owner resolution: products.owner_user_id = owners.id (primary key)
      * So we must do Owner::find() first to get the actual users.id.
@@ -71,6 +126,21 @@ class CommissionService
      */
     public function processOrderCommission(ProductOrder $order): WalletTransaction
     {
+        return DB::transaction(function () use ($order) {
+        // Serialize per-order so concurrent payment callbacks (an M-Pesa webhook retry racing
+        // the verify fallback / another caller) can't both credit: the second waits for the
+        // first, then finds the existing credit row and returns it. Makes the method genuinely
+        // idempotent regardless of caller — the counterpart to reverseOrderCommission().
+        \App\Models\ProductOrder::whereKey($order->id)->lockForUpdate()->first();
+
+        $existingCredit = WalletTransaction::where('product_order_id', $order->id)
+            ->where('type', 'credit')
+            ->where('transaction_source', 'marketplace')
+            ->first();
+        if ($existingCredit) {
+            return $existingCredit; // already processed — never double-credit
+        }
+
         // Resolve owner from the first order item's product
         $firstProduct = $order->orderItems->first()?->product;
         if (!$firstProduct) {
@@ -110,9 +180,10 @@ class CommissionService
             'description'        => "Marketplace sale — Order #{$order->order_id}",
         ]);
 
-        // ── Affiliate commission (category rate) ───────────────────
+        // ── Affiliate commission (a share of OUR commission, like rent) ──
         try {
-            app(\App\Services\AffiliateCommissionService::class)->handleMarketplaceCommission($order);
+            app(\App\Services\AffiliateCommissionService::class)
+                ->handleMarketplaceCommission($order, $breakdown['commission_amount']);
         } catch (\Exception $e) {
             Log::error('Affiliate marketplace commission failed', [
                 'order_id' => $order->id,
@@ -120,6 +191,204 @@ class CommissionService
             ]);
         }
         return $walletTransaction;
+        });
+    }
+
+    /**
+     * Reverse a marketplace sale's money when a refund is confirmed — the counter-entry to
+     * processOrderCommission. Debits the owner's wallet by the net they were credited and books a
+     * matching affiliate reversal. Idempotent (won't double-reverse). If the owner (or affiliate)
+     * has already WITHDRAWN those proceeds, the balance simply goes negative — a carried-forward
+     * clawback recovered from their future earnings; we never force-claw already-paid-out cash,
+     * but the books reconcile. Returns null if there was nothing to reverse.
+     */
+    public function reverseOrderCommission(ProductOrder $order): ?WalletTransaction
+    {
+        return DB::transaction(function () use ($order) {
+            $original = WalletTransaction::where('product_order_id', $order->id)
+                ->where('type', 'credit')
+                ->where('transaction_source', 'marketplace')
+                ->first();
+            if (! $original) {
+                return null; // never credited (e.g. unpaid) — nothing to reverse
+            }
+
+            // Idempotency: a reversal already exists for this order.
+            $alreadyReversed = WalletTransaction::where('product_order_id', $order->id)
+                ->where('type', 'refund')
+                ->exists();
+            if ($alreadyReversed) {
+                return null;
+            }
+
+            $wallet = OwnerWallet::find($original->owner_wallet_id);
+            if ($wallet) {
+                // May drive the balance negative if already withdrawn — recovered from future credits.
+                $wallet->decrement('balance', $original->net_amount);
+            }
+
+            // Store the counter-entry with NEGATIVE amounts so every report that SUMs
+            // wallet_transactions untyped (platform commission, GMV, per-owner commission) nets to
+            // zero for a refunded sale — otherwise a positive reversal row would DOUBLE-count our
+            // commission + GMV instead of reversing them.
+            $reversal = WalletTransaction::create([
+                'owner_wallet_id'    => $original->owner_wallet_id,
+                'product_order_id'   => $order->id,
+                'invoice_order_id'   => null,
+                'transaction_source' => 'marketplace',
+                'gross_amount'       => -1 * abs((float) $original->gross_amount),
+                'commission_rate'    => $original->commission_rate,
+                'commission_amount'  => -1 * abs((float) $original->commission_amount),
+                'net_amount'         => -1 * abs((float) $original->net_amount),
+                'type'               => 'refund',
+                'description'        => "Refund reversal — Order #{$order->order_id}",
+            ]);
+
+            // Reverse the affiliate's cut too (secondary — never block the owner reversal on it).
+            try {
+                app(\App\Services\AffiliateCommissionService::class)->reverseMarketplaceCommission($order);
+            } catch (\Throwable $e) {
+                Log::error('Affiliate marketplace reversal failed', ['order_id' => $order->id, 'error' => $e->getMessage()]);
+            }
+
+            return $reversal;
+        });
+    }
+
+    // ──────────────────────────────────────────────────────────
+    // MARKETPLACE REFUNDS (escrow-aware, admin-green-lit B2C to the buyer)
+    // ──────────────────────────────────────────────────────────
+
+    /**
+     * A refund is requested (buyer wants their money back, or the owner can't fulfil). This only
+     * QUEUES it for admin approval — money never moves without an admin green-light. Idempotent.
+     */
+    public function requestRefund(ProductOrder $order): void
+    {
+        if (in_array($order->refund_status, [REFUND_STATUS_PROCESSING, REFUND_STATUS_REFUNDED], true)) {
+            return; // already in-flight or done
+        }
+        $order->forceFill([
+            'payment_status' => PRODUCT_ORDER_STATUS_REFUND_PENDING,
+            'refund_status'  => REFUND_STATUS_REQUESTED,
+        ])->save();
+    }
+
+    /**
+     * ADMIN green-lights the refund → send the buyer their money back via M-Pesa B2C. The send is
+     * fired OUTSIDE any transaction (an accepted request must survive) and the order is left in
+     * `processing` until the async B2C ResultURL confirms (handleRefundResult). Retryable from a
+     * previously FAILED state. Returns ['ok'=>bool, 'message'=>string].
+     */
+    public function approveAndSendRefund(ProductOrder $order): array
+    {
+        if (! in_array($order->refund_status, [REFUND_STATUS_REQUESTED, REFUND_STATUS_FAILED], true)) {
+            return ['ok' => false, 'message' => __('This refund is not awaiting approval.')];
+        }
+
+        $buyer = \App\Models\User::find($order->user_id);
+        $phone = $buyer?->contact_number;
+        if (empty($phone)) {
+            return ['ok' => false, 'message' => __('The buyer has no M-Pesa phone number on file to refund to.')];
+        }
+
+        $amount = (float) $order->transaction_amount; // full gross the buyer paid
+        if ($amount <= 0) {
+            return ['ok' => false, 'message' => __('Nothing to refund on this order.')];
+        }
+
+        $result = app(\App\Services\Payment\MpesaB2CService::class)
+            ->send($phone, $amount, 'Marketplace refund #' . $order->order_id, 'MarketplaceRefund');
+
+        if (! ($result['success'] ?? false)) {
+            $order->forceFill(['refund_status' => REFUND_STATUS_FAILED])->save();
+            return ['ok' => false, 'message' => $result['message'] ?? __('The refund payout could not be initiated.')];
+        }
+
+        $order->forceFill([
+            'refund_status'    => REFUND_STATUS_PROCESSING,
+            'refund_reference' => $result['reference'] ?? null,
+            'refund_amount'    => $amount,
+        ])->save();
+
+        return ['ok' => true, 'message' => __('Refund payout initiated — awaiting M-Pesa confirmation.')];
+    }
+
+    /**
+     * Async B2C ResultURL outcome for a refund. Idempotent — only a `processing` refund transitions,
+     * so a re-fired Safaricom callback is a no-op. On success we finalize (reverse the owner ledger
+     * only if the proceeds were already RELEASED — a held order was never credited, so nothing to
+     * claw back); on failure we mark FAILED for admin retry.
+     */
+    public function handleRefundResult(ProductOrder $order, bool $success, ?string $receipt = null): void
+    {
+        if ($order->refund_status !== REFUND_STATUS_PROCESSING) {
+            return;
+        }
+
+        if (! $success) {
+            $order->forceFill(['refund_status' => REFUND_STATUS_FAILED])->save();
+            return;
+        }
+
+        // Reverse the owner/platform/affiliate ledger ONLY if proceeds were released (or a legacy
+        // order was credited under the old immediate model). A held order was never credited.
+        $reversed = false;
+        if ($order->settlement_status === SETTLEMENT_STATUS_RELEASED || $this->alreadyCredited($order)) {
+            try {
+                $this->reverseOrderCommission($order);
+                $reversed = true;
+            } catch (\Throwable $e) {
+                Log::error('Refund ledger reversal failed', ['order_id' => $order->id, 'error' => $e->getMessage()]);
+            }
+        }
+
+        $order->forceFill([
+            'refund_status'     => REFUND_STATUS_REFUNDED,
+            'settlement_status' => SETTLEMENT_STATUS_REFUNDED,
+            'payment_status'    => PRODUCT_ORDER_STATUS_CANCELLED,
+            'order_status'      => ORDER_STATUS_CANCELLED,
+            'refund_reference'  => $receipt ?: $order->refund_reference,
+            'refunded_at'       => now(),
+        ])->save();
+
+        // Tell the buyer the money has actually landed.
+        try {
+            \App\Jobs\SendOrderStatusNotificationJob::dispatch(
+                $order,
+                (object) [
+                    'subject' => __('Refund completed for order #:id', ['id' => $order->order_id]),
+                    'title'   => __('Refund completed'),
+                    'message' => __('Your refund for order #:id has been sent to your M-Pesa. Thank you.', ['id' => $order->order_id]),
+                ],
+                (object) [
+                    'title' => __('Refund completed'),
+                    'body'  => __('Your refund for order #:id has been sent to your M-Pesa.', ['id' => $order->order_id]),
+                    'url'   => route('tenant.order.index'),
+                ],
+            );
+        } catch (\Throwable $e) {
+            Log::error('Refund completion notification failed', ['order_id' => $order->id, 'error' => $e->getMessage()]);
+        }
+
+        // If the owner had already been paid, their wallet was just clawed back — tell them, since
+        // it's a debit they didn't initiate at this moment (a held/unreleased order needs no notice).
+        if ($reversed) {
+            try {
+                $ownerRecord = \App\Models\Owner::find($order->orderItems->first()?->product?->owner_user_id);
+                if ($ownerRecord && $ownerRecord->user_id) {
+                    addNotification(
+                        __('Marketplace refund reversed'),
+                        __('A refund on order #:id was issued to the buyer, so its proceeds were reversed from your wallet.', ['id' => $order->order_id]),
+                        route('owner.order.index'),
+                        null,
+                        $ownerRecord->user_id,
+                    );
+                }
+            } catch (\Throwable $e) {
+                Log::error('Refund owner notification failed', ['order_id' => $order->id, 'error' => $e->getMessage()]);
+            }
+        }
     }
 
     // ──────────────────────────────────────────────────────────
@@ -149,10 +418,21 @@ class CommissionService
             throw new \Exception("Cannot process rent commission: owner user {$ownerUserId} not found for order #{$order->id}");
         }
 
-        // Flat 1% rent commission
+        // Flat 1% rent commission. This method is reached ONLY for transaction-
+        // mode owners: every call site gates on ownerIsTransactionModel($invoice)
+        // because only then does rent route to the Centresidence M-Pesa account
+        // where the fee is levied. The gate lives at checkout (the routing
+        // decision), NOT here — do not re-check the owner's current mode, which
+        // can change between checkout and the payment callback after the money
+        // has already landed in the company account.
         $grossAmount      = (float) $order->transaction_amount;
         $rate             = self::RENT_COMMISSION_RATE;
-        $commissionAmount = round($grossAmount * ($rate / 100), 2);
+        // The 1% applies to the RENT portion only. In transaction mode every tenant
+        // payment routes to the company account, but late fees, deposits and other
+        // charges are not commissionable — only rent is. A pure non-rent payment
+        // therefore carries zero commission and is credited to the owner in full.
+        $rentPortion      = min((float) $invoice->rentPortion(), $grossAmount);
+        $commissionAmount = round($rentPortion * ($rate / 100), 2);
         $netAmount        = round($grossAmount - $commissionAmount, 2);
 
         // Get or create wallet

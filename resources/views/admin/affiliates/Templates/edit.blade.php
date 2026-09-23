@@ -224,7 +224,7 @@
 
                                 <!-- Delete form -->
                                 <form method="POST" action="{{ route('admin.templates.destroy', $template->id) }}"
-                                    onsubmit="return confirm('Delete this template permanently?')">
+                                    data-cs-confirm="Delete this template permanently?" data-cs-confirm-tone="danger">
                                     @csrf
                                     @method('DELETE')
                                     <button type="submit" class="at-btn-danger">
@@ -299,6 +299,26 @@
     function handleTypeChange(input) {
         document.querySelectorAll('.at-type-btn').forEach(btn => btn.classList.remove('at-type-btn--active'));
         input.closest('.at-type-btn').classList.add('at-type-btn--active');
+    }
+
+    // The placeholder reference toggle + click-to-insert (was only defined on create,
+    // so on edit the "Available placeholders" panel never opened).
+    function togglePlaceholders() {
+        const body    = document.getElementById('placeholderBody');
+        const chevron = document.getElementById('placeholderChevron');
+        const isOpen  = body.style.display !== 'none';
+        body.style.display = isOpen ? 'none' : 'block';
+        chevron.style.transform = isOpen ? '' : 'rotate(180deg)';
+    }
+
+    function insertPlaceholder(tag) {
+        const textarea = document.querySelector('textarea[name="message_template"]');
+        if (!textarea) return;
+        const start = textarea.selectionStart, end = textarea.selectionEnd, value = textarea.value;
+        textarea.value = value.slice(0, start) + tag + value.slice(end);
+        const newPos = start + tag.length;
+        textarea.setSelectionRange(newPos, newPos);
+        textarea.focus();
     }
 </script>
 @endsection

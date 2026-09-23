@@ -1,3 +1,4 @@
+@include('common.layouts._kb-nav-style')
 <div class="vertical-menu">
     <div data-simplebar class="h-100">
         <!--- Sidemenu -->
@@ -22,8 +23,37 @@
                 <li>
                     <a href="{{ route('owner.order.index') }}" >
                         <i class="ri-bill-line"></i>
-                        <span>{{ __('Product Orders') }}</span>
+                        <span>{{ __('Product Orders') }}@include('partials.nav-count', ['n' => $navBadges['orders_dispatch'] ?? 0])</span>
                     </a>
+                </li>
+
+                <li>
+                    <a href="javascript: void(0);" class="has-arrow">
+                        <i class="ri-funds-line"></i>
+                        <span>{{ __('Financing') }}</span>
+                    </a>
+                    <ul class="sub-menu {{ @$navFinancingMMShowClass }}" aria-expanded="false">
+                        <li class="{{ @$subNavBrowseOffersMMActiveClass }}">
+                            <a href="{{ route('owner.financing.index') }}"
+                                class="{{ @$subNavBrowseOffersActiveClass }}">{{ __('Browse offers') }}</a>
+                        </li>
+                        <li class="{{ @$subNavMyFinancingMMActiveClass }}">
+                            <a href="{{ route('owner.financing.mine') }}"
+                                class="{{ @$subNavMyFinancingActiveClass }}">{{ __('My financing') }}</a>
+                        </li>
+                        <li class="{{ @$subNavRentDeductionsMMActiveClass }}">
+                            <a href="{{ route('owner.financing.deductions') }}"
+                                class="{{ @$subNavRentDeductionsActiveClass }}">{{ __('Rent & deductions') }}</a>
+                        </li>
+                        <li class="{{ @$subNavSiteSurveysMMActiveClass }}">
+                            <a href="{{ route('owner.financing.surveys') }}"
+                                class="{{ @$subNavSiteSurveysActiveClass }}">{{ __('Site surveys') }}</a>
+                        </li>
+                        <li class="{{ @$subNavMyDevicesMMActiveClass }}">
+                            <a href="{{ route('owner.devices.index') }}"
+                                class="{{ @$subNavMyDevicesActiveClass }}">{{ __('My devices') }}</a>
+                        </li>
+                    </ul>
                 </li>
 
                 <li>
@@ -65,9 +95,17 @@
                             <a href="{{ route('owner.tenant.index', ['type' => 'history']) }}"
                                 class="{{ @$subNavTenantHistoryActiveClass }}">{{ __('Tenant History') }}</a>
                         </li>
-                        <li class="{{ @$subNavTenantHistoryMMActiveClass }}">
+                        <li class="{{ @$subNavTenantApplicationMMActiveClass }}">
                             <a href="{{ route('owner.tenant.applications.index') }}"
-                                class="{{ @$subNavTenantHistoryActiveClass }}">{{ __('Tenant Applications') }}</a>
+                                class="{{ @$subNavTenantApplicationActiveClass }}">{{ __('Tenant Applications') }}@include('partials.nav-count', ['n' => $navBadges['applications'] ?? 0])</a>
+                        </li>
+                        <li class="{{ @$subNavDepositMMActiveClass }}">
+                            <a href="{{ route('owner.deposit.index') }}"
+                                class="{{ @$subNavDepositActiveClass }}">{{ __('Deposits Held') }}@include('partials.nav-count', ['n' => $navBadges['deposits_due'] ?? 0])</a>
+                        </li>
+                        <li class="{{ @$subNavScreeningMMActiveClass }}">
+                            <a href="{{ route('owner.screening.index') }}"
+                                class="{{ @$subNavScreeningActiveClass }}">{{ __('Screen a Tenant') }}</a>
                         </li>
                     </ul>
                 </li>
@@ -141,12 +179,12 @@
                 <li>
                     <a href="javascript: void(0);" class="has-arrow">
                         <i class="ri-account-circle-line"></i>
-                        <span>{{ __('Maintains') }}</span>
+                        <span>{{ __('Maintenance') }}</span>
                     </a>
                     <ul class="sub-menu" aria-expanded="false">
                         <li><a href="{{ route('owner.maintainer.index') }}">{{ __('Maintainers') }}</a></li>
                         <li><a
-                                href="{{ route('owner.maintenance-request.index') }}">{{ __('Maintenance Request') }}</a>
+                                href="{{ route('owner.maintenance-request.index') }}">{{ __('Maintenance Request') }}@include('partials.nav-count', ['n' => $navBadges['maintenance'] ?? 0])</a>
                         </li>
                     </ul>
                 </li>
@@ -155,7 +193,7 @@
                     <li>
                         <a href="{{ route('owner.ticket.index') }}">
                             <i class="ri-bookmark-2-line"></i>
-                            <span>{{ __('Tickets') }}</span>
+                            <span>{{ __('Tickets') }}</span>@include('partials.nav-count', ['n' => $navBadges['tickets'] ?? 0])
                         </a>
                     </li>
                 @endif
@@ -259,12 +297,6 @@
                         <span>{{ __('Wallet') }}</span>
                     </a>
                 </li>
-                <li>
-                    <a href="{{ route('owner.kb.index') }}">
-                        <i class="fa fa-book"></i>
-                        <span>{{ __('Knowledge Base') }}</span>
-                    </a>
-                </li>
                 @if (isAddonInstalled('PROTYSAAS') > 1)
                     <li>
                         <a href="{{ route('owner.subscription.index') }}">
@@ -273,6 +305,27 @@
                         </a>
                     </li>
                 @endif
+                {{-- Support — reach our team (reusable support rail). --}}
+                <li>
+                    <a href="{{ route('support.index') }}">
+                        <i class="ri-customer-service-2-line"></i>
+                        <span>{{ __('Support') }}@include('partials.nav-count', ['n' => $navBadges['support'] ?? 0])</span>
+                    </a>
+                </li>
+                {{-- Install app — the permanent home for the PWA prompt (auto-hides once installed). --}}
+                <li>
+                    <a href="#" data-cs-install onclick="return window.csPwaInstall ? (window.csPwaInstall(), false) : true;">
+                        <i class="ri-smartphone-line"></i>
+                        <span>{{ __('Install app') }}</span>
+                    </a>
+                </li>
+                {{-- Knowledge Base kept LAST — it's colour-highlighted, so links under it read as off. --}}
+                <li>
+                    <a href="{{ route('owner.kb.index') }}" class="kb-nav-highlight">
+                        <i class="fa fa-book"></i>
+                        <span>{{ __('Knowledge Base') }}</span>
+                    </a>
+                </li>
             </ul>
         </div>
         <!-- Sidebar -->

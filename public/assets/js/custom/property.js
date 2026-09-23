@@ -22,9 +22,6 @@ setInterval(function() {
 var thisStateSelector;
 var property_id = $("#property_id").val();
 var propertyUnitIds = [];
-var country_id;
-var state_id;
-var city_id;
 getPropertyInformation(property_id);
 
 // Response handler
@@ -320,80 +317,6 @@ function getRentChargeRes(response) {
 }
 
 // ────────────────────────────────────────────────────────
-// STATE & CITY (kept for any future dropdown use)
-// ────────────────────────────────────────────────────────
-$(document).on("change", ".country_id", function () {
-    thisStateSelector = $(this);
-    getStateByCountryId($(thisStateSelector).val());
-});
-
-function getStateByCountryId(country_id) {
-    var getStateListRoute = $("#getStateListRoute").val();
-    commonAjax(
-        "GET",
-        getStateListRoute,
-        getStateByCountryRes,
-        getStateByCountryRes,
-        { country_id: country_id }
-    );
-}
-
-function getStateByCountryRes(response) {
-    var states = response.data.states;
-    var optionsHtml = states
-        .map(function (opt) {
-            return (
-                "<option " +
-                (state_id == opt.id ? "selected" : "") +
-                ' value="' +
-                opt.id +
-                '">' +
-                opt.name +
-                "</option>"
-            );
-        })
-        .join("");
-    var html = '<option value="">--Select State--</option>' + optionsHtml;
-    $("#stateHtmlOption").html(html);
-    $("#cityHtmlOption").html('<option value="">--Select City--</option>');
-}
-
-$(document).on("change", ".state_id", function () {
-    thisStateSelector = $(this);
-    getCitiesByState($(thisStateSelector).val());
-});
-
-function getCitiesByState(state_id) {
-    var getCityListRoute = $("#getCityListRoute").val();
-    commonAjax(
-        "GET",
-        getCityListRoute,
-        getCitiesByStateRes,
-        getCitiesByStateRes,
-        { state_id: state_id }
-    );
-}
-
-function getCitiesByStateRes(response) {
-    var cities = response.data.cities;
-    var optionsHtml = cities
-        .map(function (opt) {
-            return (
-                "<option " +
-                (city_id == opt.id ? "selected" : "") +
-                ' value="' +
-                opt.id +
-                '">' +
-                opt.name +
-                "</option>"
-            );
-        })
-        .join("");
-    var html = '<option value="">--Select City--</option>' + optionsHtml;
-    $("#cityHtmlOption").html(html);
-}
-
-// ────────────────────────────────────────────────────────
 // UNIT EDIT & ADD
 // ────────────────────────────────────────────────────────
 $(document).on("click", ".unit-edit", function () {
@@ -427,6 +350,7 @@ function getDataEditRes(response) {
         document.getElementById("unit-image").setAttribute("src", domain + "/assets/images/no-image.jpg");
     }
     
+    selector.find(".edit-unit-name").text(response.data.unit.unit_name || "Unit");
     selector.find("input[name=property_id]").val(response.data.property.id);
     selector.find("input[name=unit_id]").val(response.data.unit.id);
     selector.find("input[name=unit_name]").val(response.data.unit.unit_name);
@@ -536,7 +460,7 @@ $(document).on("change", ".thumbnailImage", function () {
         fd.append("file", files[0]);
         commonAjax("POST", thumbnailImageRoute, getThumbnailImageRes, getThumbnailImageRes, fd);
     } else {
-        alert("Please select a file.");
+        (window.toastr ? toastr.error("Please select a file.") : (window.csAlert && csAlert("Please select a file.")));
     }
 });
 
@@ -715,7 +639,7 @@ document.addEventListener('click', function (e) {
                 button.closest('.existing-unit-image-box').remove();
             } else {
                 console.error("Error:", data);
-                alert("Server error!");
+                (window.toastr ? toastr.error("Server error!") : (window.csAlert && csAlert("Server error!")));
             }
         })
         .catch(err => console.error("Fetch error:", err));

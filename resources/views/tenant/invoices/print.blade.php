@@ -447,6 +447,15 @@
             </table>
         </div>
 
+        @if (!empty($confirmedBy))
+            {{-- Audit attribution: this cash payment was confirmed by a caretaker (maintainer). --}}
+            <div class="inv-section" style="padding-top:0;">
+                <p style="font-size:11.5px;color:#92400E;background:#FBF1E3;border:0.5px solid #F0DCB8;border-radius:8px;padding:8px 12px;margin:0;">
+                    <strong>{{ __('Cash payment confirmed by caretaker:') }}</strong> {{ $confirmedBy }}
+                </p>
+            </div>
+        @endif
+
         {{-- ── Footer ───────────────────────────────────────── --}}
         <div class="inv-footer">
             <span class="inv-footer__note">

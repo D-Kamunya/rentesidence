@@ -3,6 +3,7 @@
 use App\Http\Controllers\PaymentSubscriptionController;
 use App\Http\Controllers\Saas\Admin\ContactMessageController;
 use App\Http\Controllers\Saas\OwnerAuthController;
+use App\Http\Controllers\Saas\TenantSelfRegisterController;
 use App\Http\Controllers\Saas\SubscriptionController as SaasSubscriptionController;
 use App\Http\Controllers\Saas\Admin\CorePagesController;
 use App\Http\Controllers\Saas\Admin\FaqController;
@@ -22,6 +23,18 @@ Route::group(['middleware' => ['version.update', 'addon.update', 'isFrontend']],
     Route::get('owner-register', [OwnerAuthController::class, 'owner_register_form'])->name('owner.register.form');
     Route::post('owner-register', [OwnerAuthController::class, 'owner_register_store'])->name('owner.register.store');
 
+    // Tenant Helper self-signup — a FREE tenant with no (on-platform) landlord. Owners still can't
+    // self-register; tenants can (see controller). Throttled to blunt scripted account creation.
+    Route::get('join', [TenantSelfRegisterController::class, 'form'])->name('tenant.join');
+    Route::post('join', [TenantSelfRegisterController::class, 'store'])
+        ->middleware('throttle:8,60')->name('tenant.join.store');
+
+    // Become an affiliate — public application page (shareable link for prospects). Creates an
+    // application only; admin turns it into an account in one click.
+    Route::get('become-an-affiliate', [\App\Http\Controllers\Saas\AffiliateApplicationController::class, 'create'])->name('affiliate.apply');
+    Route::post('become-an-affiliate', [\App\Http\Controllers\Saas\AffiliateApplicationController::class, 'store'])
+        ->middleware('throttle:8,60')->name('affiliate.apply.store');
+
     // policy
     Route::get('terms-conditions', [FrontendController::class, 'termsConditions'])->name('terms-conditions');
     Route::get('privacy-policy', [FrontendController::class, 'privacyPolicy'])->name('privacy-policy');
@@ -32,7 +45,10 @@ Route::group(['middleware' => ['version.update', 'addon.update', 'isFrontend']],
 });
 
 Route::group(['prefix' => 'payment'], function () {
-    Route::post('/subscription', [PaymentSubscriptionController::class, 'checkout'])->name('payment.subscription.checkout');
+    // Subscription checkout is initiated only by an authenticated owner (the subscription
+    // modal) and uses auth()->id() internally — require auth so a guest can't POST here
+    // and spawn orphan subscription orders. The verify route stays public (STK redirect).
+    Route::post('/subscription', [PaymentSubscriptionController::class, 'checkout'])->middleware('auth')->name('payment.subscription.checkout');
     Route::match(array('GET', 'POST'), 'subscription/verify', [PaymentSubscriptionController::class, 'verify'])->name('payment.subscription.verify');
 });
 
@@ -52,6 +68,7 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'middleware' => ['auth', 'a
         Route::get('/', [ContactMessageController::class, 'index'])->name('index');
         Route::get('get-info', [ContactMessageController::class, 'getInfo'])->name('get.info'); 
         Route::post('reply', [ContactMessageController::class, 'reply'])->name('reply');
+        Route::post('{id}/create-owner', [ContactMessageController::class, 'createOwner'])->name('create-owner');
         Route::delete('/message/{id}', [ContactMessageController::class, 'destroy'])->name('destroy');
 
     });

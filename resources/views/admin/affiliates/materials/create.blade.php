@@ -96,7 +96,7 @@
                                         <div class="col-md-8">
                                             <div class="at-field">
                                                 <label class="at-label">Category</label>
-                                                <p class="at-field-hint">Used to match materials with lead temperature or stage.</p>
+                                                <p class="at-field-hint">A label to organise your materials. To actually send one, attach it to an outreach template on the Templates page.</p>
                                                 <input type="text" name="category" class="at-input"
                                                        value="{{ old('category') }}" placeholder="e.g. cold, warm, hot, intro, trial">
                                             </div>

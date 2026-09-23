@@ -9,12 +9,21 @@ use App\Models\AffiliateAcademyProgress;
 
 class AcademyController extends Controller
 {
+    /** Resolve the signed-in user's affiliate profile, or fail cleanly (no null crash). */
+    private function affiliateOrRedirect()
+    {
+        $affiliate = auth()->user()?->affiliate;
+        abort_unless($affiliate, 403, __('Your affiliate profile is not set up yet. Please contact support.'));
+
+        return $affiliate;
+    }
+
     /**
      * Show list of modules
      */
     public function index()
     {
-        $affiliate = auth()->user()->affiliate;
+        $affiliate = $this->affiliateOrRedirect();
 
         $modules = AcademyModule::where('is_active', true)
             ->orderBy('module_order')
@@ -30,7 +39,7 @@ class AcademyController extends Controller
      */
     public function show(AcademyModule $module, Request $request)
     {
-        $affiliate = auth()->user()->affiliate;
+        $affiliate = $this->affiliateOrRedirect();
     
         // Load all active modules
         $modules = AcademyModule::where('is_active', true)
@@ -86,7 +95,7 @@ class AcademyController extends Controller
      */
     public function submit(Request $request, AcademyModule $module)
     {
-        $affiliate = auth()->user()->affiliate;
+        $affiliate = $this->affiliateOrRedirect();
 
         $progress = AffiliateAcademyProgress::firstOrCreate([
             'affiliate_id' => $affiliate->id,
@@ -163,7 +172,7 @@ class AcademyController extends Controller
      */
     public function certificate()
     {
-        $affiliate = auth()->user()->affiliate;
+        $affiliate = $this->affiliateOrRedirect();
 
         $totalModules = AcademyModule::where('is_active', true)->count();
 

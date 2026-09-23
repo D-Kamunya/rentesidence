@@ -51,7 +51,9 @@ class OwnerSubscriptionOrderService
                 return $order->gatewayTitle;
             })
             ->addColumn('mpesa_transaction_code', function ($order) {
-                return $order->mpesa_transaction_code;
+                // STK-paid orders now carry the real receipt (saved from the callback); show a
+                // dash when there genuinely is none (bank/manual/free/pending) instead of blank.
+                return $order->mpesa_transaction_code ?: '—';
             })
             ->addColumn('status', function ($order) {
                 if ($order->payment_status == ORDER_PAYMENT_STATUS_PAID) {
@@ -135,7 +137,9 @@ class OwnerSubscriptionOrderService
                 return $order->gatewayTitle;
             })
             ->addColumn('mpesa_transaction_code', function ($order) {
-                return $order->mpesa_transaction_code;
+                // STK-paid orders now carry the real receipt (saved from the callback); show a
+                // dash when there genuinely is none (bank/manual/free/pending) instead of blank.
+                return $order->mpesa_transaction_code ?: '—';
             })
             ->addColumn('status', function ($order) {
                 if ($order->payment_status == ORDER_PAYMENT_STATUS_PAID) {
@@ -243,8 +247,8 @@ class OwnerSubscriptionOrderService
             // 🔔 Notification — only for successful payment
             if ($request->status == ORDER_PAYMENT_STATUS_PAID) {
                 $invoiceUrl = route('owner.subscription.index');
-                $title = __("Subscription Activated Successfully");
-                $body  = __("Your subscription package has been activated. Payment received successfully.");
+                $title = __("Subscription activated");
+                $body  = __("Your subscription package is now active. Payment received successfully.");
 
                 addNotification(
                     $title,

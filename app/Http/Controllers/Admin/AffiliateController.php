@@ -43,13 +43,39 @@ class AffiliateController extends Controller
 
     public function affiliate_register_store(AffiliateRegisterRequest $request)
     {
-        DB::beginTransaction();
+        // registerAffiliate owns its own transaction now (single source of truth), so the
+        // controller just surfaces the outcome.
         try {
             $this->affiliateService->registerAffiliate($request->validated());
             return back()->with('success', __("AFFILIATE REGISTERED SUCCESSFULLY"));
         } catch (Exception $e) {
-            DB::rollBack();
             return back()->with('error', $e->getMessage());
         }
+    }
+
+    /**
+     * Suspend an affiliate (breach of operational rules). Reversible.
+     * Blocks their access at the affiliate middleware; earned commissions,
+     * referrals and history are preserved.
+     */
+    public function suspend($id)
+    {
+        $affiliate = Affiliate::findOrFail($id);
+        $affiliate->status = AFFILIATE_STATUS_INACTIVE;
+        $affiliate->save();
+
+        return back()->with('success', __('Affiliate suspended successfully.'));
+    }
+
+    /**
+     * Reinstate a suspended affiliate — restores platform access.
+     */
+    public function reinstate($id)
+    {
+        $affiliate = Affiliate::findOrFail($id);
+        $affiliate->status = AFFILIATE_STATUS_ACTIVE;
+        $affiliate->save();
+
+        return back()->with('success', __('Affiliate reinstated successfully.'));
     }
 }

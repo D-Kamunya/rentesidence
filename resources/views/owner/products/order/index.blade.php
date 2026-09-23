@@ -38,7 +38,7 @@
                         <div class="inv-strip__item">
                             <span class="inv-strip__dot inv-strip__dot--green"></span>
                             <div>
-                                <p class="inv-strip__label">{{ __('Completed') }}</p>
+                                <p class="inv-strip__label">{{ __('Delivered') }}</p>
                                 <p class="inv-strip__val inv-strip__val--green">{{ $totalCompleteProductOrders }}</p>
                             </div>
                         </div>
@@ -73,7 +73,7 @@
                                 <div class="inv-filter-tabs">
                                     @foreach ([
                                         'all'              => __('All'),
-                                        'order_completed'  => __('Completed'),
+                                        'order_completed'  => __('Delivered'),
                                         'order_pending'    => __('Pending'),
                                         'order_cancelled'  => __('Cancelled'),
                                     ] as $value => $label)
@@ -201,6 +201,15 @@
                                                         </svg>
                                                         {{ __('Paid') }}
                                                     </span>
+                                                    @if ($order->settlement_status === SETTLEMENT_STATUS_HELD)
+                                                        <span style="display:inline-flex;align-items:center;gap:3px;margin-top:4px;padding:2px 8px;border-radius:999px;font-size:10px;font-weight:600;background:#FFF4E5;color:#B54708;"
+                                                              title="{{ __('The platform holds the funds until the buyer confirms receipt or the return window closes, then it settles to your wallet.') }}">
+                                                            <svg width="9" height="9" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="5.5" stroke="currentColor" stroke-width="1.6"/><path d="M8 5v3.5l2 1.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+                                                            {{ __('Held · not released yet') }}
+                                                        </span>
+                                                    @elseif ($order->settlement_status === SETTLEMENT_STATUS_RELEASED)
+                                                        <span style="display:block;font-size:10px;color:#0F6E56;margin-top:3px;">{{ __('Settled to wallet') }}</span>
+                                                    @endif
                                                 @elseif ($isCancelled)
                                                     <span class="inv-badge inv-badge--cancelled">
                                                         <svg width="10" height="10" viewBox="0 0 16 16" fill="none">
@@ -247,9 +256,12 @@
                                                             data-date="{{ $order->created_at->format('d M Y') }}"
                                                             data-status="{{ $order->payment_status }}"
                                                             data-order-status="{{ $order->order_status }}"
+                                                            data-settlement="{{ $order->settlement_status ?? '' }}"
                                                             data-gateway="{{ $order->gateway?->title ?? '—' }}"
+                                                            data-mpesa-code="{{ $order->mpesa_transaction_code ?: '' }}"
                                                             data-tenant-name="{{ $order->user?->name ?? '—' }}"
                                                             data-dispatch="{{ $dispatchStr }}"
+                                                            data-fulfilment-status="{{ $order->fulfilment_status }}"
                                                             data-image="@php
                                                                 $imgs = $product?->images ?? null;
                                                                 $imgs = is_string($imgs) ? json_decode($imgs, true) : $imgs;
@@ -258,8 +270,8 @@
                                                             @endphp"
                                                             data-complete-url="{{ !$isOrderCompleted && !$isCancelledByTenant && !$isOrderCancelled ? route('owner.productOrder.markComplete', $order->id) : '' }}"
                                                             data-cancel-url="{{ !$isOrderCompleted && !$isOrderCancelled && !$isPayCancelled && !$isRefundPending ? route('owner.productOrder.cancel', $order->id) : '' }}"
-                                                            data-confirm-cancel-url="{{ $isCancelledByTenant && !$isOrderCancelled ? route('owner.productOrder.cancel', $order->id) : '' }}"
-                                                            data-refund-url="{{ $isRefundPending && $isOrderCancelled ? route('owner.productOrder.confirmRefund', $order->id) : '' }}">
+                                                            data-confirm-cancel-url=""
+                                                            data-refund-url="">{{-- old owner refund/cancel gate removed — refunds are admin-gated now --}}
                                                         <svg width="13" height="13" viewBox="0 0 24 24" fill="none">
                                                             <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" stroke="currentColor" stroke-width="1.8"/>
                                                             <circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="1.8"/>
@@ -270,11 +282,11 @@
                                                     {{-- Complete — greyed/disabled if cancelled by tenant --}}
                                                     @if (!$isOrderCompleted && !$isOrderCancelled)
                                                         @if ($isCancelledByTenant)
-                                                            <button type="button" class="inv-btn inv-btn--complete inv-btn--disabled" disabled title="{{ __('Cannot complete a cancelled order') }}">
+                                                            <button type="button" class="inv-btn inv-btn--complete inv-btn--disabled" disabled title="{{ __('Cannot deliver a cancelled order') }}">
                                                                 <svg width="13" height="13" viewBox="0 0 24 24" fill="none">
                                                                     <path d="M20 6L9 17l-5-5" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
                                                                 </svg>
-                                                                {{ __('Complete') }}
+                                                                {{ __('Mark delivered') }}
                                                             </button>
                                                         @else
                                                             <button type="button" class="inv-btn inv-btn--complete po-complete-btn"
@@ -282,40 +294,25 @@
                                                                 <svg width="13" height="13" viewBox="0 0 24 24" fill="none">
                                                                     <path d="M20 6L9 17l-5-5" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
                                                                 </svg>
-                                                                {{ __('Complete') }}
+                                                                {{ __('Mark delivered') }}
                                                             </button>
                                                         @endif
                                                     @endif
                                             
-                                                    {{-- Confirm Cancellation — tenant cancelled, owner hasn't confirmed yet --}}
-                                                    @if ($isCancelledByTenant && !$isOrderCancelled)
-                                                        <button type="button" class="inv-btn inv-btn--warn po-confirm-cancel-btn"
-                                                                data-confirm-cancel-url="{{ route('owner.productOrder.cancel', $order->id) }}"
-                                                                title="{{ __('Confirm this cancellation') }}">
-                                                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none">
-                                                                <path d="M18 6L6 18M6 6l12 12" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/>
-                                                            </svg>
-                                                            {{ __('Confirm Cancel') }}
-                                                        </button>
-                                                    @endif
-                                            
-                                                    {{-- Confirm Refund — order cancelled and refund is pending --}}
-                                                    @if ($isRefundPending && $isOrderCancelled)
-                                                        <button type="button" class="inv-btn inv-btn--refund po-confirm-refund-btn"
-                                                                data-refund-url="{{ route('owner.productOrder.confirmRefund', $order->id) }}"
-                                                                title="{{ __('Mark refund as issued') }}">
-                                                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none">
-                                                                <path d="M3 10h10a8 8 0 018 8v2M3 10l6 6M3 10l6-6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
-                                                            </svg>
-                                                            {{ __('Refund Issued') }}
-                                                        </button>
+                                                    {{-- Refund in play — admin-gated now; the owner just sees the status, no action.
+                                                         (Replaces the old owner "Confirm Cancel" / "Refund Issued" gate.) --}}
+                                                    @if ($isRefundPending)
+                                                        <span class="inv-badge inv-badge--refund" title="{{ __('A refund is pending admin approval. The buyer is paid via M-Pesa once an admin approves.') }}">
+                                                            <svg width="10" height="10" viewBox="0 0 16 16" fill="none"><path d="M8 4.5V8l2.2 1.3M8 14.5A6.5 6.5 0 108 1.5a6.5 6.5 0 000 13z" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                                                            {{ __('Refund pending — admin') }}
+                                                        </span>
                                                     @endif
                                             
                                                     {{-- Final states --}}
                                                     @if ($isOrderCompleted)
                                                         <span class="inv-badge inv-badge--completed">
                                                             <svg width="10" height="10" viewBox="0 0 16 16" fill="none"><path d="M3 8l4 4 6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                                                            {{ __('Completed') }}
+                                                            {{ __('Delivered') }}
                                                         </span>
                                                     @endif
                                             
@@ -383,6 +380,7 @@
 
         <div class="po-modal__body">
             <div class="po-modal__status-wrap" id="poModalStatusWrap">
+                <span style="font-size:10px;font-weight:500;text-transform:uppercase;letter-spacing:.07em;color:#9ca3af;display:block;margin-bottom:5px;">{{ __('Order status') }}</span>
                 <span class="po-modal__status-badge" id="poModalStatusBadge"></span>
             </div>
             <div class="po-modal__product-preview mb-4">
@@ -396,8 +394,13 @@
                 <div class="po-modal__field"><span class="po-modal__label">{{ __('Order Date') }}</span><span class="po-modal__value" id="poModalDate">—</span></div>
                 <div class="po-modal__field"><span class="po-modal__label">{{ __('Total Amount') }}</span><span class="po-modal__value po-modal__value--amount" id="poModalAmount">—</span></div>
                 <div class="po-modal__field"><span class="po-modal__label">{{ __('Payment Method') }}</span><span class="po-modal__value" id="poModalGateway">—</span></div>
+                <div class="po-modal__field" id="poModalMpesaCodeField" style="display:none;"><span class="po-modal__label">{{ __('M-Pesa Code') }}</span><span class="po-modal__value" id="poModalMpesaCode" style="font-family:monospace;">—</span></div>
                 <div class="po-modal__field po-modal__field--full">
-                    <span class="po-modal__label">{{ __('Dispatch To') }}</span>
+                    <span class="po-modal__label">{{ __('Payout to you') }}</span>
+                    <span class="po-modal__value" id="poModalSettlement" style="font-size:12.5px;">—</span>
+                </div>
+                <div class="po-modal__field po-modal__field--full">
+                    <span class="po-modal__label" id="poModalDispatchLabel">{{ __('Dispatch To') }}</span>
                     <span class="po-modal__value" id="poModalTenantName" style="font-weight:600;color:#111827;">—</span>
                     <span class="po-modal__value" id="poModalDispatch" style="font-size:12px;color:#6b7280;margin-top:2px;">—</span>
                 </div>
@@ -407,9 +410,11 @@
                     <svg width="15" height="15" viewBox="0 0 24 24" fill="none">
                         <path d="M20 6L9 17l-5-5" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
                     </svg>
-                    {{ __('Mark as Completed') }}
+                    {{ __('Mark as Delivered / Complete') }}
                 </button>
-                <p class="po-modal__action-hint">{{ __('Tenant will be notified that their order is ready.') }}</p>
+                @php $returnWindowDays = (int) getOption('marketplace_return_window_days', 2); @endphp
+                <p class="po-modal__action-hint">{{ __('Marks the order delivered and notifies the buyer. Your payment is released once the buyer confirms receipt, or automatically after :days :unit.', ['days' => $returnWindowDays, 'unit' => $returnWindowDays === 1 ? __('day') : __('days')]) }}</p>
+                <p class="po-modal__action-hint" style="color:#0C447C;">{{ __('Tip: ask your buyer to tap "Confirm receipt" once they have their goods — that releases your money right away, no waiting for the window.') }}</p>
             </div>
  
             {{-- Owner-initiated cancel --}}
@@ -440,9 +445,9 @@
                     <svg width="13" height="13" viewBox="0 0 24 24" fill="none">
                         <path d="M3 10h10a8 8 0 018 8v2M3 10l6 6M3 10l6-6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
                     </svg>
-                    {{ __('Confirm Refund Issued') }}
+                    {{ __('Approve Refund') }}
                 </button>
-                <p class="po-modal__action-hint">{{ __('Confirm that you have returned the payment to the tenant.') }}</p>
+                <p class="po-modal__action-hint">{{ __('Approves the refund and queues it for admin, who releases the M-Pesa payout to the buyer. No money leaves until an admin approves.') }}</p>
             </div>
         </div>
 
@@ -583,7 +588,7 @@
         .inv-btn--refund:hover { background:#4338CA; color:#fff; border-color:#4338CA; }
     
         .inv-btn--receipt  { background:#E6F1FB; color:#185FA5; border:0.5px solid #B8D4F0; }
-        .inv-btn--receipt:hover { background:#185FA5; color:#fff; border-color:#185FA5; text-decoration:none; }
+        .inv-btn--receipt:hover { background:#185FA5; color:#fff !important; border-color:#185FA5; text-decoration:none; }
     
         .inv-btn--disabled { background:#f3f4f6 !important; color:#d1d5db !important; border-color:#e5e7eb !important; cursor:not-allowed !important; opacity:0.6; }
     
@@ -614,11 +619,11 @@
         /* ── Modal shell ─────────────────────────────────────────── */
         .po-modal-backdrop { position:fixed; inset:0; background:rgba(17,24,39,.45); backdrop-filter:blur(2px); -webkit-backdrop-filter:blur(2px); z-index:1050; display:flex; align-items:center; justify-content:center; padding:1rem; opacity:0; pointer-events:none; transition:opacity .2s ease; }
         .po-modal-backdrop.is-open { opacity:1; pointer-events:all; }
-        .po-modal { background:#fff; border-radius:14px; width:100%; max-width:480px; box-shadow:0 20px 60px rgba(17,24,39,.18),0 4px 16px rgba(17,24,39,.08); transform:translateY(12px) scale(.98); transition:transform .22s ease,opacity .22s ease; opacity:0; overflow:hidden; }
+        .po-modal { background:#fff; border-radius:14px; width:100%; max-width:480px; box-shadow:0 20px 60px rgba(17,24,39,.18),0 4px 16px rgba(17,24,39,.08); transform:translateY(12px) scale(.98); transition:transform .22s ease,opacity .22s ease; opacity:0; overflow:hidden; max-height:calc(100vh - 3rem); display:flex; flex-direction:column; }
         .po-modal-backdrop.is-open .po-modal { transform:translateY(0) scale(1); opacity:1; }
     
         /* ── Modal header ────────────────────────────────────────── */
-        .po-modal__header { display:flex; align-items:flex-start; justify-content:space-between; padding:1.1rem 1.35rem 1rem; border-bottom:0.5px solid #e5e7eb; background:#fafafa; }
+        .po-modal__header { display:flex; align-items:flex-start; justify-content:space-between; padding:1.1rem 1.35rem 1rem; border-bottom:0.5px solid #e5e7eb; background:#fafafa; flex:none; }
         .po-modal__eyebrow { font-size:10px; font-weight:500; text-transform:uppercase; letter-spacing:.07em; color:#9ca3af; margin:0 0 4px; }
         .po-modal__title { font-size:15px; font-weight:600; color:#111827; margin:0; font-family:monospace; letter-spacing:.04em; }
         .po-modal__close { background:#f3f4f6; border:none; border-radius:7px; width:30px; height:30px; display:flex; align-items:center; justify-content:center; cursor:pointer; color:#6b7280; flex-shrink:0; transition:background .15s,color .15s; }
@@ -626,7 +631,7 @@
     
         /* ── Modal body ──────────────────────────────────────────── */
         .po-modal__status-wrap { padding:.85rem 1.35rem; border-bottom:0.5px solid #f3f4f6; }
-        .po-modal__body { padding:1.1rem 1.35rem; }
+        .po-modal__body { padding:1.1rem 1.35rem; overflow-y:auto; flex:1 1 auto; }
         .po-modal__grid { display:grid; grid-template-columns:1fr 1fr; gap:1rem .75rem; }
         .po-modal__field { display:flex; flex-direction:column; gap:4px; }
         .po-modal__field--full { grid-column:1 / -1; }
@@ -649,7 +654,7 @@
         }
     
         /* ── Modal footer ────────────────────────────────────────── */
-        .po-modal__footer { padding:.85rem 1.35rem; border-top:0.5px solid #e5e7eb; display:flex; justify-content:space-between; align-items:center; gap:8px; background:#fafafa; }
+        .po-modal__footer { padding:.85rem 1.35rem; border-top:0.5px solid #e5e7eb; display:flex; justify-content:space-between; align-items:center; gap:8px; background:#fafafa; flex:none; }
     
         /* ── Modal action blocks (complete / cancel / warn / refund) */
         .po-modal__footer-actions { padding:.6rem 1.35rem; border-top:0.5px solid #f3f4f6; }
@@ -827,11 +832,11 @@
         
             const actionConfigs = {
                 complete: {
-                    title:     '{{ __("Mark as Completed?") }}',
-                    body:      '{{ __("This will notify the tenant that their order is ready. This action cannot be undone.") }}',
+                    title:     '{{ __("Mark as delivered?") }}',
+                    body:      '{{ __("This marks the order as delivered and notifies the tenant. This action cannot be undone.") }}',
                     iconClass: 'confirm-modal__icon--green',
                     btnClass:  'confirm-btn--green',
-                    btnLabel:  '{{ __("Yes, Complete") }}',
+                    btnLabel:  '{{ __("Yes, mark delivered") }}',
                     icon:      `<svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M20 6L9 17l-5-5" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>`,
                 },
                 cancel: {
@@ -1001,11 +1006,13 @@
             const closeBtn  = document.getElementById('poModalClose');
             const closeBtn2 = document.getElementById('poModalCloseBtn');
         
+            const PAY_PAID        = {{ PRODUCT_ORDER_STATUS_PAID }};
             const PAY_CANCELLED   = {{ PRODUCT_ORDER_STATUS_CANCELLED }};
             const PAY_REFUND      = {{ PRODUCT_ORDER_STATUS_REFUND_PENDING }};
             const ORDER_COMPLETED = {{ ORDER_STATUS_COMPLETED }};
             const ORDER_CANCELLED = {{ ORDER_STATUS_CANCELLED }};
-        
+            const RETURN_WINDOW_DAYS = {{ (int) getOption('marketplace_return_window_days', 2) }};
+
             function openModal(data) {
                 document.getElementById('poModalTitle').textContent      = data.orderNo     || '—';
                 document.getElementById('poModalProduct').textContent    = data.product     || '—';
@@ -1013,8 +1020,46 @@
                 document.getElementById('poModalDate').textContent       = data.date        || '—';
                 document.getElementById('poModalAmount').textContent     = data.amount      || '—';
                 document.getElementById('poModalGateway').textContent    = data.gateway     || '—';
+                // M-Pesa code for STK orders; hidden for cash/none.
+                const mpesaField = document.getElementById('poModalMpesaCodeField');
+                if (data.mpesaCode) {
+                    document.getElementById('poModalMpesaCode').textContent = data.mpesaCode;
+                    mpesaField.style.display = '';
+                } else {
+                    mpesaField.style.display = 'none';
+                }
                 document.getElementById('poModalTenantName').textContent = data.tenantName  || '—';
                 document.getElementById('poModalDispatch').textContent   = data.dispatch    || '—';
+                // Tense-aware label: once dispatched (or delivered), it already went out.
+                document.getElementById('poModalDispatchLabel').textContent =
+                    (parseInt(data.fulfilmentStatus) >= {{ FULFILMENT_DISPATCHED }})
+                        ? '{{ __('Dispatched To') }}' : '{{ __('Dispatch To') }}';
+
+                // Escrow / settlement — explain where the buyer's payment currently sits.
+                const settleEl = document.getElementById('poModalSettlement');
+                const payStat  = parseInt(data.status);
+                if (data.settlement === 'released') {
+                    settleEl.textContent = '{{ __("Settled — released to your wallet") }}';
+                    settleEl.style.color = '#0F6E56';
+                } else if (data.settlement === 'refunded') {
+                    settleEl.textContent = '{{ __("Refunded to the buyer") }}';
+                    settleEl.style.color = '#B42318';
+                } else if (data.settlement === 'held') {
+                    // Surface the actual return-window length so owners aren't left guessing.
+                    const days = RETURN_WINDOW_DAYS;
+                    const dayWord = days === 1 ? '{{ __("day") }}' : '{{ __("days") }}';
+                    settleEl.textContent =
+                        '{{ __("Held by the platform — released to your wallet when the buyer confirms receipt, or automatically after") }} '
+                        + days + ' ' + dayWord + '.';
+                    settleEl.style.color = '#B54708';
+                } else if (payStat === PAY_PAID) {
+                    // Paid but not in escrow (recorded manually / legacy) — no platform-held funds to release.
+                    settleEl.textContent = '{{ __("Payment recorded — not held in escrow by the platform") }}';
+                    settleEl.style.color = '#9ca3af';
+                } else {
+                    settleEl.textContent = '{{ __("No payment received yet") }}';
+                    settleEl.style.color = '#9ca3af';
+                }
         
                 const imageEl = document.getElementById('poModalProductImage');
                 if (data.image && data.image.trim()) { imageEl.src = data.image; imageEl.style.display = 'block'; }
@@ -1089,10 +1134,13 @@
                     date             : btn.dataset.date,
                     status           : btn.dataset.status,
                     orderStatus      : btn.dataset.orderStatus,
+                    settlement       : btn.dataset.settlement || '',
                     image            : btn.dataset.image || '',
                     gateway          : btn.dataset.gateway || '—',
+                    mpesaCode        : btn.dataset.mpesaCode || '',
                     tenantName       : btn.dataset.tenantName || '—',
                     dispatch         : btn.dataset.dispatch || '—',
+                    fulfilmentStatus : btn.dataset.fulfilmentStatus || '0',
                     completeUrl      : btn.dataset.completeUrl || '',
                     cancelUrl        : btn.dataset.cancelUrl || '',
                     confirmCancelUrl : btn.dataset.confirmCancelUrl || '',

@@ -1,3 +1,4 @@
+@include('common.layouts._kb-nav-style')
 <div class="vertical-menu">
     <div data-simplebar class="h-100">
         <div id="sidebar-menu">
@@ -40,11 +41,36 @@
                         </a>
                     </li>
                     <li>
-                        <a href="{{ route('admin.message.index') }}">
-                            <i class="ri-message-fill"></i>
-                            <span>{{ __('Message') }}</span>
+                        <a href="{{ route('admin.screening.index') }}">
+                            <i class="ri-shield-user-line"></i>
+                            <span>{{ __('Tenant Screening') }}</span>
                         </a>
                     </li>
+                    <li>
+                        <a href="{{ route('admin.marketplace.refunds') }}">
+                            <i class="ri-refund-2-line"></i>
+                            <span>{{ __('Marketplace Refunds') }}</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="{{ route('admin.message.index') }}">
+                            <i class="ri-message-fill"></i>
+                            <span>{{ __('Enquiries') }}@include('partials.nav-count', ['n' => $navBadges['enquiries'] ?? 0])</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="{{ route('admin.support.index') }}">
+                            <i class="ri-customer-service-2-line"></i>
+                            <span>{{ __('Support') }}@include('partials.nav-count', ['n' => $navBadges['support'] ?? 0])</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="{{ route('admin.feature-announcements.index') }}">
+                            <i class="ri-volume-up-line"></i>
+                            <span>{{ __('Announcements') }}</span>
+                        </a>
+                    </li>
+
                     <li>
                         <a href="javascript: void(0);" class="has-arrow">
                             <i class="ri-lock-2-line"></i>
@@ -64,6 +90,26 @@
                         </ul>
                     </li>
                 @endif
+                <li>
+                    <a href="javascript: void(0);" class="has-arrow">
+                        <i class="ri-building-4-line"></i>
+                        <span>{{ __('Centresidence') }}</span>
+                    </a>
+                    <ul class="sub-menu" aria-expanded="false">
+                        <li><a href="{{ route('admin.centresidence.index') }}">{{ __('Overview') }}</a></li>
+                        <li><a href="{{ route('admin.centresidence.partners') }}">{{ __('Finance Partners') }}</a></li>
+                        <li><a href="{{ route('admin.centresidence.applications') }}">{{ __('Applications') }}</a></li>
+                        <li><a href="{{ route('admin.centresidence.field-studies') }}">{{ __('Site Surveys') }}</a></li>
+                        <li><a href="{{ route('admin.centresidence.facilities') }}">{{ __('Facilities') }}</a></li>
+                        <li><a href="{{ route('admin.centresidence.defaults') }}">{{ __('Defaults') }}</a></li>
+                        <li><a href="{{ route('admin.centresidence.remittances') }}">{{ __('Remittances') }}</a></li>
+                        <li><a href="{{ route('admin.centresidence.revenue') }}">{{ __('Commission & Revenue') }}</a></li>
+                        <li><a href="{{ route('admin.centresidence.modules') }}">{{ __('Modules & Costs') }}</a></li>
+                        <li><a href="{{ route('admin.centresidence.self-financed') }}">{{ __('Self-financed') }}</a></li>
+                        <li><a href="{{ route('admin.centresidence.devices') }}">{{ __('Devices') }}</a></li>
+                        <li><a href="{{ route('admin.centresidence.infrastructure') }}">{{ __('Infrastructure') }}</a></li>
+                    </ul>
+                </li>
                 <li>
                     <a class="{{ @$navAcademyModulesShowClass }}" href="{{ route('admin.academy.index') }}">
                     <i class="fa fa-graduation-cap"></i>
@@ -110,8 +156,8 @@
                 </li>
                 <li>
                     <a class="{{ @$navCommissionsAddMMShowClass }}" href="{{ route('admin.wallet.commissions') }}">
-                        <i class="fa fa-shopping-basket" aria-hidden="true"></i>
-                        <span>{{ __('Vault') }}</span>
+                        <i class="ri-wallet-3-line"></i>
+                        <span>{{ __('Wallet') }}</span>
                     </a>
                 </li>
                 <li>
@@ -133,6 +179,12 @@
                             </a>
                         </li>
                         <li>
+                            <a class="{{ @$navAffiliatesAddMMShowClass }}" href="{{ route('admin.affiliates.applications.index') }}">
+                                <i class="fa fa-user-plus" aria-hidden="true"></i>
+                                <span>{{ __('Applications') }}@include('partials.nav-count', ['n' => $navBadges['affiliate_applications'] ?? 0])</span>
+                            </a>
+                        </li>
+                        <li>
                             <a class="{{ @$navAffiliatesAddMMShowClass }}" href="{{ route('admin.leads.index') }}">
                                 <i class="fa fa-cog" aria-hidden="true"></i>
                                 <span>{{ __('Leads') }}</span>
@@ -147,35 +199,17 @@
                         <li>
                             <a class="{{ @$navAffiliatesWithdrawAddMMShowClass }}" href="{{ route('admin.affiliate.withdrawals') }}">
                             <i class="fa fa-users" aria-hidden="true"></i>
-                                <span>{{ __('Accounts & Withdrawals') }}</span>
+                                <span>{{ __('Accounts & Withdrawals') }}@include('partials.nav-count', ['n' => $navBadges['affiliate_withdrawals'] ?? 0])</span>
                             </a>
                         </li>
-                    </ul>
-                </li>
-                <li>
-                    <a href="javascript: void(0);" class="has-arrow">
-                        <i class="fa fa-book" aria-hidden="true"></i>
-                        <span>{{ __('Knowledge Base') }}</span>
-                    </a>
-                    <ul class="sub-menu" aria-expanded="false">
+                        @if (config('referrals.enabled'))
                         <li>
-                            <a class="{{ @$navKBArticlesMMShowClass }}" href="{{ route('admin.kb.articles') }}">
-                                <i class="fa fa-file" aria-hidden="true"></i>
-                                <span>{{ __('All Articles') }}</span>
+                            <a class="{{ @$navReferralPayoutsMMShowClass }}" href="{{ route('admin.referral-payouts.index') }}">
+                            <i class="ri-hand-coin-line" aria-hidden="true"></i>
+                                <span>{{ __('Referrals') }}@include('partials.nav-count', ['n' => $navBadges['referral_payouts'] ?? 0])</span>
                             </a>
                         </li>
-                        <li>
-                            <a class="{{ @$navKBArticlesMMShowClass }}" href="{{ route('admin.kb.articles.create') }}">
-                                <i class="fa fa-plus-circle" aria-hidden="true"></i>
-                                <span>{{ __('New Article') }}</span>
-                            </a>
-                        </li>
-                        <li>
-                            <a class="{{ @$navKBCategoriesMMShowClass }}" href="{{ route('admin.kb.categories') }}">
-                                <i class="fa fa-folder" aria-hidden="true"></i>
-                                <span>{{ __('Categories') }}</span>
-                            </a>
-                        </li>
+                        @endif
                     </ul>
                 </li>
                 <li>
@@ -221,6 +255,40 @@
                         <i class="ri-refresh-line"></i>
                         <span>{{ __('Version Update') }}</span>
                     </a>
+                </li>
+                {{-- Install app (auto-hides once installed). --}}
+                <li>
+                    <a href="#" data-cs-install onclick="return window.csPwaInstall ? (window.csPwaInstall(), false) : true;">
+                        <i class="ri-smartphone-line"></i>
+                        <span>{{ __('Install app') }}</span>
+                    </a>
+                </li>
+                {{-- Knowledge Base kept LAST — it's colour-highlighted, so links under it read as off. --}}
+                <li>
+                    <a href="javascript: void(0);" class="has-arrow kb-nav-highlight">
+                        <i class="fa fa-book" aria-hidden="true"></i>
+                        <span>{{ __('Knowledge Base') }}</span>
+                    </a>
+                    <ul class="sub-menu" aria-expanded="false">
+                        <li>
+                            <a class="{{ @$navKBArticlesMMShowClass }}" href="{{ route('admin.kb.articles') }}">
+                                <i class="fa fa-file" aria-hidden="true"></i>
+                                <span>{{ __('All Articles') }}</span>
+                            </a>
+                        </li>
+                        <li>
+                            <a class="{{ @$navKBArticlesMMShowClass }}" href="{{ route('admin.kb.articles.create') }}">
+                                <i class="fa fa-plus-circle" aria-hidden="true"></i>
+                                <span>{{ __('New Article') }}</span>
+                            </a>
+                        </li>
+                        <li>
+                            <a class="{{ @$navKBCategoriesMMShowClass }}" href="{{ route('admin.kb.categories') }}">
+                                <i class="fa fa-folder" aria-hidden="true"></i>
+                                <span>{{ __('Categories') }}</span>
+                            </a>
+                        </li>
+                    </ul>
                 </li>
                 <li class="font-semi-bold mt-20 text-center text-info">
                     <a href="">

@@ -225,15 +225,24 @@ $(document).on("click", "#subscribeBtn", function (e) {
     if (pricingModel === "free" || pricingModel === "transaction") {
         e.preventDefault();
 
+        // Free & transaction have no billing period — hide the Monthly/Yearly toggle.
+        // .d-flex is display:flex !important, so jQuery .hide()/style.display lose — set
+        // it !important via the raw node.
+        var _tRow = document.getElementById("monthly-yearly-button");
+        _tRow = _tRow ? _tRow.closest(".d-flex") : null;
+        if (_tRow) _tRow.style.setProperty("display", "none", "important");
+
         // Pass data to the confirmation partial via globals (it self-executes on render)
         window._cfmPlanId       = planId;
         window._cfmPlanName     = planName;
         window._cfmPricingModel = pricingModel;
 
-        // Fetch and render the confirmation screen inside the same modal
+        // Fetch and render the confirmation screen inside the same modal.
+        // cache:false — otherwise the browser serves a stale confirmation partial.
         $.ajax({
             url: $("#confirmFreeRoute").val(),
             method: "GET",
+            cache: false,
             data: { package_id: planId },
             success: function (html) {
                 $("#choosePlanModal").find("#planListBlock").html(html);
@@ -275,31 +284,9 @@ $(document).on("change", "#bank_id", function () {
     $("#bankDetails p").html($(this).find(":selected").data("details"));
 });
 
-var timerInterval;
-function showMpesaPreloader() {
-    let countdown = 120; // 2 minutes (in seconds)
-    const timerElement = document.getElementById("mpesa-timer");
-    document.getElementById("mpesa-preloader").style.display = "block";
-    // Start countdown
-    timerInterval = setInterval(() => {
-        let minutes = Math.floor(countdown / 60);
-        let seconds = countdown % 60;
-        timerElement.textContent = `${minutes}:${
-            seconds < 10 ? "0" + seconds : seconds
-        }`;
-
-        if (countdown <= 0) {
-            clearInterval(timerInterval);
-        }
-
-        countdown--;
-    }, 1000);
-}
-
-function hideMpesaPreloader() {
-    clearInterval(timerInterval);
-    document.getElementById("mpesa-preloader").style.display = "none";
-}
+// Shared STK waiting overlay (common.partials.mpesa-stk-waiting).
+function showMpesaPreloader(amount) { if (window.mpesaWait) mpesaWait.show(amount ? { amount: amount } : {}); }
+function hideMpesaPreloader() { if (window.mpesaWait) mpesaWait.hide(); }
 
 $("#payBtn").on("click", function () {
     var gateway = $("#selectGateway").val();

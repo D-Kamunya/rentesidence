@@ -28,52 +28,80 @@ use Exception;
 
 class AffiliateLeadsController extends Controller
 {
+    /**
+     * Master list: one row PER AFFILIATE with their lead-count breakdown — so the page scales
+     * with the number of affiliates instead of listing every lead across everyone on one page.
+     * Drill into a single affiliate's leads via affiliateLeads().
+     */
     public function index(Request $request)
     {
-        $query = Lead::with(['company', 'affiliate']);
+        $affiliates = User::query()
+            ->where('users.role', USER_ROLE_AFFILIATE)
+            ->join('leads', 'leads.affiliate_id', '=', 'users.id')
+            ->when($request->filled('search'), function ($q) use ($request) {
+                $s = $request->search;
+                $q->where(function ($w) use ($s) {
+                    $w->where('users.first_name', 'like', "%{$s}%")
+                      ->orWhere('users.last_name', 'like', "%{$s}%")
+                      ->orWhere('users.email', 'like', "%{$s}%");
+                });
+            })
+            ->groupBy('users.id', 'users.first_name', 'users.last_name', 'users.email')
+            ->selectRaw("users.id, users.first_name, users.last_name, users.email,
+                COUNT(leads.id) as total_leads,
+                SUM(CASE WHEN leads.status = 'pending_conversion' THEN 1 ELSE 0 END) as pending_leads,
+                SUM(CASE WHEN leads.status = 'trial' THEN 1 ELSE 0 END) as trial_leads,
+                SUM(CASE WHEN leads.status = 'converted' THEN 1 ELSE 0 END) as converted_leads,
+                MAX(leads.updated_at) as last_activity")
+            ->orderByDesc('last_activity')
+            ->paginate(15)
+            ->withQueryString();
 
-        // Search
+        // Platform-wide summary (affiliate-attributed leads only, matching this page's scope).
+        $base           = Lead::whereNotNull('affiliate_id');
+        $pendingCount   = (clone $base)->where('status', 'pending_conversion')->count();
+        $trialCount     = (clone $base)->where('status', 'trial')->count();
+        $convertedCount = (clone $base)->where('status', 'converted')->count();
+        $totalLeads     = (clone $base)->count();
+        $conversionRate = $totalLeads > 0 ? round(($convertedCount / $totalLeads) * 100, 1) : 0;
+
+        return view('admin.affiliates.leads.index', compact(
+            'affiliates', 'pendingCount', 'trialCount', 'convertedCount', 'conversionRate', 'totalLeads'
+        ));
+    }
+
+    /**
+     * Drill-down: one affiliate's leads (the full lead table, scoped) with the same status /
+     * temperature / company-search filters as the flat list used to offer.
+     */
+    public function affiliateLeads(Request $request, User $affiliate)
+    {
+        abort_unless((int) $affiliate->role === USER_ROLE_AFFILIATE, 404);
+
+        $query = Lead::with(['company', 'affiliate'])->where('affiliate_id', $affiliate->id);
+
         if ($request->filled('search')) {
             $search = $request->search;
-            $query->where(function($q) use ($search) {
-                $q->whereHas('company', function($q) use ($search) {
-                    $q->where('company_name', 'like', "%{$search}%");
-                })
-                ->orWhereHas('affiliate', function($q) use ($search) {
-                    $q->where('first_name', 'like', "%{$search}%")
-                    ->orWhere('last_name', 'like', "%{$search}%");
-                });
-            });
+            $query->whereHas('company', fn ($q) => $q->where('company_name', 'like', "%{$search}%"));
         }
-
-        // Status Filter
         if ($request->filled('status')) {
             $query->where('status', $request->status);
         }
-
-        // Temperature Filter
         if ($request->filled('temperature')) {
             $query->where('temperature', $request->temperature);
         }
 
-        $leads = $query->whereNotNull('affiliate_id')
-               ->latest()
-               ->paginate(10)
-               ->withQueryString();
+        $leads = $query->latest()->paginate(15)->withQueryString();
 
-        // Summary Stats
-        $pendingCount = Lead::where('status', 'pending_conversion')->count();
-        $trialCount = Lead::where('status', 'trial')->count();
-        $convertedCount = Lead::where('status', 'converted')->count();
-        $totalLeads = Lead::count();
-        $conversionRate = $totalLeads > 0 ? round(($convertedCount / $totalLeads) * 100, 1) : 0;
+        $base           = Lead::where('affiliate_id', $affiliate->id);
+        $pendingCount   = (clone $base)->where('status', 'pending_conversion')->count();
+        $trialCount     = (clone $base)->where('status', 'trial')->count();
+        $convertedCount = (clone $base)->where('status', 'converted')->count();
+        $total          = (clone $base)->count();
+        $conversionRate = $total > 0 ? round(($convertedCount / $total) * 100, 1) : 0;
 
-        return view('admin.affiliates.leads.index', compact(
-            'leads',
-            'pendingCount',
-            'trialCount',
-            'convertedCount',
-            'conversionRate'
+        return view('admin.affiliates.leads.affiliate', compact(
+            'affiliate', 'leads', 'pendingCount', 'trialCount', 'convertedCount', 'conversionRate'
         ));
     }
 
@@ -105,6 +133,15 @@ class AffiliateLeadsController extends Controller
 
             $company = $lead->company;
             $affiliateId = $lead->affiliate_id;
+
+            // A valid email is mandatory — the whole account is keyed on it (login, the
+            // setup/password-reset link, and the existing-user lookup below). Lead emails
+            // are nullable on the affiliate side, so guard here rather than mint an account
+            // with a null email that can never receive its setup link.
+            if (empty($company->email) || ! filter_var($company->email, FILTER_VALIDATE_EMAIL)) {
+                DB::rollBack();
+                return back()->with('error', 'This lead has no valid email address on file. Add one before approving — the account setup link is delivered there.');
+            }
 
             // Split company name safely
             $nameParts = explode(' ', $company->company_name, 2);
@@ -161,11 +198,13 @@ class AffiliateLeadsController extends Controller
 
                     // 🟡 Active trial → block (can't renew active trial)
                     if ($trialEndsAt->isFuture()) {
+                        DB::rollBack();
                         return back()->with('error', 'This user already has an active trial that expires on ' . $trialEndsAt->format('M d, Y') . '. Cannot approve another trial.');
                     }
 
                     // 🔁 Expired trial → require confirmation
                     if (!$request->has('confirm_renewal')) {
+                        DB::rollBack();
                         $expiredDate = $trialEndsAt->format('M d, Y');
                         return back()
                             ->with('warning_message', 'This user\'s trial expired on ' . $expiredDate . '. Do you want to extend their trial?')
@@ -175,15 +214,33 @@ class AffiliateLeadsController extends Controller
                             ]);
                     }
 
+                    // 🧢 Cap the number of extensions (config-tunable; interlocks with the
+                    // trial cost-guardrail decision D8). Prior extensions are logged as
+                    // LeadActivity with an "extended" description.
+                    $maxExtensions = (int) getOption('trial_max_extensions', 2);
+                    $priorExtensions = LeadActivity::where('lead_id', $lead->id)
+                        ->where('description', 'like', '%extended%')
+                        ->count();
+                    if ($priorExtensions >= $maxExtensions) {
+                        DB::rollBack();
+                        return back()->with('error', 'This lead has reached the maximum of ' . $maxExtensions . ' trial extension(s). Convert them to a paid plan to continue.');
+                    }
+
                     // Confirmed renewal
                     $isExtension = true;
                 }
 
                 // ✅ Renew/Extend trial for existing user
                 $defaultPackage = Package::where(['is_trail' => ACTIVE])->first();
+                $trialDurationDays = (int) getOption('trail_duration', 1);
+                // The NEW end date (setUserPackage sets end_date = now + duration). Used for
+                // the email — the old code passed the stale EXPIRED date (and a Carbon into a
+                // string param, which threw at dispatch).
+                $newTrialEndsAt = Carbon::now()->addDays($trialDurationDays)->format('M d, Y');
 
                 if ($defaultPackage) {
-                    setUserPackage($existingUser->id, $defaultPackage, (int) getOption('trail_duration', 1), 1);
+                    // grantSms=false → extend the window without refilling the SMS pool.
+                    setUserPackage($existingUser->id, $defaultPackage, $trialDurationDays, 1, null, false);
                 }
 
                 // Update lead status
@@ -212,7 +269,7 @@ class AffiliateLeadsController extends Controller
                 SendTrialExtendedMail::dispatch(
                     $lead->id,
                     $company->email,
-                    $trialEndsAt,
+                    $newTrialEndsAt,
                     $affiliate->user->email,
                     $affiliate->user->first_name,
                 );
@@ -226,7 +283,13 @@ class AffiliateLeadsController extends Controller
             $user->last_name = $lastName;
             $user->contact_number = $company->phone;
             $user->email = $company->email;
-            $user->password = Hash::make(Str::random(32));
+            // System-generated TEMP password → the trial owner signs in with it and
+            // is forced to set their own on first login (same onboarding lifecycle as
+            // owner-created tenants + registered affiliates; enforced by
+            // ForcePasswordChange, cleared in ProfileController::changePasswordUpdate).
+            $plainPassword = Str::random(10);
+            $user->password = Hash::make($plainPassword);
+            $user->must_change_password = 1;
             $user->status = USER_STATUS_ACTIVE;
             $user->email_verified_at = Carbon::now()->format("Y-m-d H:i:s");
             $user->role = USER_ROLE_OWNER;
@@ -254,6 +317,7 @@ class AffiliateLeadsController extends Controller
             setOwnerInvoiceType($user->id);
             setOwnerDefaultMaintenanceIssue($user->id);
             setOwnerDefaultTicketTopics($user->id);
+            setOwnerDefaultDocumentConfig($user->id);
 
             // Update lead status
             $lead->update([
@@ -277,23 +341,13 @@ class AffiliateLeadsController extends Controller
 
             DB::commit();
 
-            // 🔐 Password reset setup (only for new users)
-            $passwordResetToken = Str::random(64);
-            $resetLink     = url('/password/reset/' . $passwordResetToken . '?email=' . urlencode($user->email));
-
-            DB::table('password_resets')->updateOrInsert(
-                ['email' => $user->email],
-                [
-                    'token' => Hash::make($passwordResetToken),
-                    'created_at' => now()
-                ]
-            );
-
-            // 📧 Send email (Acount created and Trial approved only for new users)
+            // 📧 Trial-approved mail — delivers the temporary login credentials
+            // (the owner sets their own password on first login via
+            // must_change_password above), plus the affiliate notification copy.
             SendTrialApprovedMail::dispatch(
                 $lead->id,
                 $user->email,
-                $resetLink,
+                $plainPassword,
                 $trialEndsAt,
                 $affiliate->user->email,
                 $affiliate->user->first_name,

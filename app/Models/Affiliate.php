@@ -13,6 +13,12 @@ class Affiliate extends Model
     protected $fillable = [
         'user_id',
         'referral_code',
+        'origin_tenant_user_id',
+        'graduated_at',
+    ];
+
+    protected $casts = [
+        'graduated_at' => 'datetime',
     ];
     protected $table = 'affiliates';
 
@@ -39,5 +45,17 @@ class Affiliate extends Model
     public function withdrawals()
     {
         return $this->hasMany(AffiliateWithdrawal::class, 'affiliate_id');
+    }
+
+    /** Products this affiliate works (Affiliate OS participation). */
+    public function products(): HasMany
+    {
+        return $this->hasMany(AffiliateProduct::class, 'affiliate_id');
+    }
+
+    /** True if the affiliate is enrolled in the given product. */
+    public function worksProduct(string $product): bool
+    {
+        return $this->products()->where('product', $product)->exists();
     }
 }

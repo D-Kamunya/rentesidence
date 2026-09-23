@@ -4,7 +4,9 @@
     <div class="main-content">
         <div class="page-content">
             <div class="container-fluid">
-                <div class="page-content-wrapper bg-white p-30 radius-20">
+                <div class="page-content-wrapper bg-white p-30 radius-20 cs-controls">
+                    @include('centresidence._design')
+
                     <div class="row">
                         <div class="col-12">
                             <div
@@ -34,7 +36,7 @@
                                 </div>
                             </div>
                         </div>
-                        <div class="billing-center-area bg-off-white theme-border radius-4 p-25">
+                        <div class="billing-center-area cs-card cs-card--pad">
                             <table id="allDataTable" class="table responsive theme-border p-20 ">
                                 <thead>
                                     <th>{{ __('Name') }}</th>
@@ -55,7 +57,7 @@
     </div>
 
     <!-- Add Package Modal Start -->
-    <div class="modal fade" id="addModal" tabindex="-1" aria-labelledby="addModalLabel" aria-hidden="true">
+    <div class="modal fade cs-modal" id="addModal" tabindex="-1" aria-labelledby="addModalLabel" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content">
                 <div class="modal-header">
@@ -239,7 +241,7 @@
                                         class="label-text-title color-heading font-medium mb-2">{{ __('Status') }}</label>
                                     <select name="status" id="status" class="form-control">
                                         <option value="1">{{ __('Active') }}</option>
-                                        <option value="0">{{ __('Deactivate') }}</option>
+                                        <option value="0">{{ __('Inactive') }}</option>
                                     </select>
                                 </div>
                                 <div class="col-md-6 mb-25">
@@ -282,7 +284,7 @@
         </div>
     </div>
 
-    <div class="modal fade" id="editModal" tabindex="-1" aria-labelledby="editModalLabel" aria-hidden="true">
+    <div class="modal fade cs-modal" id="editModal" tabindex="-1" aria-labelledby="editModalLabel" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content">
                 <div class="modal-header">
@@ -468,7 +470,7 @@
                                         class="label-text-title color-heading font-medium mb-2">{{ __('Status') }}</label>
                                     <select name="status" id="status" class="form-control">
                                         <option value="1">{{ __('Active') }}</option>
-                                        <option value="0">{{ __('Deactivate') }}</option>
+                                        <option value="0">{{ __('Inactive') }}</option>
                                     </select>
                                 </div>
                                 <div class="col-md-6 mb-25">

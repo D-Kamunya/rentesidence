@@ -11,6 +11,7 @@ use App\Models\PaymentCheck;
 use App\Models\Gateway;
 use App\Models\Invoice;
 use App\Traits\ResponseTrait;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Session;
 
@@ -31,6 +32,38 @@ class InvoiceController extends Controller
     {
         $tenantId = auth()->user()->tenant->user_id;
         $data['pageTitle'] = __('Invoices');
+        // Security deposit the landlord is holding for this tenancy — surfaced as reassurance
+        // ("your money is recorded, refundable at move-out"), the tenant-facing half of Model A.
+        $tenantRecord = auth()->user()->tenant;
+        $data['depositHeld'] = $tenantRecord
+            ? app(\App\Services\DepositService::class)->totalHeldForTenant((int) $tenantRecord->id)
+            : 0;
+        // The latest deposit settlement (if any) — the tenant confirms receipt / disputes it here.
+        $data['depositSettlement'] = $tenantRecord
+            ? \App\Models\DepositSettlement::with('items')->where('tenant_id', $tenantRecord->id)->latest('id')->first()
+            : null;
+        // Context for the settlement record (property + landlord) — makes it a self-contained,
+        // portable record once the tenant is ownerless and the affiliation has ended.
+        $data['settlementProperty'] = $tenantRecord ? optional(\App\Models\Property::find($tenantRecord->property_id))->name : null;
+        $settlementOwner = ($tenantRecord && $tenantRecord->owner_user_id) ? \App\Models\User::find($tenantRecord->owner_user_id) : null;
+        $data['settlementLandlord'] = $settlementOwner ? (trim($settlementOwner->first_name . ' ' . $settlementOwner->last_name) ?: null) : null;
+
+        // Notice-to-vacate context: required period, earliest valid move-out, and any move-out.
+        // activeNotice PERSISTS through completed (settlement done) so the tenant keeps seeing
+        // "Moving out" until the owner closes them, rather than reverting to "Give notice".
+        $vn = app(\App\Services\VacationNoticeService::class);
+        $ownerId = (int) ($tenantRecord->owner_user_id ?? 0);
+        $activeNotice = $tenantRecord ? $vn->movingOutNotice((int) $tenantRecord->id) : null;
+        $data['noticeDays']     = $tenantRecord ? $vn->noticePeriodDays($ownerId) : 30;
+        $data['noticeEarliest'] = $tenantRecord ? $vn->earliestMoveOut($ownerId)->toDateString() : null;
+        $data['activeNotice']   = $activeNotice;
+        $data['canGiveNotice']  = $tenantRecord && (int) $tenantRecord->status === TENANT_STATUS_ACTIVE;
+        $data['tenancyEnded']   = $tenantRecord && (int) $tenantRecord->status === TENANT_STATUS_CLOSE;
+        // Once the move-out date has arrived on an acknowledged/completed notice and the owner
+        // hasn't closed the tenancy, let the tenant nudge them ("in case the owner forgot").
+        $data['canRemindClose'] = $activeNotice
+            && in_array($activeNotice->status, [\App\Models\VacationNotice::STATUS_ACKNOWLEDGED, \App\Models\VacationNotice::STATUS_COMPLETED], true)
+            && \Carbon\Carbon::parse($activeNotice->intended_move_out_date)->lte(\Carbon\Carbon::today());
         // Retrieve records from the SubscriptionOrder model
         // $latestMpesaOrder = Order::whereNotNull('payment_id')
         //     ->where('user_id', $tenantId) // Filter by user_id
@@ -80,6 +113,13 @@ class InvoiceController extends Controller
             
         // }
         $data['invoices'] = $this->invoiceService->getByTenantId(auth()->user()->tenant->id);
+        // Upcoming rent months (name + amount + state) for the "Pay Upcoming Rent" modal.
+        // Authoritative gate: a tenant with no active landlord (ownerless/Helper) or a pending
+        // move-out has no business pre-paying future rent — offer no months in the first place.
+        $canPayAhead = ! auth()->user()->isOwnerlessTenant() && empty($activeNotice);
+        $data['upcomingRentMonths'] = $canPayAhead
+            ? app(\App\Services\InvoiceRecurringService::class)->upcomingRentMonths(auth()->user()->tenant)
+            : [];
         return view('tenant.invoices.index', $data);
     }
 
@@ -91,6 +131,28 @@ class InvoiceController extends Controller
         $data['tenant'] = $this->tenantService->getDetailsById($data['invoice']->tenant_id);
         $data['order'] = $this->invoiceService->getOrderById($data['invoice']->order_id);
         return view('tenant.invoices.print', $data);
+    }
+
+    /**
+     * Post-payment rent receipt (mirrors the marketplace order receipt). Distinct from the
+     * formal invoice document (details()/print) — this is the celebratory confirmation the
+     * tenant lands on after a successful rent payment, with buttons back to their invoices.
+     * Scoped to the authenticated tenant via getByIdCheckTenantAuthId (owner + tenant match),
+     * so a tenant can never open another tenant's receipt by id.
+     */
+    public function receipt($id)
+    {
+        $invoice = $this->invoiceService->getByIdCheckTenantAuthId($id);
+
+        $data['pageTitle'] = __('Payment Receipt');
+        $data['invoice']   = $invoice;
+        $data['items']     = $this->invoiceService->getItemsByInvoiceId($id);
+        $data['owner']     = $this->invoiceService->ownerInfo(auth()->user()->owner_user_id);
+        $data['order']     = $invoice->order_id
+            ? $this->invoiceService->getOrderById($invoice->order_id)
+            : null;
+
+        return view('tenant.invoices.receipt', $data);
     }
 
    
@@ -128,6 +190,54 @@ class InvoiceController extends Controller
         $data['ownerMpesaGatewayId']    = $rentGateway?->id;
     
         return view('tenant.invoices.pay', $data);
+    }
+
+    /**
+     * Advance / early rent: generate the current + up to 10 future months' rent invoices on
+     * demand (idempotent — never double-bills, and the cron won't re-generate them), then send
+     * the tenant back to their invoices where the new ones are payable via the normal flow.
+     */
+    public function generateUpcoming(Request $request)
+    {
+        $tenant = auth()->user()->tenant;
+        if (!$tenant || (int) $tenant->status !== TENANT_STATUS_ACTIVE) {
+            return back()->with('error', __('No active tenancy found.'));
+        }
+
+        // A tenant who has given notice to vacate shouldn't pre-pay months they won't be around
+        // for — mirrors the hidden UI, and hard-stops a direct POST (money surface, defense in depth).
+        if (app(\App\Services\VacationNoticeService::class)->movingOutNotice((int) $tenant->id)) {
+            return back()->with('error', __('You have a pending move-out, so paying rent ahead isn\'t available right now.'));
+        }
+
+        $recurringService = app(\App\Services\InvoiceRecurringService::class);
+
+        // Only periods the tenant is actually shown as "available" (not already invoiced/paid,
+        // within the 10-month window, monthly-rent unit) can be generated — tamper-safe.
+        $available = collect($recurringService->upcomingRentMonths($tenant))
+            ->where('state', 'available')
+            ->keyBy('period');
+
+        if ($available->isEmpty()) {
+            return back()->with('error', __('There are no upcoming rent months available to prepare right now.'));
+        }
+
+        $selected = array_filter((array) $request->input('periods', []), fn ($p) => $available->has($p));
+        if (empty($selected)) {
+            return back()->with('error', __('Please pick at least one month to prepare.'));
+        }
+
+        $setting = $recurringService->ensureUnitRecurringSetting($tenant);
+        $setting->loadMissing('items');
+
+        $count = 0;
+        foreach ($selected as $periodStr) {
+            $recurringService->generateRentInvoiceForPeriod($tenant, $setting, Carbon::parse($periodStr)->startOfMonth());
+            $count++;
+        }
+
+        return redirect()->route('tenant.invoice.index')
+            ->with('success', __(':n rent invoice(s) prepared — pay them below.', ['n' => $count]));
     }
 
     public function getCurrencyByGateway(Request $request)

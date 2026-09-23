@@ -5,6 +5,8 @@
         <div class="page-content">
             <div class="container-fluid">
                 <div class="page-content-wrapper bg-white p-30 radius-20">
+                    @include('centresidence._design')
+
                     <div class="row">
                         <div class="col-12">
                             <div
@@ -29,7 +31,7 @@
                         <div class="row">
                             @include('admin.setting.sidebar')
                             <div class="col-md-12 col-lg-12 col-xl-8 col-xxl-9">
-                                <div class="account-settings-rightside bg-off-white theme-border radius-4 p-25">
+                                <div class="account-settings-rightside cs-card cs-card--pad cs-controls">
                                     <div class="language-settings-page-area">
                                         <div class="account-settings-content-box">
                                             <div class="account-settings-title border-bottom mb-20 pb-20">
@@ -38,6 +40,17 @@
                                                         <h4>{{ $pageTitle }}</h4>
                                                     </div>
                                                 </div>
+                                            </div>
+                                            <div class="alert alert-info radius-4 mb-25" role="note"
+                                                style="font-size:13px;line-height:1.6;">
+                                                <strong>{{ __('These rates apply across every affiliate income line.') }}</strong>
+                                                {{ __('The first-time rate is paid on an owner\'s first activity in each line; the recurring rate applies for the number of months set below (measured per line, from that line\'s first commission). Income lines:') }}
+                                                <span class="d-block mt-1">
+                                                    {{ __('Subscription (of the plan fee) · Rent (a set share of our rent fee) · Marketplace (a cut of our sale commission) · Tenant screening · Agreements ·') }}@if(config('centresidence.gas_live', false)) {{ __('Gas tokens (gas only) ·') }}@endif {{ __('Financing (origination fee).') }}
+                                                </span>
+                                                <span class="d-block mt-1 text-muted">
+                                                    {{ __('For the usage lines (screening, agreements,') }}@if(config('centresidence.gas_live', false)) {{ __('gas tokens,') }}@endif {{ __('financing) the rate is applied to OUR take on each event, so a payout never exceeds what we earned — the affiliate earns from what their owners do, not just the plan they are on.') }}
+                                                </span>
                                             </div>
                                             <form action="{{ route('admin.setting.general-setting.update') }}"
                                                 method="post" enctype="multipart/form-data">

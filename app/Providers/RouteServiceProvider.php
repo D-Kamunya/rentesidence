@@ -85,6 +85,9 @@ class RouteServiceProvider extends ServiceProvider
             Route::middleware(['web', 'tenancy', 'common', 'version.update', 'addon.update'])
                 ->group(base_path('routes/admin.php'));
 
+            Route::middleware(['web', 'tenancy', 'common', 'version.update', 'addon.update'])
+                ->group(base_path('routes/finance-partner.php'));
+
             if (isAddonInstalled('PROTYSAAS') > 1) {
                 Route::middleware(['web', 'tenancy', 'common', 'version.update', 'addon.update'])
                     ->group(base_path('routes/saas.php'));

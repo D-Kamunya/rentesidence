@@ -589,10 +589,10 @@
                     @endif
 
                     @if($plan->commission_discount ?? null)
-                        - {{ $plan->commission_discount }}% discount applied 
+                        - {{ $plan->commission_discount }}% discount applied
                     @endif
 
-                    - 0 free SMS 
+                    - {{ (int) ($plan->monthly_sms_credits ?? 0) }} free SMS
 
                    <b> - No payment required </b>
                 </p>
@@ -657,9 +657,9 @@
 
                     <b> - Centresidence wallet </b>
 
-                    - 200 Free monthly SMS
+                    - {{ (int) ($plan->monthly_sms_credits ?? 0) }} Free monthly SMS
 
-                    - 1% per transaction
+                    - {{ rtrim(rtrim(number_format((float) config('centresidence.billing.transaction_fee_percentage', 1), 2), '0'), '.') }}% per transaction
 
                     @if(($plan->commission_markup ?? null) || ($plan->commission_discount ?? null))
                         @if($plan->commission_discount ?? null)
@@ -854,6 +854,22 @@
 // Sync toggle label active state (visual only — the existing JS handles d-none toggling)
 (function () {
     var toggle = document.getElementById('monthly-yearly-button');
+
+    // The Monthly/Yearly toggle only makes sense for SUBSCRIPTION plans (free & transaction
+    // have no billing period). Show it on the plan list only when subscription plans exist;
+    // the confirmation screens hide it. Target the toggle's row via the always-present input.
+    var _billingToggle = document.getElementById('planBillingToggleRow')
+        || (toggle ? toggle.closest('.d-flex') : null);
+    // .d-flex is display:flex !important — must override with !important to hide, and
+    // clear the inline prop (not set flex) to restore the class-driven layout when shown.
+    if (_billingToggle) {
+        @if ($hasSubscriptionPlans)
+            _billingToggle.style.removeProperty('display');
+        @else
+            _billingToggle.style.setProperty('display', 'none', 'important');
+        @endif
+    }
+
     if (!toggle) return;
     var monthlyLabel = document.querySelector('.price-monthly-label');
     var yearlyLabel  = document.querySelector('.price-yearly-label');

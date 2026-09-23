@@ -35,14 +35,22 @@
                         <div class="property-top-search-bar">
                             <div class="row">
                                 <div class="col-md-6">
-                                    <a href="{{ route('owner.property.add') }}" class="theme-btn mb-25"
-                                        title="Add New Proparty">{{ __('Add New Property') }}</a>
-                                </div>
-                                <div class="col-md-6">
-                                    <div class="page-inner-search ms-auto position-relative mb-25">
-                                        <input type="text" class="form-control" placeholder="Search properties">
-                                        <span class="ri-search-line"></span>
-                                    </div>
+                                    @php
+                                        $subscriptionService = app(\App\Services\SubscriptionService::class);
+                                        $unitLimit       = $subscriptionService->getUnitLimit();
+                                        $remainingUnits  = $unitLimit['remaining'] ?? 0;
+                                        $totalUnits      = $unitLimit['total'] ?? 0;
+                                        $hasReachedLimit = $remainingUnits <= 0 && $totalUnits > 0;
+                                        $isNearLimit     = $remainingUnits > 0 && $remainingUnits <= 3;
+                                    @endphp
+                                    @if ($hasReachedLimit)
+                                        <a href="{{ route('owner.subscription.index', ['current_plan' => 'no']) }}"
+                                            class="theme-btn-purple mb-25"
+                                            title="{{ __('You\'ve used all :total units. Upgrade to add more.', ['total' => $totalUnits]) }}">{{ __('Upgrade to Add Property') }}</a>
+                                    @else
+                                        <a href="{{ route('owner.property.add') }}" class="theme-btn mb-25"
+                                            title="{{ __('Add New Property') }}">{{ __('Add New Property') }}@if ($isNearLimit) ({{ $remainingUnits }} {{ __('left') }})@endif</a>
+                                    @endif
                                 </div>
                             </div>
                         </div>

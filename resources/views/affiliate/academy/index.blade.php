@@ -43,6 +43,12 @@
                                     <p class="mb-0" style="color:#6b7280;font-size:14px;max-width:560px;">
                                         Complete all modules to become a certified Centresidence partner and unlock lucrative recurring income generating opportunities.
                                     </p>
+                                    @if($percentage < 100)
+                                        <div class="acad-gate-note">
+                                            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" style="flex-shrink:0;margin-top:1px;"><rect x="4" y="7" width="8" height="6" rx="1.5" stroke="currentColor" stroke-width="1.5"/><path d="M5.5 7V5.5a2.5 2.5 0 0 1 5 0V7" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+                                            <span>Your affiliate dashboard unlocks once your certification is complete. Finish the modules below to gain full access to your tools and start earning.</span>
+                                        </div>
+                                    @endif
                                 </div>
                                 {{-- Circular-ish progress chip --}}
                                 <div style="text-align:center;min-width:64px;">
@@ -176,6 +182,22 @@
     </div>
 
     <style>
+        /* ── Dashboard-access gate note ──────────────────────── */
+        .acad-gate-note {
+            display: flex;
+            align-items: flex-start;
+            gap: 8px;
+            margin-top: 12px;
+            max-width: 560px;
+            background: #FEF9EE;
+            border: 1px solid #F5E4C3;
+            color: #854F0B;
+            border-radius: 10px;
+            padding: 10px 12px;
+            font-size: 12.5px;
+            line-height: 1.5;
+        }
+
         /* ── Module card ─────────────────────────────────────── */
         .module-card {
             background: #fff;

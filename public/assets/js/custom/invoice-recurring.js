@@ -177,10 +177,14 @@
         selector.modal("show");
         selector.find(".invoiceNo").text(response.data.invoice.invoice_no);
         var status = "Deactivate";
+        var statusClass = "ipv-status-off";
         if (response.data.invoice.status == "1") {
             status = "Active";
+            statusClass = "ipv-status-paid";
         }
-        selector.find(".invoiceStatus").html(status);
+        selector
+            .find(".invoiceStatus")
+            .html('<span class="' + statusClass + '">' + status + "</span>");
 
         selector
             .find(".tenantName")
@@ -287,11 +291,8 @@
         $(".invoiceItem-invoice_type_id").trigger("change");
     });
 
-    // datatable
-    $("#search_property").on("change", function () {
-        var oTable = $("#allInvoiceDataTable").DataTable();
-        oTable.search($(this).val()).draw();
-    });
+    // datatable — filtering is handled by the DataTables built-in search box (the property
+    // dropdown was removed: it filtered unreliably and the search box already covers it).
     $("#allInvoiceDataTable").DataTable({
         processing: true,
         serverSide: true,

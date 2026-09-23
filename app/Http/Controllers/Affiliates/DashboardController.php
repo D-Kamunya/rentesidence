@@ -26,6 +26,17 @@ class DashboardController extends Controller
         $this->svc = $svc;
     }
 
+    /** Affiliate notifications page — marks all seen, then lists them. */
+    public function notification()
+    {
+        \App\Models\Notification::where('user_id', auth()->id())->update(['is_seen' => ACTIVE]);
+
+        return view('affiliate.notification', [
+            'pageTitle'     => __('Notifications'),
+            'notifications' => getNotification(auth()->id()),
+        ]);
+    }
+
     public function dashboard(Request $request)
     {
         $user = auth()->user();
@@ -68,6 +79,26 @@ class DashboardController extends Controller
             'total_payouts' => $totalWithdrawals,
             'total_referrals' => $totalReferrals
             ];
+
+        // "Your owners generated X this month" — every income line an affiliate earns from
+        // their owners' ACTIVITY, not just the subscription. Surfacing the usage lines
+        // (screening, agreements, gas tokens, financing) shows that even a free-tier owner
+        // who never upgrades still earns the affiliate money — the antidote to dereliction.
+        $activityEarnings = AffiliateCommission::where('affiliate_id', $affiliateId)
+            ->where('period_month', $month)
+            ->where('period_year', $year)
+            ->select('source', \DB::raw('SUM(commission_amount) as total'))
+            ->groupBy('source')
+            ->pluck('total', 'source');
+
+        // Gated to live verticals only (gas stays hidden until launch) — single source
+        // of truth so wallet, dashboard and training never drift or advertise parked income.
+        $sourceLabels = AffiliateCommissionService::surfacedStreams();
+        $earningsBySource = [];
+        foreach ($sourceLabels as $key => $label) {
+            $earningsBySource[] = ['label' => $label, 'amount' => (float) ($activityEarnings[$key] ?? 0)];
+        }
+        $ownersGeneratedThisMonth = array_sum(array_column($earningsBySource, 'amount'));
 
          $commissionTrends = AffiliateCommissionPayment::select(
                 'period_month',
@@ -137,6 +168,6 @@ class DashboardController extends Controller
             $urgentSuggestions = $suggestionCounts->sum('urgent_count');
             $leadsWithSuggestions = $suggestionCounts->count();
         // Pass the data to the view
-        return view('affiliate.dashboard', compact('summary', 'totalLeads', 'newModules', 'commissionTrends', 'recentCommissions', 'isCertified', 'suggestionCounts', 'pendingWithdrawalsCount', 'totalSuggestions','urgentSuggestions', 'leadsWithSuggestions'));
+        return view('affiliate.dashboard', compact('summary', 'totalLeads', 'newModules', 'commissionTrends', 'recentCommissions', 'isCertified', 'suggestionCounts', 'pendingWithdrawalsCount', 'totalSuggestions','urgentSuggestions', 'leadsWithSuggestions', 'earningsBySource', 'ownersGeneratedThisMonth'));
     }
 }

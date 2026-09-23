@@ -10,11 +10,11 @@ use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Mail;
+use App\Mail\Concerns\SendsCsMail;
 
 class SendSmsCreditsEmailJob implements ShouldQueue
 {
-    use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
+    use Dispatchable, InteractsWithQueue, Queueable, SerializesModels, SendsCsMail;
 
     /**
      * @param User        $recipient        The owner's user record.
@@ -40,19 +40,22 @@ class SendSmsCreditsEmailJob implements ShouldQueue
                 null,
             );
 
-            // ── Email notification ───────────────────────────────────
+            // ── Email notification (CS lifecycle layout) ──────────────
             if ($this->recipient->email) {
-                Mail::send([], [], function ($message) {
-                    $message->to($this->recipient->email)
-                            ->subject($this->emailData->subject)
-                            ->html(
-                                '<p>' . __('Hello') . ' ' . e($this->recipient->name) . ',</p>' .
-                                '<p>' . e($this->emailData->message) . '</p>' .
-                                '<p><a href="' . e($this->notificationData->url) . '">' .
-                                    __('Manage SMS Credits') .
-                                '</a></p>'
-                            );
-                });
+                $name = e($this->recipient->name);
+                $this->sendCs(
+                    [$this->recipient->email],
+                    $this->emailData->subject,
+                    [
+                        'eyebrow' => __('SMS credits'), 'eyebrowColor' => '#854F0B',
+                        'title'   => $this->notificationData->title ?? $this->emailData->subject,
+                        'blocks'  => [
+                            ['type' => 'text', 'html' => __('Hello :name,', ['name' => "<strong>{$name}</strong>"])
+                                . ' ' . e($this->emailData->message)],
+                            ['type' => 'button', 'url' => $this->notificationData->url, 'label' => __('Manage SMS credits')],
+                        ],
+                    ]
+                );
             }
 
         } catch (\Exception $e) {

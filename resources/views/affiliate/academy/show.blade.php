@@ -68,7 +68,8 @@
                         {{-- Module Content Card --}}
                         <div class="mod-card mb-4">
                             <div class="mod-card__body">
-                                <div class="mod-content">
+                                @include('common.partials.kb-prose-style')
+                                <div class="kb-prose">
                                     {!! $module->content !!}
                                 </div>
                             </div>
@@ -111,20 +112,25 @@
                             </div>
                         @endif
 
-                        @if(!$completed && !$needsReview)
-                            <div id="video-warning" class="mod-alert mod-alert--info mb-3">
-                                <div class="mod-alert__icon">
-                                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                                        <circle cx="8" cy="8" r="7" stroke="currentColor" stroke-width="1.5"/>
-                                        <path d="M8 7v4M8 5v.5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/>
-                                    </svg>
+                        @if(!$completed && !$needsReview && $module->youtube_url)
+                            <div id="video-warning" class="mod-alert mod-alert--info mb-3" style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;">
+                                <div style="display:flex;align-items:center;gap:10px;">
+                                    <div class="mod-alert__icon">
+                                        <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                                            <circle cx="8" cy="8" r="7" stroke="currentColor" stroke-width="1.5"/>
+                                            <path d="M8 7v4M8 5v.5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/>
+                                        </svg>
+                                    </div>
+                                    <div>Watch the training video above to unlock the quiz.</div>
                                 </div>
-                                <div>Watch the training video above to unlock the quiz.</div>
+                                {{-- Fallback so a missed "video ended" event can never trap the learner. --}}
+                                <button type="button" id="continue-to-quiz" style="display:none;background:#185FA5;color:#fff;border:none;border-radius:8px;font-size:12.5px;font-weight:600;padding:8px 14px;cursor:pointer;white-space:nowrap;">Continue to quiz →</button>
                             </div>
                         @endif
 
-                        {{-- Quiz Section --}}
-                        <div id="quiz-section" style="display:none;">
+                        {{-- Quiz Section — gated behind the video only when a module HAS one;
+                             text-only modules show the quiz straight away. --}}
+                        <div id="quiz-section" style="display:{{ $module->youtube_url ? 'none' : 'block' }};">
                             <div class="mod-card">
                                 <div class="mod-card__body">
 
@@ -230,11 +236,6 @@
         .mod-card__body { padding: 1.5rem; }
 
         /* ── Module content typography ───────────────────────── */
-        .mod-content { font-size: 15px; line-height: 1.75; color: #374151; }
-        .mod-content h1,.mod-content h2,.mod-content h3 { font-weight: 500; margin-top: 1.5rem; margin-bottom: .5rem; }
-        .mod-content p { margin-bottom: 1rem; }
-        .mod-content ul,.mod-content ol { padding-left: 1.25rem; margin-bottom: 1rem; }
-        .mod-content li { margin-bottom: .35rem; }
 
         /* ── Alerts ──────────────────────────────────────────── */
         .mod-alert {
@@ -316,19 +317,35 @@
         .quiz-submit-btn:active { transform: scale(.98); }
     </style>
 
+    @if($module->youtube_url)
     <script src="https://www.youtube.com/iframe_api"></script>
     <script>
         var player;
+        function revealQuiz() {
+            var q = document.getElementById('quiz-section');   if (q) q.style.display = 'block';
+            var w = document.getElementById('video-warning');  if (w) w.style.display = 'none';
+        }
+        // Only build a player if the iframe actually exists (guards against errors).
         function onYouTubeIframeAPIReady() {
-            player = new YT.Player('academy-video', {
-                events: { 'onStateChange': onPlayerStateChange }
-            });
+            if (!document.getElementById('academy-video')) return;
+            player = new YT.Player('academy-video', { events: { 'onStateChange': onPlayerStateChange } });
         }
         function onPlayerStateChange(event) {
+            // Auto-reveal when the video ends…
             if (event.data == YT.PlayerState.ENDED) {
-                document.getElementById('quiz-section').style.display = 'block';
-                document.getElementById('video-warning').style.display = 'none';
+                revealQuiz();
+            }
+            // …and, once it starts playing, surface a manual "Continue" so a missed
+            // ENDED event (a known YouTube API quirk) can never leave the learner stuck.
+            else if (event.data == YT.PlayerState.PLAYING) {
+                var btn = document.getElementById('continue-to-quiz');
+                if (btn) btn.style.display = '';
             }
         }
+        document.addEventListener('DOMContentLoaded', function () {
+            var btn = document.getElementById('continue-to-quiz');
+            if (btn) btn.addEventListener('click', revealQuiz);
+        });
     </script>
+    @endif
 @endsection

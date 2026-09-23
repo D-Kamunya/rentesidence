@@ -38,7 +38,7 @@ class PropertyUnit extends Model
         $firstImage = $this->images()->oldest()->first(); // get the first uploaded image
         return $firstImage
             ? asset('storage/' . $firstImage->folder_name . '/' . $firstImage->file_name)
-            : asset('assets/images/default-unit.png'); // fallback if none
+            : asset('assets/images/no-image.jpg'); // fallback if none (default-unit.png doesn't exist)
     }    
 
     public function property()

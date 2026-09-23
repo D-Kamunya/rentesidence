@@ -1,0 +1,166 @@
+<?php
+
+namespace App\Services;
+
+use App\Models\AffiliateWithdrawal;
+use App\Models\Agreement;
+use App\Models\HouseHuntApplication;
+use App\Models\Invoice;
+use App\Models\LandlordReferral;
+use App\Models\Lead;
+use App\Models\LeadSuggestion;
+use App\Models\MaintenanceRequest;
+use App\Models\Message;
+use App\Models\Owner;
+use App\Models\ProductOrder;
+use App\Models\Property;
+use App\Models\Ticket;
+
+/**
+ * Sidebar count badges — the actionable "you have N things waiting" numbers on nav links,
+ * per role. Each entry is a single, cheap, correct query (reusing the same logic the target
+ * page uses), computed once per request via a view composer on each role's sidebar.
+ *
+ * A badge only means something you can ACT on, so a count of zero renders nothing. Every query
+ * is schema-guarded so a bare/partial install (or a test rendering a sidebar) degrades to 0
+ * rather than throwing.
+ */
+class NavBadgeService
+{
+    /** Owner sidebar: pending applications to review, deposits due, maintenance + tickets awaiting action. */
+    public function forOwner(int $ownerUserId): array
+    {
+        return [
+            'applications' => $this->safe(fn () => HouseHuntApplication::whereHas(
+                'propertyUnit.property',
+                fn ($q) => $q->where('owner_user_id', $ownerUserId)
+            )->where('status', HOUSE_HUNT_APPLICATION_PENDING)->count()),
+
+            'deposits_due' => $this->safe(fn () => app(DepositService::class)->dueForSettlementCount($ownerUserId)),
+
+            'maintenance' => $this->safe(fn () => MaintenanceRequest::whereIn(
+                'property_id',
+                Property::where('owner_user_id', $ownerUserId)->pluck('id')
+            )->where('status', MAINTENANCE_REQUEST_STATUS_PENDING)->count()),
+
+            // Tenant-raised tickets that still need the owner: newly OPEN or REOPENed (not in-progress/resolved/closed).
+            'tickets' => $this->safe(fn () => Ticket::where('owner_user_id', $ownerUserId)
+                ->whereIn('status', [TICKET_STATUS_OPEN, TICKET_STATUS_REOPEN])->count()),
+
+            // Paid marketplace orders awaiting dispatch (fulfilment not yet started) — mirrors the
+            // owner Product Orders page scoping (products.owner_user_id = the Owner RECORD id).
+            'orders_dispatch' => $this->safe(function () use ($ownerUserId) {
+                $ownerId = Owner::where('user_id', $ownerUserId)->value('id');
+                if (! $ownerId) {
+                    return 0;
+                }
+                return ProductOrder::whereHas('orderItems.product', fn ($q) => $q->where('owner_user_id', $ownerId))
+                    ->where('payment_status', PRODUCT_ORDER_STATUS_PAID)
+                    ->where('fulfilment_status', FULFILMENT_NONE)
+                    ->count();
+            }),
+
+            // Support tickets with an unread reply from admin.
+            'support' => $this->safe(fn () => app(SupportTicketService::class)->requesterUnreadCount($ownerUserId)),
+        ];
+    }
+
+    /**
+     * Tenant sidebar: unpaid invoices, landlord-requested documents still outstanding, and
+     * agreements awaiting the tenant's signature. (invoices/docs key on the tenant RECORD id;
+     * agreements key on the tenant's USER id.)
+     */
+    public function forTenant(int $tenantRecordId, int $userId): array
+    {
+        return [
+            'invoices_unpaid' => $this->safe(fn () => Invoice::where('tenant_id', $tenantRecordId)
+                ->where('status', INVOICE_STATUS_PENDING)->count()),
+
+            // Documents the landlord requested that the tenant hasn't provided (or must re-submit).
+            'documents' => $this->safe(fn () => app(KycConfigService::class)
+                ->outstandingRequestCountForTenant($tenantRecordId)),
+
+            // Agreements sent to this tenant and still awaiting their signature.
+            'agreements' => $this->safe(fn () => Agreement::where('tenant_user_id', $userId)
+                ->where('status', Agreement::STATUS_SENT)->count()),
+
+            // Support tickets with an unread reply from admin.
+            'support' => $this->safe(fn () => app(SupportTicketService::class)->requesterUnreadCount($userId)),
+        ];
+    }
+
+    /**
+     * Affiliate sidebar: unclaimed leads available in the marketplace (the pool anyone can claim),
+     * and pending suggested actions the engine has raised on THIS affiliate's own leads.
+     */
+    public function forAffiliate(int $affiliateUserId): array
+    {
+        return [
+            'marketplace_leads' => $this->safe(fn () => Lead::where('marketplace_status', 'marketplace')
+                ->whereNull('affiliate_id')->count()),
+
+            'lead_suggestions' => $this->safe(function () use ($affiliateUserId) {
+                $leadIds = Lead::where('affiliate_id', $affiliateUserId)->pluck('id');
+                if ($leadIds->isEmpty()) {
+                    return 0;
+                }
+                return LeadSuggestion::where('status', 'pending')->whereIn('lead_id', $leadIds)->count();
+            }),
+
+            'support' => $this->safe(fn () => app(SupportTicketService::class)->requesterUnreadCount($affiliateUserId)),
+        ];
+    }
+
+    /** Finance-partner sidebar: unread support replies (the rest of their surfaces are their own pass). */
+    public function forFinancePartner(int $userId): array
+    {
+        return [
+            'support' => $this->safe(fn () => app(SupportTicketService::class)->requesterUnreadCount($userId)),
+        ];
+    }
+
+    /**
+     * Admin sidebar: pending affiliate withdrawals, and referral items needing attention —
+     * owner sign-up requests to onboard PLUS reward payouts ready to pay.
+     */
+    public function forAdmin(): array
+    {
+        return [
+            'affiliate_withdrawals' => $this->safe(fn () => AffiliateWithdrawal::where('status', AFFILIATE_WITHDRAWAL_PENDING)->count()),
+            'enquiries'             => $this->safe(fn () => Message::where('is_view', 0)->count()),
+            'referral_payouts'      => $this->safe(function () {
+                $svc = app(LandlordReferralService::class);
+                if (! $svc->enabled()) {
+                    return 0;
+                }
+
+                // A referred landlord filled the form and is waiting to be onboarded into an owner.
+                $onboard = LandlordReferral::where('status', LandlordReferral::STATUS_LEAD_CREATED)
+                    ->whereNull('owner_id')
+                    ->whereHas('lead', fn ($q) => $q->whereNull('owner_id'))
+                    ->count();
+
+                // Tenant-initiated payout requests awaiting admin release.
+                $payoutRequests = \App\Models\ReferralPayout::where('status', \App\Models\ReferralPayout::STATUS_PENDING)->count();
+
+                return $onboard + $payoutRequests;
+            }),
+
+            // Support tickets from any account type awaiting an admin reply.
+            'support' => $this->safe(fn () => app(SupportTicketService::class)->adminOpenCount()),
+
+            // Prospective-affiliate applications awaiting review (from the public apply page).
+            'affiliate_applications' => $this->safe(fn () => \App\Models\AffiliateApplication::where('status', \App\Models\AffiliateApplication::STATUS_PENDING)->count()),
+        ];
+    }
+
+    /** Run a count, returning 0 on any error (missing table/column on a bare install, etc.). */
+    private function safe(callable $fn): int
+    {
+        try {
+            return (int) $fn();
+        } catch (\Throwable $e) {
+            return 0;
+        }
+    }
+}

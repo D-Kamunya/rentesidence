@@ -28,6 +28,18 @@ class Kernel extends ConsoleKernel
         $schedule->command('backup:database')
             ->dailyAt('00:00')
             ->appendOutputTo(storage_path('logs/db_backup.log'));
+
+        // Comms safety net: surface persistent job failures (a send that didn't happen) to admins
+        // daily, and prune old failed rows weekly so the table stays clean.
+        $schedule->command('queue:alert-failed')->dailyAt('07:00')->withoutOverlapping();
+        $schedule->command('queue:prune-failed --hours=168')->weekly();
+
+        // Affiliate commission digest — 1st of each month, for the previous month.
+        $schedule->command('affiliate:commission-digest')->monthlyOn(1, '08:00')->withoutOverlapping();
+        // Re-engage owners stuck out of SMS credits with a paused backlog. Weekly is the cadence;
+        // a per-owner Cache throttle inside the command backs it up. (Skips topped-up owners.)
+        $schedule->command('sms:paused-digest')->weeklyOn(1, '08:30')->withoutOverlapping()
+        ->appendOutputTo(storage_path('logs/sms_paused_digest_scheduler.log'));
         $schedule->command('leads:generate-suggestions')->everyFourHours()
         ->appendOutputTo(storage_path('logs/generate_suggestions_scheduler.log'));
         $schedule->command('leads:generate-suggestions --notify')->dailyAt('09:00')
@@ -36,7 +48,18 @@ class Kernel extends ConsoleKernel
         ->appendOutputTo(storage_path('logs/leads_expire_scheduler.log'));
         $schedule->command('trials:expire')->dailyAt('02:30')->withoutOverlapping()
         ->appendOutputTo(storage_path('logs/trials_expire_scheduler.log'));
-            
+
+        // Global Tenant ID backbone — refresh tenant payment-behaviour profiles nightly.
+        $schedule->command('screening:recompute')->dailyAt('03:00')->withoutOverlapping()
+        ->appendOutputTo(storage_path('logs/screening_recompute_scheduler.log'));
+
+        // Escrow safety net: release held marketplace proceeds after the acceptance window.
+        $schedule->command('marketplace:auto-release-settlements')->dailyAt('03:30')->withoutOverlapping();
+
+        // Invite-a-landlord: confirm rewards for referred owners who crossed the revenue
+        // threshold without buying a subscription (the paid-subscription case is instant).
+        $schedule->command('referrals:evaluate-revenue')->dailyAt('04:00')->withoutOverlapping();
+
     }
 
     /**

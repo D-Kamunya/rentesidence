@@ -5,6 +5,8 @@
         <div class="page-content">
             <div class="container-fluid">
                 <div class="page-content-wrapper bg-white p-30 radius-20">
+                    @include('centresidence._design')
+
                     <div class="row">
                         <div class="col-12">
                             <div
@@ -27,7 +29,7 @@
                         <div class="row">
                             @include('admin.setting.sidebar')
                             <div class="col-md-12 col-lg-12 col-xl-8 col-xxl-9">
-                                <div class="account-settings-rightside bg-off-white theme-border radius-4 p-25">
+                                <div class="account-settings-rightside cs-card cs-card--pad cs-controls">
                                     <div class="currency-settings-page-area">
                                         <div class="account-settings-content-box">
                                             <div class="account-settings-title border-bottom mb-20 pb-20">
@@ -61,7 +63,7 @@
                                                                     @else
                                                                         <div
                                                                             class="status-btn status-btn-red font-13 radius-4">
-                                                                            {{ __('Deactivate') }}</div>
+                                                                            {{ __('Inactive') }}</div>
                                                                     @endif
                                                                 </td>
                                                                 <td>
@@ -86,7 +88,7 @@
                                                                     @else
                                                                         <div
                                                                             class="status-btn status-btn-red font-13 radius-4">
-                                                                            {{ __('Deactivate') }}</div>
+                                                                            {{ __('Inactive') }}</div>
                                                                     @endif
                                                                 </td>
                                                                 <td>
@@ -111,7 +113,7 @@
                                                                     @else
                                                                         <div
                                                                             class="status-btn status-btn-red font-13 radius-4">
-                                                                            {{ __('Deactivate') }}</div>
+                                                                            {{ __('Inactive') }}</div>
                                                                     @endif
                                                                 </td>
                                                                 <td>
@@ -136,7 +138,7 @@
                                                                     @else
                                                                         <div
                                                                             class="status-btn status-btn-red font-13 radius-4">
-                                                                            {{ __('Deactivate') }}</div>
+                                                                            {{ __('Inactive') }}</div>
                                                                     @endif
                                                                 </td>
                                                                 <td>
@@ -161,7 +163,7 @@
                                                                     @else
                                                                         <div
                                                                             class="status-btn status-btn-red font-13 radius-4">
-                                                                            {{ __('Deactivate') }}</div>
+                                                                            {{ __('Inactive') }}</div>
                                                                     @endif
                                                                 </td>
                                                                 <td>
@@ -186,7 +188,7 @@
                                                                     @else
                                                                         <div
                                                                             class="status-btn status-btn-red font-13 radius-4">
-                                                                            {{ __('Deactivate') }}</div>
+                                                                            {{ __('Inactive') }}</div>
                                                                     @endif
                                                                 </td>
                                                                 <td>
@@ -211,7 +213,7 @@
                                                                     @else
                                                                         <div
                                                                             class="status-btn status-btn-red font-13 radius-4">
-                                                                            {{ __('Deactivate') }}</div>
+                                                                            {{ __('Inactive') }}</div>
                                                                     @endif
                                                                 </td>
                                                                 <td>
@@ -236,7 +238,7 @@
                                                                     @else
                                                                         <div
                                                                             class="status-btn status-btn-red font-13 radius-4">
-                                                                            {{ __('Deactivate') }}</div>
+                                                                            {{ __('Inactive') }}</div>
                                                                     @endif
                                                                 </td>
                                                                 <td>
@@ -261,7 +263,7 @@
                                                                     @else
                                                                         <div
                                                                             class="status-btn status-btn-red font-13 radius-4">
-                                                                            {{ __('Deactivate') }}</div>
+                                                                            {{ __('Inactive') }}</div>
                                                                     @endif
                                                                 </td>
                                                                 <td>
@@ -290,7 +292,7 @@
         </div>
     </div>
 
-    <div class="modal fade" id="editHeroModal" tabindex="-1" aria-labelledby="editHeroModalLabel" aria-hidden="true">
+    <div class="modal fade cs-modal" id="editHeroModal" tabindex="-1" aria-labelledby="editHeroModalLabel" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content">
                 <div class="modal-header">
@@ -330,7 +332,7 @@
                                             {{ __('Active') }}</option>
                                         <option value="0"
                                             {{ getOption('home_hero_section_status', 1) == 0 ? 'selected' : '' }}>
-                                            {{ __('Deactivate') }}</option>
+                                            {{ __('Inactive') }}</option>
                                     </select>
                                 </div>
                             </div>
@@ -347,7 +349,7 @@
         </div>
     </div>
 
-    <div class="modal fade" id="editFeaturesModal" tabindex="-1" aria-labelledby="editFeaturesModalLabel"
+    <div class="modal fade cs-modal" id="editFeaturesModal" tabindex="-1" aria-labelledby="editFeaturesModalLabel"
         aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content">
@@ -395,7 +397,7 @@
                                             {{ __('Active') }}</option>
                                         <option value="0"
                                             {{ getOption('home_feature_section_status', 1) == 0 ? 'selected' : '' }}>
-                                            {{ __('Deactivate') }}</option>
+                                            {{ __('Inactive') }}</option>
                                     </select>
                                 </div>
                             </div>
@@ -413,7 +415,7 @@
         </div>
     </div>
 
-    <div class="modal fade" id="editAboutUsModal" tabindex="-1" aria-labelledby="editAboutUsModalLabel"
+    <div class="modal fade cs-modal" id="editAboutUsModal" tabindex="-1" aria-labelledby="editAboutUsModalLabel"
         aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content">
@@ -455,7 +457,7 @@
                                             {{ __('Active') }}</option>
                                         <option value="0"
                                             {{ getOption('home_about_us_section_status', 1) == 0 ? 'selected' : '' }}>
-                                            {{ __('Deactivate') }}</option>
+                                            {{ __('Inactive') }}</option>
                                     </select>
                                 </div>
                             </div>
@@ -472,7 +474,7 @@
         </div>
     </div>
 
-    <div class="modal fade" id="editHowItWorkModal" tabindex="-1" aria-labelledby="editHowItWorkModalLabel"
+    <div class="modal fade cs-modal" id="editHowItWorkModal" tabindex="-1" aria-labelledby="editHowItWorkModalLabel"
         aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content">
@@ -514,7 +516,7 @@
                                             {{ __('Active') }}</option>
                                         <option value="0"
                                             {{ getOption('home_how_it_word_section_status', 1) == 0 ? 'selected' : '' }}>
-                                            {{ __('Deactivate') }}</option>
+                                            {{ __('Inactive') }}</option>
                                     </select>
                                 </div>
                             </div>
@@ -532,7 +534,7 @@
         </div>
     </div>
 
-    <div class="modal fade" id="editCorePagesModal" tabindex="-1" aria-labelledby="editCorePagesModalLabel"
+    <div class="modal fade cs-modal" id="editCorePagesModal" tabindex="-1" aria-labelledby="editCorePagesModalLabel"
         aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content">
@@ -576,7 +578,7 @@
                                             {{ __('Active') }}</option>
                                         <option value="0"
                                             {{ getOption('home_core_pages_section_status', 1) == 0 ? 'selected' : '' }}>
-                                            {{ __('Deactivate') }}</option>
+                                            {{ __('Inactive') }}</option>
                                     </select>
                                 </div>
                             </div>
@@ -594,7 +596,7 @@
         </div>
     </div>
 
-    <div class="modal fade" id="editPriceModal" tabindex="-1" aria-labelledby="editPriceModalLabel"
+    <div class="modal fade cs-modal" id="editPriceModal" tabindex="-1" aria-labelledby="editPriceModalLabel"
         aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content">
@@ -631,7 +633,7 @@
                                             {{ __('Active') }}</option>
                                         <option value="0"
                                             {{ getOption('home_pricing_section_status', 1) == 0 ? 'selected' : '' }}>
-                                            {{ __('Deactivate') }}</option>
+                                            {{ __('Inactive') }}</option>
                                     </select>
                                 </div>
                             </div>
@@ -649,7 +651,7 @@
         </div>
     </div>
 
-    <div class="modal fade" id="editIntegrationModal" tabindex="-1" aria-labelledby="editIntegrationModalLabel"
+    <div class="modal fade cs-modal" id="editIntegrationModal" tabindex="-1" aria-labelledby="editIntegrationModalLabel"
         aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content">
@@ -698,7 +700,7 @@
                                             {{ __('Active') }}</option>
                                         <option value="0"
                                             {{ getOption('home_integration_section_status', 1) == 0 ? 'selected' : '' }}>
-                                            {{ __('Deactivate') }}</option>
+                                            {{ __('Inactive') }}</option>
                                     </select>
                                 </div>
                             </div>
@@ -716,7 +718,7 @@
         </div>
     </div>
 
-    <div class="modal fade" id="editTestimonialModal" tabindex="-1" aria-labelledby="editTestimonialModalLabel"
+    <div class="modal fade cs-modal" id="editTestimonialModal" tabindex="-1" aria-labelledby="editTestimonialModalLabel"
         aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content">
@@ -754,7 +756,7 @@
                                             {{ __('Active') }}</option>
                                         <option value="0"
                                             {{ getOption('home_testimonial_section_status', 1) == 0 ? 'selected' : '' }}>
-                                            {{ __('Deactivate') }}</option>
+                                            {{ __('Inactive') }}</option>
                                     </select>
                                 </div>
                             </div>
@@ -772,7 +774,7 @@
         </div>
     </div>
 
-    <div class="modal fade" id="editFaqModal" tabindex="-1" aria-labelledby="editFaqModalLabel" aria-hidden="true">
+    <div class="modal fade cs-modal" id="editFaqModal" tabindex="-1" aria-labelledby="editFaqModalLabel" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content">
                 <div class="modal-header">
@@ -807,7 +809,7 @@
                                             {{ __('Active') }}</option>
                                         <option value="0"
                                             {{ getOption('home_faq_section_status', 1) == 0 ? 'selected' : '' }}>
-                                            {{ __('Deactivate') }}</option>
+                                            {{ __('Inactive') }}</option>
                                     </select>
                                 </div>
                             </div>

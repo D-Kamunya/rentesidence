@@ -273,7 +273,7 @@
                                                     View Lead
                                                 </a>
                                                 <form method="POST" action="{{ route('admin.suggestions.destroy', $s->id) }}" style="display:inline;"
-                                                      onsubmit="return confirm('Delete this suggestion?')">
+                                                      data-cs-confirm="Delete this suggestion?" data-cs-confirm-tone="danger">
                                                     @csrf @method('DELETE')
                                                     <button type="submit" class="at-action-btn at-action-btn--delete">
                                                         <svg width="12" height="12" viewBox="0 0 16 16" fill="none">

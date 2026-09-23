@@ -40,37 +40,41 @@ class ReferralsController extends Controller
                 $q->where('affiliate_id', $affiliateId)
                   ->where('source', AFFILIATE_COMMISSION_SOURCE_MARKETPLACE);
             }], 'commission_amount')
+            // Usage lines (screening / agreement / financing / …) so the columns sum to Total Earned.
+            ->withSum(['commissions as other_earned' => function ($q) use ($affiliateId) {
+                $q->where('affiliate_id', $affiliateId)
+                  ->whereNotIn('source', [
+                      AFFILIATE_COMMISSION_SOURCE_SUBSCRIPTION,
+                      AFFILIATE_COMMISSION_SOURCE_RENT,
+                      AFFILIATE_COMMISSION_SOURCE_MARKETPLACE,
+                  ]);
+            }], 'commission_amount')
             ->orderByDesc('total_earned')
             ->paginate(20);
 
-        // Get first and last commission dates for each referral
-        $referrals->getCollection()->transform(function ($owner) use ($affiliateId) {
-            $firstCommission = AffiliateCommission::where('affiliate_id', $affiliateId)
-                ->where('owner_id', $owner->id)
-                ->oldest()
-                ->first();
-            
-            $lastCommission = AffiliateCommission::where('affiliate_id', $affiliateId)
-                ->where('owner_id', $owner->id)
-                ->latest()
-                ->first();
+        // Fetch every commission for the referrals on this page in ONE query,
+        // grouped by owner, then derive per-referral facts in memory. (Was an
+        // N+1: ~3–4 queries per referral × 20 per page.)
+        $ownerIds = $referrals->getCollection()->pluck('id');
+        $commissionsByOwner = AffiliateCommission::where('affiliate_id', $affiliateId)
+            ->whereIn('owner_id', $ownerIds)
+            ->get(['owner_id', 'source', 'type', 'created_at'])
+            ->groupBy('owner_id');
 
-            $owner->first_commission_date = $firstCommission?->created_at;
-            $owner->last_commission_date = $lastCommission?->created_at;
-            $owner->client_type = $owner->commissions()
-                ->where('affiliate_id', $affiliateId)
-                ->where('source', AFFILIATE_COMMISSION_SOURCE_SUBSCRIPTION)
-                ->exists() 
-                ? (AffiliateCommission::where('affiliate_id', $affiliateId)
-                    ->where('owner_id', $owner->id)
-                    ->where('source', AFFILIATE_COMMISSION_SOURCE_SUBSCRIPTION)
-                    ->where('type', NEW_CLIENT)
-                    ->exists() ? 'new_client' : 'recurring_client')
-                : 'other';
-            
-            // Determine if active (commission in last 30 days)
-            $owner->is_active = $lastCommission && $lastCommission->created_at->gt(now()->subDays(30));
-            
+        $referrals->getCollection()->transform(function ($owner) use ($commissionsByOwner) {
+            $rows = $commissionsByOwner->get($owner->id, collect());
+
+            $owner->first_commission_date = $rows->min('created_at');
+            $owner->last_commission_date  = $rows->max('created_at');
+
+            $subs   = $rows->where('source', AFFILIATE_COMMISSION_SOURCE_SUBSCRIPTION);
+            $owner->client_type = $subs->isEmpty()
+                ? 'other'
+                : ($subs->where('type', NEW_CLIENT)->isNotEmpty() ? 'new_client' : 'recurring_client');
+
+            $owner->is_active = $owner->last_commission_date
+                && $owner->last_commission_date->gt(now()->subDays(30));
+
             return $owner;
         });
 
@@ -130,9 +134,19 @@ class ReferralsController extends Controller
                     'subscription' => $monthGroup->where('source', AFFILIATE_COMMISSION_SOURCE_SUBSCRIPTION)->sum('total'),
                     'rent' => $monthGroup->where('source', AFFILIATE_COMMISSION_SOURCE_RENT)->sum('total'),
                     'marketplace' => $monthGroup->where('source', AFFILIATE_COMMISSION_SOURCE_MARKETPLACE)->sum('total'),
+                    // Usage lines (screening / agreement / financing / …) so the columns sum to the total.
+                    'other' => $monthGroup->whereNotIn('source', [
+                        AFFILIATE_COMMISSION_SOURCE_SUBSCRIPTION,
+                        AFFILIATE_COMMISSION_SOURCE_RENT,
+                        AFFILIATE_COMMISSION_SOURCE_MARKETPLACE,
+                    ])->sum('total'),
                     'total' => $monthGroup->sum('total'),
                 ];
             })
+            // Drop pure-noise months where nothing net was earned (e.g. a 0.00 commission
+            // row) — they render as an empty all-dashes row. A month that nets to zero via
+            // a sale + its reversal still has non-zero source columns, so it's kept.
+            ->filter(fn ($m) => $m['total'] != 0 || $m['subscription'] != 0 || $m['rent'] != 0 || $m['marketplace'] != 0 || $m['other'] != 0)
             ->values();
 
         // Recent commissions
@@ -146,7 +160,9 @@ class ReferralsController extends Controller
                 return [
                     'date' => $c->created_at->format('M d, Y'),
                     'source' => ucfirst($c->source),
-                    'type' => $c->type ? ucfirst($c->type) : '—',
+                    // type is an enum string ('NEW_CLIENT' / 'RECURRING_CLIENT') — humanise
+                    // it ("Recurring Client") rather than showing the raw constant.
+                    'type' => $c->type ? \Illuminate\Support\Str::title(str_replace('_', ' ', $c->type)) : '—',
                     'rate' => $c->commission_rate . '%',
                     'amount' => $c->commission_amount,
                     'package' => $c->subscription?->package?->name ?? '—',
@@ -177,9 +193,20 @@ class ReferralsController extends Controller
                         ->where('affiliate_id', $affiliateId)
                         ->where('source', AFFILIATE_COMMISSION_SOURCE_MARKETPLACE)
                         ->sum('commission_amount'),
+                    'other_total' => $owner->commissions()
+                        ->where('affiliate_id', $affiliateId)
+                        ->whereNotIn('source', [
+                            AFFILIATE_COMMISSION_SOURCE_SUBSCRIPTION,
+                            AFFILIATE_COMMISSION_SOURCE_RENT,
+                            AFFILIATE_COMMISSION_SOURCE_MARKETPLACE,
+                        ])
+                        ->sum('commission_amount'),
                 ],
                 'monthly_earnings' => $monthlyEarnings,
                 'recent_commissions' => $recentCommissions,
+                // Total ledger rows so the UI can flag that the 15-row recent list is truncated.
+                'recent_total' => AffiliateCommission::where('affiliate_id', $affiliateId)
+                    ->where('owner_id', $ownerId)->count(),
             ],
         ]);
     }

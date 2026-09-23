@@ -51,76 +51,30 @@ class OwnerController extends Controller
     {
         DB::beginTransaction();
         try {
-            $user = new User();
-            $user->first_name = $request->first_name;
-            $user->last_name = $request->last_name;
-            $user->contact_number = $request->contact_number;
-            $user->email = $request->email;
-            $user->password = Hash::make($request->password);
-            $user->status = USER_STATUS_UNVERIFIED;
-            $user->role = USER_ROLE_OWNER;
-            $user->verify_token = str_replace('-', '', Str::uuid()->toString());
-            $user->save();
-
-            $owner = new Owner();
-            $owner->user_id = $user->id;
-            $owner->affiliate_id = $request->affiliate_id;
-            $owner->save();
-
-            $duration = (int) getOption('trail_duration', 1);
-
-            $defaultPackage = Package::where(['is_trail' => ACTIVE])->first();
-            if ($defaultPackage) {
-                setUserPackage($user->id, $defaultPackage, $duration, 1);
-            }
-
-            setOwnerGateway($user->id);
-            
-            setOwnerInvoiceType($user->id);
-
-            setOwnerDefaultMaintenanceIssue($user->id);
-
-            setOwnerDefaultTicketTopics($user->id);
+            // Shared owner-onboarding machinery: system temp password, forced reset on first
+            // login, active + verified, trial package + plug-and-play defaults. The admin no
+            // longer types a password (matches tenant + referral + trial-message creation).
+            $onboard = app(\App\Services\OwnerOnboardingService::class)->create([
+                'first_name'   => $request->first_name,
+                'last_name'    => $request->last_name,
+                'phone'        => $request->contact_number,
+                'email'        => $request->email,
+                'affiliate_id' => $request->affiliate_id,
+            ]);
+            $user = $onboard['user'];
+            $plainPassword = $onboard['password'];
 
             DB::commit();
-            if (getOption('send_email_status', 0) == ACTIVE) {
-                $emails = [$user->email];
-                $subject = getOption('app_name') . ' ' . __('welcome you');
-                $message = __('Welcome to Centresidence. You have successfully been registered');
-                $ownerUserId = $user->id;
 
-                $mailService = new MailService;
-                $mailService->sendWelcomeMail($emails, $subject, $message, $ownerUserId);
+            // Deliver the login credentials (email + SMS, forced reset on first login).
+            \App\Jobs\SendLoginDetailsJob::dispatch($user, $plainPassword);
 
-                if (getOption('email_verification_status', 0) == ACTIVE) {
-                    $subject = __('Account Verification') . ' ' . getOption('app_name');
-                    $message = __('Welcome to Centresidence! Please verify your account');
-                    $template = EmailTemplate::where('owner_user_id', $ownerUserId)->where('category', EMAIL_TEMPLATE_EMAIL_VERIFY)->where('status', ACTIVE)->first();
-                    if ($template) {
-                        $customizedFieldsArray = [
-                            '{{user_name}}' => $user->name,
-                            '{{verify_link}}' => route('user.email.verified', $user->verify_token),
-                            '{{otp}}' => $user->otp,
-                            '{{app_name}}' => getOption('app_name'),
-                        ];
-                        $content = getEmailTemplate($template->body, $customizedFieldsArray);
-                        $mailService->sendCustomizeMail($emails, $template->subject, $content);
-                    } else {
-                        $mailService->sendUserEmailVerificationMail($emails, $subject, $message, $user, $ownerUserId);
-                    }
-                    return redirect()->route('user.email.verify', $user->verify_token);
-                } else {
-                    $user->status = USER_STATUS_ACTIVE;
-                    $user->email_verified_at = Carbon::now()->format("Y-m-d H:i:s");
-                    $user->save();
-                }
-            } else {
-                $user->status = USER_STATUS_ACTIVE;
-                $user->email_verified_at = Carbon::now()->format("Y-m-d H:i:s");
-                $user->save();
+            // DEV ONLY: surface the temp password in a persistent panel so the flow can be tested
+            // without live email/SMS (the toast flash disappears too fast to copy). Never in prod.
+            if (config('app.debug')) {
+                session()->flash('dev_credentials', app(\App\Services\OwnerOnboardingService::class)->devCredentials($user, $plainPassword));
             }
-            $message = __("OWNER REGISTERED SUCCESSFULLY");
-            return back()->with('success', $message);
+            return back()->with('success', __('OWNER REGISTERED SUCCESSFULLY'));
         } catch (Exception $e) {
             DB::rollBack();
             return back()->with('error', $e->getMessage());
@@ -132,7 +86,7 @@ class OwnerController extends Controller
         $owner->status = 1;
         $owner->save();
 
-        return redirect()->back()->with('success', 'Owner activated successfully.');
+        return redirect()->back()->with('success', __('Owner activated successfully.'));
     }
 
     public function deactivate($id)
@@ -141,7 +95,7 @@ class OwnerController extends Controller
         $owner->status = 0;
         $owner->save();
 
-        return redirect()->back()->with('success', 'Owner deactivated successfully.');
+        return redirect()->back()->with('success', __('Owner deactivated successfully.'));
     }
 
 }

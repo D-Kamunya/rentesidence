@@ -15,6 +15,13 @@ class FileManager extends Model
     public function upload($to, $file, $name = '')
     {
         try {
+            // A file that exceeds PHP's upload_max_filesize arrives as an INVALID upload with an
+            // empty temp path — calling mime_content_type('') then throws a ValueError. Guard it
+            // up front so oversized uploads fail cleanly with a helpful message, not a 500.
+            if (! $file || ! $file->isValid()) {
+                throw new Exception(__('The file could not be uploaded — it may be larger than the :max limit.', ['max' => ini_get('upload_max_filesize')]));
+            }
+
             $extension = pathinfo($file->getClientOriginalName(), PATHINFO_EXTENSION);
 
             $mime_type = mime_content_type($file->getPathname());
@@ -45,7 +52,7 @@ class FileManager extends Model
                 }
             }
             return ['status' => true, 'file' => $store, 'message' => "File Save Successfully"];
-        } catch (\Exception $exception) {
+        } catch (\Throwable $exception) {
             return ['status' => false, 'file' => [], 'message' => $exception->getMessage()];
         }
     }
@@ -54,6 +61,9 @@ class FileManager extends Model
     {
 
         try {
+            if (! $file || ! $file->isValid()) {
+                throw new Exception(__('The file could not be uploaded — it may be larger than the :max limit.', ['max' => ini_get('upload_max_filesize')]));
+            }
 
             $extension = pathinfo($file->getClientOriginalName(), PATHINFO_EXTENSION);
 
@@ -84,7 +94,7 @@ class FileManager extends Model
                 }
             }
             return ['status' => true, 'file' => $store, 'message' => "File Save Successfully"];
-        } catch (\Exception $exception) {
+        } catch (\Throwable $exception) {
             return ['status' => false, 'file' => [], 'message' => $exception->getMessage()];
         }
     }

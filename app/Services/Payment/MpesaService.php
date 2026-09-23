@@ -41,7 +41,11 @@ class MpesaService extends BasePaymentService
         $this->setAmount($paymentData['amount']);
         $mpesaAccount    = $paymentData['mpesaAccount'];
         $amount          = $this->amount;
-        $transaction_desc = $this->payment['type'];
+        // TransactionDesc is a short, restricted Safaricom field (≤13 chars, alphanumeric).
+        // A raw routing type like "credit:agreement" (colon and >13 chars) can make Daraja
+        // ACCEPT the request yet never deliver the STK prompt. Sanitize to a safe form for
+        // the push only — the callback routing below still uses the untouched payment['type'].
+        $transaction_desc = substr(preg_replace('/[^A-Za-z0-9 ]/', '', (string) $this->payment['type']), 0, 13) ?: 'Payment';
         $callbackurl     = $this->callbackUrl;
 
         $callbackWithParams = config('mpesa.callback_url')

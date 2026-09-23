@@ -13,11 +13,15 @@ class TicketTopicService
 
     public function getAll()
     {
+        ensureOwnerDefaults(auth()->id(), TicketTopic::class, 'setOwnerDefaultTicketTopics');
+
         return TicketTopic::where('owner_user_id', auth()->id())->get();
     }
 
     public function getActiveAll()
     {
+        ensureOwnerDefaults(auth()->user()->owner_user_id ?? null, TicketTopic::class, 'setOwnerDefaultTicketTopics');
+
         $topics = TicketTopic::where('owner_user_id', auth()->user()->owner_user_id)->where('status', ACTIVE)->get();
         return $topics?->makeHidden(['created_at', 'updated_at', 'deleted_at', 'owner_user_id', 'status']);
     }

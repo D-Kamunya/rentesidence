@@ -495,8 +495,18 @@ async function likePost(postId) {
             },
         });
         const data = await response.json();
+
+        // Guests can't like (blog_post_likes needs a user); the API returns 401 — prompt
+        // sign-in instead of writing "undefined" into the count.
+        if (response.status === 401 || (data && data.requires_auth)) {
+            const msg = (data && data.message) || 'Please sign in to like this article.';
+            if (window.toastr) { toastr.info(msg); } else { alert(msg); }
+            return;
+        }
+        if (!response.ok) { return; }
+
         document.getElementById('likesCount').textContent = data.likes_count;
-        
+
         const likeButton = document.getElementById('likeButton');
         const likeIcon = document.getElementById('likeIcon');
         if (data.liked) {

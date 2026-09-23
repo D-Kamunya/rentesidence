@@ -40,7 +40,8 @@ class Lead extends Model
     protected $fillable = [
         'company_id',
         'affiliate_id',
-        'owner_id', 
+        'product',
+        'owner_id',
         'contact_person_name',
         'contact_person_role',
         'temperature',
@@ -53,6 +54,7 @@ class Lead extends Model
         'notes',
         'last_activity_at',
         'demo_scheduled_at',
+        'demo_meeting_link',
         'converted_at',
     ];
 

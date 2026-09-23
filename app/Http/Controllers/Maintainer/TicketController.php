@@ -24,6 +24,9 @@ class TicketController extends Controller
         $maintainer = auth()->user()->maintainer;
         $propertyIds = $this->propertyService->getPropertyIdsByMaintainerIds($maintainer->user_id);
         $data['tickets'] = $this->ticketService->getAllByPropertyId($propertyIds);
+        // Eager-load the card source line (property · unit · who raised) here rather than in the
+        // shared service, so the mobile API response shape is untouched. No N+1 on the grid.
+        $data['tickets']->load(['property', 'unit', 'user']);
         return view('maintainer.tickets.index', $data);
     }
 

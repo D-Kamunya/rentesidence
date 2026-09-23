@@ -143,7 +143,7 @@
                                                     </a>
                                                     <form method="POST"
                                                         action="{{ route('admin.demo_prep.sections.destroy', $s->id) }}"
-                                                        onsubmit="return confirm('Delete this section?')">
+                                                        data-cs-confirm="Delete this section?" data-cs-confirm-tone="danger">
                                                         @csrf @method('DELETE')
                                                         <button type="submit" class="at-btn-danger"
                                                                 style="padding:6px 12px;font-size:12px;">

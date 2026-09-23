@@ -25,7 +25,7 @@
     <meta name="msapplication-TileImage" content="assets/img/logo.png">
 
     <meta name="msapplication-TileColor" content="#F8F8F8">
-    <meta name="theme-color" content="#3686FC">
+    <meta name="theme-color" content="#185FA5">
 
     <title>@stack('title' ?? '') {{ getOption('app_name') }}</title>
 
@@ -83,6 +83,7 @@
             'pusher_cluster' => config('app.pusher_cluster'),
         ]) !!};
     </script>
+    @include('common.layouts.pwa-meta')
 </head>
 
 <body class="{{ selectedLanguage()->rtl == 1 ? 'direction-rtl' : 'direction-ltr' }}">

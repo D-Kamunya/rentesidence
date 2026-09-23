@@ -3,82 +3,73 @@
     {{ __('Reset Password') }} -
 @endpush
 @section('content')
-    <div id="headless-wrapper">
-        <section class="sign-up-page bg-white">
-            <div class="container-fluid p-0">
-                <div class="row sign-up-page-wrap-row">
-                    <div class="col-md-6">
-                        <div class="sign-up-right-content bg-white">
-                            <form method="POST" action="{{ route('password.update') }}">
-                                @csrf
-                                <input type="hidden" name="token" value="{{ $token }}">
-                                <div class="mb-25 sign-up-top-logo">
-                                    <a href="{{ route('frontend') }}">
-                                        <span class="logo-lg">
-                                            <img src="{{ getSettingImage('app_logo') }}">
-                                        </span>
-                                    </a>
-                                </div>
-                                <h2 class="mb-25">{{ __('Reset Password') }}</h2>
-                                <div class="row mb-25">
-                                    <div class="col-md-12">
-                                        <label
-                                            class="label-text-title color-heading font-medium mb-2">{{ __('Email') }}</label>
-                                        <input type="text" name="email" class="form-control"
-                                            value="{{ $email ?? old('email') }}" placeholder="{{ __('Email') }}">
-                                        @error('email')
-                                            <span class="text-danger">{{ $message }}</span>
-                                        @enderror
-                                    </div>
-                                </div>
-                                <div class="row mb-25">
-                                    <div class="col-md-12">
-                                        <label
-                                            class="label-text-title color-heading font-medium mb-2">{{ __('Password') }}</label>
-                                        <div class="form-group mb-0 position-relative">
-                                            <input class="form-control password" name="password"
-                                                placeholder="{{ __('Password') }}" type="password">
-                                            <span class="toggle cursor fas fa-eye pass-icon"></span>
-                                        </div>
-                                        @error('password')
-                                            <span class="text-danger">{{ $message }}</span>
-                                        @enderror
-                                    </div>
-                                </div>
-                                <div class="row mb-25">
-                                    <div class="col-md-12">
-                                        <label
-                                            class="label-text-title color-heading font-medium mb-2">{{ __('Confirm Password') }}</label>
-                                        <div class="form-group mb-0 position-relative">
-                                            <input class="form-control password" name="password_confirmation"
-                                                placeholder="{{ __('Confirm Password') }}" type="password">
-                                            <span class="toggle cursor fas fa-eye pass-icon"></span>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="row mb-25">
-                                    <div class="col-md-12">
-                                        <button type="submit"
-                                            class="theme-btn theme-button1 theme-button3 font-15 fw-bold w-100"
-                                            title="{{ __('Reset Password') }}">{{ __('Reset Password') }}</button>
-                                    </div>
-                                </div>
+<div class="cs-auth">
+    @include('auth.partials._auth-bg')
 
-                            </form>
+    <div class="cs-auth__inner">
+        @include('auth.partials._auth-brand')
+
+        {{-- Form panel --}}
+        <main class="cs-auth__panel">
+            <div class="cs-auth__card">
+                @include('auth.partials._auth-cardlogo')
+
+                <h2 class="cs-auth__title">{{ __('Set a new password') }}</h2>
+                <p class="cs-auth__hint">{{ __('Choose a new password for your account.') }}</p>
+
+                <form method="POST" action="{{ route('password.update') }}" class="cs-auth__form" autocomplete="off">
+                    @csrf
+                    <input type="hidden" name="token" value="{{ $token }}">
+
+                    <div class="cs-fld">
+                        <label class="cs-fld__label">{{ __('Email') }}</label>
+                        <div class="cs-fld__wrap">
+                            <span class="cs-fld__ic">{!! '<svg width="17" height="17" viewBox="0 0 24 24" fill="none"><path d="M4 6h16v12H4zM4 7l8 6 8-6" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>' !!}</span>
+                            <input type="text" name="email" value="{{ $email ?? old('email') }}" class="cs-fld__input email @error('email') is-bad @enderror" placeholder="{{ __('you@company.com') }}">
+                        </div>
+                        @error('email')<span class="cs-fld__err">{{ $message }}</span>@enderror
+                    </div>
+
+                    <div class="cs-fld">
+                        <label class="cs-fld__label">{{ __('Password') }}</label>
+                        <div class="cs-fld__wrap">
+                            <span class="cs-fld__ic">{!! '<svg width="17" height="17" viewBox="0 0 24 24" fill="none"><rect x="5" y="10" width="14" height="10" rx="2" stroke="currentColor" stroke-width="1.6"/><path d="M8 10V7a4 4 0 018 0v3" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>' !!}</span>
+                            <input type="password" name="password" class="cs-fld__input password @error('password') is-bad @enderror" placeholder="{{ __('••••••••') }}">
+                            <button type="button" class="cs-fld__eye" aria-label="{{ __('Show password') }}">
+                                {!! '<svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7-10-7-10-7z" stroke="currentColor" stroke-width="1.6"/><circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="1.6"/></svg>' !!}
+                            </button>
+                        </div>
+                        @error('password')<span class="cs-fld__err">{{ $message }}</span>@enderror
+                    </div>
+
+                    <div class="cs-fld">
+                        <label class="cs-fld__label">{{ __('Confirm Password') }}</label>
+                        <div class="cs-fld__wrap">
+                            <span class="cs-fld__ic">{!! '<svg width="17" height="17" viewBox="0 0 24 24" fill="none"><rect x="5" y="10" width="14" height="10" rx="2" stroke="currentColor" stroke-width="1.6"/><path d="M8 10V7a4 4 0 018 0v3" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>' !!}</span>
+                            <input type="password" name="password_confirmation" class="cs-fld__input password" placeholder="{{ __('••••••••') }}">
+                            <button type="button" class="cs-fld__eye" aria-label="{{ __('Show password') }}">
+                                {!! '<svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7-10-7-10-7z" stroke="currentColor" stroke-width="1.6"/><circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="1.6"/></svg>' !!}
+                            </button>
                         </div>
                     </div>
-                    <div class="col-md-6">
-                        <div class="sign-up-left-content position-relative text-center">
-                            <div class="sign-up-bottom-img mb-25">
-                                <img src="{{ getSettingImage('sign_in_image') }}" alt="{{ getOption('app_name') }}"
-                                    class="img-fluid">
-                            </div>
-                            <h1 class="text-white">{{ __(getOption('sign_in_text_title')) }}</h1>
-                            <p class="mt-25 w-75 mx-auto">{{ __(getOption('sign_in_text_subtitle')) }}</p>
-                        </div>
-                    </div>
-                </div>
+
+                    <button type="submit" class="cs-auth__submit" title="{{ __('Reset Password') }}">
+                        <span>{{ __('Reset Password') }}</span>
+                        {!! '<svg width="17" height="17" viewBox="0 0 24 24" fill="none"><path d="M5 12h14M13 6l6 6-6 6" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/></svg>' !!}
+                    </button>
+                </form>
+
+                <a href="{{ route('login') }}" class="cs-auth__back">
+                    {!! '<svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M19 12H5M11 6l-6 6 6 6" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/></svg>' !!}
+                    {{ __('Back to sign in') }}
+                </a>
             </div>
-        </section>
+        </main>
     </div>
+</div>
+
+@include('auth.partials._auth-styles')
 @endsection
+@push('script')
+@include('auth.partials._auth-scripts')
+@endpush

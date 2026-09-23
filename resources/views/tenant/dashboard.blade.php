@@ -16,15 +16,102 @@
                                 <span class="iconify font-24" data-icon="openmoji:waving-hand"></span>
                             </p>
                         </div>
-                        <a href="{{ route('tenant.maintenance-request.index') }}" class="theme-btn-primary">
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
-                                <path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/>
-                            </svg>
-                            {{ __('Maintenance Request') }}
-                        </a>
+                        @if (empty($tenancyEnded))
+                            <a href="{{ route('tenant.maintenance-request.index') }}" class="theme-btn-primary">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+                                    <path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/>
+                                </svg>
+                                {{ __('Maintenance Request') }}
+                            </a>
+                        @endif
                     </div>
 
-                    {{-- Summary Cards --}}
+                    {{-- Terminal state: this tenancy has ended. Clean close, forward pointer. --}}
+                    @if (!empty($tenancyEnded))
+                        <div class="tmo-nudge tmo-nudge--ended" style="cursor:default;">
+                            <span class="tmo-nudge__ic"><i class="ri-checkbox-circle-line"></i></span>
+                            <span class="tmo-nudge__body">
+                                <strong>{{ __('Your tenancy has ended') }}</strong>
+                                <span>
+                                    @if (!empty($tenant->close_date))
+                                        {{ __('Closed on') }} {{ \Carbon\Carbon::parse($tenant->close_date)->format('d M Y') }}.
+                                    @endif
+                                    {{ __('Your records stay available below. When you\'re ready, find your next home.') }}
+                                </span>
+                            </span>
+                            <a href="{{ route('house.hunt') }}" class="tmo-nudge__cta">{{ __('Find a home') }}</a>
+                        </div>
+                    @endif
+
+                    {{-- Live-tenancy nudges — suppressed once the tenancy has ended (see banner above). --}}
+                    @if (empty($tenancyEnded))
+                    {{-- Move-out status — surfaced up top; links to the actual thing on Invoices --}}
+                    @if (!empty($pendingSettlement))
+                        <a href="{{ route('tenant.invoice.index') }}" class="tmo-nudge tmo-nudge--action">
+                            <span class="tmo-nudge__ic"><i class="ri-hand-coin-line"></i></span>
+                            <span class="tmo-nudge__body">
+                                <strong>{{ __('Confirm your deposit refund') }}</strong>
+                                <span>{{ __('Your landlord recorded a refund of') }} {{ currencyPrice($pendingSettlement->refund_amount) }} — {{ __('please confirm receipt or raise a concern.') }}</span>
+                            </span>
+                            <span class="tmo-nudge__go"><i class="ri-arrow-right-line"></i></span>
+                        </a>
+                    @elseif (!empty($reportedSettlement))
+                        <a href="{{ route('tenant.invoice.index') }}" class="tmo-nudge {{ $reportedSettlement->owner_responded_at ? 'tmo-nudge--action' : '' }}">
+                            <span class="tmo-nudge__ic"><i class="ri-feedback-line"></i></span>
+                            <span class="tmo-nudge__body">
+                                <strong>{{ $reportedSettlement->owner_responded_at ? __('Your landlord responded about your refund') : __('Your report is with your landlord') }}</strong>
+                                <span>{{ $reportedSettlement->owner_responded_at ? __('Confirm receipt once you have it, or follow up with them.') : __('They\'ll respond and put it right — you can confirm receipt once you have your refund.') }}</span>
+                            </span>
+                            <span class="tmo-nudge__go"><i class="ri-arrow-right-line"></i></span>
+                        </a>
+                    @elseif (!empty($activeNotice))
+                        @php
+                            $vnAck    = in_array($activeNotice->status, [\App\Models\VacationNotice::STATUS_ACKNOWLEDGED, \App\Models\VacationNotice::STATUS_COMPLETED], true);
+                            $vnPassed = $vnAck && \Carbon\Carbon::parse($activeNotice->intended_move_out_date)->lte(\Carbon\Carbon::today());
+                        @endphp
+                        <a href="{{ route('tenant.invoice.index') }}" class="tmo-nudge {{ $vnAck ? 'tmo-nudge--ok' : '' }}">
+                            <span class="tmo-nudge__ic"><i class="ri-logout-box-r-line"></i></span>
+                            <span class="tmo-nudge__body">
+                                <strong>{{ $vnPassed ? __('Moving out — awaiting finalization') : ($vnAck ? __('Notice to vacate — acknowledged') : __('Notice to vacate — sent')) }}</strong>
+                                <span>
+                                    {{ __('Move-out') }} {{ \Carbon\Carbon::parse($activeNotice->intended_move_out_date)->format('d M Y') }} ·
+                                    {{ $vnPassed ? __('your move-out date has passed — your landlord will finalize your account. You can nudge them from Invoices.') : ($vnAck ? __('your landlord has acknowledged it.') : __('awaiting your landlord\'s acknowledgement.')) }}
+                                </span>
+                            </span>
+                            <span class="tmo-nudge__go"><i class="ri-arrow-right-line"></i></span>
+                        </a>
+                    @endif
+
+                    {{-- Documents your landlord requested — submit / re-submit (separate concern from move-out) --}}
+                    @if (!empty($outstandingDocs) && $outstandingDocs > 0)
+                        <a href="{{ route('tenant.document.index') }}" class="tmo-nudge tmo-nudge--action">
+                            <span class="tmo-nudge__ic"><i class="ri-file-upload-line"></i></span>
+                            <span class="tmo-nudge__body">
+                                <strong>{{ $outstandingDocs > 1 ? __(':n documents requested', ['n' => $outstandingDocs]) : __('A document is requested') }}</strong>
+                                <span>{{ __('Your landlord has asked you to provide documents. Tap to upload.') }}</span>
+                            </span>
+                            <span class="tmo-nudge__go"><i class="ri-arrow-right-line"></i></span>
+                        </a>
+                    @endif
+
+                    {{-- Always-visible pointer: paying rent ahead is easy to miss on the Invoices tab.
+                         Only meaningful with an active landlord AND no pending move-out — an ownerless/
+                         Helper tenant has no upcoming rent, and a tenant who's given notice to vacate
+                         shouldn't be nudged to pre-pay months they won't be around for. --}}
+                    @if (empty($ownerless) && empty($activeNotice))
+                    <a href="{{ route('tenant.invoice.index', ['pay_ahead' => 1]) }}" class="tmo-nudge tmo-nudge--action">
+                        <span class="tmo-nudge__ic"><i class="ri-calendar-check-line"></i></span>
+                        <span class="tmo-nudge__body">
+                            <strong>{{ __('Pay your rent ahead') }}</strong>
+                            <span>{{ __('Cover one or several upcoming months in one go — never miss a due date.') }}</span>
+                        </span>
+                        <span class="tmo-nudge__go"><i class="ri-arrow-right-line"></i></span>
+                    </a>
+                    @endif
+                    @endif {{-- /live-tenancy nudges (empty($tenancyEnded)) --}}
+
+                    {{-- Summary Cards — owner-bound (unit/rent/tickets) only for an active tenancy. --}}
+                    @if (empty($ownerless))
                     <div class="row g-3 mb-4">
 
                         {{-- My Unit --}}
@@ -99,13 +186,138 @@
                         </div>
 
                     </div>
+                    @else
+                    {{-- Standalone (ownerless) summary: the tenant's own, portable things. --}}
+                    <div class="row g-3 mb-4">
+                        <div class="col-12 col-md-4">
+                            <a href="{{ route('tenant.rental-score.index') }}" class="glance-card glance-card--blue" style="text-decoration:none;">
+                                <div class="glance-card__icon-wrap">
+                                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M12 3l7 4v5c0 4-3 7-7 8-4-1-7-4-7-8V7l7-4z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/><path d="M9 12l2 2 4-4" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                                </div>
+                                <div class="glance-card__body">
+                                    <p class="glance-card__label">{{ __('My Rental Score') }}</p>
+                                    <p class="glance-card__value" style="font-size:18px;">{{ __('View') }}</p>
+                                    <p class="glance-card__sub">{{ __('Your portable record') }}</p>
+                                </div>
+                            </a>
+                        </div>
+                        <div class="col-12 col-md-4">
+                            <a href="{{ route('house.hunt') }}" class="glance-card glance-card--green" style="text-decoration:none;">
+                                <div class="glance-card__icon-wrap">
+                                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M3 10.5L12 3l9 7.5V21a1 1 0 01-1 1H5a1 1 0 01-1-1V10.5z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/><path d="M9 22V12h6v10" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/></svg>
+                                </div>
+                                <div class="glance-card__body">
+                                    <p class="glance-card__label">{{ __('Find a Home') }}</p>
+                                    <p class="glance-card__value" style="font-size:18px;">{{ __('Browse') }}</p>
+                                    <p class="glance-card__sub">{{ __('Your next place') }}</p>
+                                </div>
+                            </a>
+                        </div>
+                        <div class="col-12 col-md-4">
+                            <a href="{{ route('tenant.invoice.index') }}" class="glance-card glance-card--amber" style="text-decoration:none;">
+                                <div class="glance-card__icon-wrap">
+                                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M8 3H5a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2V5a2 2 0 00-2-2h-3M8 3v4h8V3M8 11h8M8 15h5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                                </div>
+                                <div class="glance-card__body">
+                                    <p class="glance-card__label">{{ __('My Records') }}</p>
+                                    <p class="glance-card__value" style="font-size:18px;">{{ __('Invoices') }}</p>
+                                    <p class="glance-card__sub">{{ __('Your payment history') }}</p>
+                                </div>
+                            </a>
+                        </div>
+                    </div>
+
+                    {{-- Coming soon: the rent-record ledger — the Helper's headline feature (log your own
+                         rent, build a verified record even with no landlord on CS). Shown only to a
+                         self-registered Helper (never had a landlord); a moved-out tenant has real records. --}}
+                    @if (auth()->user()->isHelperTenant())
+                    <div class="row g-3 mb-4">
+                        <div class="col-12">
+                            <div style="display:flex;gap:15px;align-items:center;flex-wrap:wrap;
+                                background:#F4F9FF;border:1px solid #CFE2F6;border-radius:16px;padding:16px 20px;">
+                                <div style="flex:none;width:44px;height:44px;border-radius:12px;display:grid;place-items:center;
+                                    background:#E1EDFB;color:#185FA5;">
+                                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M4 7h16v10H4zM4 10h16M8 14h4" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                                </div>
+                                <div style="flex:1 1 240px;min-width:200px;">
+                                    <div style="font-size:15.5px;font-weight:700;color:#123a63;line-height:1.3;">
+                                        {{ __('Log your rent — coming soon') }}
+                                        <span style="display:inline-block;font-size:10.5px;font-weight:700;color:#185FA5;background:#E1EDFB;border-radius:999px;padding:2px 9px;margin-left:6px;vertical-align:middle;letter-spacing:.04em;">{{ __('SOON') }}</span>
+                                    </div>
+                                    <div style="font-size:13px;color:#4a5568;margin-top:3px;line-height:1.5;">
+                                        {{ __('Record your rent payments to build a verified rental record you own — even while your landlord isn\'t on Centresidence. We\'ll let you know the moment it\'s ready.') }}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    @endif
+                    @endif
                     {{-- End Summary Cards --}}
+
+                    {{-- Invite-a-landlord — the growth funnel. Shown to every tenant while the funnel is
+                         on; the earning line is only promised when the cash reward is actually enabled. --}}
+                    @if (config('referrals.enabled'))
+                    <div class="row g-3 mb-4">
+                        <div class="col-12">
+                            <a href="{{ route('tenant.invite-landlord.index') }}" style="text-decoration:none;display:block;">
+                                <div style="display:flex;gap:16px;align-items:center;flex-wrap:wrap;
+                                    background:linear-gradient(120deg,#123a63,#185FA5);border-radius:16px;
+                                    padding:18px 20px;color:#fff;box-shadow:0 6px 20px rgba(24,95,165,.18);">
+                                    <div style="flex:none;width:46px;height:46px;border-radius:13px;display:grid;place-items:center;
+                                        background:rgba(255,255,255,.14);font-size:24px;">🤝</div>
+                                    <div style="flex:1 1 240px;min-width:200px;">
+                                        <div style="font-size:16.5px;font-weight:700;line-height:1.25;">{{ __('Know a landlord who isn\'t on Centresidence yet?') }}</div>
+                                        <div style="font-size:13.5px;color:#dbe7f4;margin-top:3px;">
+                                            @if (config('referrals.cash_enabled') && (float) config('referrals.cash_amount', 0) > 0)
+                                                {{ __('Invite them and earn') }}
+                                                <b style="color:#ffd784;">{{ config('referrals.currency', 'KES') }} {{ number_format((float) config('referrals.cash_amount', 0)) }}</b>
+                                                {{ __('when they come on board as a paying customer.') }}
+                                            @else
+                                                {{ __('Invite them to Centresidence and help build your rental world — track record, deposits and more.') }}
+                                            @endif
+                                        </div>
+                                    </div>
+                                    <div style="flex:none;background:#fff;color:#185FA5;font-weight:650;font-size:14px;
+                                        padding:10px 18px;border-radius:10px;">{{ empty($ownerless) ? __('Refer a landlord') : __('Invite your landlord') }} →</div>
+                                </div>
+                            </a>
+                        </div>
+                    </div>
+                    @endif
+
+                    {{-- Utilities (Centresidence) — a balance card per metered module on the unit, else nothing --}}
+                    @if (empty($ownerless) && !empty($hasUtilities))
+                        <div class="row g-3 mb-4">
+                            @foreach ($utilityModules as $um)
+                                @php
+                                    $uLabel   = optional($um->tokenConfig)->token_unit_label ?: __('units');
+                                    $uBalance = rtrim(rtrim(number_format((float) ($um->wallet_balance ?? 0), 4, '.', ','), '0'), '.');
+                                @endphp
+                                <div class="col-12 col-md-4">
+                                    <a href="{{ route('tenant.utilities.index') }}" class="util-mini">
+                                        <span class="util-mini__icon"><i class="{{ optional($um->module)->icon ?: 'ri-drop-line' }}"></i></span>
+                                        <span class="util-mini__body">
+                                            <span class="util-mini__name">{{ optional($um->module)->name ?? __('Utility') }}</span>
+                                            <span class="util-mini__bal">
+                                                <span class="util-mini__num">{{ $uBalance === '' ? '0' : $uBalance }}</span>
+                                                <span class="util-mini__unit">{{ $uLabel }}</span>
+                                            </span>
+                                            <span class="util-mini__cta">{{ __('Top up') }}
+                                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none"><path d="M5 12h14M13 6l6 6-6 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                                            </span>
+                                        </span>
+                                    </a>
+                                </div>
+                            @endforeach
+                        </div>
+                    @endif
 
                     {{-- Invoices + Notice Board --}}
                     <div class="row g-3">
 
-                        {{-- Invoice Card --}}
-                        <div class="col-lg-8">
+                        {{-- Invoice Card (full width when ownerless — Notice Board is owner-bound, hidden) --}}
+                        <div class="{{ empty($ownerless) ? 'col-lg-8' : 'col-lg-12' }}">
                             <div class="dash-card">
 
                                 <div class="dash-card__head d-flex align-items-center justify-content-between">
@@ -234,14 +446,29 @@
                                             </a>
                                         </div>
                                     @endif
+
+                                    {{-- Advance-pay whisper: teaches where to settle rent ahead of time, without a loud
+                                         CTA. Hidden for an ownerless/Helper tenant (invoices are history, not upcoming
+                                         rent) and for a tenant with a pending move-out (they're leaving — don't nudge
+                                         pre-payment of months they won't be here for). --}}
+                                    @if (empty($ownerless) && empty($activeNotice))
+                                    <div class="inv-advance-hint">
+                                        <a href="{{ route('tenant.invoice.index') }}" class="inv-advance-hint__link">
+                                            <span>{{ __('Paying ahead? Settle upcoming rent') }}</span>
+                                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none">
+                                                <path d="M5 12h14M13 6l6 6-6 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                            </svg>
+                                        </a>
+                                    </div>
+                                    @endif
                                 </div>
 
                             </div>
                         </div>
                         {{-- End Invoice Card --}}
 
-                        {{-- Notice Board --}}
-                        @if (ownerCurrentPackage(auth()->user()->owner_user_id)?->notice_support == ACTIVE || isAddonInstalled('PROTYSAAS') < 1)
+                        {{-- Notice Board (owner-bound — hidden for an ownerless tenant) --}}
+                        @if (empty($ownerless) && (ownerCurrentPackage(auth()->user()->owner_user_id)?->notice_support == ACTIVE || isAddonInstalled('PROTYSAAS') < 1))
                             <div class="col-lg-4">
                                 <div class="dash-card h-100">
                                     <div class="dash-card__head d-flex align-items-center justify-content-between">
@@ -318,7 +545,7 @@
                     </div>
                     {{-- End Invoices + Notice --}}
 
-                    @if(isset($featuredProducts) && $featuredProducts->isNotEmpty())
+                    @if(empty($ownerless) && isset($featuredProducts) && $featuredProducts->isNotEmpty())
                     <div class="row g-3 mt-1">
                         <div class="col-12">
                             <div class="dash-card mkt-card">
@@ -453,6 +680,30 @@
 </div>
 
 <style>
+    /* ── Move-out nudge ─────────────────────────────────────── */
+    .tmo-nudge { display:flex; align-items:center; gap:14px; text-decoration:none; margin-bottom:20px;
+        background:#E6F1FB; border:0.5px solid #B5D4F4; border-radius:12px; padding:15px 18px; transition:transform .12s; }
+    .tmo-nudge:hover { transform:translateY(-1px); }
+    .tmo-nudge--ok { background:#E1F5EE; border-color:#B6E3D3; }
+    .tmo-nudge--action { background:#FAEEDA; border-color:#F5D9A8; }
+    .tmo-nudge--ended { background:#F3F4F6; border-color:#E5E7EB; }
+    .tmo-nudge__ic { flex:none; width:40px; height:40px; border-radius:10px; background:#fff; display:flex; align-items:center; justify-content:center; color:#0C447C; }
+    .tmo-nudge--ok .tmo-nudge__ic { color:#0F6E56; }
+    .tmo-nudge--action .tmo-nudge__ic { color:#854F0B; }
+    .tmo-nudge--ended .tmo-nudge__ic { color:#374151; }
+    .tmo-nudge__ic i { font-size:20px; }
+    .tmo-nudge__body { flex:1; min-width:0; display:flex; flex-direction:column; gap:2px; }
+    .tmo-nudge__body strong { font-size:14px; color:#111827; }
+    .tmo-nudge__body span { font-size:12.5px; color:#4b5563; }
+    .tmo-nudge__go { flex:none; color:#6b7280; font-size:18px; }
+    .tmo-nudge__cta { flex:none; display:inline-flex; align-items:center; gap:6px; background:#185FA5; color:#fff;
+        font-size:12.5px; font-weight:600; padding:8px 14px; border-radius:8px; text-decoration:none; white-space:nowrap; transition:background .13s; }
+    .tmo-nudge__cta:hover { background:#0F4A84; color:#fff; }
+    @media (max-width:640px) {
+        .tmo-nudge { flex-wrap:wrap; }
+        .tmo-nudge__cta { flex:1 1 100%; justify-content:center; margin-top:4px; }
+    }
+
     /* ── Page header ─────────────────────────────────────────── */
     .dash-header {
         display: flex;
@@ -561,6 +812,40 @@
     .glance-card--blue  .glance-card__deco { color: #185FA5; }
     .glance-card--green .glance-card__deco { color: #1D9E75; }
     .glance-card--amber .glance-card__deco { color: #854F0B; }
+
+    /* ── Utilities balance cards (one per metered module) ─────── */
+    /* Sit in the same col-md-4 grid as the summary cards above so widths
+       line up exactly. Card fills its column height for a uniform row. */
+    .util-mini {
+        position: relative; height: 100%;
+        display: flex; align-items: center; gap: 16px;
+        padding: 1.25rem 1.4rem; border-radius: 14px;
+        background: #FDF6EC; border: 0.5px solid #F5D9A8;
+        text-decoration: none; transition: transform .18s, box-shadow .18s;
+    }
+    .util-mini:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(133,79,11,.12); }
+    .util-mini__icon {
+        flex-shrink: 0; width: 46px; height: 46px; border-radius: 12px;
+        background: #FAEEDA; color: #854F0B;
+        display: flex; align-items: center; justify-content: center; font-size: 22px;
+    }
+    .util-mini__body { flex: 1; min-width: 0; }
+    .util-mini__name {
+        display: block; font-size: 11px; font-weight: 500;
+        text-transform: uppercase; letter-spacing: .07em; color: #854F0B; opacity: .7;
+        margin: 0 0 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .util-mini__bal  { display: flex; align-items: baseline; gap: 7px; margin-bottom: 5px; }
+    .util-mini__num  { font-size: 26px; font-weight: 700; color: #6B3E08; line-height: 1; }
+    .util-mini__unit {
+        font-size: 10.5px; font-weight: 600; text-transform: uppercase; letter-spacing: .04em;
+        color: #9A6E2A; background: #FAEEDA; padding: 3px 8px; border-radius: 6px; white-space: nowrap;
+    }
+    .util-mini__cta {
+        display: inline-flex; align-items: center; gap: 4px;
+        color: #854F0B; font-size: 12px; font-weight: 600; white-space: nowrap;
+    }
+    .util-mini:hover .util-mini__cta { color: #6f4109; text-decoration: underline; }
 
     /* ── Shared dash card ────────────────────────────────────── */
     .dash-card {
@@ -710,6 +995,34 @@
     }
 
     .view-all-link:hover svg {
+        transform: translateX(2px);
+    }
+
+    /* ── Advance-pay whisper (muted hint, not a CTA) ─────────── */
+    .inv-advance-hint {
+        margin-top: 6px;
+        text-align: center;
+    }
+    .inv-advance-hint__link {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 12px;
+        font-weight: 500;
+        color: #9ca3af;
+        text-decoration: none;
+        padding: 4px 10px;
+        border-radius: 6px;
+        transition: color 0.15s, background 0.15s;
+    }
+    .inv-advance-hint__link:hover {
+        color: #185FA5 !important;
+        background: #F7F9FC;
+    }
+    .inv-advance-hint__link svg {
+        transition: transform 0.15s;
+    }
+    .inv-advance-hint__link:hover svg {
         transform: translateX(2px);
     }
 

@@ -96,7 +96,8 @@
 
                             {{-- Article Body --}}
                             @if($article->type === 'article')
-                            <div style="font-size: 14px; line-height: 1.8; color: #374151;">
+                            @include('common.partials.kb-prose-style')
+                            <div class="kb-prose">
                                 {!! $article->body !!}
                             </div>
                             

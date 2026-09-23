@@ -7,6 +7,34 @@
             <div class="page-content-wrapper bg-white p-30 radius-20">
                 <div class="container">
 
+                    {{-- Centresidence financing nudge (responsive + dismissible; starts
+                         hidden and is revealed by JS so a snoozed banner never flashes). --}}
+                    <div class="cs-fin-nudge" id="csFinNudge" hidden>
+                        <a href="{{ route('owner.financing.index') }}" class="cs-fin-nudge__link">
+                            <span class="cs-fin-nudge__ico"><i class="ri-funds-line"></i></span>
+                            <span class="cs-fin-nudge__txt">
+                                <span class="cs-fin-nudge__title">{{ __('Boost your property cashflow with smart modules') }}</span>
+                                <span class="cs-fin-nudge__sub">{{ __('Add water/gas meters, smart locks and more — finance them through a partner, or self-finance and own them outright.') }}</span>
+                            </span>
+                            <span class="cs-fin-nudge__cta">{{ __('Explore modules') }}</span>
+                        </a>
+                        <button type="button" class="cs-fin-nudge__x" aria-label="{{ __('Dismiss') }}" onclick="csDismissFinNudge()">&times;</button>
+                    </div>
+                    <script>
+                        (function () {
+                            var KEY = 'cs_fin_nudge_snooze', DAYS = 30;
+                            var el = document.getElementById('csFinNudge');
+                            if (!el) return;
+                            var until = 0;
+                            try { until = parseInt(localStorage.getItem(KEY) || '0', 10) || 0; } catch (e) {}
+                            if (Date.now() > until) { el.hidden = false; }
+                            window.csDismissFinNudge = function () {
+                                el.hidden = true;
+                                try { localStorage.setItem(KEY, String(Date.now() + DAYS * 864e5)); } catch (e) {}
+                            };
+                        })();
+                    </script>
+
                     {{-- Page Header --}}
                     <div class="dash-header mb-4">
                         <div>
@@ -56,6 +84,118 @@
                             </a>
                         @endif
                     </div>
+
+                    {{-- Reported deposit settlements — highest priority (money + relationship) --}}
+                    @if (!empty($disputedSettlements) && $disputedSettlements->count() > 0)
+                        <div class="notice-bar notice-bar--warning mb-4" style="background:#FAECE7;border-color:#F3C4BC;">
+                            <div class="notice-bar__left">
+                                <div class="notice-bar__icon" style="color:#993C1D;">
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M12 9v4M12 17h.01M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                                </div>
+                                <div>
+                                    <div class="notice-bar__text">
+                                        <strong>{{ $disputedSettlements->count() }} {{ Str::plural('deposit settlement', $disputedSettlements->count()) }} reported</strong>
+                                        — {{ __('a tenant hasn\'t received their refund or flagged an issue') }}
+                                    </div>
+                                    <div class="notice-bar__sub">
+                                        @foreach ($disputedSettlements->take(4) as $dss)
+                                            @php $dssName = trim(optional(optional($dss->tenant)->user)->first_name . ' ' . optional(optional($dss->tenant)->user)->last_name) ?: __('Tenant'); @endphp
+                                            <a href="{{ route('owner.tenant.details', [$dss->tenant_id, 'tab' => 'payment']) }}" style="color:inherit;text-decoration:underline;margin-right:14px;white-space:nowrap;display:inline-block;">
+                                                {{ $dssName }} — {{ currencyPrice($dss->refund_amount) }}
+                                            </a>
+                                        @endforeach
+                                        @if ($disputedSettlements->count() > 4)
+                                            <span>+{{ $disputedSettlements->count() - 4 }} {{ __('more') }}</span>
+                                        @endif
+                                    </div>
+                                </div>
+                            </div>
+                            @if ($disputedSettlements->count() === 1)
+                                <a href="{{ route('owner.tenant.details', [$disputedSettlements->first()->tenant_id, 'tab' => 'payment']) }}" class="notice-bar__action">
+                                    <svg width="10" height="10" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                                    {{ __('Respond') }}
+                                </a>
+                            @endif
+                        </div>
+                    @endif
+
+                    {{-- Notices to vacate — business-level, surfaced first --}}
+                    @if (!empty($pendingVacationNotices) && $pendingVacationNotices->count() > 0)
+                        <div class="notice-bar notice-bar--warning mb-4">
+                            <div class="notice-bar__left">
+                                <div class="notice-bar__icon">
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+                                        <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+                                    </svg>
+                                </div>
+                                <div>
+                                    <div class="notice-bar__text">
+                                        <strong>{{ $pendingVacationNotices->count() }} {{ Str::plural('notice', $pendingVacationNotices->count()) }} to vacate</strong>
+                                        {{ __('awaiting your acknowledgement') }}
+                                    </div>
+                                    <div class="notice-bar__sub">
+                                        @foreach ($pendingVacationNotices->take(4) as $vn)
+                                            @php $vnName = trim(optional(optional($vn->tenant)->user)->first_name . ' ' . optional(optional($vn->tenant)->user)->last_name) ?: __('Tenant'); @endphp
+                                            <a href="{{ route('owner.tenant.details', [$vn->tenant_id, 'tab' => 'payment']) }}"
+                                               style="color:inherit;text-decoration:underline;margin-right:14px;white-space:nowrap;display:inline-block;">
+                                                {{ $vnName }} — {{ \Carbon\Carbon::parse($vn->intended_move_out_date)->format('d M Y') }}@if (!$vn->meets_notice) ({{ __('short notice') }})@endif
+                                            </a>
+                                        @endforeach
+                                        @if ($pendingVacationNotices->count() > 4)
+                                            <span>+{{ $pendingVacationNotices->count() - 4 }} {{ __('more') }}</span>
+                                        @endif
+                                    </div>
+                                </div>
+                            </div>
+                            @if ($pendingVacationNotices->count() === 1)
+                                <a href="{{ route('owner.tenant.details', [$pendingVacationNotices->first()->tenant_id, 'tab' => 'payment']) }}" class="notice-bar__action">
+                                    <svg width="10" height="10" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                                    {{ __('Review') }}
+                                </a>
+                            @endif
+                        </div>
+                    @endif
+
+                    {{-- Ready to close: acknowledged notices at/past move-out — finalize the tenancy --}}
+                    @if (!empty($readyToClose) && $readyToClose->count() > 0)
+                        <div class="notice-bar notice-bar--warning mb-4">
+                            <div class="notice-bar__left">
+                                <div class="notice-bar__icon">
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+                                        <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+                                    </svg>
+                                </div>
+                                <div>
+                                    <div class="notice-bar__text">
+                                        <strong>{{ $readyToClose->count() }} {{ Str::plural('tenancy', $readyToClose->count()) }} ready to close</strong>
+                                        {{ __('— move-out date reached; finalize to free the unit') }}
+                                    </div>
+                                    <div class="notice-bar__sub">
+                                        @foreach ($readyToClose->take(4) as $rc)
+                                            @php
+                                                $rcName = trim(optional(optional($rc->tenant)->user)->first_name . ' ' . optional(optional($rc->tenant)->user)->last_name) ?: __('Tenant');
+                                                $rcDate = \Carbon\Carbon::parse($rc->intended_move_out_date);
+                                                $rcPast = $rcDate->isPast();
+                                            @endphp
+                                            <a href="{{ route('owner.tenant.details', [$rc->tenant_id, 'tab' => 'profile', 'close' => 1]) }}"
+                                               style="color:inherit;text-decoration:underline;margin-right:14px;white-space:nowrap;display:inline-block;">
+                                                {{ $rcName }} — {{ $rcDate->format('d M Y') }}@if ($rcPast) ({{ __('date passed') }})@endif
+                                            </a>
+                                        @endforeach
+                                        @if ($readyToClose->count() > 4)
+                                            <span>+{{ $readyToClose->count() - 4 }} {{ __('more') }}</span>
+                                        @endif
+                                    </div>
+                                </div>
+                            </div>
+                            @if ($readyToClose->count() === 1)
+                                <a href="{{ route('owner.tenant.details', [$readyToClose->first()->tenant_id, 'tab' => 'profile', 'close' => 1]) }}" class="notice-bar__action">
+                                    <svg width="10" height="10" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                                    {{ __('Close tenant') }}
+                                </a>
+                            @endif
+                        </div>
+                    @endif
 
                     {{-- Pending Tickets Nudge --}}
                     @if (isset($pendingTickets) && $pendingTickets > 0)
@@ -343,8 +483,8 @@
                                     <svg viewBox="0 0 120 80" fill="none" xmlns="http://www.w3.org/2000/svg">
                                         <!-- Pie chart / occupancy indicator -->
                                         <circle cx="45" cy="40" r="28" stroke="#E1F5EE" stroke-width="12" fill="none"/>
-                                        <circle cx="45" cy="40" r="28" stroke="#0F6E56" stroke-width="12" fill="none" 
-                                                stroke-dasharray="{{ round(($totalTenants / max($totalUnits, 1)) * 176) }} 176" 
+                                        <circle cx="45" cy="40" r="28" stroke="#0F6E56" stroke-width="12" fill="none"
+                                                stroke-dasharray="{{ round(($totalTenants / max($totalUnitsdash, 1)) * 176) }} 176"
                                                 stroke-linecap="round" opacity="0.7"
                                                 transform="rotate(-90 45 40)"/>
                                         <!-- Home icon inside -->
@@ -357,7 +497,7 @@
                                 <div class="stat-card__content">
                                     <p class="stat-card__label">Occupancy Rate</p>
                                     <p class="stat-card__value stat-card__value--green">
-                                        {{ $totalUnits > 0 ? round(($totalTenants / $totalUnits) * 100) : 0 }}%
+                                        {{ $totalUnitsdash > 0 ? round(($totalTenants / $totalUnitsdash) * 100) : 0 }}%
                                     </p>
                                 </div>
                             </div>
@@ -562,11 +702,24 @@
                                                     </div>
                                                 @endif
                                             </div>
-                                            <div class="flex-grow-1 ms-3">
+                                            <div class="flex-grow-1 ms-3" style="min-width:0;">
                                                 <p class="ticket-title">{{ Str::limit($ticket->title, 38, '...') }}</p>
+                                                {{-- Where + who the ticket is from (single expression — avoids
+                                                     adjacent @endif@if which Blade mis-compiles). --}}
+                                                <p class="ticket-src">{{ trim(($ticket->property->name ?? '—') . ($ticket->unit ? ' · '.$ticket->unit->unit_name : '') . ($ticket->user ? ' · '.$ticket->user->name : '')) }}</p>
                                                 <div class="d-flex gap-2 mt-1">
                                                     <span class="ticket-badge ticket-badge--cat">{{ $ticket->topic->name ?? 'General' }}</span>
-                                                    <span class="ticket-badge ticket-badge--open">Open</span>
+                                                    @php
+                                                        $tkMap = [
+                                                            TICKET_STATUS_OPEN       => [__('Open'), 'open'],
+                                                            TICKET_STATUS_INPROGRESS => [__('In progress'), 'inprogress'],
+                                                            TICKET_STATUS_REOPEN     => [__('Reopened'), 'reopen'],
+                                                            TICKET_STATUS_RESOLVED   => [__('Resolved'), 'resolved'],
+                                                            TICKET_STATUS_CLOSE      => [__('Closed'), 'closed'],
+                                                        ];
+                                                        $tk = $tkMap[$ticket->status] ?? [__('Open'), 'open'];
+                                                    @endphp
+                                                    <span class="ticket-badge ticket-badge--{{ $tk[1] }}">{{ $tk[0] }}</span>
                                                 </div>
                                             </div>
                                             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" style="color:#d1d5db;flex-shrink:0;margin-left:8px;">
@@ -684,40 +837,47 @@
 
             </div>
 
-            {{-- M-Pesa waiting overlay (inside modal) --}}
-            <div id="modalMpesaWait" style="display:none;position:absolute;inset:0;background:rgba(255,255,255,.96);border-radius:16px;flex-direction:column;align-items:center;justify-content:center;gap:16px;text-align:center;padding:2rem;">
-                <img src="{{ asset('assets/images/gateway-icon/mpesa.jpg') }}"
-                     alt="M-PESA" style="width:70px;height:70px;border-radius:12px;object-fit:cover;">
-                <div>
-                    <p style="font-size:14px;font-weight:600;color:#111827;margin:0 0 6px;">{{ __('Check your phone') }}</p>
-                    <p style="font-size:13px;color:#6b7280;margin:0;">{{ __('Enter your M-Pesa PIN to complete payment.') }}</p>
-                    <p style="font-size:13px;color:#6b7280;margin:6px 0 0;">
-                        {{ __('Time remaining:') }} <strong id="modalTimer" style="color:#185FA5;">2:00</strong>
-                    </p>
-                </div>
-                <img src="{{ asset('assets/images/loading.svg') }}" alt="Loading" style="width:32px;">
-            </div>
-
         </div>
     </div>
 </div>
-
-{{-- Preloader (page-level, same as products checkout — used after Pusher redirect) --}}
-<div id="mpesa-preloader" style="display:none;">
-    <div id="mpesa-preloaderInner">
-        <img src="{{ asset('assets/images/gateway-icon/mpesa.jpg') }}" alt="M-PESA">
-        <div>
-            <p>{{ __('Please follow the instructions and do not refresh or leave this page.') }}</p>
-            <p>{{ __('This may take up to') }} <span id="mpesa-timer">2:00</span> {{ __('minute(s).') }}</p>
-            <p>{{ __('You will receive a prompt on your mobile number to enter your PIN to authorize payment.') }}</p>
-            <p>{{ __('Please ensure your phone is on and unlocked. Thank you.') }}</p>
-        </div>
-        <img src="{{ asset('assets/images/loading.svg') }}" alt="Loading">
-    </div>
-</div>
+{{-- STK waiting overlay is now the shared common.partials.mpesa-stk-waiting component. --}}
 
 @push('style')
 <style>
+/* ── Financing nudge banner (responsive + dismissible) ─────── */
+.cs-fin-nudge { position:relative; margin-bottom:22px; }
+.cs-fin-nudge__link {
+    display:flex; align-items:center; gap:14px; flex-wrap:wrap; text-decoration:none;
+    background:linear-gradient(90deg,#E6F1FB,#E1F5EE); border:1px solid #B5D4F4;
+    border-radius:14px; padding:16px 46px 16px 20px;
+}
+.cs-fin-nudge__ico {
+    width:42px; height:42px; border-radius:12px; background:#185FA5; flex:none;
+    display:flex; align-items:center; justify-content:center; font-size:22px;
+}
+.cs-fin-nudge__ico i { color:#fff; }
+.cs-fin-nudge__txt { flex:1 1 240px; min-width:0; display:flex; flex-direction:column; gap:3px; }
+.cs-fin-nudge__title { font-weight:700; color:#111827; }
+.cs-fin-nudge__sub { font-size:13px; color:#374151; line-height:1.45; }
+.cs-fin-nudge__cta {
+    flex:none; display:inline-flex; align-items:center; gap:6px; background:#185FA5;
+    color:#fff; font-size:12px; font-weight:500; padding:8px 16px; border-radius:7px;
+    white-space:nowrap; transition:background .13s;
+}
+.cs-fin-nudge__link:hover .cs-fin-nudge__cta { background:#0F4A84; }
+.cs-fin-nudge__x {
+    position:absolute; top:8px; right:10px; border:none; background:transparent;
+    color:#6b7280; font-size:22px; line-height:1; cursor:pointer; padding:2px 7px;
+    border-radius:6px; transition:all .13s;
+}
+.cs-fin-nudge__x:hover { color:#111827; background:rgba(0,0,0,.06); }
+@media (max-width:600px) {
+    .cs-fin-nudge__link { padding:14px 40px 14px 14px; gap:12px; }
+    /* Row 1 = icon + text fill the width; Row 2 = full-width CTA (no one-word columns). */
+    .cs-fin-nudge__txt { flex:1 1 calc(100% - 54px); }
+    .cs-fin-nudge__cta { flex:1 1 100%; justify-content:center; }
+}
+
 /* ── SMS pack buttons (in modal) ─────────────────────────── */
 .sms-pack-btn {
     display:flex; flex-direction:column; align-items:center;
@@ -727,21 +887,7 @@
 .sms-pack-btn:hover, .sms-pack-btn.active {
     border-color:#185FA5; background:#E6F1FB;
 }
-/* ── Page-level preloader ─────────────────────────────────── */
-#mpesa-preloader {
-    position:fixed; inset:0; background:rgba(0,0,0,.55);
-    z-index:9999; display:flex; align-items:center; justify-content:center;
-}
-#mpesa-preloaderInner {
-    background:#fff; border-radius:16px; padding:2rem;
-    max-width:420px; width:90%; display:flex; flex-direction:column;
-    align-items:center; gap:16px; text-align:center;
-    box-shadow:0 20px 40px rgba(0,0,0,.2);
-}
-#mpesa-preloaderInner img:first-child { width:80px; height:80px; object-fit:contain; border-radius:12px; }
-#mpesa-preloaderInner p { font-size:13px; color:#374151; margin:0; line-height:1.6; }
-#mpesa-timer { font-weight:600; color:#185FA5; }
-#mpesa-preloaderInner img:last-child { width:36px; }
+/* STK waiting overlay is now the shared common.partials.mpesa-stk-waiting component. */
 </style>
 @endpush
 
@@ -765,8 +911,15 @@
         buyBtn.style.opacity = valid ? '1' : '.5';
         buyBtn.style.cursor  = valid ? 'pointer' : 'not-allowed';
         const total = (selectedQty * pricePerSms).toFixed(2);
-        buyAmountEl.textContent = selectedQty >= 10 ? 'KSh ' + total : '';
+        const amtEl = document.getElementById('modalBuyAmount'); // re-query (button html may have been swapped)
+        if (amtEl) amtEl.textContent = selectedQty >= 10 ? 'KSh ' + total : '';
     }
+
+    // Money-safety: a second, amount-showing tap is required before charging; any change to
+    // the quantity cancels a pending confirm.
+    let confirming = false, confirmReset;
+    const origBtnHtml = buyBtn ? buyBtn.innerHTML : '';
+    function resetConfirm(){ confirming = false; clearTimeout(confirmReset); if (buyBtn){ buyBtn.style.background = '#185FA5'; buyBtn.innerHTML = origBtnHtml; updateBuyBtn(); } }
 
     // Quick-pick
     document.querySelectorAll('.sms-pack-btn').forEach(btn => {
@@ -776,62 +929,44 @@
             selectedQty = parseInt(this.dataset.qty);
             customQtyEl.value = selectedQty;
             customTotalEl.textContent = (selectedQty * pricePerSms).toFixed(2);
-            updateBuyBtn();
+            updateBuyBtn(); resetConfirm();
         });
     });
 
     // Custom qty
+    customQtyEl.addEventListener('focus', function(){ this.select(); }); // avoid fat-fingering an existing value
     customQtyEl.addEventListener('input', function () {
         selectedQty = parseInt(this.value) || 0;
         customTotalEl.textContent = (selectedQty * pricePerSms).toFixed(2);
         document.querySelectorAll('.sms-pack-btn').forEach(b => b.classList.remove('active'));
-        updateBuyBtn();
+        updateBuyBtn(); resetConfirm();
     });
 
     // Phone change
-    phoneEl.addEventListener('input', updateBuyBtn);
+    phoneEl.addEventListener('input', function(){ updateBuyBtn(); resetConfirm(); });
 
-    // ── Modal waiting overlay timer ───────────────────────────
-    let modalTimer;
-    const modalWait  = document.getElementById('modalMpesaWait');
-    const modalTimerEl = document.getElementById('modalTimer');
-
-    function showModalWait() {
-        let countdown = 120;
-        modalWait.style.display = 'flex';
-        modalTimer = setInterval(() => {
-            const m = Math.floor(countdown / 60);
-            const s = countdown % 60;
-            modalTimerEl.textContent = `${m}:${s < 10 ? '0' + s : s}`;
-            if (countdown-- <= 0) clearInterval(modalTimer);
-        }, 1000);
-    }
-
-    function hideModalWait() {
-        clearInterval(modalTimer);
-        modalWait.style.display = 'none';
-    }
-
-    // ── Page-level preloader ──────────────────────────────────
-    let pageTimer;
-    function showPagePreloader() {
-        let countdown = 120;
-        const el = document.getElementById('mpesa-timer');
-        document.getElementById('mpesa-preloader').style.display = 'flex';
-        pageTimer = setInterval(() => {
-            const m = Math.floor(countdown / 60);
-            const s = countdown % 60;
-            el.textContent = `${m}:${s < 10 ? '0' + s : s}`;
-            if (countdown-- <= 0) clearInterval(pageTimer);
-        }, 1000);
-    }
+    // ── STK waiting overlay (shared common.partials.mpesa-stk-waiting) ──
+    function showModalWait(amount) { mpesaWait.show(amount ? { amount: amount } : {}); }
+    function hideModalWait() { mpesaWait.hide(); }
+    function showPagePreloader() { mpesaWait.show(); }
 
     // ── Pay button ────────────────────────────────────────────
     buyBtn.addEventListener('click', function () {
         if (selectedQty < 10 || phoneEl.value.trim().length < 9) return;
 
         const total = (selectedQty * pricePerSms).toFixed(2);
-        showModalWait();
+
+        // First tap arms an explicit confirmation of the exact total; only the second charges.
+        if (!confirming) {
+            confirming = true;
+            buyBtn.style.background = '#B45309';
+            buyBtn.innerHTML = '<span style="font-weight:700;white-space:nowrap;">{{ __("Confirm") }} KSh ' + total + ' &rarr;</span>';
+            confirmReset = setTimeout(resetConfirm, 8000);
+            return;
+        }
+        clearTimeout(confirmReset); confirming = false;
+
+        showModalWait('KSh ' + Number(total).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
 
         const formData = new FormData();
         formData.append('_token',    '{{ csrf_token() }}');
@@ -861,21 +996,21 @@
 
                     channel.bind('MpesaTransactionDeclined', function () {
                         clearTimeout(redirectTimeout);
-                        hideModalWait();
+                        hideModalWait(); resetConfirm();
                         if (typeof toastr !== 'undefined') {
                             toastr.error('{{ __("Payment was declined. Please try again.") }}');
                         }
                     });
 
                 } else {
-                    hideModalWait();
+                    hideModalWait(); resetConfirm();
                     if (typeof toastr !== 'undefined') {
                         toastr.error(data.error || '{{ __("Payment failed. Please try again.") }}');
                     }
                 }
             })
             .catch(() => {
-                hideModalWait();
+                hideModalWait(); resetConfirm();
                 if (typeof toastr !== 'undefined') {
                     toastr.error('{{ __("Something went wrong. Please try again.") }}');
                 }
@@ -884,7 +1019,7 @@
 
     // Reset modal state when closed
     document.getElementById('smsTopupModal').addEventListener('hidden.bs.modal', function () {
-        hideModalWait();
+        hideModalWait(); resetConfirm();
         document.querySelectorAll('.sms-pack-btn').forEach(b => b.classList.remove('active'));
         customQtyEl.value = '';
         customTotalEl.textContent = '0.00';
@@ -1214,6 +1349,12 @@
     }
     .ticket-badge--cat  { background: #f3f4f6; color: #6b7280; }
     .ticket-badge--open { background: #FAEEDA; color: #854F0B; }
+    .ticket-badge--inprogress { background:#E6F1FB; color:#0C447C; }
+    .ticket-badge--resolved   { background:#E1F5EE; color:#0F6E56; }
+    .ticket-badge--reopen     { background:#FAECE7; color:#993C1D; }
+    .ticket-badge--closed     { background:#f3f4f6; color:#6b7280; }
+    .ticket-src { font-size:11px; color:#9ca3af; margin:2px 0 0; line-height:1.4;
+        white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
 
     /* ── Responsive ───────────────────────────────────────── */
     @media (max-width: 768px) {

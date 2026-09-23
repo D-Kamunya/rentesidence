@@ -73,18 +73,15 @@ class InvoiceController extends Controller
         $data['invoice'] = $this->invoiceService->getById($id);
         $data['items'] = $this->invoiceService->getItemsByInvoiceId($id);
         $data['owner'] = $this->invoiceService->ownerInfo(auth()->id());
-        $data['tenant'] = $this->tenantService->getDetailsById($data['invoice']->tenant_id);
+        // Null-safe: a tenant that was removed / can't be resolved must not blow up
+        // the whole details view (that left the loader hanging on such invoices).
+        $data['tenant'] = $this->tenantDetailsSafe($data['invoice']->tenant_id);
         $data['order'] = $this->invoiceService->getOrderById($data['invoice']->order_id);
+        // Audit attribution: if a caretaker confirmed this cash payment, name them.
+        $data['confirmedBy'] = $this->caretakerConfirmerName($data['order']);
 
-        if ($data['owner'] && empty($data['owner']->print_name)) {
-            $data['owner']->print_name = getOption('app_name');
-        } 
-        if ($data['owner'] && empty($data['owner']->print_address)) {
-            $data['owner']->print_address= getOption('app_location');
-        } 
-        if ($data['owner'] && empty($data['owner']->print_contact)) {
-            $data['owner']->print_contact = getOption('app_contact_number');
-        } 
+        // Effective print details (owner profile → platform fallback) are resolved centrally
+        // in InvoiceService::ownerInfo(), so they're consistent across preview, print & orders.
         return $this->success($data);
     }
 
@@ -93,9 +90,34 @@ class InvoiceController extends Controller
         $data['invoice'] = $this->invoiceService->getById($id);
         $data['items'] = $this->invoiceService->getItemsByInvoiceId($id);
         $data['owner'] = $this->invoiceService->ownerInfo(auth()->id());
-        $data['tenant'] = $this->tenantService->getDetailsById($data['invoice']->tenant_id);
+        $data['tenant'] = $this->tenantDetailsSafe($data['invoice']->tenant_id);
         $data['order'] = $this->invoiceService->getOrderById($data['invoice']->order_id);
+        $data['confirmedBy'] = $this->caretakerConfirmerName($data['order']);
         return view('tenant.invoices.print', $data);
+    }
+
+    /** Resolve a tenant's details without throwing when it can't be found. */
+    private function tenantDetailsSafe($tenantId)
+    {
+        if (! $tenantId) {
+            return null;
+        }
+
+        try {
+            return $this->tenantService->getDetailsById($tenantId);
+        } catch (\Throwable $e) {
+            return null;
+        }
+    }
+
+    /** Name of the caretaker (maintainer) who confirmed this cash payment, or null. Audit attribution. */
+    private function caretakerConfirmerName($order): ?string
+    {
+        if (! $order || ! ($order->confirmed_by_user_id ?? null)) {
+            return null;
+        }
+        $u = \App\Models\User::find($order->confirmed_by_user_id);
+        return $u ? trim($u->first_name . ' ' . $u->last_name) : null;
     }
 
     public function store(InvoiceRequest $request)

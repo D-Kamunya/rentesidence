@@ -20,9 +20,17 @@ class DashboardController extends Controller
     {
         $data['pageTitle'] = __('Dashboard');
         $tenantUser = auth()->user()->tenant;
-        $data['property'] = Property::findOrFail($tenantUser->property_id);
-        $data['unit'] = PropertyUnit::findOrFail($tenantUser->unit_id);
+        // find (not findOrFail): an ownerless/closed tenant may reference a unit/property that has
+        // since been removed — the standalone dashboard doesn't render these, so null is fine.
+        $data['property'] = Property::find($tenantUser->property_id);
+        $data['unit'] = PropertyUnit::find($tenantUser->unit_id);
         $data['tenant'] = $tenantUser;
+        // Terminal state: a closed tenancy should read cleanly ("ended") rather than showing stale
+        // live surfaces (rent, meters, give-notice). The full no-owner experience is the Tenant Helper.
+        // A self-registered Helper is ALSO a CLOSE row but never had a landlord (owner_user_id null) —
+        // it must NOT read as "your tenancy has ended", so gate on having actually had an owner.
+        $data['tenancyEnded'] = (int) $tenantUser->status === TENANT_STATUS_CLOSE
+            && ! is_null(auth()->user()->owner_user_id);
         $data['invoices'] = Invoice::where('tenant_id', $tenantUser->id)
             ->with(['invoiceItems.invoiceType'])
             ->latest()
@@ -36,6 +44,21 @@ class DashboardController extends Controller
             });
         $data['totalTickets'] = Ticket::query()->where('unit_id', $tenantUser->unit_id)->count();
         $data['today'] = date('Y-m-d');
+
+        // Move-out lifecycle status the tenant is likely waiting on — surfaced up top for visibility.
+        // Persists through completion so the dashboard keeps showing "Moving out" until the owner closes.
+        $data['activeNotice'] = app(\App\Services\VacationNoticeService::class)->movingOutNotice((int) $tenantUser->id);
+        $data['pendingSettlement'] = \App\Models\DepositSettlement::where('tenant_id', $tenantUser->id)
+            ->where('status', \App\Models\DepositSettlement::STATUS_RECORDED)
+            ->latest('id')->first();
+        // A settlement the tenant has reported an issue on (awaiting resolution).
+        $data['reportedSettlement'] = \App\Models\DepositSettlement::where('tenant_id', $tenantUser->id)
+            ->where('status', \App\Models\DepositSettlement::STATUS_DISPUTED)
+            ->latest('id')->first();
+        // Documents the landlord requested that the tenant must act on — requested-not-submitted
+        // OR rejected (re-submit). This is the tenant-facing half of the doc "request".
+        $data['outstandingDocs'] = app(\App\Services\KycConfigService::class)
+            ->outstandingRequestCountForTenant($tenantUser->id);
         $data['notices'] = NoticeBoard::with('userNotices')
             ->where(function ($q) use ($tenantUser) {
                 $q->where('unit_id', $tenantUser->unit_id)
@@ -54,7 +77,14 @@ class DashboardController extends Controller
                 ->latest()
                 ->take(4)
                 ->get()
-            : collect(); 
+            : collect();
+
+        // Centresidence: surface the tenant's metered utilities (with live balances)
+        // as dashboard cards — only when they actually have modules (guarded elsewhere).
+        $data['utilityModules'] = \Illuminate\Support\Facades\Schema::hasTable('property_modules')
+            ? app(\App\Centresidence\Services\TokenPurchaseCollectionService::class)->modulesFor((int) auth()->id())
+            : collect();
+        $data['hasUtilities'] = $data['utilityModules']->isNotEmpty();
 
         return view('tenant.dashboard')->with($data);
     }

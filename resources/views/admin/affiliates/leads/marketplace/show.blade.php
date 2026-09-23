@@ -146,7 +146,7 @@
                             <div class="d-flex align-items-start gap-2 flex-wrap">
                                 @if($isAvailable)
                                     <form method="POST" action="{{ route('admin.marketplace.destroy', $lead->id) }}"
-                                          onsubmit="return confirm('Remove this lead from the marketplace?')">
+                                          data-cs-confirm="Remove this lead from the marketplace?" data-cs-confirm-tone="danger">
                                         @csrf
                                         @method('DELETE')
                                         <button type="submit" class="mps-btn mps-btn--red">

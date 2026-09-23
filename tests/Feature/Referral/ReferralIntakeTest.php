@@ -1,0 +1,263 @@
+<?php
+
+namespace Tests\Feature\Referral;
+
+use App\Models\LandlordReferral;
+use App\Models\Lead;
+use App\Models\User;
+use App\Services\LandlordReferralService;
+use App\Services\LeadService;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
+use Tests\TestCase;
+
+/**
+ * The public invite intake path (Slice 2): an invited landlord's form creates a vetted
+ * marketplace LEAD (never an owner account) and the referral ledger attaches to it.
+ * Isolated in-memory sqlite with only the tables the flow touches.
+ */
+class ReferralIntakeTest extends TestCase
+{
+    private LeadService $leads;
+    private LandlordReferralService $referrals;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        config(['database.connections.refi_sqlite' => [
+            'driver' => 'sqlite', 'database' => ':memory:', 'prefix' => '',
+        ]]);
+        config(['database.default' => 'refi_sqlite']);
+        DB::purge('refi_sqlite');
+
+        config(['referrals.enabled' => true, 'referrals.cash_enabled' => true, 'referrals.cash_amount' => 200, 'referrals.currency' => 'KES', 'referrals.hold_days' => 30, 'referrals.revenue_threshold' => 1000]);
+
+        Schema::create('users', function ($t) {
+            $t->id();
+            $t->string('first_name')->nullable();
+            $t->string('last_name')->nullable();
+            $t->string('contact_number')->nullable();
+            $t->string('email')->nullable();
+            $t->unsignedTinyInteger('role')->nullable();
+            $t->softDeletes();
+            $t->timestamps();
+        });
+
+        Schema::create('companies', function ($t) {
+            $t->id();
+            $t->string('company_name')->nullable();
+            $t->string('normalized_name')->nullable();
+            $t->string('country')->nullable();
+            $t->string('city')->nullable();
+            $t->string('phone')->nullable();
+            $t->string('email')->nullable();
+            $t->string('website')->nullable();
+            $t->string('property_type')->nullable();
+            $t->integer('estimated_units')->nullable();
+            $t->string('sales_status')->nullable();
+            $t->timestamps();
+        });
+
+        Schema::create('leads', function ($t) {
+            $t->id();
+            $t->unsignedBigInteger('company_id')->nullable();
+            $t->unsignedBigInteger('affiliate_id')->nullable();
+            $t->unsignedBigInteger('owner_id')->nullable();
+            $t->string('contact_person_name')->nullable();
+            $t->string('contact_person_role')->nullable();
+            $t->string('temperature')->nullable();
+            $t->string('status')->nullable();
+            $t->string('source')->nullable();
+            $t->string('marketplace_status')->nullable();
+            $t->timestamp('marketplace_at')->nullable();
+            $t->timestamp('ownership_expires_at')->nullable();
+            $t->text('notes')->nullable();
+            $t->timestamps();
+        });
+
+        Schema::create('owners', function ($t) {
+            $t->id();
+            $t->unsignedBigInteger('user_id')->index();
+            $t->softDeletes();
+            $t->timestamps();
+        });
+
+        Schema::create('subscription_orders', function ($t) {
+            $t->id();
+            $t->unsignedBigInteger('user_id');
+            $t->float('amount')->default(0);
+            $t->tinyInteger('payment_status')->default(0); // 1 = paid
+            $t->softDeletes();
+            $t->timestamps();
+        });
+
+        Schema::create('owner_wallets', function ($t) {
+            $t->id();
+            $t->unsignedBigInteger('user_id')->unique();
+            $t->decimal('balance', 12, 2)->default(0);
+            $t->timestamps();
+        });
+
+        Schema::create('wallet_transactions', function ($t) {
+            $t->id();
+            $t->unsignedBigInteger('owner_wallet_id');
+            $t->decimal('gross_amount', 12, 2)->default(0);
+            $t->decimal('net_amount', 12, 2)->default(0);
+            $t->string('type')->default('credit');
+            $t->timestamps();
+        });
+
+        Schema::create('lead_activities', function ($t) {
+            $t->id();
+            $t->unsignedBigInteger('lead_id');
+            $t->unsignedBigInteger('user_id')->nullable();
+            $t->string('type')->nullable();
+            $t->text('description')->nullable();
+            $t->timestamps();
+        });
+
+        Schema::create('landlord_referral_codes', function ($t) {
+            $t->id();
+            $t->unsignedBigInteger('user_id');
+            $t->string('code', 32);
+            $t->timestamps();
+            $t->unique('user_id');
+            $t->unique('code');
+        });
+
+        Schema::create('landlord_referrals', function ($t) {
+            $t->id();
+            $t->unsignedBigInteger('referrer_user_id');
+            $t->string('code', 32);
+            $t->string('invitee_name')->nullable();
+            $t->string('invitee_phone')->nullable();
+            $t->string('invitee_email')->nullable();
+            $t->string('invitee_company')->nullable();
+            $t->string('status', 20)->default('pending');
+            $t->unsignedBigInteger('lead_id')->nullable();
+            $t->unsignedBigInteger('owner_id')->nullable();
+            $t->unsignedBigInteger('payout_id')->nullable();
+            $t->string('reward_type', 12)->nullable();
+            $t->decimal('reward_amount', 12, 2)->default(0);
+            $t->string('currency', 8)->nullable();
+            $t->string('trigger_reason', 30)->nullable();
+            $t->timestamp('confirmed_at')->nullable();
+            $t->timestamp('held_until')->nullable();
+            $t->timestamp('paid_at')->nullable();
+            $t->timestamp('clawed_back_at')->nullable();
+            $t->boolean('needs_review')->default(false);
+            $t->json('meta')->nullable();
+            $t->timestamps();
+        });
+
+        $this->leads = new LeadService();
+        $this->referrals = new LandlordReferralService();
+    }
+
+    public function test_intake_creates_an_admin_owned_lead_not_a_marketplace_one(): void
+    {
+        $lead = $this->leads->createReferralLead([
+            'contact_person_name' => 'Jane Wanjiru',
+            'company_name'        => 'Wanjiru Apartments',
+            'phone'               => '254700111000',
+            'email'               => 'jane@example.com',
+            'estimated_units'     => 12,
+        ]);
+
+        $this->assertSame('admin', $lead->source, 'A referral is a platform lead, not affiliate-sourced.');
+        $this->assertNull($lead->marketplace_status, 'It must NOT enter the affiliate marketplace to be claimed.');
+        $this->assertNull($lead->affiliate_id, 'No affiliate — it belongs to admin.');
+        $this->assertSame('warm', $lead->temperature);
+        $this->assertNull($lead->owner_id, 'Intake never creates an owner account.');
+        $this->assertSame(1, Lead::count());
+        $this->assertSame(1, DB::table('lead_activities')->where('lead_id', $lead->id)->count());
+    }
+
+    public function test_intake_reuses_an_existing_active_lead_for_the_same_company(): void
+    {
+        $first = $this->leads->createReferralLead(['company_name' => 'Kilimani Homes', 'phone' => '254700222000', 'contact_person_name' => 'A']);
+        $second = $this->leads->createReferralLead(['company_name' => 'Kilimani Homes', 'phone' => '254700222000', 'contact_person_name' => 'A']);
+
+        $this->assertSame($first->id, $second->id, 'A second invite for the same company reuses the lead.');
+        $this->assertSame(1, Lead::count());
+    }
+
+    public function test_full_intake_attaches_referral_and_confirms_on_real_money(): void
+    {
+        // Tenant has a code and logged a pending invite for this landlord.
+        $tenant = User::create(['first_name' => 'Tess', 'role' => USER_ROLE_TENANT, 'contact_number' => '254700999000']);
+        $code = $this->referrals->codeForTenant($tenant->id);
+        $this->referrals->startInvite($tenant, ['name' => 'Larry Landlord', 'phone' => '254711333222']);
+
+        // Landlord submits the public intake form → lead created, referral attaches.
+        $lead = $this->leads->createReferralLead([
+            'company_name' => 'Larry Estates', 'phone' => '254711333222', 'contact_person_name' => 'Larry Landlord',
+        ]);
+        $ref = $this->referrals->attachLead($code, $lead, ['name' => 'Larry Landlord', 'phone' => '254711333222']);
+
+        $this->assertSame(LandlordReferral::STATUS_LEAD_CREATED, $ref->status);
+        $this->assertSame($lead->id, $ref->lead_id);
+        $this->assertSame(1, LandlordReferral::where('referrer_user_id', $tenant->id)->count(), 'Reused the pending invite.');
+
+        // Admin later converts the lead → owner; real money confirms the reward.
+        $lead->update(['owner_id' => 77, 'status' => 'converted']);
+        $confirmed = $this->referrals->confirmForOwner(77, 'first_subscription');
+
+        $this->assertSame(LandlordReferral::STATUS_CONFIRMED, $confirmed->status);
+        $this->assertSame(LandlordReferral::REWARD_CASH, $confirmed->reward_type);
+        $this->assertEquals(200.0, (float) $confirmed->reward_amount);
+    }
+
+    public function test_confirm_via_owner_user_id_resolves_the_owner_record(): void
+    {
+        // The payment paths carry the owner's USER id; the referral links to owners.id.
+        $tenant = User::create(['first_name' => 'Tim', 'role' => USER_ROLE_TENANT]);
+        $code = $this->referrals->codeForTenant($tenant->id);
+
+        $ownerUser = User::create(['first_name' => 'Owen', 'role' => USER_ROLE_OWNER]);
+        $ownerId = DB::table('owners')->insertGetId(['user_id' => $ownerUser->id, 'created_at' => now(), 'updated_at' => now()]);
+
+        $lead = $this->leads->createReferralLead(['company_name' => 'Owen Rentals', 'phone' => '254700555000', 'contact_person_name' => 'Owen']);
+        $this->referrals->attachLead($code, $lead);
+        $lead->update(['owner_id' => $ownerId, 'status' => 'converted']);
+
+        // Confirm using the USER id — the service resolves owners.id and rewards once.
+        $confirmed = $this->referrals->confirmForOwnerUser($ownerUser->id, 'first_subscription');
+
+        $this->assertNotNull($confirmed, 'A paid subscription confirms the referral for the resolved owner.');
+        $this->assertSame(LandlordReferral::STATUS_CONFIRMED, $confirmed->status);
+        $this->assertSame($ownerId, $confirmed->owner_id);
+
+        // An unknown user id (no owner record) confirms nothing.
+        $this->assertNull($this->referrals->confirmForOwnerUser(999999, 'first_subscription'));
+    }
+
+    public function test_revenue_sweep_confirms_owner_who_crossed_threshold_without_a_subscription(): void
+    {
+        // Referred owner is converted but hasn't bought a subscription.
+        $tenant = User::create(['first_name' => 'Rae', 'role' => USER_ROLE_TENANT]);
+        $code = $this->referrals->codeForTenant($tenant->id);
+        $ownerUser = User::create(['first_name' => 'Ray', 'role' => USER_ROLE_OWNER]);
+        $ownerId = DB::table('owners')->insertGetId(['user_id' => $ownerUser->id, 'created_at' => now(), 'updated_at' => now()]);
+        $lead = $this->leads->createReferralLead(['company_name' => 'Ray Rentals', 'phone' => '254700666000', 'contact_person_name' => 'Ray']);
+        $this->referrals->attachLead($code, $lead);
+        $lead->update(['owner_id' => $ownerId, 'status' => 'converted']);
+
+        // Below threshold → nothing confirmed.
+        $this->assertSame(0, $this->referrals->confirmEligibleByRevenue());
+        $this->assertSame('lead_created', $lead->fresh() ? LandlordReferral::where('lead_id', $lead->id)->value('status') : null);
+
+        // Owner earns real money through us via wallet credits (rent/marketplace) ≥ 1000.
+        $walletId = DB::table('owner_wallets')->insertGetId(['user_id' => $ownerUser->id, 'balance' => 0, 'created_at' => now(), 'updated_at' => now()]);
+        DB::table('wallet_transactions')->insert(['owner_wallet_id' => $walletId, 'gross_amount' => 1200, 'net_amount' => 1188, 'type' => 'credit', 'created_at' => now(), 'updated_at' => now()]);
+
+        $this->assertSame(1, $this->referrals->confirmEligibleByRevenue());
+        $ref = LandlordReferral::where('owner_id', $ownerId)->first();
+        $this->assertSame(LandlordReferral::STATUS_CONFIRMED, $ref->status);
+        $this->assertSame('revenue_threshold', $ref->trigger_reason);
+
+        // Idempotent — a second sweep confirms nothing more.
+        $this->assertSame(0, $this->referrals->confirmEligibleByRevenue());
+    }
+}

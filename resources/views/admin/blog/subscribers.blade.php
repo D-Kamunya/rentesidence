@@ -98,7 +98,7 @@
                                                 <span style="font-size: 12px; color: #9ca3af;">{{ $subscriber->created_at->format('M d, Y') }}</span>
                                             </td>
                                             <td style="padding: .8rem 1rem; text-align: center;">
-                                                <form action="{{ route('admin.blog.subscribers.destroy', $subscriber) }}" method="POST" onsubmit="return confirm('Remove this subscriber?');" style="display: inline;">
+                                                <form action="{{ route('admin.blog.subscribers.destroy', $subscriber) }}" method="POST" data-cs-confirm="Remove this subscriber?" data-cs-confirm-tone="danger" style="display: inline;">
                                                     @csrf
                                                     @method('DELETE')
                                                     <button type="submit" class="btn btn-sm" 

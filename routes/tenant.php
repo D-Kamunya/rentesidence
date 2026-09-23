@@ -5,8 +5,10 @@ use App\Http\Controllers\Tenant\DocumentController;
 use App\Http\Controllers\Tenant\InformationController;
 use App\Http\Controllers\Tenant\InvoiceController;
 use App\Http\Controllers\Tenant\ProductOrderController;
+use App\Http\Controllers\Tenant\UtilityTokenController;
 use App\Http\Controllers\Tenant\MaintenanceRequestController;
 use App\Http\Controllers\Tenant\TicketController;
+use App\Http\Controllers\Tenant\RentalScoreController;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\PaymentController;
 use Illuminate\Support\Facades\Route;
@@ -16,12 +18,49 @@ Route::group(['prefix' => 'tenant', 'as' => 'tenant.', 'middleware' => ['auth', 
     Route::get('notification', [DashboardController::class, 'notification'])->name('notification');
     Route::get('notices', [DashboardController::class, 'notices'])->name('notices');
 
+    // My Rental Score — the tenant-owned Global Tenant ID (transparency + activate + dispute).
+    Route::group(['prefix' => 'rental-score', 'as' => 'rental-score.'], function () {
+        Route::get('/', [RentalScoreController::class, 'index'])->name('index');
+        Route::post('activate', [RentalScoreController::class, 'activate'])->name('activate');
+        Route::post('dispute', [RentalScoreController::class, 'dispute'])->name('dispute');
+        Route::post('dispute/reply', [RentalScoreController::class, 'disputeReply'])->name('dispute.reply');
+    });
+
     Route::group(['prefix' => 'invoice', 'as' => 'invoice.'], function () {
         Route::get('/', [InvoiceController::class, 'index'])->name('index');
         Route::get('print/{id}', [InvoiceController::class, 'details'])->name('print');
         Route::get('pay/{id}', [InvoiceController::class, 'pay'])->name('pay');
+        Route::get('receipt/{id}', [InvoiceController::class, 'receipt'])->name('receipt');
+        Route::post('pay-upcoming', [InvoiceController::class, 'generateUpcoming'])->name('pay.upcoming');
         Route::get('get-currency-by-gateway', [InvoiceController::class, 'getCurrencyByGateway'])->name('get.currency');
     });
+
+    // Tenant responds to a recorded deposit settlement (confirm receipt / dispute).
+    Route::post('deposit-settlement/{id}/respond', [\App\Http\Controllers\Tenant\DepositSettlementController::class, 'respond'])->name('deposit-settlement.respond');
+
+    // Notice to vacate (move-out lifecycle).
+    Route::group(['prefix' => 'vacation-notice', 'as' => 'vacation-notice.'], function () {
+        Route::post('/', [\App\Http\Controllers\Tenant\VacationNoticeController::class, 'store'])->name('store');
+        Route::post('/remind', [\App\Http\Controllers\Tenant\VacationNoticeController::class, 'remind'])->name('remind');
+    });
+
+    // Invite-a-landlord funnel — available to every tenant (linked or ownerless), so it sits
+    // OUTSIDE the tenant.owned guard: inviting a landlord is a growth action, not owner-bound.
+    Route::group(['prefix' => 'invite-landlord', 'as' => 'invite-landlord.'], function () {
+        Route::get('/', [\App\Http\Controllers\Tenant\InviteLandlordController::class, 'index'])->name('index');
+        // Throttled on top of the per-tenant daily cap + contact dedupe — bounds outbound
+        // invite SMS/email so the form can't be used to spam numbers.
+        Route::post('/', [\App\Http\Controllers\Tenant\InviteLandlordController::class, 'store'])
+            ->middleware('throttle:12,60')->name('store');
+        Route::post('/request-payout', [\App\Http\Controllers\Tenant\InviteLandlordController::class, 'requestPayout'])
+            ->middleware('throttle:6,60')->name('request-payout');
+        Route::post('/graduate', [\App\Http\Controllers\Tenant\InviteLandlordController::class, 'graduate'])
+            ->middleware('throttle:4,60')->name('graduate');
+    });
+
+    // ── Owner-bound surfaces: blocked for an ownerless (Helper) tenant, whose tenancy is closed.
+    //    The nav hides these; this stops direct hits (which would error on missing owner data). ──
+    Route::group(['middleware' => 'tenant.owned'], function () {
 
     Route::group(['prefix' => 'order', 'as' => 'order.'], function () {
         Route::get('/', [ProductOrderController::class, 'index'])->name('index');
@@ -68,10 +107,23 @@ Route::group(['prefix' => 'tenant', 'as' => 'tenant.', 'middleware' => ['auth', 
     });
     
     Route::post('orders/{id}/cancel', [ProductOrderController::class, 'cancel'])->name('product_order.cancel');
+    Route::post('orders/{id}/request-refund', [ProductOrderController::class, 'requestRefund'])->name('product_order.request-refund');
+    Route::post('orders/{id}/confirm-receipt', [ProductOrderController::class, 'confirmReceipt'])->name('product_order.confirm-receipt');
+
+    Route::group(['prefix' => 'utilities', 'as' => 'utilities.'], function () {
+        Route::get('/', [UtilityTokenController::class, 'index'])->name('index');
+        Route::post('purchase', [UtilityTokenController::class, 'purchase'])->name('purchase');
+    });
+
+    }); // ── /owner-bound surfaces ──
 });
 
 Route::get('/pay/invoice/{token}', [InvoiceController::class, 'instantRentPayShow'])
     ->name('instant.invoice.pay');
 
-Route::post('/instant-invoice-pay/{token}', [PaymentController::class, 'instantCheckout'])->name('instant.payment.checkout');
+// Throttled: unauthenticated STK-trigger endpoint — cap attempts per IP so a leaked
+// pay link can't be used to spam STK prompts at an arbitrary phone number.
+Route::post('/instant-invoice-pay/{token}', [PaymentController::class, 'instantCheckout'])
+    ->middleware('throttle:6,1')
+    ->name('instant.payment.checkout');
 

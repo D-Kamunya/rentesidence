@@ -2,6 +2,7 @@
 namespace App\Jobs\Mail;
 
 use App\Models\Lead;
+use App\Models\User;
 
 class SendTrialExpiredMail extends BaseMailJob
 {
@@ -9,49 +10,85 @@ class SendTrialExpiredMail extends BaseMailJob
 
     public function handle(): void
     {
-        $lead      = Lead::with('company')->findOrFail($this->leadId);
+        $lead      = Lead::with(['company', 'owner'])->findOrFail($this->leadId);
         $company   = $lead->company;
         $affiliate = $lead->affiliate;
 
+        // Notify the account holder (the converted lead's owner user) too — their trial
+        // ended and the account has been moved to the Free plan.
+        $this->notifyUser($lead, $company);
+
         if (!$affiliate || !$company) return;
 
-        $this->send(
+        $appName     = getOption('app_name');
+        $companyName = e($company->company_name);
+        $firstName   = e($affiliate->first_name);
+
+        $whatsNext = '<ol style="margin:0;padding-left:18px;line-height:1.8;">'
+            . '<li>' . __('Reach out to :company to gather feedback on their trial experience', ['company' => "<strong>{$companyName}</strong>"]) . '</li>'
+            . '<li>' . __('Address any concerns they may have about the platform') . '</li>'
+            . '<li>' . __('Highlight the value they gained during the trial') . '</li>'
+            . '<li>' . __('Request a trial extension if they need more time to evaluate') . '</li>'
+            . '</ol>';
+
+        $this->sendCs(
             [$affiliate->email],
-            'Trial Expired - ' . $company->company_name . ' | ' . getOption('app_name'),
-            "
-                <div style='font-family:Arial,sans-serif;max-width:600px;margin:0 auto;'>
-                    <h2 style='color:#854F0B;'>⏰ Trial Period Has Ended</h2>
-                    <p>Hello <strong>{$affiliate->first_name}</strong>,</p>
-                    <p>The trial period for <strong>{$company->company_name}</strong> has ended.</p>
-                    <div style='background:#FEF9EE;border:1px solid #FAC775;border-radius:8px;padding:16px;margin:20px 0;'>
-                        <p style='margin:0 0 8px;font-weight:600;color:#854F0B;'>📋 Lead Details:</p>
-                        <p style='margin:4px 0;'><strong>Company:</strong> {$company->company_name}</p>
-                        <p style='margin:4px 0;'><strong>Contact:</strong> {$lead->contact_person_name}</p>
-                        <p style='margin:4px 0;'><strong>Email:</strong> {$company->email}</p>
-                        <p style='margin:4px 0;'><strong>Phone:</strong> {$company->phone}</p>
-                    </div>
-                    <h3 style='color:#185FA5;margin-top:24px;'>What's Next?</h3>
-                    <ol style='line-height:1.8;'>
-                        <li><strong>Reach out to {$company->company_name}</strong> to gather feedback on their trial experience</li>
-                        <li><strong>Address any concerns</strong> they may have about the platform</li>
-                        <li><strong>Highlight the value</strong> they gained during the trial</li>
-                        <li><strong>Request a trial extension</strong> if they need more time to evaluate</li>
-                    </ol>
-                    <div style='background:#E1F5EE;border:1px solid #9FE1CB;border-radius:8px;padding:16px;margin:20px 0;'>
-                        <p style='margin:0 0 8px;font-weight:600;color:#0F6E56;'>💡 Pro Tip:</p>
-                        <p style='margin:0;color:#0F6E56;'>If the client needs more time, you can re-request trial approval from your dashboard. Just make sure to note why additional trial time is needed!</p>
-                    </div>
-                    <div style='text-align:center;margin:30px 0;'>
-                        <a href='" . route('affiliate.leads.show', $this->leadId) . "'
-                           style='background:#185FA5;color:#fff;padding:12px 28px;text-decoration:none;border-radius:8px;display:inline-block;'>
-                           View Lead Details
-                        </a>
-                    </div>
-                    <p style='color:#6b7280;font-size:13px;margin-top:30px;'>
-                        Remember: Converting this lead to a paying customer means monthly recurring commissions for you!
-                    </p>
-                </div>
-            "
+            __('Trial expired') . ' - ' . $company->company_name . ' | ' . $appName,
+            [
+                'eyebrow' => __('Trial ended'), 'eyebrowColor' => '#854F0B',
+                'title'   => __('Trial period has ended'),
+                'blocks'  => [
+                    ['type' => 'text', 'html' => __('Hello :name,', ['name' => "<strong>{$firstName}</strong>"])
+                        . ' ' . __('The trial period for :company has ended.', ['company' => "<strong>{$companyName}</strong>"])],
+                    ['type' => 'panel', 'variant' => 'amber', 'title' => __('Lead details'), 'rows' => [
+                        ['k' => __('Company'), 'v' => $company->company_name],
+                        ['k' => __('Contact'), 'v' => $lead->contact_person_name],
+                        ['k' => __('Email'),   'v' => $company->email],
+                        ['k' => __('Phone'),   'v' => $company->phone],
+                    ]],
+                    ['type' => 'text', 'html' => '<strong>' . __("What's next?") . '</strong>' . $whatsNext],
+                    ['type' => 'note', 'text' => '<strong>' . __('Pro tip') . '</strong> — '
+                        . __('If the client needs more time, you can re-request trial approval from your dashboard. Just make sure to note why additional trial time is needed.')],
+                    ['type' => 'button', 'url' => route('affiliate.leads.show', $this->leadId), 'label' => __('View lead details')],
+                    ['type' => 'text', 'html' => "<span style='color:#6b7280;font-size:13px;'>"
+                        . __('Remember: converting this lead to a paying customer means monthly recurring commissions for you.') . '</span>'],
+                ],
+            ]
+        );
+    }
+
+    /**
+     * User-facing trial-ended email — the account holder is told their trial has ended
+     * and their account moved to the Free plan, with a path to upgrade. Distinct from the
+     * affiliate email above (which is about following up the lead).
+     */
+    private function notifyUser(Lead $lead, $company): void
+    {
+        $owner = $lead->owner;
+        $user  = $owner ? User::find($owner->user_id) : null;
+
+        if (!$user || empty($user->email)) return;
+
+        $appName   = getOption('app_name');
+        $firstName = e($user->first_name ?: (optional($company)->company_name ?? __('there')));
+
+        $this->sendCs(
+            [$user->email],
+            __('Your trial has ended') . ' — ' . $appName,
+            [
+                'eyebrow' => __('Trial ended'), 'eyebrowColor' => '#854F0B',
+                'title'   => __('Your free trial has ended'),
+                'blocks'  => [
+                    ['type' => 'text', 'html' => __('Hello :name,', ['name' => "<strong>{$firstName}</strong>"])
+                        . ' ' . __('Your trial of :app has come to an end. Your account has been moved to the Free plan, so you can keep signing in and using the essentials — nothing has been deleted.', ['app' => "<strong>{$appName}</strong>"])],
+                    ['type' => 'panel', 'variant' => 'blue', 'title' => __('Want your full feature set back?'), 'rows' => [
+                        ['k' => __('Upgrade'), 'v' => __('Pick the plan that fits your properties')],
+                    ]],
+                    ['type' => 'button', 'url' => route('owner.subscription.index'), 'label' => __('View plans & upgrade')],
+                    ['type' => 'text', 'html' => "<span style='color:#6b7280;font-size:13px;'>"
+                        . __('Thank you for trying :app. We would love to have you on board.', ['app' => $appName]) . '</span>'],
+                ],
+            ]
         );
     }
 }

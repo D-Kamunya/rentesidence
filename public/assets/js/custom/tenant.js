@@ -274,7 +274,13 @@ function nextStep(stepClassName) {
 
 function goToList(stepClassName) {
     if (stepClassName === "lastStep") {
-        window.location.href = $("#tenantListRoute").val();
+        var listUrl = $("#tenantListRoute").val();
+        // Carry the just-created tenant id so the list auto-opens the move-in first-invoice modal.
+        var tenantId = $("input[name='id']").val();
+        if (tenantId) {
+            listUrl += (listUrl.indexOf("?") === -1 ? "?" : "&") + "first_invoice=" + tenantId;
+        }
+        window.location.href = listUrl;
     }
 }
 

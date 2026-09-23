@@ -1,0 +1,149 @@
+<?php
+
+namespace Tests\Feature\Affiliate;
+
+use App\Models\AffiliateCommissionPayment;
+use App\Models\AffiliateWithdrawal;
+use App\Services\AffiliateCommissionService;
+
+/**
+ * Tier-1 money-safety fix (2026-07-31): available balance must reserve PENDING
+ * withdrawals, not only APPROVED ones — otherwise an affiliate could stack
+ * pending requests that each pass the balance check but together over-draw.
+ */
+class WithdrawalBalanceTest extends AffiliateDatabaseTestCase
+{
+    private function svc(): AffiliateCommissionService
+    {
+        return app(AffiliateCommissionService::class);
+    }
+
+    private function earn(int $affiliateId, float $amount): void
+    {
+        AffiliateCommissionPayment::create([
+            'affiliate_id' => $affiliateId,
+            'period_month' => 1,
+            'period_year' => 2026,
+            'total_commission_payout' => $amount,
+        ]);
+    }
+
+    private function withdrawal(int $affiliateId, float $amount, int $status): void
+    {
+        AffiliateWithdrawal::create([
+            'affiliate_id' => $affiliateId,
+            'amount' => $amount,
+            'status' => $status,
+            'settlement_method' => 'b2c',
+        ]);
+    }
+
+    public function test_pending_withdrawal_is_reserved_against_available_balance(): void
+    {
+        $this->earn(1, 1000);
+        $this->withdrawal(1, 300, AFFILIATE_WITHDRAWAL_PENDING);
+
+        // The old bug: pending was ignored, so available stayed 1000 → over-draw.
+        $this->assertSame(300.0, $this->svc()->getReservedWithdrawals(1));
+        $this->assertSame(700.0, $this->svc()->getAvailableBalance(1));
+    }
+
+    public function test_stacked_pending_requests_cannot_exceed_balance(): void
+    {
+        $this->earn(1, 1000);
+        // First pending request of 700 leaves 300 available — a second 700 must NOT fit.
+        $this->withdrawal(1, 700, AFFILIATE_WITHDRAWAL_PENDING);
+        $available = $this->svc()->getAvailableBalance(1);
+
+        $this->assertSame(300.0, $available);
+        $this->assertLessThan(700.0, $available); // the second stacked request is refused
+    }
+
+    public function test_pending_and_approved_are_both_reserved(): void
+    {
+        $this->earn(1, 1000);
+        $this->withdrawal(1, 300, AFFILIATE_WITHDRAWAL_PENDING);
+        $this->withdrawal(1, 200, AFFILIATE_WITHDRAWAL_APPROVED);
+
+        $this->assertSame(500.0, $this->svc()->getReservedWithdrawals(1));
+        $this->assertSame(500.0, $this->svc()->getAvailableBalance(1));
+    }
+
+    public function test_rejected_withdrawal_restores_availability(): void
+    {
+        $this->earn(1, 1000);
+        $this->withdrawal(1, 400, AFFILIATE_WITHDRAWAL_REJECTED);
+
+        $this->assertSame(0.0, $this->svc()->getReservedWithdrawals(1));
+        $this->assertSame(1000.0, $this->svc()->getAvailableBalance(1));
+    }
+
+    public function test_processing_withdrawal_is_reserved(): void
+    {
+        // A B2C payout accepted by Daraja but not yet confirmed is in-flight — the
+        // money must stay reserved so it can't be double-withdrawn while awaiting
+        // the ResultURL callback.
+        $this->earn(1, 1000);
+        $this->withdrawal(1, 400, AFFILIATE_WITHDRAWAL_PROCESSING);
+
+        $this->assertSame(400.0, $this->svc()->getReservedWithdrawals(1));
+        $this->assertSame(600.0, $this->svc()->getAvailableBalance(1));
+    }
+
+    public function test_failed_withdrawal_releases_the_reservation(): void
+    {
+        // When the ResultURL reports the B2C failed, the money never left — the
+        // reservation must release so the affiliate's balance is restored, with no
+        // ledger reversal needed.
+        $this->earn(1, 1000);
+        $this->withdrawal(1, 400, AFFILIATE_WITHDRAWAL_FAILED);
+
+        $this->assertSame(0.0, $this->svc()->getReservedWithdrawals(1));
+        $this->assertSame(1000.0, $this->svc()->getAvailableBalance(1));
+    }
+
+    public function test_gross_is_unaffected_by_reservations(): void
+    {
+        $this->earn(1, 1000);
+        $this->withdrawal(1, 300, AFFILIATE_WITHDRAWAL_PENDING);
+
+        $this->assertSame(1000.0, $this->svc()->getLifeTimeGrossCommissions(1));
+    }
+
+    /**
+     * SECURITY REGRESSION (pentest finding #1, 2026-09-06): the public B2C
+     * result/timeout callbacks must authenticate via the server-only token
+     * embedded in the ResultURL. A forged timeout (no token) must NOT be able to
+     * fail an in-flight payout and release its reservation — otherwise a
+     * beneficiary who can see their withdrawal's correlation ref could fake a
+     * failure, get their balance restored, and double-spend after the real payout
+     * lands. Only a callback carrying the correct token may reconcile.
+     */
+    public function test_forged_b2c_timeout_without_token_cannot_release_a_processing_payout(): void
+    {
+        $this->earn(1, 1000);
+        $wd = AffiliateWithdrawal::create([
+            'affiliate_id'      => 1,
+            'amount'            => 400,
+            'status'            => AFFILIATE_WITHDRAWAL_PROCESSING,
+            'settlement_method' => 'b2c',
+            'mpesa_reference'   => 'AG_TEST_CONVERSATION_123',
+        ]);
+
+        $body = ['Result' => [
+            'ConversationID' => 'AG_TEST_CONVERSATION_123',
+            'ResultCode'     => 1,
+            'ResultDesc'     => 'forged failure',
+        ]];
+
+        // Forged (no token) → rejected → payout stays PROCESSING (still reserved).
+        $this->postJson('/api/v1/b2c/timeout', $body)->assertOk();
+        $this->assertSame(AFFILIATE_WITHDRAWAL_PROCESSING, (int) $wd->fresh()->status);
+        $this->assertSame(600.0, $this->svc()->getAvailableBalance(1));
+
+        // Genuine (correct token) → reconciled to FAILED, reservation released.
+        $this->postJson('/api/v1/b2c/timeout?token=' . b2cCallbackSecret(), $body)->assertOk();
+        $this->assertSame(AFFILIATE_WITHDRAWAL_FAILED, (int) $wd->fresh()->status);
+        $this->assertSame(1000.0, $this->svc()->getAvailableBalance(1));
+    }
+}

@@ -16,8 +16,14 @@ class MpesaB2CService
         $this->consumer_secret = config('mpesa.mpesa_consumer_secret');
     }
 
-    public function send(string $phone, float $amount): array
+    public function send(string $phone, float $amount, string $remarks = 'Owner wallet withdrawal', string $occasion = 'OwnerWithdrawal'): array
     {
+        // Embed a server-only secret in the callback URLs so B2CResult/B2CTimeout can
+        // authenticate that a result genuinely came from Safaricom (only Safaricom is
+        // given these URLs) — a forged callback can't carry the token. Prevents a
+        // beneficiary from faking a payout failure to restore their reserved balance.
+        $token = b2cCallbackSecret();
+
         $payload = [
             'InitiatorName'      => config('mpesa.initiator_name'),
             'SecurityCredential' => $this->encryptInitiatorPassword(config('mpesa.initiator_password')),
@@ -25,10 +31,10 @@ class MpesaB2CService
             'Amount'             => (int) round($amount),
             'PartyA'             => config('mpesa.b2c_shortcode') ?: config('mpesa.shortcode'),
             'PartyB'             => $this->phoneValidator($phone),
-            'Remarks'            => 'Owner wallet withdrawal',
-            'QueueTimeOutURL'    => config('mpesa.b2c_timeout_url'),
-            'ResultURL'          => config('mpesa.b2c_result_url'),
-            'Occasion'           => 'OwnerWithdrawal',
+            'Remarks'            => $remarks,
+            'QueueTimeOutURL'    => $this->withCallbackToken(config('mpesa.b2c_timeout_url'), $token),
+            'ResultURL'          => $this->withCallbackToken(config('mpesa.b2c_result_url'), $token),
+            'Occasion'           => $occasion,
         ];
 
         $response = $this->MpesaRequest($this->url . '/mpesa/b2c/v1/paymentrequest', $payload);
@@ -48,6 +54,16 @@ class MpesaB2CService
                 ?? null,
             'response'  => $result,
         ];
+    }
+
+    /** Append the callback authenticity token to a B2C Result/Timeout URL. */
+    private function withCallbackToken(?string $url, string $token): ?string
+    {
+        if (empty($url)) {
+            return $url;
+        }
+
+        return $url . (str_contains($url, '?') ? '&' : '?') . 'token=' . urlencode($token);
     }
 
     private function encryptInitiatorPassword(string $plainPassword): string

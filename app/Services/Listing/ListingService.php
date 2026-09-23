@@ -37,6 +37,7 @@ class ListingService
     public function getAllActive($request, $paginate=true)
     {
         $data = Listing::query()
+            ->with('owner')   // eager-load owner so $sale->owner->name is 1 query, not N+1
             ->leftJoin('listing_images', function ($q) {
                 $q->on('listing_images.listing_id', '=', 'listings.id')->whereNull('listing_images.deleted_at');
             })

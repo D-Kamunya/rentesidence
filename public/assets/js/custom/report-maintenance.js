@@ -24,6 +24,18 @@ var dt = $("#maintenanceReportDataTable").DataTable({
     buttons: [
         {
             extend: "excelHtml5",
+            action: function (e, dt, node, config) {
+                var base = $("#reportExportRoute").val();
+                if (!base) { return; }
+                var params = $.param({
+                    format: "csv",
+                    property_id: $("#property_id").val() || "",
+                    unit_id: $("#unit_id").val() || "",
+                    start_date: $("#start_date").val() || "",
+                    end_date: $("#end_date").val() || "",
+                });
+                window.open(base + (base.indexOf("?") > -1 ? "&" : "?") + params, "_blank");
+            },
             className: "theme-btn theme-button1 default-hover-btn",
             title: "",
             filename: function () {
@@ -86,6 +98,17 @@ var dt = $("#maintenanceReportDataTable").DataTable({
         },
         {
             extend: "pdf",
+            action: function (e, dt, node, config) {
+                var base = $("#reportExportRoute").val();
+                if (!base) { return; }
+                var params = $.param({
+                    property_id: $("#property_id").val() || "",
+                    unit_id: $("#unit_id").val() || "",
+                    start_date: $("#start_date").val() || "",
+                    end_date: $("#end_date").val() || "",
+                });
+                window.open(base + (base.indexOf("?") > -1 ? "&" : "?") + params, "_blank");
+            },
             className: "theme-btn theme-button1 default-hover-btn",
             title: "",
             filename: function () {
@@ -150,6 +173,8 @@ var dt = $("#maintenanceReportDataTable").DataTable({
                 doc.content[1].layout = "fixed"; // Fix table layout for better alignment
                 doc.content[1].alignment = "center"; // Center the table horizontally
 
+                doc.pageOrientation = "landscape";
+                doc.defaultStyle.fontSize = 8;
                 doc.defaultStyle.alignment = "center";
 
                 // Add Logo to the footer

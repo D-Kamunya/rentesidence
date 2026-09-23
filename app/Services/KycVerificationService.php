@@ -50,34 +50,8 @@ class KycVerificationService
 
         return datatables($kycVerifications)
             ->addIndexColumn()
-            ->addColumn('front', function ($data) {
-                $html = '<div class="tenants-tbl-info-object d-flex align-items-center" title="Download">
-                        <div class="flex-shrink-0">
-                            <a href="' . $data->front . '" download>';
-                if (pathinfo($data->front, PATHINFO_EXTENSION) == 'pdf') {
-                    $html .= '<img src="' . asset('assets/images/pdf-file-img.png') . '">';
-                } else {
-                    $html .= '<img class="rounded avatar-md tbl-user-image" src="' . $data->front . '">';
-                }
-                $html .= '</a>
-                        </div>
-                    </div>';
-                return $html;
-            })
-            ->addColumn('back', function ($data) {
-                $html = '<div class="tenants-tbl-info-object d-flex align-items-center" title="Download">
-                        <div class="flex-shrink-0">
-                            <a href="' . $data->back . '" download>';
-                if (pathinfo($data->back, PATHINFO_EXTENSION) == 'pdf') {
-                    $html .= '<img src="' . asset('assets/images/pdf-file-img.png') . '">';
-                } else {
-                    $html .= '  <img class="rounded avatar-md tbl-user-image" src="' . $data->back . '">';
-                }
-                $html .= '</a>
-                        </div>
-                    </div>';
-                return $html;
-            })
+            ->addColumn('front', fn ($data) => $this->docThumb($data->front))
+            ->addColumn('back', fn ($data) => $this->docThumb($data->back))
             ->addColumn('config_name', function ($data) {
                 return $data->config_name;
             })
@@ -105,6 +79,27 @@ class KycVerificationService
             })
             ->rawColumns(['front', 'back', 'status', 'action'])
             ->make(true);
+    }
+
+    /**
+     * A consistent, clickable document thumbnail — opens the file full-size in a NEW
+     * TAB (view, not download) so owners/tenants can actually read it. Images render as
+     * a cropped thumbnail; PDFs as a labelled tile; missing files as an empty slot.
+     * Shared `.doc-thumb` styling lives in common/layouts/style.blade.php.
+     */
+    public function docThumb(?string $url): string
+    {
+        if (empty($url)) {
+            return '<span class="doc-thumb doc-thumb--empty" title="' . __('No file') . '">&mdash;</span>';
+        }
+
+        $safe = e($url);
+
+        if (strtolower(pathinfo($url, PATHINFO_EXTENSION)) === 'pdf') {
+            return '<a href="' . $safe . '" target="_blank" rel="noopener" class="doc-thumb doc-thumb--pdf" title="' . __('View PDF') . '"><i class="ri-file-pdf-2-line"></i><span>PDF</span></a>';
+        }
+
+        return '<a href="' . $safe . '" target="_blank" rel="noopener" class="doc-thumb" title="' . __('View') . '"><img src="' . $safe . '" alt=""></a>';
     }
 
     public function getAllByTenantId($id)

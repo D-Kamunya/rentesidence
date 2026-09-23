@@ -72,8 +72,12 @@ class BlogController extends Controller
         $relatedPosts = BlogPost::published()
             ->where('id', '!=', $post->id)
             ->where(function ($query) use ($post) {
-                $query->where('blog_category_id', $post->blog_category_id)
-                      ->orWhereJsonContains('tags', $post->tags);
+                // Same category OR sharing ANY single tag. (Passing the whole tags array to
+                // whereJsonContains matched only posts containing ALL of them — too strict.)
+                $query->where('blog_category_id', $post->blog_category_id);
+                foreach ((array) $post->tags as $tag) {
+                    $query->orWhereJsonContains('tags', $tag);
+                }
             })
             ->latest('published_at')
             ->limit(3)
@@ -123,8 +127,19 @@ class BlogController extends Controller
 
     public function like(Request $request, BlogPost $post)
     {
+        // blog_post_likes.user_id is NOT nullable, so a guest like would 500 (and the
+        // unique(post,user) is built for authed likes). Require sign-in; the frontend
+        // can prompt login on `requires_auth`.
+        if (!auth()->check()) {
+            return response()->json([
+                'success'       => false,
+                'requires_auth' => true,
+                'message'       => __('Please sign in to like this article.'),
+            ], 401);
+        }
+
         $userId = auth()->id();
-        
+
         $existingLike = $post->likes()->where('user_id', $userId)->first();
         
         if ($existingLike) {
@@ -165,14 +180,26 @@ class BlogController extends Controller
     public function subscribe(Request $request)
     {
         $validated = $request->validate([
-            'email' => 'required|email|unique:blog_subscribers,email',
-            'name' => 'nullable|string|max:255',
+            'email' => 'required|email|max:255',
+            'name'  => 'nullable|string|max:255',
         ]);
-        
-        $validated['subscribed_at'] = now();
-        $validated['is_active'] = true;
-        
-        $subscriber = BlogSubscriber::create($validated);
+
+        // Don't fail on `unique` — a previously-unsubscribed reader must be able to come
+        // back. Reactivate an existing row (the model has resubscribe()); otherwise create.
+        $subscriber = BlogSubscriber::where('email', $validated['email'])->first();
+        if ($subscriber) {
+            if (! $subscriber->is_active) {
+                $subscriber->resubscribe();
+            }
+            if (! empty($validated['name']) && empty($subscriber->name)) {
+                $subscriber->update(['name' => $validated['name']]);
+            }
+        } else {
+            $subscriber = BlogSubscriber::create($validated + [
+                'subscribed_at' => now(),
+                'is_active'     => true,
+            ]);
+        }
         
         if ($request->ajax() || $request->wantsJson()) {
             return response()->json([
@@ -189,8 +216,15 @@ class BlogController extends Controller
 
     public function unsubscribe(Request $request)
     {
+        // The link must carry a valid signature (see SendBlogNotificationJob) — otherwise
+        // anyone could unsubscribe any email just by guessing the address.
+        if (! $request->hasValidSignature()) {
+            return redirect()->route('blog.index')
+                ->with('error', 'This unsubscribe link is invalid or has expired.');
+        }
+
         $email = $request->get('email');
-        
+
         if (!$email) {
             return redirect()->route('blog.index')
                 ->with('error', 'Invalid unsubscribe link.');
@@ -200,7 +234,9 @@ class BlogController extends Controller
         
         if ($subscriber) {
             $subscriber->unsubscribe();
-            return view('blog.unsubscribed', compact('subscriber'));
+            // View lives at listing/frontend/blog/unsubscribed.blade.php — the old
+            // 'blog.unsubscribed' path doesn't exist and 500'd here.
+            return view('listing.frontend.blog.unsubscribed', compact('subscriber'));
         }
         
         return redirect()->route('blog.index')

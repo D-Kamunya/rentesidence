@@ -32,6 +32,54 @@ class AppServiceProvider extends ServiceProvider
     public function boot()
     {
         Paginator::useBootstrapFive();
+
+        // Share the "ownerless" (standalone Tenant Helper) flag to every tenant view so the sidebar,
+        // dashboard and guards all read one source of truth. Cheap: ->tenant is loaded once/request.
+        \Illuminate\Support\Facades\View::composer('tenant.*', function ($view) {
+            $view->with('ownerless', optional(auth()->user())->isOwnerlessTenant() ?? false);
+        });
+
+        // Sidebar count badges — actionable "N waiting" numbers, computed once per request
+        // per role's sidebar (a count of 0 renders nothing).
+        \Illuminate\Support\Facades\View::composer('owner.layouts.sidebar', function ($view) {
+            $uid = auth()->id();
+            $view->with('navBadges', $uid ? app(\App\Services\NavBadgeService::class)->forOwner((int) $uid) : []);
+        });
+        \Illuminate\Support\Facades\View::composer('tenant.layouts.sidebar', function ($view) {
+            $user = auth()->user();
+            $tenant = optional($user)->tenant;
+            $view->with('navBadges', $tenant
+                ? app(\App\Services\NavBadgeService::class)->forTenant((int) $tenant->id, (int) $user->id)
+                : []);
+        });
+        \Illuminate\Support\Facades\View::composer('affiliate.layouts.sidebar', function ($view) {
+            $uid = auth()->id();
+            $view->with('navBadges', $uid ? app(\App\Services\NavBadgeService::class)->forAffiliate((int) $uid) : []);
+        });
+        // Finance-partner sidebar is inline in its app layout, so the badges attach to that view.
+        \Illuminate\Support\Facades\View::composer('finance-partner.layouts.app', function ($view) {
+            $uid = auth()->id();
+            $view->with('navBadges', $uid ? app(\App\Services\NavBadgeService::class)->forFinancePartner((int) $uid) : []);
+        });
+        \Illuminate\Support\Facades\View::composer('admin.layouts.sidebar', function ($view) {
+            $view->with('navBadges', app(\App\Services\NavBadgeService::class)->forAdmin());
+        });
+
+        // "What's new" feature-announcement modal — the unseen announcements for the current user
+        // (role-targeted). Schema-guarded so it degrades cleanly on a bare/pre-migration install.
+        \Illuminate\Support\Facades\View::composer('partials.feature-announcement', function ($view) {
+            $user = auth()->user();
+            $unseen = ($user && \Illuminate\Support\Facades\Schema::hasTable('feature_announcements'))
+                ? \App\Models\FeatureAnnouncement::unseenFor($user)
+                : collect();
+            $view->with('featureAnnouncements', $unseen);
+        });
+
+        // Graduation account switch — offer the "Switch to tenant/affiliate" control in the
+        // navbar only when the current user has a linked counterpart account.
+        \Illuminate\Support\Facades\View::composer(['tenant.layouts.navbar', 'affiliate.layouts.navbar'], function ($view) {
+            $view->with('accountSwitch', app(\App\Services\AffiliateGraduationService::class)->switchTargetFor(auth()->user()));
+        });
         try {
             Builder::defaultStringLength(191);
             $connection = DB::connection()->getPdo();

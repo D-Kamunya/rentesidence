@@ -15,13 +15,20 @@ class DashboardController extends Controller
     {
         $data['pageTitle'] = __('Dashboard');
         $authUser = auth()->user();
-        $data['properties'] = Property::where('owner_user_id', $authUser->owner_user_id)->get();
-        $data['totalOpenTickets'] = Ticket::query()->whereIn('property_id', $authUser->maintainer->properties->pluck('id')->toArray())->where('status', TICKET_STATUS_OPEN)->count();
-        $data['totalResolvedTickets'] = Ticket::query()->whereIn('property_id', $authUser->maintainer->properties->pluck('id')->toArray())->where('status', TICKET_STATUS_RESOLVED)->count();
-        $data['totalCloseTickets'] = Ticket::query()->whereIn('property_id', $authUser->maintainer->properties->pluck('id')->toArray())->where('status', TICKET_STATUS_CLOSE)->count();
+        // Scope EVERYTHING to the maintainer's ASSIGNED properties (properties.maintainer_id),
+        // not the owner's whole portfolio — the property count/list was leaking owner-wide.
+        $propertyIds = $authUser->maintainer ? $authUser->maintainer->properties->pluck('id')->toArray() : [];
+        $data['properties'] = Property::whereIn('id', $propertyIds)->get();
+        $data['totalOpenTickets'] = Ticket::whereIn('property_id', $propertyIds)->where('status', TICKET_STATUS_OPEN)->count();
+        $data['totalResolvedTickets'] = Ticket::whereIn('property_id', $propertyIds)->where('status', TICKET_STATUS_RESOLVED)->count();
+        $data['totalCloseTickets'] = Ticket::whereIn('property_id', $propertyIds)->where('status', TICKET_STATUS_CLOSE)->count();
         $data['today'] = date('Y-m-d');
-        $data['notices'] = NoticeBoard::whereIn('property_id', $authUser->maintainer->properties->pluck('id')->toArray())->where('start_date', '<=', $data['today'])->where('end_date', '>=', $data['today'])->limit(10)->get();
-        $data['tickets'] = Ticket::whereIn('property_id', $authUser->maintainer->properties->pluck('id')->toArray())->limit(10)->get();
+        $data['notices'] = NoticeBoard::whereIn('property_id', $propertyIds)->where('start_date', '<=', $data['today'])->where('end_date', '>=', $data['today'])->limit(10)->get();
+        $data['tickets'] = Ticket::with(['property', 'unit', 'user', 'topic'])
+            ->whereIn('property_id', $propertyIds)
+            ->latest()
+            ->limit(10)
+            ->get();
         return view('maintainer.dashboard')->with($data);
     }
 

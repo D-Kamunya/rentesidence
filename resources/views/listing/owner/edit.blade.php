@@ -72,7 +72,7 @@
                                                                             {{ __('Active') }}</option>
                                                                         <option value="2"
                                                                             {{ $listing->status == LISTING_STATUS_DEACTIVATE ? 'selected' : '' }}>
-                                                                            {{ __('Deactivate') }}</option>
+                                                                            {{ __('Inactive') }}</option>
                                                                         <option value="3"
                                                                             {{ $listing->status == LISTING_STATUS_CLOSED ? 'selected' : '' }}>
                                                                             {{ __('Close') }} </option>

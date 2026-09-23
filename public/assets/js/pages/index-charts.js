@@ -1,72 +1,70 @@
 $(function () {
     "use strict";
+    // Centresidence design language: cs-blue gradient bars, rounded, subtle grid,
+    // muted axes, k-formatted y-axis and a clean light tooltip.
     var options = {
         series: [{
-            name: "Total",
+            name: "Rent collected",
             data: INVOICEMONTLYAMOUNT
         }],
         chart: {
-            foreColor: '#9a9797',
+            foreColor: '#9ca3af',
+            fontFamily: 'inherit',
             type: "bar",
             height: 270,
-            toolbar: {
-                show: !1
-            },
-            zoom: {
-                enabled: !1
-            },
-            dropShadow: {
-                enabled: 0,
-                top: 3,
-                left: 14,
-                blur: 4,
-                opacity: .12,
-                color: "#3461ff"
-            },
-            sparkline: {
-                enabled: !1
-            }
-        },
-        markers: {
-            size: 0,
-            colors: ["#3461ff", "#12bf24"],
-            strokeColors: "#fff",
-            strokeWidth: 2,
-            hover: {
-                size: 7
-            }
+            toolbar: { show: false },
+            zoom: { enabled: false },
+            sparkline: { enabled: false }
         },
         plotOptions: {
             bar: {
-                horizontal: !1,
-                columnWidth: "40%",
-                endingShape: "rounded"
+                horizontal: false,
+                columnWidth: "45%",
+                borderRadius: 6,
+                borderRadiusApplication: 'end'
             }
         },
-        legend: {
-            show: false,
-            position: 'top',
-            horizontalAlign: 'left',
-            offsetX: -20
-        },
-        dataLabels: {
-            enabled: !1
-        },
+        legend: { show: false },
+        dataLabels: { enabled: false },
         grid: {
-            show: false,
-            borderColor: '#eee',
+            show: true,
+            borderColor: '#eef2f7',
             strokeDashArray: 4,
+            xaxis: { lines: { show: false } },
+            yaxis: { lines: { show: true } },
+            padding: { left: 6, right: 6 }
         },
-        stroke: {
-            show: !0,
-            curve: "smooth"
+        fill: {
+            type: 'gradient',
+            gradient: {
+                shade: 'light',
+                type: 'vertical',
+                shadeIntensity: 0.2,
+                gradientToColors: ['#3b82f6'],
+                inverseColors: false,
+                opacityFrom: 1,
+                opacityTo: 0.82,
+                stops: [0, 100]
+            }
         },
-        colors: ["#3686FC"],
+        colors: ["#185FA5"],
+        states: { hover: { filter: { type: 'darken', value: 0.92 } } },
         xaxis: {
-            categories: MONTHS
+            categories: MONTHS,
+            axisBorder: { show: false },
+            axisTicks: { show: false },
+            labels: { style: { fontSize: '11px', colors: '#9ca3af' } }
+        },
+        yaxis: {
+            labels: {
+                style: { fontSize: '11px', colors: '#9ca3af' },
+                formatter: function (val) {
+                    return Math.abs(val) >= 1000 ? (val / 1000).toFixed(val % 1000 === 0 ? 0 : 1) + 'k' : val;
+                }
+            }
         },
         tooltip: {
-            theme: 'dark',
+            theme: 'light',
             y: {
                 formatter: function (val) {
                     return currencyPrice(val)
