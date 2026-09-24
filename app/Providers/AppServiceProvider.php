@@ -114,32 +114,28 @@ class AppServiceProvider extends ServiceProvider
      * Wire the queue + scheduler failure listeners to the incident recorder. A job or
      * scheduled command only reaches these AFTER it has spent its retries, so a one-off
      * network blip that succeeds on retry never lands here — the failure is real.
+     *
+     * NOTE on comms: credential/SMS jobs deliberately CATCH their own delivery errors
+     * (one channel failing must never block the other), so they never "fail" here — the
+     * genuine "user got no credentials" incident is raised inside those jobs instead.
+     * This queue hook is the catch-all safety net for jobs that genuinely die.
      */
     private function registerIncidentHooks(): void
     {
-        // Curated critical jobs → the type/label they surface as. Anything not listed
-        // is left to ordinary logging; we don't page for non-critical background noise.
-        $criticalJobs = [
-            \App\Jobs\SendLoginDetailsJob::class          => ['comms_failure', 'Login credentials could not be delivered'],
-            \App\Jobs\SendTenantCredentialsJob::class     => ['comms_failure', 'Tenant credentials could not be delivered'],
-            \App\Jobs\SendSmsJob::class                   => ['comms_failure', 'SMS delivery is failing'],
-            \App\Jobs\SendInvoiceNotificationAndEmailJob::class => ['job_failed', 'Invoice notification job failed'],
-        ];
-
-        \Illuminate\Support\Facades\Queue::failing(function (\Illuminate\Queue\Events\JobFailed $event) use ($criticalJobs) {
+        // Any job that exhausts its retries and dies is a genuine background failure worth
+        // surfacing — but a dead background job is not, by itself, a wake-the-admin event,
+        // so it opens as a WARNING (visible on the dashboard, no SMS). The money/comms paths
+        // that DO warrant a page are captured at their own hooks (callbacks, credential jobs).
+        \Illuminate\Support\Facades\Queue::failing(function (\Illuminate\Queue\Events\JobFailed $event) {
             try {
                 $name  = method_exists($event->job, 'resolveName') ? $event->job->resolveName() : get_class($event->job);
-                if (! isset($criticalJobs[$name])) {
-                    return;
-                }
-                [$type, $title] = $criticalJobs[$name];
                 $short = class_basename($name);
 
                 app(\App\Services\SystemIncidentService::class)->report(
-                    $type,
-                    \App\Models\SystemIncident::SEVERITY_CRITICAL,
-                    $title,
-                    'Background job ' . $short . ' failed after exhausting its retries: '
+                    \App\Models\SystemIncident::TYPE_JOB_FAILED,
+                    \App\Models\SystemIncident::SEVERITY_WARNING,
+                    'Background job failing: ' . $short,
+                    'Job ' . $short . ' failed after exhausting its retries: '
                         . \Illuminate\Support\Str::limit(optional($event->exception)->getMessage() ?? '', 300),
                     ['job' => $short, 'connection' => $event->connectionName],
                     'job:' . $short
