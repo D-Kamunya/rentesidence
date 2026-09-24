@@ -25,6 +25,12 @@
                         </nav>
                     </div>
 
+                    <a href="{{ route('owner.property.onboarding-card', $property->id) }}" target="_blank" rel="noopener" class="ps-btn ps-btn--ghost" title="{{ __('Printable tenant onboarding card (QR)') }}">
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none">
+                            <path d="M4 4h6v6H4V4zM14 4h6v6h-6V4zM4 14h6v6H4v-6zM14 14h3v3h-3v-3zM20 14v6M17 20h3" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                        {{ __('Onboarding card') }}
+                    </a>
                     <a href="{{ route('owner.property.edit', $property->id) }}" class="ps-btn ps-btn--ghost" title="{{ __('Edit Info') }}">
                         <svg width="13" height="13" viewBox="0 0 24 24" fill="none">
                             <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>

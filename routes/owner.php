@@ -109,6 +109,8 @@ Route::group(['prefix' => 'owner', 'as' => 'owner.', 'middleware' => ['auth', 'o
     Route::post('infrastructure-bill/pay', [\App\Http\Controllers\Owner\InfraBillController::class, 'pay'])->name('infra-bill.pay');
 
     Route::group(['prefix' => 'property', 'as' => 'property.'], function () {
+        // Printable per-property tenant onboarding card (QR → get-started).
+        Route::get('{property}/onboarding-card', [\App\Http\Controllers\Owner\OnboardingCardController::class, 'show'])->name('onboarding-card');
         Route::get('all-property', [PropertyController::class, 'allProperty'])->name('allProperty');
         Route::get('all-unit', [PropertyController::class, 'allUnit'])->name('allUnit');
         Route::get('own-property', [PropertyController::class, 'ownProperty'])->name('ownProperty');
