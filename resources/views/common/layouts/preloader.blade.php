@@ -5,9 +5,9 @@
 @if (getOption('app_preloader_status', 1) == 1)
     <div id="preloader">
         <div id="preloaderInner">
-            <img src="{{ getSettingImage('app_preloader', asset('assets/images/cs-logo.png')) }}"
+            <img src="{{ getSettingImage('app_preloader', asset('assets/images/cs-icon.png')) }}"
                  alt="{{ getOption('app_name') ?: 'Centresidence' }}"
-                 style="max-width:220px;width:60%;height:auto;">
+                 style="max-width:150px;width:38%;height:auto;">
             <img id="ajaxLoader" src="{{ asset('assets/images/ajaxloader.svg') }}" alt="loading">
         </div>
     </div>
