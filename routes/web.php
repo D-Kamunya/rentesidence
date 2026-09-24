@@ -55,6 +55,9 @@ Route::group(['middleware' => ['auth', 'version.update']], function () {
         Route::post('profile', [ProfileController::class, 'profileUpdate'])->name('profile.update');
         Route::get('change-password', [ProfileController::class, 'changePassword'])->name('change-password');
         Route::post('change-password', [ProfileController::class, 'changePasswordUpdate'])->name('change-password.update');
+
+        // One-time onboarding tours — mark a tour complete for the signed-in user (role-agnostic).
+        Route::post('tour/complete', [\App\Http\Controllers\TourController::class, 'complete'])->name('tour.complete');
         Route::post('delete-my-account', [ProfileController::class, 'deleteMyAccount'])->name('delete-my-account');
 
         // Graduation account switch — swaps the session between a person's linked tenant and
