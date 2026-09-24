@@ -69,6 +69,9 @@
               <div class="tt-kv"><span class="k">{{ __('Unit') }}</span><span class="v">{{ optional($tenant->unit)->unit_name ?? ('#' . $tenant->unit_id) }}</span></div>
               <div class="tt-kv"><span class="k">{{ __('Rent') }}</span><span class="v">{{ currencyPrice($tenant->general_rent) }}</span></div>
               <div class="tt-kv"><span class="k">{{ __('Deposit held') }}</span><span class="v">{{ currencyPrice($depositHeld) }}</span></div>
+              @if (($depositPending ?? 0) > 0)
+                <div class="tt-kv"><span class="k">{{ __('Deposit awaiting payment') }}</span><span class="v" style="color:#1E5DA8;">{{ currencyPrice($depositPending) }} <a href="{{ route('owner.deposit.index', ['status' => 'pending']) }}" style="font-weight:600;font-size:11.5px;text-decoration:none;">{{ __('view') }} ›</a></span></div>
+              @endif
             </div>
 
             <div class="tt-card">

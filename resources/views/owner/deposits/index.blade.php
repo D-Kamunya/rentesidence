@@ -29,6 +29,17 @@
                 </div>
             </div>
 
+            {{-- Awaiting-payment note: deposits invoiced but not yet collected. Display only — NOT
+                 part of the held total above (you only "hold" money you've actually received). --}}
+            @if (($pendingCount ?? 0) > 0)
+                <a href="{{ route('owner.deposit.index', ['status' => 'pending']) }}" class="dep-pending-note {{ ($statusFilter ?? '') === 'pending' ? 'is-active' : '' }}">
+                    <i class="ri-time-line"></i>
+                    <span><strong>{{ currencyPrice($pendingTotal) }} {{ __('awaiting payment') }}</strong>
+                        {{ trans_choice('on :count deposit invoice|on :count deposit invoices', $pendingCount, ['count' => $pendingCount]) }} —
+                        {{ __('invoiced but not yet collected, so not counted in the held total above. Listed here so nothing slips.') }}</span>
+                </a>
+            @endif
+
             {{-- Due-for-settlement alert: tenancies closed but the deposit is still held. --}}
             @if (($dueCount ?? 0) > 0)
                 <a href="{{ route('owner.deposit.index', ['status' => 'due']) }}" class="dep-due-alert">
@@ -40,6 +51,9 @@
             {{-- Status filter --}}
             @php
                 $filters = ['' => __('All'), 'held' => __('Held')];
+                if (($pendingCount ?? 0) > 0 || ($statusFilter ?? '') === 'pending') {
+                    $filters['pending'] = __('Awaiting payment');
+                }
                 if (($dueCount ?? 0) > 0 || ($statusFilter ?? '') === 'due') {
                     $filters['due'] = __('Due for settlement');
                 }
@@ -54,7 +68,55 @@
 
             {{-- Register --}}
             <div class="dep-card">
-                @if ($deposits->count())
+                @if (($statusFilter ?? '') === 'pending')
+                    {{-- Awaiting payment: invoiced deposits not yet collected (display only). --}}
+                    @if ($pendingCount > 0)
+                        <div class="table-responsive">
+                            <table class="dep-table">
+                                <thead>
+                                    <tr>
+                                        <th>{{ __('Tenant') }}</th>
+                                        <th>{{ __('Unit') }}</th>
+                                        <th class="dep-num">{{ __('Amount') }}</th>
+                                        <th>{{ __('Invoiced') }}</th>
+                                        <th>{{ __('Status') }}</th>
+                                        <th></th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach ($pendingDeposits as $item)
+                                        @php
+                                            $inv    = $item->invoice;
+                                            $tName  = trim(optional(optional($inv)->tenant->user)->first_name . ' ' . optional(optional($inv)->tenant->user)->last_name) ?: __('Tenant');
+                                            $unit   = optional(optional($inv)->propertyUnit)->unit_name ?: (optional($inv)->property_unit_id ? '#' . $inv->property_unit_id : '—');
+                                            $when   = optional($inv)->created_at;
+                                        @endphp
+                                        <tr>
+                                            <td><span class="dep-tenant">{{ $tName }}</span></td>
+                                            <td><span class="dep-muted">{{ $unit }}</span></td>
+                                            <td class="dep-num"><span class="dep-amt">{{ currencyPrice($item->amount) }}</span></td>
+                                            <td><span class="dep-muted">{{ $when ? $when->format('d M Y') : '—' }}</span></td>
+                                            <td><span class="dep-badge dep-badge--unpaid" title="{{ __('Invoiced, awaiting payment') }}">{{ __('Unpaid') }}</span></td>
+                                            <td class="text-end">
+                                                @if (optional($inv)->tenant_id)
+                                                    <a href="{{ route('owner.tenant.details', [$inv->tenant_id, 'tab' => 'payment']) }}" class="dep-settle-link">{{ __('View invoice') }} <i class="ri-arrow-right-line"></i></a>
+                                                @endif
+                                            </td>
+                                        </tr>
+                                    @endforeach
+                                </tbody>
+                            </table>
+                        </div>
+                    @else
+                        <div class="dep-empty">
+                            <div class="dep-empty__icon"><i class="ri-time-line"></i></div>
+                            <h3>{{ __('Nothing awaiting payment') }}</h3>
+                            <p>{{ __('Deposits you have invoiced but not yet collected show here as Unpaid, then move to Held once the tenant pays.') }}</p>
+                        </div>
+                    @endif
+                @else
+                    @php $showInlinePending = (($statusFilter ?? '') === '' && ($pendingCount ?? 0) > 0); @endphp
+                    @if ($deposits->count() || $showInlinePending)
                     <div class="table-responsive">
                         <table class="dep-table">
                             <thead>
@@ -68,6 +130,28 @@
                                 </tr>
                             </thead>
                             <tbody>
+                                {{-- On "All", list invoiced-but-unpaid deposits inline so the view is truly complete. --}}
+                                @if ($showInlinePending)
+                                    @foreach ($pendingDeposits as $item)
+                                        @php
+                                            $pInv   = $item->invoice;
+                                            $pName  = trim(optional(optional($pInv)->tenant->user)->first_name . ' ' . optional(optional($pInv)->tenant->user)->last_name) ?: __('Tenant');
+                                            $pUnit  = optional(optional($pInv)->propertyUnit)->unit_name ?: (optional($pInv)->property_unit_id ? '#' . $pInv->property_unit_id : '—');
+                                        @endphp
+                                        <tr>
+                                            <td><span class="dep-tenant">{{ $pName }}</span></td>
+                                            <td><span class="dep-muted">{{ $pUnit }}</span></td>
+                                            <td class="dep-num"><span class="dep-amt">{{ currencyPrice($item->amount) }}</span></td>
+                                            <td><span class="dep-muted">—</span></td>
+                                            <td><span class="dep-badge dep-badge--unpaid" title="{{ __('Invoiced, awaiting payment') }}">{{ __('Unpaid') }}</span></td>
+                                            <td class="text-end">
+                                                @if (optional($pInv)->tenant_id)
+                                                    <a href="{{ route('owner.tenant.details', [$pInv->tenant_id, 'tab' => 'payment']) }}" class="dep-settle-link">{{ __('View invoice') }} <i class="ri-arrow-right-line"></i></a>
+                                                @endif
+                                            </td>
+                                        </tr>
+                                    @endforeach
+                                @endif
                                 @foreach ($deposits as $d)
                                     @php
                                         $tName = trim(optional($d->tenant->user)->first_name . ' ' . optional($d->tenant->user)->last_name) ?: __('Tenant');
@@ -108,6 +192,7 @@
                         <h3>{{ __('No deposits held yet') }}</h3>
                         <p>{{ __('When you collect a security deposit at move-in, it will appear here as a held liability — tracked separately from your rent income, and returned at move-out.') }}</p>
                     </div>
+                    @endif
                 @endif
                 </div>
 
@@ -166,6 +251,12 @@
     .dep-badge--refunded { background: #E1F5EE; color: #0F6E56; }
     .dep-badge--applied { background: #f3f4f6; color: #4b5563; }
     .dep-badge--due { background: #FAECE7; color: #993C1D; }
+    .dep-badge--unpaid { background: #EFF4FB; color: #1E5DA8; }
+    .dep-pending-note { display: flex; align-items: flex-start; gap: 10px; margin-bottom: 14px; padding: 12px 14px;
+        background: #F4F8FD; border: 0.5px solid #C9DDF3; border-radius: 10px; text-decoration: none; color: #325377; font-size: 12.5px; line-height: 1.5; transition: border-color .13s; }
+    .dep-pending-note i { flex: none; color: #1E5DA8; font-size: 18px; }
+    .dep-pending-note strong { color: #1B4A85; }
+    .dep-pending-note:hover, .dep-pending-note.is-active { border-color: #1E5DA8; }
     .dep-due-alert { display: flex; align-items: flex-start; gap: 10px; margin-bottom: 14px; padding: 12px 14px;
         background: #FDF6EC; border: 0.5px solid #F5D9A8; border-radius: 10px; text-decoration: none; color: #7A4A10; font-size: 12.5px; line-height: 1.5; transition: border-color .13s; }
     .dep-due-alert i { flex: none; color: #993C1D; font-size: 18px; }

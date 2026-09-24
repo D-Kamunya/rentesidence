@@ -291,6 +291,9 @@ class TenantController extends Controller
         // register) — not the configured `security_deposit` term, which implies money is held
         // even when none was ever collected.
         $data['depositHeld'] = $depSvc->totalHeldForTenant((int) $tenant->id);
+        // Deposit invoiced to this tenant but not yet paid — surfaced next to the held figure so the
+        // owner sees it here too (it shows on the Deposits page as "Awaiting payment").
+        $data['depositPending'] = $depSvc->pendingDepositForTenant((int) $tenant->id);
         // Whether a deposit is already in play (held OR on a pending line) — the same guard
         // generateFirstInvoice uses; when true the "also collect deposit" option is hidden so we
         // never offer to charge a deposit that would be silently skipped.

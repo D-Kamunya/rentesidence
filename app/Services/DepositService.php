@@ -178,6 +178,44 @@ class DepositService
             ->count('tenant_id');
     }
 
+    /**
+     * Deposits INVOICED but not yet collected — a display-only "awaiting payment" view for the
+     * Deposits page. Sourced from pending invoices' deposit lines (NOT the held register), so a
+     * deposit charged at move-in/transfer is visible before it's paid, then graduates to HELD on
+     * payment. Deliberately kept OUT of the held-liability total (you only "hold" collected money).
+     * Excludes any line already recorded as held (defensive — recordHeld keys off invoice_item_id).
+     *
+     * @return \Illuminate\Support\Collection<int,\App\Models\InvoiceItem>
+     */
+    public function pendingDepositsForOwner(int $ownerId)
+    {
+        $heldItemIds = TenantDeposit::whereNotNull('invoice_item_id')->pluck('invoice_item_id')->all();
+
+        return InvoiceItem::query()
+            ->with(['invoice.tenant.user', 'invoice.propertyUnit'])
+            ->whereHas('invoiceType', fn ($q) => $q->whereRaw('LOWER(name) = ?', [strtolower(self::DEPOSIT_TYPE_NAME)]))
+            ->whereHas('invoice', fn ($q) => $q->where('owner_user_id', $ownerId)->where('status', INVOICE_STATUS_PENDING))
+            ->when(! empty($heldItemIds), fn ($q) => $q->whereNotIn('id', $heldItemIds))
+            ->orderByDesc('id')
+            ->get();
+    }
+
+    /**
+     * Deposit invoiced to a single tenancy but not yet collected (sum of unpaid deposit lines,
+     * excluding any already held). Mirrors {@see pendingDepositsForOwner()} for one tenant —
+     * used to surface an "awaiting payment" figure alongside the held amount.
+     */
+    public function pendingDepositForTenant(int $tenantId): float
+    {
+        $heldItemIds = TenantDeposit::whereNotNull('invoice_item_id')->pluck('invoice_item_id')->all();
+
+        return (float) InvoiceItem::query()
+            ->whereHas('invoiceType', fn ($q) => $q->whereRaw('LOWER(name) = ?', [strtolower(self::DEPOSIT_TYPE_NAME)]))
+            ->whereHas('invoice', fn ($q) => $q->where('tenant_id', $tenantId)->where('status', INVOICE_STATUS_PENDING))
+            ->when(! empty($heldItemIds), fn ($q) => $q->whereNotIn('id', $heldItemIds))
+            ->sum('amount');
+    }
+
     /** Owner-scoped register query for the Deposits Held page (newest first, eager-loaded). */
     public function ownerDepositsQuery(int $ownerId, array $filters = [])
     {

@@ -76,9 +76,14 @@ class Invoice extends Model
         return $this->hasMany(InvoiceItem::class);
     }
 
+    /**
+     * Alias of {@see propertyUnit()}. Historically pointed at a non-existent Unit model on a
+     * non-existent `unit_id` column, so any access crashed; repointed to the real PropertyUnit
+     * (keyed on `property_unit_id`) so `$invoice->unit` resolves the same as `->propertyUnit`.
+     */
     public function unit()
     {
-        return $this->belongsTo(Unit::class, 'unit_id');
+        return $this->belongsTo(PropertyUnit::class, 'property_unit_id');
     }
 
     /**
