@@ -16,7 +16,7 @@
 <div class="main-content">
   <div class="page-content">
     <div class="container-fluid">
-      <div class="page-content-wrapper p-30 radius-20" style="background:#f6f7f9;">
+      <div class="page-content-wrapper bg-white p-3 p-md-4 radius-20">
 
         <div class="sup-head">
           <div>

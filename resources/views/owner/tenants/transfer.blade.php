@@ -4,7 +4,7 @@
 <div class="main-content">
   <div class="page-content">
     <div class="container-fluid">
-      <div class="page-content-wrapper p-30 radius-20" style="background:#f6f7f9;">
+      <div class="page-content-wrapper bg-white p-3 p-md-4 radius-20">
 
         <style>
           .tt-head h1{font-size:22px;font-weight:700;color:#1b1e22;margin:0 0 4px;}
@@ -57,7 +57,7 @@
               <h2>{{ __('Current unit') }}</h2>
               <div class="tt-kv"><span class="k">{{ __('Unit') }}</span><span class="v">{{ optional($tenant->unit)->unit_name ?? ('#' . $tenant->unit_id) }}</span></div>
               <div class="tt-kv"><span class="k">{{ __('Rent') }}</span><span class="v">{{ currencyPrice($tenant->general_rent) }}</span></div>
-              <div class="tt-kv"><span class="k">{{ __('Deposit held') }}</span><span class="v">{{ currencyPrice($tenant->security_deposit) }}</span></div>
+              <div class="tt-kv"><span class="k">{{ __('Deposit held') }}</span><span class="v">{{ currencyPrice($depositHeld) }}</span></div>
             </div>
 
             <div class="tt-card">

@@ -258,7 +258,13 @@ class TenantController extends Controller
             ->whereNotIn('id', $occupiedUnitIds)->orderBy('unit_name')->get();
         $data['standingInvoices'] = \App\Models\Invoice::where('tenant_id', $tenant->id)
             ->where('status', INVOICE_STATUS_PENDING)->latest()->get();
-        $data['outstandingTotal'] = (float) $data['standingInvoices']->sum('total');
+        // Invoices store the due figure in `amount` (there is no `total` column) — summing the
+        // wrong field silently returned 0 while the rows below showed real amounts.
+        $data['outstandingTotal'] = (float) $data['standingInvoices']->sum('amount');
+        // ACTUAL deposit held for this tenancy (genuinely collected, from the held-deposit
+        // register) — not the configured `security_deposit` term, which implies money is held
+        // even when none was ever collected.
+        $data['depositHeld'] = app(\App\Services\DepositService::class)->totalHeldForTenant((int) $tenant->id);
         $data['pageTitle'] = __('Transfer Tenant');
 
         return view('owner.tenants.transfer', $data);
