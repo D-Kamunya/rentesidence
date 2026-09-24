@@ -57,8 +57,9 @@ class PackageCatalogSeeder extends Seeder
             // earliest/most reliable usage rail — a recurring free grant would permanently blunt
             // it. Email reminders stay free, so the tier isn't crippled; SMS is paid from msg 1
             // (normalised in KE). Trial keeps a grant — it's a time-boxed conversion tool.
-            // SMS PRICE per credit (last col): Free/global = null → 1.00; PAID domains = 0.90 (a
-            // 10% pull, floored above our 0.80 Advanta cost = 0.10 margin). Tunable per plan later.
+            // SMS PRICE per credit (last col): Free/global = null → the standard sms_credit_price
+            // (2.00); PAID domains = 0.90 (a demonstrable saving vs the 2.00 standard, floored above
+            // our 0.80 Advanta cost = 0.10 margin). Tunable per plan later.
             // name             maxU   perM  model           def trail  mkup  disc   sms   smsP
             ['Free',            30,      0,  'free',          1,   0,    2.0,  0.0,     0,  null],
             ['Starter',         60,     50,  'subscription',  0,   0,    1.5,  0.0,   120,  0.90],
