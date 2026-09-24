@@ -48,6 +48,8 @@ Route::group(['prefix' => 'owner', 'as' => 'owner.', 'middleware' => ['auth', 'o
 
 Route::group(['prefix' => 'owner', 'as' => 'owner.', 'middleware' => ['auth', 'owner', 'owner.active', 'infra.standing', 'terms.accepted']], function () {
     Route::get('/', [DashboardController::class, 'dashboard'])->name('dashboard');
+    // Owner Upgrade Advisor — dismiss/snooze a suggestion (server-side).
+    Route::post('advisor/dismiss', [\App\Http\Controllers\Owner\AdvisorController::class, 'dismiss'])->name('advisor.dismiss');
     Route::get('top-search', [DashboardController::class, 'topSearch'])->name('top.search');
     Route::get('notification', [DashboardController::class, 'notification'])->name('notification');
     Route::post('tenant/resend-login', [TenantController::class, 'resendLogin'])->name('tenant.resend-login');

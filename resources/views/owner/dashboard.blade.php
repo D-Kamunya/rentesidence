@@ -7,33 +7,9 @@
             <div class="page-content-wrapper bg-white p-30 radius-20">
                 <div class="container">
 
-                    {{-- Centresidence financing nudge (responsive + dismissible; starts
-                         hidden and is revealed by JS so a snoozed banner never flashes). --}}
-                    <div class="cs-fin-nudge" id="csFinNudge" hidden>
-                        <a href="{{ route('owner.financing.index') }}" class="cs-fin-nudge__link">
-                            <span class="cs-fin-nudge__ico"><i class="ri-funds-line"></i></span>
-                            <span class="cs-fin-nudge__txt">
-                                <span class="cs-fin-nudge__title">{{ __('Boost your property cashflow with smart modules') }}</span>
-                                <span class="cs-fin-nudge__sub">{{ __('Add water/gas meters, smart locks and more — finance them through a partner, or self-finance and own them outright.') }}</span>
-                            </span>
-                            <span class="cs-fin-nudge__cta">{{ __('Explore modules') }}</span>
-                        </a>
-                        <button type="button" class="cs-fin-nudge__x" aria-label="{{ __('Dismiss') }}" onclick="csDismissFinNudge()">&times;</button>
-                    </div>
-                    <script>
-                        (function () {
-                            var KEY = 'cs_fin_nudge_snooze', DAYS = 30;
-                            var el = document.getElementById('csFinNudge');
-                            if (!el) return;
-                            var until = 0;
-                            try { until = parseInt(localStorage.getItem(KEY) || '0', 10) || 0; } catch (e) {}
-                            if (Date.now() > until) { el.hidden = false; }
-                            window.csDismissFinNudge = function () {
-                                el.hidden = true;
-                                try { localStorage.setItem(KEY, String(Date.now() + DAYS * 864e5)); } catch (e) {}
-                            };
-                        })();
-                    </script>
+                    {{-- Owner Upgrade Advisor — the top personalised nudge (subsumes the old static
+                         financing banner; now targeted + server-side dismiss). --}}
+                    @include('owner.partials.upgrade-advisor')
 
                     {{-- Page Header --}}
                     <div class="dash-header mb-4">
