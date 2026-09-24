@@ -263,23 +263,55 @@ class CreditService
         });
     }
 
-    /** KES unit price for one credit in this bucket (admin-set, with config fallback). */
-    public static function pricePerUnit(string $bucket): float
+    /**
+     * KES unit price for one credit in this bucket (admin-set, with config fallback). For the SMS
+     * bucket, an owner's PLAN may set a lower per-credit price (paid domains cheaper than Free, as an
+     * upgrade pull) — resolved when an owner is supplied, and floored above our gateway cost so we
+     * never sell below cost.
+     */
+    public static function pricePerUnit(string $bucket, ?int $ownerUserId = null): float
     {
-        $cfg = self::config($bucket);
-        return (float) getOption($cfg['price_option'], $cfg['default_price']);
+        $cfg  = self::config($bucket);
+        $base = (float) getOption($cfg['price_option'], $cfg['default_price']);
+
+        if ($bucket === 'sms' && $ownerUserId) {
+            $planRate = self::ownerSmsRate($ownerUserId);
+            if ($planRate !== null) {
+                $floor = (float) getOption('sms_cost_floor', 0.80);
+                return max($planRate, $floor);
+            }
+        }
+
+        return $base;
+    }
+
+    /** The owner's plan-specific SMS price per credit, or null when the plan has no override. */
+    private static function ownerSmsRate(int $ownerUserId): ?float
+    {
+        try {
+            $rate = \App\Models\OwnerPackage::where('owner_packages.user_id', $ownerUserId)
+                ->where('owner_packages.status', ACTIVE)
+                ->whereDate('owner_packages.end_date', '>=', now())
+                ->join('packages', 'packages.id', '=', 'owner_packages.package_id')
+                ->orderByDesc('owner_packages.id')
+                ->value('packages.sms_price_per_credit');
+
+            return ($rate !== null && (float) $rate > 0) ? (float) $rate : null;
+        } catch (\Throwable $e) {
+            return null;
+        }
     }
 
     /** N credits → KES cost. */
-    public static function amountForCredits(string $bucket, int $quantity): float
+    public static function amountForCredits(string $bucket, int $quantity, ?int $ownerUserId = null): float
     {
-        return round($quantity * self::pricePerUnit($bucket), 2);
+        return round($quantity * self::pricePerUnit($bucket, $ownerUserId), 2);
     }
 
     /** KES amount → how many whole credits it buys. */
-    public static function creditsForAmount(string $bucket, float $amount): int
+    public static function creditsForAmount(string $bucket, float $amount, ?int $ownerUserId = null): int
     {
-        $price = self::pricePerUnit($bucket);
+        $price = self::pricePerUnit($bucket, $ownerUserId);
         return $price > 0 ? (int) floor($amount / $price) : 0;
     }
 }

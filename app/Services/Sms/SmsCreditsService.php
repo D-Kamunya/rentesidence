@@ -204,19 +204,26 @@ class SmsCreditsService
     }
 
     /**
-     * KES amount → how many credits.
+     * KES amount → how many credits. Priced per the owner's plan (paid domains cheaper);
+     * defaults to the signed-in owner so credit surfaces show that owner's rate.
      */
-    public static function creditsForAmount(float $amount): int
+    public static function creditsForAmount(float $amount, ?int $ownerUserId = null): int
     {
-        return CreditService::creditsForAmount(self::BUCKET, $amount);
+        return CreditService::creditsForAmount(self::BUCKET, $amount, $ownerUserId ?? auth()->id());
     }
 
     /**
-     * N credits → KES cost.
+     * N credits → KES cost, priced per the owner's plan (defaults to the signed-in owner).
      */
-    public static function amountForCredits(int $credits): float
+    public static function amountForCredits(int $credits, ?int $ownerUserId = null): float
     {
-        return CreditService::amountForCredits(self::BUCKET, $credits);
+        return CreditService::amountForCredits(self::BUCKET, $credits, $ownerUserId ?? auth()->id());
+    }
+
+    /** KES price per SMS credit for an owner's plan (defaults to the signed-in owner). */
+    public static function pricePerUnit(?int $ownerUserId = null): float
+    {
+        return CreditService::pricePerUnit(self::BUCKET, $ownerUserId ?? auth()->id());
     }
 
     private static function notifyLowCredits(Owner $owner, int $remaining): void

@@ -37,10 +37,10 @@ class PackageCatalogSeeder extends Seeder
 {
     public function run(): void
     {
-        // v5 sets maintainer/invoice/auto-invoice limits to -1 (unlimited) — they were 0,
-        // which reads/enforces as "zero allowed". (v4 soft-deleted stale bands; v3 zeroed the
-        // FREE SMS grant; v2 flattened/tapered the paid grants.)
-        if (getOption('package_catalog_v5')) {
+        // v6 adds per-domain SMS pricing (paid bands cheaper per credit as an upgrade pull).
+        // (v5 set maintainer/invoice/auto-invoice to -1 unlimited; v4 soft-deleted stale bands;
+        // v3 zeroed the FREE SMS grant; v2 flattened/tapered the paid grants.)
+        if (getOption('package_catalog_v6')) {
             return;
         }
 
@@ -57,24 +57,26 @@ class PackageCatalogSeeder extends Seeder
             // earliest/most reliable usage rail — a recurring free grant would permanently blunt
             // it. Email reminders stay free, so the tier isn't crippled; SMS is paid from msg 1
             // (normalised in KE). Trial keeps a grant — it's a time-boxed conversion tool.
-            // name             maxU   perM  model           def trail  mkup  disc   sms
-            ['Free',            30,      0,  'free',          1,   0,    2.0,  0.0,     0],
-            ['Starter',         60,     50,  'subscription',  0,   0,    1.5,  0.0,   120],
-            ['Growth',         100,     40,  'subscription',  0,   0,    1.0,  0.0,   200],
-            ['Professional',   150,     39,  'subscription',  0,   0,    0.5,  0.0,   300],
-            ['Business',       200,     38,  'subscription',  0,   0,    0.0,  0.0,   400],
-            ['Enterprise',     400,     30,  'subscription',  0,   0,    0.0,  0.5,   600],
-            ['Corporate',      600,     29,  'subscription',  0,   0,    0.0,  1.0,   800],
-            ['Institutional', 1000,     24,  'subscription',  0,   0,    0.0,  1.5,  1000],
+            // SMS PRICE per credit (last col): Free/global = null → 1.00; PAID domains = 0.90 (a
+            // 10% pull, floored above our 0.80 Advanta cost = 0.10 margin). Tunable per plan later.
+            // name             maxU   perM  model           def trail  mkup  disc   sms   smsP
+            ['Free',            30,      0,  'free',          1,   0,    2.0,  0.0,     0,  null],
+            ['Starter',         60,     50,  'subscription',  0,   0,    1.5,  0.0,   120,  0.90],
+            ['Growth',         100,     40,  'subscription',  0,   0,    1.0,  0.0,   200,  0.90],
+            ['Professional',   150,     39,  'subscription',  0,   0,    0.5,  0.0,   300,  0.90],
+            ['Business',       200,     38,  'subscription',  0,   0,    0.0,  0.0,   400,  0.90],
+            ['Enterprise',     400,     30,  'subscription',  0,   0,    0.0,  0.5,   600,  0.90],
+            ['Corporate',      600,     29,  'subscription',  0,   0,    0.0,  1.0,   800,  0.90],
+            ['Institutional', 1000,     24,  'subscription',  0,   0,    0.0,  1.5,  1000,  0.90],
             // Transaction: 1% of rent, zero upfront, unlocks financing. No unit ceiling.
-            ['Transaction', 1000000,     0,  'transaction',   0,   0,    0.0,  1.0,   100],
+            ['Transaction', 1000000,     0,  'transaction',   0,   0,    0.0,  1.0,   100,  0.90],
             // Trial: admin one-tap taste of the full experience; time-boxed via end_date +
             // ExpireTrials, cost-capped by a SMALL SMS grant (not unlimited).
-            ['Trial',           50,      0,  'free',          0,   1,    0.0,  0.0,    50],
+            ['Trial',           50,      0,  'free',          0,   1,    0.0,  0.0,    50,  null],
         ];
 
         DB::transaction(function () use ($bands) {
-            foreach ($bands as [$name, $maxUnit, $perMonthly, $model, $isDefault, $isTrail, $markup, $discount, $sms]) {
+            foreach ($bands as [$name, $maxUnit, $perMonthly, $model, $isDefault, $isTrail, $markup, $discount, $sms, $smsPrice]) {
                 // Flat band price = per-unit × ceiling. Annual = 2 months free (×10).
                 $perYearly    = $perMonthly * 10;
                 $monthlyPrice = $perMonthly * $maxUnit;
@@ -107,6 +109,7 @@ class PackageCatalogSeeder extends Seeder
                         'commission_discount'      => $discount,
                         'max_marketplace_listings' => 0, // 0 = unlimited (listing cap lifted for all)
                         'monthly_sms_credits'      => $sms,
+                        'sms_price_per_credit'     => $smsPrice, // null → global sms_credit_price
                         'is_default'               => $isDefault,
                         'is_trail'                 => $isTrail,
                         'status'                   => ACTIVE,
@@ -122,6 +125,6 @@ class PackageCatalogSeeder extends Seeder
             Package::whereNotIn('name', array_column($bands, 0))->delete();
         });
 
-        setOption('package_catalog_v5', '1');
+        setOption('package_catalog_v6', '1');
     }
 }

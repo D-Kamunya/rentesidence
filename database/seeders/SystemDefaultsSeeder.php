@@ -72,7 +72,8 @@ class SystemDefaultsSeeder extends Seeder
             'screening_price'      => 30,   // price per screening credit once quota is used
 
             // ── SMS behaviour / credit rail ──
-            'sms_credit_price'          => 1.00, // price per SMS credit
+            'sms_credit_price'          => 1.00, // price per SMS credit (Free tier / global default)
+            'sms_cost_floor'            => 0.80, // our gateway cost (Advanta) — per-plan SMS prices are floored above this so we never sell below cost
             'sms_low_credit_threshold'  => 30,   // low-credit nudge — below the 50-credit trial grant so a fresh account isn't warned on day one
             'sms_reminder_cooldown_hours' => 24, // min gap between the same SMS reminder
             'sms_paused_digest_days'      => 7,  // look-back window for the paused-backlog re-engagement digest
