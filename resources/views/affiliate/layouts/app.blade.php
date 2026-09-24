@@ -36,14 +36,7 @@
 </head>
 
 <body class="{{ selectedLanguage()->rtl == 1 ? 'direction-rtl' : 'direction-ltr' }}">
-    @if (getOption('app_preloader_status') == 1)
-        <div id="preloader">
-            <div id="preloaderInner">
-                <img src="{{ getSettingImage('app_preloader') }}" alt="img">
-                <img id="ajaxLoader" src="{{asset('assets/images/ajaxloader.svg')}}" alt="img">
-            </div>
-        </div>
-    @endif
+    @include('common.layouts.preloader')
 
     <div id="layout-wrapper">
         @include('affiliate.layouts.navbar')

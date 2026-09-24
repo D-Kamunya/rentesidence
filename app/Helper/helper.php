@@ -115,7 +115,7 @@ function gatewaySettings()
     return '{"paypal":[{"label":"Url","name":"url","is_show":0},{"label":"Client ID","name":"key","is_show":1},{"label":"Secret","name":"secret","is_show":1}],"stripe":[{"label":"Url","name":"url","is_show":0},{"label":"Secret Key","name":"key","is_show":1},{"label":"Secret Key","name":"secret","is_show":0}],"razorpay":[{"label":"Url","name":"url","is_show":0},{"label":"Key","name":"key","is_show":1},{"label":"Secret","name":"secret","is_show":1}],"instamojo":[{"label":"Url","name":"url","is_show":0},{"label":"Api Key","name":"key","is_show":1},{"label":"Auth Token","name":"secret","is_show":1}],"mollie":[{"label":"Url","name":"url","is_show":0},{"label":"Mollie Key","name":"key","is_show":1},{"label":"Secret","name":"secret","is_show":0}],"paystack":[{"label":"Url","name":"url","is_show":0},{"label":"Public Key","name":"key","is_show":1},{"label":"Secret Key","name":"secret","is_show":0}],"mercadopago":[{"label":"Url","name":"url","is_show":0},{"label":"Client ID","name":"key","is_show":1},{"label":"Client Secret","name":"secret","is_show":1}],"sslcommerz":[{"label":"Url","name":"url","is_show":0},{"label":"Store ID","name":"key","is_show":1},{"label":"Store Password","name":"secret","is_show":1}],"flutterwave":[{"label":"Hash","name":"url","is_show":1},{"label":"Public Key","name":"key","is_show":1},{"label":"Client Secret","name":"secret","is_show":1}],"coinbase":[{"label":"Hash","name":"url","is_show":0},{"label":"API Key","name":"key","is_show":1},{"label":"Client Secret","name":"secret","is_show":0}],"bank":[{"label":"Hash","name":"url","is_show":0},{"label":"API Key","name":"key","is_show":0},{"label":"Client Secret","name":"secret","is_show":0}],"cash":[{"label":"Hash","name":"url","is_show":0},{"label":"API Key","name":"key","is_show":0},{"label":"Client Secret","name":"secret","is_show":0}], "mpesa": [{"label": "Url", "name": "url", "is_show": 0},{"label": "API Key", "name": "key", "is_show": 0},{"label": "Public Key", "name": "public_key", "is_show": 0},{"label": "Secret", "name": "secret", "is_show": 0}]}';
 }
 
-function getSettingImage($option_key)
+function getSettingImage($option_key, $fallback = null)
 {
     try {
         $system_settings = config('settings');
@@ -134,10 +134,12 @@ function getSettingImage($option_key)
                 }
             }
         }
-        // Every miss (no option, missing record, or file absent on disk) falls back here.
-        return asset('assets/images/users/empty-user.jpg');
+        // Every miss (no option, missing record, or file absent on disk) falls back here —
+        // to the caller-supplied fallback when given (e.g. a bundled brand asset), else the
+        // generic empty-user placeholder.
+        return $fallback ?: asset('assets/images/users/empty-user.jpg');
     } catch (\Throwable $e) {
-        return asset('assets/images/users/empty-user.jpg');
+        return $fallback ?: asset('assets/images/users/empty-user.jpg');
     }
 }
 
