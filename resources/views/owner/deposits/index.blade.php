@@ -4,7 +4,7 @@
     <div class="main-content">
         <div class="page-content">
             <div class="container-fluid">
-                <div class="dep-wrap">
+                <div class="page-content-wrapper bg-white p-30 radius-20 dep-wrap">
 
             {{-- Header --}}
             <div class="dep-head">
@@ -119,7 +119,7 @@
 
 @push('style')
 <style>
-    .dep-wrap { padding: 4px 2px 40px; }
+    .dep-wrap { padding: 30px; }
     .dep-head { margin-bottom: 18px; }
     .dep-title { font-size: 20px; font-weight: 700; color: #111827; margin: 0; }
     .dep-sub { font-size: 13px; color: #6b7280; margin: 4px 0 0; }

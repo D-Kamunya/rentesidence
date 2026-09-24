@@ -4,7 +4,7 @@
 <div class="main-content">
   <div class="page-content">
     <div class="container-fluid">
-      <div class="page-content-wrapper bg-white p-3 p-md-4 radius-20">
+      <div class="page-content-wrapper bg-white p-30 radius-20">
 
         <style>
           .tt-head h1{font-size:22px;font-weight:700;color:#1b1e22;margin:0 0 4px;}
@@ -35,9 +35,20 @@
           .tt-flash{border-radius:10px;padding:11px 14px;font-size:13.5px;margin-bottom:16px;}
           .tt-flash--err{background:#FBE9E7;border:1px solid #f0b8b0;color:#B42318;}
           .tt-new-terms{background:#f6f7f9;border:1px solid #eef0f3;border-radius:10px;padding:12px 14px;margin-top:2px;font-size:12.5px;color:#6b7280;display:none;}
+          .tt-bill{margin-top:12px;border:1px solid #eef0f3;border-radius:10px;padding:12px 14px;}
+          .tt-bill__head{font-size:12.5px;font-weight:700;color:#4a4f57;margin-bottom:8px;}
+          .tt-bill__head span{font-weight:500;color:#9aa2ad;}
+          .tt-opt{display:flex;align-items:flex-start;gap:9px;padding:7px 0;font-size:13px;color:#3a3f47;cursor:pointer;line-height:1.4;}
+          .tt-opt input{margin-top:2px;flex:none;accent-color:#185FA5;}
+          .tt-opt small{color:#9aa2ad;}
+          .tt-opt__amt{color:#185FA5;font-weight:700;}
+          .tt-opt__days{color:#9aa2ad;}
+          .tt-opt--dep{border-top:1px solid #f0f0ee;margin-top:4px;padding-top:10px;}
+          .tt-bill__note{font-size:12px;color:#8a5a12;background:#FEF3E7;border:1px solid #F5D9A8;border-radius:8px;padding:8px 10px;margin-top:6px;}
+          .tt-bill__hint{font-size:11.5px;color:#9aa2ad;margin-top:8px;line-height:1.5;}
         </style>
 
-        <a href="{{ route('owner.tenant.details', $tenant->id) }}" class="tt-back">
+        <a href="{{ route('owner.tenant.details', ['id' => $tenant->id, 'tab' => 'profile']) }}" class="tt-back">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M15 6l-6 6 6 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
           {{ __('Back to tenant') }}
         </a>
@@ -103,7 +114,11 @@
                     @foreach ($vacantUnits as $u)
                       <option value="{{ $u->id }}"
                         data-rent="{{ currencyPrice($u->general_rent) }}"
-                        data-deposit="{{ currencyPrice($u->security_deposit) }}">{{ $u->unit_name ?? ('#' . $u->id) }}</option>
+                        data-deposit="{{ currencyPrice($u->resolved_deposit) }}"
+                        data-deposit-raw="{{ (float) $u->resolved_deposit }}"
+                        data-prorate="{{ currencyPrice($u->prorate_amount) }}"
+                        data-prorate-days="{{ (int) $u->prorate_days }}"
+                        data-prorate-applies="{{ $u->prorate_applies ? 1 : 0 }}">{{ $u->unit_name ?? ('#' . $u->id) }}</option>
                     @endforeach
                   </select>
                 </div>
@@ -111,6 +126,25 @@
                   <div style="display:flex;justify-content:space-between;padding:2px 0;"><span>{{ __('New rent') }}</span><b id="ttRent">—</b></div>
                   <div style="display:flex;justify-content:space-between;padding:2px 0;"><span>{{ __('New deposit') }}</span><b id="ttDeposit">—</b></div>
                   <div style="margin-top:6px;color:#9aa2ad;">{{ __('The new unit\'s rent, deposit and due date apply going forward. The deposit already held is not auto-adjusted — settle any difference off-system.') }}</div>
+                </div>
+
+                <div class="tt-bill" id="ttBill" style="display:none;">
+                  <div class="tt-bill__head">{{ __('Bill the new unit now') }} <span>{{ __('(optional)') }}</span></div>
+                  <label class="tt-opt"><input type="radio" name="bill_mode" value="skip" checked>
+                    <span>{{ __("Don't bill now") }} <small>{{ __('— the next rent cycle invoices it automatically') }}</small></span></label>
+                  <label class="tt-opt"><input type="radio" name="bill_mode" value="full">
+                    <span>{{ __("Full month's rent") }} <b id="ttBillRent" class="tt-opt__amt">—</b></span></label>
+                  <label class="tt-opt" id="ttProrateRow"><input type="radio" name="bill_mode" value="prorate" id="ttProrateChk">
+                    <span>{{ __('Pro-rate for the days left this month') }} <small id="ttProrateDays" class="tt-opt__days"></small> <b id="ttBillProrate" class="tt-opt__amt">—</b> <small id="ttProrateNa" style="display:none;">{{ __('(monthly rent only)') }}</small></span></label>
+
+                  <label class="tt-opt tt-opt--dep" id="ttDepRow" @if($depositInPlay) style="display:none;" @endif>
+                    <input type="checkbox" name="include_deposit" value="1" id="ttDepChk">
+                    <span>{{ __('Also collect the deposit now') }} <b id="ttBillDep" class="tt-opt__amt">—</b></span></label>
+                  @if ($depositInPlay)
+                    <div class="tt-bill__note">{{ __('A deposit is already held for this tenant — a second one won\'t be collected on the move.') }}</div>
+                  @endif
+
+                  <div class="tt-bill__hint">{{ __('If you already billed the old unit for this month, choose pro-rate or "don\'t bill now" so the tenant isn\'t charged a full month twice.') }}</div>
                 </div>
                 <div class="tt-field" style="margin-top:14px;">
                   <label>{{ __('Note') }} <span style="color:#9aa2ad;font-weight:500;">({{ __('optional — recorded on the transfer') }})</span></label>
@@ -134,15 +168,44 @@
     var sel = document.getElementById('ttUnit');
     if (!sel) return;
     var terms = document.getElementById('ttTerms'), submit = document.getElementById('ttSubmit');
+    var bill = document.getElementById('ttBill');
+    var depRow = document.getElementById('ttDepRow'), depChk = document.getElementById('ttDepChk');
+    var proChk = document.getElementById('ttProrateChk'), proNa = document.getElementById('ttProrateNa');
+    var depInPlay = {{ $depositInPlay ? 'true' : 'false' }};
     sel.addEventListener('change', function () {
       var o = sel.options[sel.selectedIndex];
       if (sel.value) {
-        document.getElementById('ttRent').textContent = o.getAttribute('data-rent') || '—';
-        document.getElementById('ttDeposit').textContent = o.getAttribute('data-deposit') || '—';
+        var rent = o.getAttribute('data-rent') || '—';
+        var dep  = o.getAttribute('data-deposit') || '—';
+        document.getElementById('ttRent').textContent = rent;
+        document.getElementById('ttDeposit').textContent = dep;
+        document.getElementById('ttBillRent').textContent = rent;
         terms.style.display = 'block';
+        if (bill) bill.style.display = 'block';
+
+        // Pro-rate: show the exact figure + the day count for clarity; disable for non-monthly units.
+        var proApplies = o.getAttribute('data-prorate-applies') === '1';
+        document.getElementById('ttBillProrate').textContent = proApplies ? (o.getAttribute('data-prorate') || '—') : '';
+        var proDays = parseInt(o.getAttribute('data-prorate-days') || '0', 10);
+        document.getElementById('ttProrateDays').textContent = (proApplies && proDays > 0)
+          ? '(' + proDays + ' ' + (proDays === 1 ? '{{ __('day') }}' : '{{ __('days') }}') + ')' : '';
+        if (proChk) {
+          proChk.disabled = !proApplies;
+          if (!proApplies && proChk.checked) { proChk.checked = false; var s = document.querySelector('input[name=bill_mode][value=skip]'); if (s) s.checked = true; }
+        }
+        if (proNa) proNa.style.display = proApplies ? 'none' : 'inline';
+
+        // Only offer the deposit if this unit actually has one configured and none is already in play.
+        var hasDeposit = parseFloat(o.getAttribute('data-deposit-raw') || '0') > 0;
+        if (depRow && !depInPlay) {
+          depRow.style.display = hasDeposit ? 'flex' : 'none';
+          document.getElementById('ttBillDep').textContent = dep;
+          if (!hasDeposit && depChk) depChk.checked = false;
+        }
         submit.disabled = false;
       } else {
         terms.style.display = 'none';
+        if (bill) bill.style.display = 'none';
         submit.disabled = true;
       }
     });
