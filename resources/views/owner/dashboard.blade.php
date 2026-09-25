@@ -11,6 +11,9 @@
                          (auto-hides once complete or dismissed). --}}
                     @include('owner.partials.setup-checklist')
 
+                    {{-- First-login owner walk-around (desktop spotlight / mobile carousel); replay via "How it works". --}}
+                    @include('owner.partials.welcome-tour')
+
                     {{-- Owner Upgrade Advisor — the top personalised nudge (subsumes the old static
                          financing banner; now targeted + server-side dismiss). --}}
                     @include('owner.partials.upgrade-advisor')
@@ -22,6 +25,7 @@
                             <p class="dash-subtitle">
                                 {{ __('Welcome back') }}, <strong>{{ auth()->user()->name }}</strong>
                                 <span class="iconify font-24" data-icon="openmoji:waving-hand"></span>
+                                <a href="javascript:void(0)" onclick="if(window.csOpenTour)csOpenTour()" style="margin-left:10px;font-size:12.5px;font-weight:600;color:#185FA5;text-decoration:none;white-space:nowrap;">{{ __('How it works') }} ›</a>
                             </p>
                         </div>
                         @php

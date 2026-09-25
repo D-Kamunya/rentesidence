@@ -13,13 +13,13 @@
                     </a>
                 </li>
                 <li class="{{ @$navInvoiceMMActiveClass }}">
-                    <a href="{{ route('tenant.invoice.index') }}" class="{{ @$navInvoiceActiveClass }}">
+                    <a href="{{ route('tenant.invoice.index') }}" data-tour="tenant-invoices" class="{{ @$navInvoiceActiveClass }}">
                         <i class="ri-bill-line"></i>
                         <span>{{ __('Invoices') }}@include('partials.nav-count', ['n' => $navBadges['invoices_unpaid'] ?? 0])</span>
                     </a>
                 </li>
                 <li class="{{ @$navRentalScoreMMActiveClass }}">
-                    <a href="{{ route('tenant.rental-score.index') }}" class="{{ @$navRentalScoreActiveClass }}">
+                    <a href="{{ route('tenant.rental-score.index') }}" data-tour="tenant-score" class="{{ @$navRentalScoreActiveClass }}">
                         <i class="ri-shield-star-line"></i>
                         <span>{{ __('My Rental Score') }}</span>
                     </a>
@@ -105,7 +105,7 @@
                 </li>
                 {{-- Support — reach our team (reusable support rail). --}}
                 <li>
-                    <a href="{{ route('support.index') }}">
+                    <a href="{{ route('support.index') }}" data-tour="tenant-support">
                         <i class="ri-customer-service-2-line"></i>
                         <span>{{ __('Support') }}@include('partials.nav-count', ['n' => $navBadges['support'] ?? 0])</span>
                     </a>

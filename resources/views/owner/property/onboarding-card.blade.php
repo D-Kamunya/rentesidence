@@ -36,6 +36,9 @@
         <button type="button" class="print" onclick="window.print()">{{ __('Print') }}</button>
         <a href="{{ route('owner.property.show', $property->id) }}" class="back">{{ __('Back') }}</a>
     </div>
+    <p style="text-align:center;max-width:520px;margin:0 auto 8px;font-size:13px;color:#6b7280;line-height:1.5;padding:0 18px;">
+        {{ __('Print this once your tenants are added to their units — they sign in with the details from their welcome SMS/email. Pin it on the property notice board.') }}
+    </p>
 
     <div class="sheet">
         <div class="card__top">

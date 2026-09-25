@@ -57,7 +57,7 @@
                 </li>
 
                 <li>
-                    <a href="javascript: void(0);" class="has-arrow">
+                    <a href="javascript: void(0);" class="has-arrow" data-tour="owner-properties">
                         <i class="ri-building-line"></i>
                         <span>{{ __('Properties') }}</span>
                     </a>
@@ -82,7 +82,7 @@
                 </li>
 
                 <li>
-                    <a href="javascript: void(0);" class="has-arrow">
+                    <a href="javascript: void(0);" class="has-arrow" data-tour="owner-tenants">
                         <i class="ri-user-3-line"></i>
                         <span>{{ __('Tenants') }}</span>
                     </a>
@@ -111,7 +111,7 @@
                 </li>
 
                 <li>
-                    <a href="javascript: void(0);" class="has-arrow">
+                    <a href="javascript: void(0);" class="has-arrow" data-tour="owner-billing">
                         <i class="ri-wallet-line"></i>
                         <span>{{ __('Billing Center') }}</span>
                     </a>

@@ -17,7 +17,7 @@
                             <p class="dash-subtitle">
                                 {{ __('Welcome back') }}, <strong>{{ auth()->user()->name }}</strong>
                                 <span class="iconify font-24" data-icon="openmoji:waving-hand"></span>
-                                <a href="javascript:void(0)" onclick="if(window.csOpenTenantTour)csOpenTenantTour()" style="margin-left:10px;font-size:12.5px;font-weight:600;color:#185FA5;text-decoration:none;white-space:nowrap;">{{ __('How it works') }} ›</a>
+                                <a href="javascript:void(0)" onclick="if(window.csOpenTour)csOpenTour()" style="margin-left:10px;font-size:12.5px;font-weight:600;color:#185FA5;text-decoration:none;white-space:nowrap;">{{ __('How it works') }} ›</a>
                             </p>
                         </div>
                         @if (empty($tenancyEnded))
