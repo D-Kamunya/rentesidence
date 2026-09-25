@@ -223,7 +223,8 @@
                                         <img class="ps-unit-thumb"
                                              src="{{ $propertyUnit->first_image
                                                      ? asset('storage/' . $propertyUnit->first_image->folder_name . '/' . $propertyUnit->first_image->file_name)
-                                                     : asset('images/default-unit.png') }}"
+                                                     : asset('assets/images/unit.png') }}"
+                                             onerror="this.onerror=null;this.src='{{ asset('assets/images/unit.png') }}'"
                                              alt="">
                                     </td>
                                     <td>
