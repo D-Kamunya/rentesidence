@@ -7,6 +7,10 @@
             <div class="page-content-wrapper bg-white p-30 radius-20">
                 <div class="container">
 
+                    {{-- Owner setup checklist — live "get set up to collect rent" tracker for new owners
+                         (auto-hides once complete or dismissed). --}}
+                    @include('owner.partials.setup-checklist')
+
                     {{-- Owner Upgrade Advisor — the top personalised nudge (subsumes the old static
                          financing banner; now targeted + server-side dismiss). --}}
                     @include('owner.partials.upgrade-advisor')

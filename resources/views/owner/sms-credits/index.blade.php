@@ -102,7 +102,7 @@
                         <p class="sms-price-note">
                             {{ __('Price:') }} <strong>KSh {{ number_format($pricePerSms, 2) }}</strong> {{ __('per SMS credit') }}
                             @if (isset($globalSmsPrice) && $pricePerSms < $globalSmsPrice)
-                                <span style="color:#0F6E56;font-weight:600;">— {{ __('your plan rate (standard KSh :std)', ['std' => number_format($globalSmsPrice, 2)]) }}</span>
+                                <span style="color:#0F6E56;font-weight:600;">— {{ __('you save vs the standard KSh :std', ['std' => number_format($globalSmsPrice, 2)]) }}</span>
                             @endif
                         </p>
 
