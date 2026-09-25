@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>{{ __('Onboarding card') }} · {{ $property->name }}</title>
+    <title>{{ __('Tenant onboarding') }} · {{ $property->name }}</title>
     <style>
         *{box-sizing:border-box}
         body{margin:0;background:#EDEBE6;font-family:system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
@@ -40,7 +40,7 @@
     <div class="sheet">
         <div class="card__top">
             <img src="{{ asset('assets/images/cs-icon.png') }}" alt="{{ $appName }}" class="card__logo">
-            <p class="card__prop">{{ $property->name }}</p>
+            <p class="card__prop">{{ __('Tenant onboarding') }} · {{ $property->name }}</p>
             <h1 class="card__h1">{{ __('Set up your rent app') }}</h1>
         </div>
         <div class="card__body">
