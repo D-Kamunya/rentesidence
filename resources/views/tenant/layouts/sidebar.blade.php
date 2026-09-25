@@ -44,7 +44,7 @@
                     </a>
                 </li>
                 <li class="{{ @$navProductOrdersMMActiveClass }}">
-                    <a href="{{ route('tenant.order.index') }}" class="{{ @$navProductOrderActiveClass }}">
+                    <a href="{{ route('tenant.order.index') }}" data-tour="tenant-shop" class="{{ @$navProductOrderActiveClass }}">
                         <i class="ri-bill-line"></i>
                         <span>{{ __('Product Orders') }}</span>
                     </a>
@@ -60,7 +60,7 @@
                 @endif
                 @if (ownerCurrentPackage(auth()->user()->owner_user_id)?->ticket_support == ACTIVE || isAddonInstalled('PROTYSAAS') < 1)
                     <li class="{{ @$navTicketMMActiveClass }}">
-                        <a href="{{ route('tenant.ticket.index') }}" class="{{ @$navTicketActiveClass }}">
+                        <a href="{{ route('tenant.ticket.index') }}" data-tour="tenant-tickets" class="{{ @$navTicketActiveClass }}">
                             <i class="ri-bookmark-2-line"></i>
                             <span>{{ __('My Tickets') }}</span>
                         </a>
@@ -73,7 +73,7 @@
                     </a>
                 </li>
                 <li>
-                    <a href="{{ route('tenant.maintenance-request.index') }}">
+                    <a href="{{ route('tenant.maintenance-request.index') }}" data-tour="tenant-maintenance">
                         <i class="ri-folder-info-line"></i>
                         <span>{{ __('Maintenance Request') }}</span>
                     </a>

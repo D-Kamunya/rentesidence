@@ -14,7 +14,7 @@
                 </li>
 
                 <li>
-                    <a href="{{ route('owner.products.index') }}">
+                    <a href="{{ route('owner.products.index') }}" data-tour="owner-shop">
                         <i class="ri-store-2-line"></i>
                         <span>{{ __('My Shop') }}</span>
                     </a>
@@ -28,7 +28,7 @@
                 </li>
 
                 <li>
-                    <a href="javascript: void(0);" class="has-arrow">
+                    <a href="javascript: void(0);" class="has-arrow" data-tour="owner-financing">
                         <i class="ri-funds-line"></i>
                         <span>{{ __('Financing') }}</span>
                     </a>

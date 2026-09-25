@@ -15,6 +15,8 @@
         ['ico' => '🖊️', 'title' => __('Agreements'),           'body' => __('Send a lease and have your tenant sign it in-app — no printing, no scanning.'), 'target' => '[data-tour="owner-agreement"]'],
         ['ico' => '💬', 'title' => __('SMS credits'),           'body' => __('Top up SMS credits here — they power tenant reminders and notifications.'), 'target' => '[data-tour="owner-sms"]'],
         ['ico' => '🛠️', 'title' => __('Maintenance & more'),   'body' => __('Handle maintenance requests, tickets and your property notice board from here.'), 'target' => '[data-tour="owner-maintenance"]'],
+        ['ico' => '🛒', 'title' => __('Sell to your tenants'),  'body' => __('Open a shop and sell products to your tenants — an extra income stream, right inside the app.'), 'target' => '[data-tour="owner-shop"]'],
+        ['ico' => '📈', 'title' => __('Finance & grow'),        'body' => __('Fund smart meters, locks and more through a partner — repaid from rent — to boost your property cashflow.'), 'target' => '[data-tour="owner-financing"]'],
         ['ico' => '🎧', 'title' => __('Help is here'),          'body' => __('Reach the Centresidence team any time from Support. That is the tour — enjoy!'), 'target' => '[data-tour="owner-support"]'],
     ];
 @endphp
