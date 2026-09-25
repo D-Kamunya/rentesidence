@@ -127,7 +127,7 @@
                 </li>
 
                 <li>
-                    <a href="{{ route('owner.sms.credits.index') }}">
+                    <a href="{{ route('owner.sms.credits.index') }}" data-tour="owner-sms">
                         <i class="ri-message-2-line"></i>
                         <span>{{ __('SMS Credits') }}</span>
                     </a>
@@ -177,7 +177,7 @@
                 @endif
 
                 <li>
-                    <a href="javascript: void(0);" class="has-arrow">
+                    <a href="javascript: void(0);" class="has-arrow" data-tour="owner-maintenance">
                         <i class="ri-account-circle-line"></i>
                         <span>{{ __('Maintenance') }}</span>
                     </a>
@@ -264,7 +264,7 @@
                 @endif
                 @if (isAddonInstalled('PROTYAGREEMENT') > 0)
                     <li>
-                        <a href="{{ route('owner.agreement.index') }}">
+                        <a href="{{ route('owner.agreement.index') }}" data-tour="owner-agreement">
                             <i class="ri-contacts-line"></i>
                             <span>{{ __('Agreement') }}</span>
                         </a>
@@ -292,7 +292,7 @@
                     </ul>
                 </li>
                 <li>
-                    <a href="{{ route('owner.wallet.index') }}" >
+                    <a href="{{ route('owner.wallet.index') }}" data-tour="owner-wallet">
                         <i class="ri-wallet-line"></i>
                         <span>{{ __('Wallet') }}</span>
                     </a>
@@ -307,7 +307,7 @@
                 @endif
                 {{-- Support — reach our team (reusable support rail). --}}
                 <li>
-                    <a href="{{ route('support.index') }}">
+                    <a href="{{ route('support.index') }}" data-tour="owner-support">
                         <i class="ri-customer-service-2-line"></i>
                         <span>{{ __('Support') }}@include('partials.nav-count', ['n' => $navBadges['support'] ?? 0])</span>
                     </a>
