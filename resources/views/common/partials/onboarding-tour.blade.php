@@ -13,6 +13,7 @@
     <h3 class="cst__title" id="cstTitle"></h3>
     <p class="cst__body" id="cstBody"></p>
     <div class="cst__dots" id="cstDots"></div>
+    <button type="button" class="cst__btn cst__btn--primary" id="cstCta" style="display:none;width:100%;margin-bottom:9px;"></button>
     <div class="cst__actions">
       <button type="button" class="cst__btn cst__btn--ghost" id="cstBack">{{ __('Back') }}</button>
       <button type="button" class="cst__btn cst__btn--primary" id="cstNext">{{ __('Next') }}</button>
@@ -47,10 +48,19 @@
     var STEPS = @json($tourSteps);
     var KEY = @json($tourKey);
     var root = document.getElementById('cstRoot');
-    if (!root || !STEPS.length) return;
+    if (!root) return;
+
+    function isStandalone() {
+      return (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches) || window.navigator.standalone === true;
+    }
+    // Drop any "install the app" step once the app is already installed — nothing left to prompt.
+    STEPS = STEPS.filter(function (s) { return !s.install || !isStandalone(); });
+    if (!STEPS.length) return;
+
     var dim = document.getElementById('cstDim'), spot = document.getElementById('cstSpot'), card = document.getElementById('cstCard');
     var icoEl = document.getElementById('cstIco'), titleEl = document.getElementById('cstTitle'), bodyEl = document.getElementById('cstBody');
     var dotsEl = document.getElementById('cstDots'), back = document.getElementById('cstBack'), next = document.getElementById('cstNext'), skip = document.getElementById('cstSkip');
+    var cta = document.getElementById('cstCta');
     var cur = 0, marked = false, DESKTOP = 900;
 
     dotsEl.innerHTML = STEPS.map(function (s, i) { return '<span class="cst__dot' + (i === 0 ? ' on' : '') + '"></span>'; }).join('');
@@ -66,6 +76,12 @@
       dots.forEach(function (d, k) { d.classList.toggle('on', k === i); });
       back.style.visibility = i === 0 ? 'hidden' : 'visible';
       next.textContent = (i === STEPS.length - 1) ? '{{ __('Done') }}' : '{{ __('Next') }}';
+
+      // Optional per-step call-to-action (e.g. "Install app").
+      if (s.cta) {
+        cta.style.display = ''; cta.textContent = s.cta.label;
+        cta.onclick = function () { if (s.cta.action === 'install' && window.csPwaInstall) window.csPwaInstall(); };
+      } else { cta.style.display = 'none'; cta.onclick = null; }
 
       var el = s.target ? document.querySelector(s.target) : null;
       var useSpot = el && visible(el) && window.innerWidth >= DESKTOP;

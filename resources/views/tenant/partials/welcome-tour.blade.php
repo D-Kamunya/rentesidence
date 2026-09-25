@@ -12,6 +12,7 @@
         ['ico' => '🛠️', 'title' => __('Report a problem'),           'body' => __('Something needs fixing? Raise a maintenance request and follow its progress.'), 'target' => '[data-tour="tenant-maintenance"]'],
         ['ico' => '🎫', 'title' => __('Your tickets'),               'body' => __('Follow up on your requests and messages in My Tickets.'), 'target' => '[data-tour="tenant-tickets"]'],
         ['ico' => '💬', 'title' => __('Help is one tap away'),        'body' => __('Reach Centresidence support any time from here. Tip: keep your password private.'), 'target' => '[data-tour="tenant-support"]'],
+        ['ico' => '📲', 'title' => __('Get the app'),                 'body' => __('Install :app on your phone for the best experience — and it stays with you. Even after you move on, your rental record travels with you.', ['app' => $app]), 'install' => true, 'cta' => ['label' => __('Install app'), 'action' => 'install']],
     ];
 @endphp
 @include('common.partials.onboarding-tour', ['tourKey' => $tourKey, 'tourSteps' => $tourSteps, 'tourAutoshow' => $tourAutoshow])

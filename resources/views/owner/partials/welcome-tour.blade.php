@@ -25,7 +25,8 @@
         ['ico' => '🛠️', 'title' => __('Maintenance & more'),   'body' => __('Handle maintenance requests, tickets and your property notice board from here.'), 'target' => '[data-tour="owner-maintenance"]'],
         ['ico' => '🛒', 'title' => __('Sell to your tenants'),  'body' => __('Open a shop and sell products to your tenants — an extra income stream, right inside the app.'), 'target' => '[data-tour="owner-shop"]'],
         ['ico' => '📈', 'title' => __('Finance & grow'),        'body' => __('Fund smart meters, locks and more through a partner — repaid from rent — to boost your property cashflow.'), 'target' => '[data-tour="owner-financing"]'],
-        ['ico' => '🎧', 'title' => __('Help is here'),          'body' => __('Reach the Centresidence team any time from Support. That is the tour — enjoy!'), 'target' => '[data-tour="owner-support"]'],
+        ['ico' => '🎧', 'title' => __('Help is here'),          'body' => __('Reach the Centresidence team any time from Support.'), 'target' => '[data-tour="owner-support"]'],
+        ['ico' => '📲', 'title' => __('Get the app'),           'body' => __('Install :app for one-tap access to your rentals on the go — the fastest, most reliable way to manage everything. That is the tour — enjoy!', ['app' => $app]), 'install' => true, 'cta' => ['label' => __('Install app'), 'action' => 'install']],
     ];
 @endphp
 @include('common.partials.onboarding-tour', ['tourKey' => $tourKey, 'tourSteps' => $tourSteps, 'tourAutoshow' => $tourAutoshow])
