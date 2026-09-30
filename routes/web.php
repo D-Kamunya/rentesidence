@@ -115,6 +115,34 @@ Route::prefix('blog')->name('blog.')->group(function () {
     Route::post('/{post}/share', [BlogController::class, 'share'])->name('share');
 });
 
+// Digital business card — the public /card page a printed QR resolves to (trade fairs etc.).
+// ⚠️ The URL is fixed: distributed QR codes encode https://centresidence.com/card, so the path
+// must stay /card even when the page is redesigned. Page: resources/views/card.blade.php.
+Route::view('/card', 'card')->name('digital.card');
+
+// Save Centresidence as a phone contact (vCard download from the card page).
+Route::get('/card/contact', function () {
+    $vcard = implode("\r\n", [
+        'BEGIN:VCARD',
+        'VERSION:3.0',
+        'FN:Centresidence',
+        'ORG:Centresidence',
+        'TITLE:Infrastructure & Finance OS',
+        'TEL;TYPE=WORK,VOICE:+254714389005',
+        'EMAIL;TYPE=WORK:info@centresidence.com',
+        'URL:https://centresidence.com/',
+        'ADR;TYPE=WORK:;;Nairobi;;;Kenya',
+        'NOTE:Smarter property management. Stronger communities.',
+        'END:VCARD',
+        '',
+    ]);
+
+    return response($vcard, 200, [
+        'Content-Type'        => 'text/vcard; charset=utf-8',
+        'Content-Disposition' => 'attachment; filename="centresidence.vcf"',
+    ]);
+})->name('digital.card.contact');
+
 // Public certificate verification — anyone holding a signed agreement certificate can
 // confirm its authenticity (gated by the unguessable code, so agreements can't be enumerated).
 Route::get('/agreement/verify/{code?}', [\App\Http\Controllers\Agreement\VerificationController::class, 'show'])->name('agreement.verify');
