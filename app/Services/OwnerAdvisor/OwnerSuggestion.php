@@ -16,7 +16,9 @@ class OwnerSuggestion
         public string $body,
         public string $ctaLabel,
         public string $ctaUrl,
-        public array $meta = []      // computed numbers for display/telemetry
+        public array $meta = [],     // computed numbers for display/telemetry
+        public ?string $learnLabel = null, // optional secondary "learn more" link (e.g. a KB article)
+        public ?string $learnUrl = null
     ) {
     }
 
@@ -36,6 +38,8 @@ class OwnerSuggestion
             'body'      => $this->body,
             'cta_label' => $this->ctaLabel,
             'cta_url'   => $this->ctaUrl,
+            'learn_label' => $this->learnLabel,
+            'learn_url'   => $this->learnUrl,
             'meta'      => $this->meta,
         ];
     }

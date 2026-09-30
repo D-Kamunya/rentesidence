@@ -21,6 +21,11 @@
             </span>
             <span class="cs-fin-nudge__cta">{{ $csAdvisor->ctaLabel }}</span>
         </a>
+        @if ($csAdvisor->learnUrl && $csAdvisor->learnLabel)
+            <a href="{{ $csAdvisor->learnUrl }}" class="cs-fin-nudge__learn btn-learn">
+                <i class="ri-book-open-line"></i> {{ $csAdvisor->learnLabel }}
+            </a>
+        @endif
         <button type="button" class="cs-fin-nudge__x" aria-label="{{ __('Dismiss') }}" onclick="csAdvisorDismiss()">&times;</button>
     </div>
     <script>

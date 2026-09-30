@@ -855,6 +855,12 @@
     border-radius:6px; transition:all .13s;
 }
 .cs-fin-nudge__x:hover { color:#111827; background:rgba(0,0,0,.06); }
+.cs-fin-nudge__learn {
+    display:inline-flex; align-items:center; gap:5px; margin:9px 0 0 20px;
+    font-size:12.5px; font-weight:500; color:#185FA5; text-decoration:none;
+}
+.cs-fin-nudge__learn:hover { text-decoration:underline; }
+.cs-fin-nudge__learn i { font-size:14px; }
 @media (max-width:600px) {
     .cs-fin-nudge__link { padding:14px 40px 14px 14px; gap:12px; }
     /* Row 1 = icon + text fill the width; Row 2 = full-width CTA (no one-word columns). */

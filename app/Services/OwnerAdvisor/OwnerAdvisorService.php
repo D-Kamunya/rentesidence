@@ -158,9 +158,11 @@ class OwnerAdvisorService
     }
 
     /** Resolve a route by name, degrading to home if it isn't registered (never throws). */
-    private function url(string $name): string
+    private function url(string $name, $param = null): string
     {
-        return \Illuminate\Support\Facades\Route::has($name) ? route($name) : url('/');
+        return \Illuminate\Support\Facades\Route::has($name)
+            ? ($param === null ? route($name) : route($name, $param))
+            : url('/');
     }
 
     // ── Value-exposure rules (free owners) — surface the value already in the platform ──────────
@@ -193,10 +195,12 @@ class OwnerAdvisorService
 
         return new OwnerSuggestion(
             key: 'try_sms', category: 'value', priority: 'medium',
-            title: __('Reach your tenants instantly by SMS'),
-            body: __('Send rent reminders, receipts and notices straight to their phones — the surest way to get paid on time. Top up SMS credits to start.'),
+            title: __('Let SMS do your rent follow-up'),
+            body: __('Chasing tenants one by one eats your month. Automated SMS reminders carry a one-tap pay link, so tenants pay straight from the text — no calls, no WhatsApp round-ups. It\'s the surest way to get paid on time and the biggest time-saver in the app. Top up credits to switch it on.'),
             ctaLabel: __('Explore SMS'),
             ctaUrl: $this->url('owner.sms.credits.index'),
+            learnLabel: __('What SMS can do for you'),
+            learnUrl: $this->url('owner.kb.article', 'ow-sms-what-sends'),
             meta: []
         );
     }
@@ -251,9 +255,11 @@ class OwnerAdvisorService
             category: 'upgrade',
             priority: 'medium',
             title: __('Get more from Centresidence as you grow'),
-            body: __('Collecting rent through Transaction costs about :amt/mo for you — and unlocks financing (repaid from rent), lower marketplace fees and an in-app wallet.', ['amt' => 'KES ' . number_format($monthly)]),
+            body: __('Collecting rent through Transaction costs about :amt/mo for you — and unlocks financing (repaid from rent), lower marketplace fees and an in-app wallet. Not sure which mode suits you? It depends on your rent volume and whether you want to finance.', ['amt' => 'KES ' . number_format($monthly)]),
             ctaLabel: __('See Transaction'),
             ctaUrl: $this->url('owner.subscription.index'),
+            learnLabel: __('Which payment mode fits you?'),
+            learnUrl: $this->url('owner.kb.article', 'ow-pricing-modes'),
             meta: ['rent_gmv' => $s['rentGmv'], 'monthly_1pct' => $monthly]
         );
     }
