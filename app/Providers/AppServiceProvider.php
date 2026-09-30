@@ -21,7 +21,12 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register()
     {
-        //
+        // Passport's oauth_* tables already exist on our databases and are managed outside our
+        // migration set. Stop Passport auto-loading its 2016 create-migrations so a plain
+        // `php artisan migrate` doesn't choke on "table already exists" on every deploy.
+        if (class_exists(\Laravel\Passport\Passport::class)) {
+            \Laravel\Passport\Passport::ignoreMigrations();
+        }
     }
 
     /**
