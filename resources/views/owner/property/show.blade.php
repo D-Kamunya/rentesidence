@@ -25,13 +25,21 @@
                         </nav>
                     </div>
 
-                    <a href="{{ route('owner.property.edit', $property->id) }}" class="ps-btn ps-btn--ghost" title="{{ __('Edit Info') }}">
-                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none">
-                            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
-                            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
-                        </svg>
-                        {{ __('Edit Info') }}
-                    </a>
+                    <div class="ps-header-actions" style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+                        <a href="{{ route('owner.property.onboarding-card', $property->id) }}" target="_blank" rel="noopener" class="ps-btn ps-btn--ghost" title="{{ __('Printable QR card to hand tenants — use it once tenants have been added to their units') }}">
+                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none">
+                                <path d="M4 4h6v6H4V4zM14 4h6v6h-6V4zM4 14h6v6H4v-6zM14 14h3v3h-3v-3zM20 14v6M17 20h3" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>
+                            </svg>
+                            {{ __('Tenant onboarding') }}
+                        </a>
+                        <a href="{{ route('owner.property.edit', $property->id) }}" class="ps-btn ps-btn--ghost" title="{{ __('Edit Info') }}">
+                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none">
+                                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+                                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+                            </svg>
+                            {{ __('Edit Info') }}
+                        </a>
+                    </div>
                 </div>
 
                 {{-- ── Property hero ────────────────────────────────────── --}}
@@ -215,7 +223,8 @@
                                         <img class="ps-unit-thumb"
                                              src="{{ $propertyUnit->first_image
                                                      ? asset('storage/' . $propertyUnit->first_image->folder_name . '/' . $propertyUnit->first_image->file_name)
-                                                     : asset('images/default-unit.png') }}"
+                                                     : asset('assets/images/unit.png') }}"
+                                             onerror="this.onerror=null;this.src='{{ asset('assets/images/unit.png') }}'"
                                              alt="">
                                     </td>
                                     <td>

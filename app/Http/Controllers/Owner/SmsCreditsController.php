@@ -33,12 +33,14 @@ class SmsCreditsController extends Controller
             ->first();
 
         $failedMessages = SmsCreditsService::getRetryableFailed(auth()->id(), 30);
-        $pricePerSms    = (float) getOption('sms_credit_price', 1.00);
+        // The OWNER's plan rate (paid domains cheaper), so the shown price matches what checkout charges.
+        $pricePerSms    = SmsCreditsService::pricePerUnit();
+        $globalSmsPrice = (float) getOption('sms_credit_price', 1.00); // for a "you save vs standard" hint
         $lowThreshold   = (int)   getOption('sms_low_credit_threshold', 30);
 
         return view('owner.sms-credits.index', compact(
             'balance', 'creditPools', 'transactions', 'stats',
-            'failedMessages', 'pricePerSms', 'lowThreshold'
+            'failedMessages', 'pricePerSms', 'globalSmsPrice', 'lowThreshold'
         ));
     }
 

@@ -119,6 +119,28 @@ class AdvantaSmsService
             SmsCreditsService::notifySendSummary($ownerUserId, $sentCount, $failedCount, $blockedByCredits);
         }
 
+        // SMS-infrastructure incident: a whole batch failed to send with NOTHING getting
+        // through and nothing merely credit-blocked — that's the gateway being down / a bad
+        // API key, not one stray invalid number. This is where credential/OTP/reminder SMS
+        // all die silently otherwise. Genuine-not-transient is handled downstream: it opens
+        // as critical but only pages once it has happened twice (threshold), and repeats
+        // aggregate onto one growing incident. Fail-safe — never breaks the send path.
+        if ($sentCount === 0 && $failedCount > 0 && $blockedByCredits === 0) {
+            try {
+                app(\App\Services\SystemIncidentService::class)->report(
+                    \App\Models\SystemIncident::TYPE_COMMS_FAILURE,
+                    \App\Models\SystemIncident::SEVERITY_CRITICAL,
+                    'SMS delivery is failing',
+                    'An SMS batch failed to send with nothing delivered — the SMS gateway may be down or the API key rejected. Credential, OTP and reminder texts are affected.',
+                    ['failed' => $failedCount],
+                    \App\Models\SystemIncident::TYPE_COMMS_FAILURE . ':sms',
+                    2 // page only after it recurs — a single transient batch failure won't
+                );
+            } catch (\Throwable $e) {
+                // incident recording must never disrupt SMS sending
+            }
+        }
+
         return 'success';
     }
 

@@ -40,6 +40,9 @@ Route::group(['middleware' => ['version.update', 'addon.update', 'isFrontend']],
     Route::get('privacy-policy', [FrontendController::class, 'privacyPolicy'])->name('privacy-policy');
     Route::get('cookie-policy', [FrontendController::class, 'cookiePolicy'])->name('cookie-policy');
 
+    // Tenant onboarding on-ramp (the QR-poster target): install the app, or sign in.
+    Route::get('get-started', fn () => view('get-started'))->name('get-started');
+
     // contact
     Route::post('contact-message-store', [FrontendController::class, 'contactMessageStore'])->name('contact.message.store');
 });

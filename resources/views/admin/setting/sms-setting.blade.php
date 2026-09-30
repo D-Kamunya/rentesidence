@@ -159,6 +159,15 @@
                                                                     class="form-control"
                                                                     placeholder="{{ __('ADVANTA_SHORT_CODE') }}">
                                                             </div>
+                                                            <div class="col-md-6 mb-25">
+                                                                <label
+                                                                    class="label-text-title color-heading font-medium mb-2">{{ __('Critical alert phone') }}</label>
+                                                                <input type="text" name="critical_alert_phone"
+                                                                    value="{{ getOption('critical_alert_phone') }}"
+                                                                    class="form-control"
+                                                                    placeholder="{{ __('e.g. 2547XXXXXXXX') }}">
+                                                                <small class="text-muted">{{ __('Where critical system incidents (failed payouts, undelivered credentials) are texted. Leave blank to fall back to the first admin\'s number.') }}</small>
+                                                            </div>
                                                         </div>
                                                     </div>
                                                 </div>

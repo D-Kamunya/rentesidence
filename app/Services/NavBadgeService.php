@@ -151,6 +151,9 @@ class NavBadgeService
 
             // Prospective-affiliate applications awaiting review (from the public apply page).
             'affiliate_applications' => $this->safe(fn () => \App\Models\AffiliateApplication::where('status', \App\Models\AffiliateApplication::STATUS_PENDING)->count()),
+
+            // Genuine platform failures awaiting admin attention (unresolved incidents).
+            'incidents' => $this->safe(fn () => app(SystemIncidentService::class)->openCount()),
         ];
     }
 

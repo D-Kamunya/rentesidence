@@ -404,6 +404,17 @@ class MpesaController extends Controller
             DB::rollBack();
             Log::error($e->getMessage());
             config(['queue.default' => $originalQueueConnection]);
+            try {
+                app(\App\Services\SystemIncidentService::class)->report(
+                    \App\Models\SystemIncident::TYPE_CALLBACK_EXCEPTION,
+                    \App\Models\SystemIncident::SEVERITY_CRITICAL,
+                    'Payment callback processing failed',
+                    'An M-Pesa payment confirmation was received but processing threw (payment recorded, downstream steps rolled back): ' . $e->getMessage(),
+                    ['exception' => class_basename($e)],
+                    \App\Models\SystemIncident::TYPE_CALLBACK_EXCEPTION . ':stk'
+                );
+            } catch (\Throwable $ignored) {
+            }
         } finally {
             config(['queue.default' => $originalQueueConnection]);
         }
@@ -452,6 +463,7 @@ class MpesaController extends Controller
         // closes the forged-failure double-spend on withdrawals/refunds.
         if (! hash_equals(b2cCallbackSecret(), (string) $request->query('token'))) {
             Log::warning('B2C result callback rejected: missing/invalid authenticity token', ['ip' => $request->ip()]);
+            $this->reportForgedCallback('B2C result', $request->ip());
             return $this->b2cAck();
         }
 
@@ -477,6 +489,9 @@ class MpesaController extends Controller
             $affiliate = AffiliateWithdrawal::whereIn('mpesa_reference', $refs)->first();
             if ($affiliate) {
                 $this->reconcileAffiliateB2C($affiliate, $isSuccess, $transactionId, $resultDesc, $resultCode);
+                if (! $isSuccess) {
+                    $this->reportPayoutFailure('affiliate withdrawal', $affiliate->id, $resultDesc, $resultCode);
+                }
                 return $this->b2cAck();
             }
 
@@ -484,6 +499,9 @@ class MpesaController extends Controller
             $owner = WithdrawalRequest::whereIn('mpesa_reference', $refs)->first();
             if ($owner) {
                 $this->reconcileOwnerB2C($owner, $isSuccess, $resultDesc, $resultCode);
+                if (! $isSuccess) {
+                    $this->reportPayoutFailure('owner withdrawal', $owner->id, $resultDesc, $resultCode);
+                }
                 return $this->b2cAck();
             }
 
@@ -491,6 +509,9 @@ class MpesaController extends Controller
             $refundOrder = \App\Models\ProductOrder::whereIn('refund_reference', $refs)->first();
             if ($refundOrder) {
                 app(\App\Services\CommissionService::class)->handleRefundResult($refundOrder, $isSuccess, $transactionId);
+                if (! $isSuccess) {
+                    $this->reportPayoutFailure('marketplace refund', $refundOrder->id, $resultDesc, $resultCode);
+                }
                 return $this->b2cAck();
             }
 
@@ -499,6 +520,9 @@ class MpesaController extends Controller
             if ($referralPayout) {
                 app(\App\Services\LandlordReferralService::class)
                     ->reconcilePayout($referralPayout, $isSuccess, $transactionId, $resultDesc);
+                if (! $isSuccess) {
+                    $this->reportPayoutFailure('referral payout', $referralPayout->id, $resultDesc, $resultCode);
+                }
                 return $this->b2cAck();
             }
 
@@ -507,9 +531,64 @@ class MpesaController extends Controller
             // Never let a reconciliation error bubble - Safaricom retries, and the
             // idempotency guards make a retry safe.
             Log::error('B2CResult reconciliation failed: ' . $e->getMessage());
+            try {
+                app(\App\Services\SystemIncidentService::class)->report(
+                    \App\Models\SystemIncident::TYPE_CALLBACK_EXCEPTION,
+                    \App\Models\SystemIncident::SEVERITY_CRITICAL,
+                    'Payout callback processing failed',
+                    'A B2C result callback threw while reconciling a payout: ' . $e->getMessage(),
+                    ['exception' => class_basename($e)],
+                    \App\Models\SystemIncident::TYPE_CALLBACK_EXCEPTION . ':b2c'
+                );
+            } catch (\Throwable $ignored) {
+            }
         }
 
         return $this->b2cAck();
+    }
+
+    /**
+     * A payout Safaricom confirmed FAILED (money never left; the reconciler has already
+     * released the reservation). Definitive per M-Pesa's ResultCode — not a transient blip —
+     * so it's a critical incident the moment it lands. Fail-safe: never breaks the callback.
+     */
+    private function reportPayoutFailure(string $kind, $refId, $resultDesc, $resultCode): void
+    {
+        try {
+            app(\App\Services\SystemIncidentService::class)->report(
+                \App\Models\SystemIncident::TYPE_PAYOUT_FAILURE,
+                \App\Models\SystemIncident::SEVERITY_CRITICAL,
+                'M-Pesa payout failed (' . $kind . ')',
+                ucfirst($kind) . ' #' . $refId . ' was declined by M-Pesa: ' . ($resultDesc ?: 'no description'),
+                ['kind' => $kind, 'ref_id' => $refId, 'result_code' => $resultCode, 'result_desc' => $resultDesc],
+                \App\Models\SystemIncident::TYPE_PAYOUT_FAILURE . ':' . $kind . ':' . $refId
+            );
+        } catch (\Throwable $e) {
+            // incident recording must never disrupt reconciliation
+        }
+    }
+
+    /**
+     * A callback that failed the authenticity gate (forged/misconfigured). A single one is
+     * likely a stray probe, so it opens as a WARNING and only escalates to a critical page
+     * once they repeat — the "genuine, not one-off" gate for security noise.
+     */
+    private function reportForgedCallback(string $which, ?string $ip): void
+    {
+        try {
+            app(\App\Services\SystemIncidentService::class)->report(
+                \App\Models\SystemIncident::TYPE_CALLBACK_REJECTED,
+                \App\Models\SystemIncident::SEVERITY_WARNING,
+                'Forged/invalid payment callbacks',
+                'One or more ' . $which . ' callbacks failed the authenticity token check.',
+                ['last_ip' => $ip, 'last_which' => $which],
+                \App\Models\SystemIncident::TYPE_CALLBACK_REJECTED,
+                5,   // page only after the 5th
+                5    // …by which point it has escalated to critical
+            );
+        } catch (\Throwable $e) {
+            //
+        }
     }
 
     /**
@@ -525,6 +604,7 @@ class MpesaController extends Controller
         // fail an in-flight payout and restore the reserved balance.
         if (! hash_equals(b2cCallbackSecret(), (string) $request->query('token'))) {
             Log::warning('B2C timeout callback rejected: missing/invalid authenticity token', ['ip' => $request->ip()]);
+            $this->reportForgedCallback('B2C timeout', $request->ip());
             return $this->b2cAck();
         }
 

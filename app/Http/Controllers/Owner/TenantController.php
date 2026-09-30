@@ -247,18 +247,57 @@ class TenantController extends Controller
     {
         $tenant = \App\Models\Tenant::where('owner_user_id', auth()->id())->findOrFail($id);
         if ((int) $tenant->status !== TENANT_STATUS_ACTIVE) {
-            return redirect()->route('owner.tenant.details', $id)->with('error', __('Only an active tenant can be transferred.'));
+            return redirect()->route('owner.tenant.details', ['id' => $id, 'tab' => 'profile'])->with('error', __('Only an active tenant can be transferred.'));
         }
 
         $occupiedUnitIds = \App\Models\Tenant::where('property_id', $tenant->property_id)
             ->where('status', TENANT_STATUS_ACTIVE)->pluck('unit_id')->all();
 
+        $depSvc = app(\App\Services\DepositService::class);
+
         $data['tenant'] = $tenant->load('property', 'unit', 'user');
         $data['vacantUnits'] = \App\Models\PropertyUnit::where('property_id', $tenant->property_id)
-            ->whereNotIn('id', $occupiedUnitIds)->orderBy('unit_name')->get();
+            ->whereNotIn('id', $occupiedUnitIds)->orderBy('unit_name')
+            ->get()
+            // Resolve each unit's deposit the way the deposit register does (fixed vs %-of-rent),
+            // so the form shows the real figure that would be collected, not the raw stored value.
+            // Also precompute the pro-rated first-month rent (from today) so the toggle can show the
+            // exact amount that would be billed — mirroring the move-in modal.
+            ->each(function ($u) use ($depSvc) {
+                $u->resolved_deposit = $depSvc->configuredDepositAmount($u, (float) $u->general_rent);
+
+                $isMonthly = (int) $u->rent_type === PROPERTY_UNIT_RENT_TYPE_MONTHLY;
+                $u->prorate_applies = $isMonthly;
+                // Match generateFirstInvoice's move-in anchor: the unit's lease start if it falls in
+                // this month, else today. Pro-rate only differs from a full month past the 1st.
+                $lease  = $u->lease_start_date ? \Carbon\Carbon::parse($u->lease_start_date) : null;
+                $moveIn = ($lease && $lease->isSameMonth(now())) ? $lease : now();
+                if ($isMonthly && $moveIn->day > 1) {
+                    $pr = app(\App\Services\InvoiceRecurringService::class)->proratedRent((float) $u->general_rent, $moveIn);
+                    $u->prorate_amount = $pr['amount'];
+                    $u->prorate_days   = $pr['days_remaining'];
+                } else {
+                    // Day 1 (or non-monthly) → a pro-rate equals the full month.
+                    $u->prorate_amount = (float) $u->general_rent;
+                    $u->prorate_days   = $moveIn->daysInMonth;
+                }
+            });
         $data['standingInvoices'] = \App\Models\Invoice::where('tenant_id', $tenant->id)
             ->where('status', INVOICE_STATUS_PENDING)->latest()->get();
-        $data['outstandingTotal'] = (float) $data['standingInvoices']->sum('total');
+        // Invoices store the due figure in `amount` (there is no `total` column) — summing the
+        // wrong field silently returned 0 while the rows below showed real amounts.
+        $data['outstandingTotal'] = (float) $data['standingInvoices']->sum('amount');
+        // ACTUAL deposit held for this tenancy (genuinely collected, from the held-deposit
+        // register) — not the configured `security_deposit` term, which implies money is held
+        // even when none was ever collected.
+        $data['depositHeld'] = $depSvc->totalHeldForTenant((int) $tenant->id);
+        // Deposit invoiced to this tenant but not yet paid — surfaced next to the held figure so the
+        // owner sees it here too (it shows on the Deposits page as "Awaiting payment").
+        $data['depositPending'] = $depSvc->pendingDepositForTenant((int) $tenant->id);
+        // Whether a deposit is already in play (held OR on a pending line) — the same guard
+        // generateFirstInvoice uses; when true the "also collect deposit" option is hidden so we
+        // never offer to charge a deposit that would be silently skipped.
+        $data['depositInPlay'] = $depSvc->tenantHasDeposit((int) $tenant->id);
         $data['pageTitle'] = __('Transfer Tenant');
 
         return view('owner.tenants.transfer', $data);
@@ -267,8 +306,12 @@ class TenantController extends Controller
     public function transferStore(Request $request, $id)
     {
         $request->validate([
-            'to_unit_id' => 'required|integer',
-            'note'       => 'nullable|string|max:1000',
+            'to_unit_id'      => 'required|integer',
+            'note'            => 'nullable|string|max:1000',
+            // Optional: bill the new unit's first rent now (mirrors the move-in modal). 'skip'
+            // (default) leaves it to the recurring cron next cycle.
+            'bill_mode'       => 'nullable|in:skip,full,prorate',
+            'include_deposit' => 'nullable|boolean',
         ]);
 
         $tenant = \App\Models\Tenant::where('owner_user_id', auth()->id())->findOrFail($id);
@@ -282,8 +325,24 @@ class TenantController extends Controller
             return back()->with('error', $e->getMessage());
         }
 
-        return redirect()->route('owner.tenant.details', $id)
-            ->with('success', __('Tenant transferred to :unit. Any standing invoices remain on their account.', ['unit' => $newUnit->unit_name ?? ('#' . $newUnit->id)]));
+        $flash = __('Tenant transferred to :unit. Any standing invoices remain on their account.', ['unit' => $newUnit->unit_name ?? ('#' . $newUnit->id)]);
+
+        // Optional upfront billing for the new unit — reuses the move-in SSOT so the rent line,
+        // one-time deposit guard, period idempotency and tenant notification are all identical to
+        // add-tenant. The transfer above has already re-pointed the recurring setting to the new unit.
+        $mode           = $request->input('bill_mode', 'skip');
+        $wantsDeposit   = $request->boolean('include_deposit');
+        if ($mode !== 'skip' || $wantsDeposit) {
+            $fresh   = $tenant->fresh();
+            $depSvc  = app(\App\Services\DepositService::class);
+            $deposit = $wantsDeposit ? $depSvc->configuredDepositAmount($fresh, (float) $fresh->general_rent) : null;
+
+            $res = app(\App\Services\InvoiceRecurringService::class)->generateFirstInvoice($fresh, $mode, null, $deposit);
+            $flash .= ' ' . $res['message'];
+        }
+
+        return redirect()->route('owner.tenant.details', ['id' => $id, 'tab' => 'profile'])
+            ->with('success', $flash);
     }
 
     public function store(Request $request)
@@ -312,6 +371,12 @@ class TenantController extends Controller
 
     public function details(Request $request, $id)
     {
+        // The view is dispatched by ?tab=; a link without one (e.g. "Back to tenant") would
+        // otherwise fall through every branch and return a blank response. Default to profile.
+        if (! $request->filled('tab')) {
+            return redirect()->route('owner.tenant.details', ['id' => $id, 'tab' => 'profile']);
+        }
+
         $data['navTenantMMShowClass'] = 'mm-show';
         $data['subNavAllTenantMMActiveClass'] = 'mm-active';
         $data['subNavAllTenantActiveClass'] = 'active';

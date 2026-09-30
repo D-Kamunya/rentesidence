@@ -6,8 +6,10 @@ use App\Http\Controllers\Controller;
 use App\Models\TenantCreditDispute;
 use App\Models\TenantCreditProfile;
 use App\Models\TenantScreeningLookup;
+use App\Models\User;
 use App\Services\Screening\TenantCreditProfileService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 /**
  * Admin surface for tenant screening (Step 4): tune the monetization (per-lookup price + the
@@ -33,9 +35,59 @@ class ScreeningAdminController extends Controller
         $data['disputes'] = TenantCreditDispute::with(['profile', 'user'])
             ->orderByRaw("FIELD(status, 'open', 'reviewing', 'resolved', 'rejected')")
             ->latest()
-            ->paginate(15);
+            ->paginate(15, ['*'], 'disputes');
+
+        // ── The data bank (Global Tenant ID backbone) ───────────────────────────────────────────
+        // A read-only window on the objective payment-behaviour data we've aggregated so far, so we
+        // can watch it grow. The rows are computed, never hand-entered — that objectivity is the
+        // whole point (see recompute()).
+        $reach = (int) User::where('role', USER_ROLE_TENANT)->whereNotNull('contact_number')->distinct('contact_number')->count('contact_number');
+        $profileCount = (int) TenantCreditProfile::count();
+
+        $bandRows = TenantCreditProfile::select('score_band', DB::raw('COUNT(*) as n'))
+            ->groupBy('score_band')->pluck('n', 'score_band')->all();
+
+        $data['bank'] = [
+            'profiles'        => $profileCount,
+            'reach'           => $reach, // distinct tenant phones we could profile
+            'coverage'        => $reach > 0 ? round($profileCount / $reach * 100) : 0,
+            'thin_files'      => (int) TenantCreditProfile::where('is_thin_file', true)->count(),
+            'rated'           => (int) TenantCreditProfile::whereNotNull('score')->where('is_thin_file', false)->count(),
+            'new_this_month'  => (int) TenantCreditProfile::whereYear('created_at', now()->year)->whereMonth('created_at', now()->month)->count(),
+            'invoices_seen'   => (int) TenantCreditProfile::sum('invoices_total'),
+            'last_computed'   => TenantCreditProfile::max('computed_at'),
+            'bands'           => $bandRows,
+        ];
+
+        $q = trim((string) $request->get('q', ''));
+        $profiles = TenantCreditProfile::query()
+            ->when($q !== '', fn ($query) => $query->where(function ($w) use ($q) {
+                $w->where('display_name', 'like', "%{$q}%")
+                  ->orWhere('phone', 'like', "%{$q}%")
+                  ->orWhere('identity_key', 'like', "%{$q}%");
+            }))
+            ->orderByDesc('last_activity_at')
+            ->paginate(15, ['*'], 'bank')
+            ->appends(['q' => $q]);
+
+        $data['profiles'] = $profiles;
+        $data['bankSearch'] = $q;
 
         return view('admin.screening.index', $data);
+    }
+
+    /**
+     * Grow the data bank from source. Re-aggregates every tenant's objective payment history into
+     * their credit profile — the ONLY way to "add data": we never hand-enter scores (that would
+     * break the objective basis the Global Tenant ID rests on). To bring in tenants who aren't
+     * profiled yet, make sure their tenancy + invoices exist as real records, then rebuild here.
+     */
+    public function rebuild(Request $request)
+    {
+        // Synchronous at current scale; queue this when the tenant base grows large.
+        $count = app(TenantCreditProfileService::class)->recomputeAll();
+
+        return back()->with('success', __(':count rental profile(s) rebuilt from the latest records.', ['count' => $count]));
     }
 
     public function updateSettings(Request $request)

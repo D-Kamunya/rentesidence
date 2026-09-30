@@ -15,11 +15,15 @@ class DepositController extends Controller
         $ownerId = auth()->id();
         $svc     = app(DepositService::class);
 
-        $due    = $request->status === 'due';
-        $status = (!$due && in_array($request->status, [
+        $due     = $request->status === 'due';
+        $pending = $request->status === 'pending';
+        $status  = (!$due && !$pending && in_array($request->status, [
             TenantDeposit::STATUS_HELD, TenantDeposit::STATUS_REFUNDED,
             TenantDeposit::STATUS_APPLIED, TenantDeposit::STATUS_SETTLED,
         ], true)) ? $request->status : null;
+
+        // Invoiced-but-unpaid deposits — display only, kept out of the held-liability total.
+        $pendingDeposits = $svc->pendingDepositsForOwner($ownerId);
 
         $data = [
             'pageTitle'                 => __('Deposits Held'),
@@ -29,7 +33,11 @@ class DepositController extends Controller
             'totalHeld'                 => $svc->totalHeldForOwner($ownerId),
             'heldCount'                 => $svc->heldTenantCountForOwner($ownerId),
             'dueCount'                  => $svc->dueForSettlementCount($ownerId),
-            'statusFilter'              => $due ? 'due' : $status,
+            'pendingDeposits'           => $pendingDeposits,
+            'pendingTotal'              => (float) $pendingDeposits->sum('amount'),
+            'pendingCount'              => $pendingDeposits->count(),
+            'statusFilter'              => $due ? 'due' : ($pending ? 'pending' : $status),
+            // The held register (unchanged); hidden when the owner is viewing the pending list.
             'deposits'                  => $svc->ownerDepositsQuery($ownerId, $due ? ['due' => true] : ['status' => $status])
                                               ->paginate(15)->appends($request->query()),
         ];

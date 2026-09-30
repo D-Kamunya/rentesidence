@@ -122,6 +122,7 @@ function getDataEditRes(response) {
     selector.find("input[name=commission_discount]").val(response.data.commission_discount ?? '');
     selector.find("input[name=max_marketplace_listings]").val(response.data.max_marketplace_listings ?? '');
     selector.find("input[name=monthly_sms_credits]").val(response.data.monthly_sms_credits ?? '');
+    selector.find("input[name=sms_price_per_credit]").val(response.data.sms_price_per_credit ?? '');
 
     selector.modal("show");
 }
