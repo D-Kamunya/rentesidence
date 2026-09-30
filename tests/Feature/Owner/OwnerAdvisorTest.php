@@ -48,12 +48,19 @@ class OwnerAdvisorTest extends TestCase
         return array_map(fn (OwnerSuggestion $s) => $s->key, $suggestions);
     }
 
+    /** Full state with all features "already used" (so value rules stay quiet unless a test opts in). */
+    private function st(array $o = []): array
+    {
+        return array_merge([
+            'pricingModel' => 'free', 'unitCap' => 30, 'unitsUsed' => 10, 'rentGmv' => 0.0,
+            'hasModule' => true, 'hasProperty' => true, 'hasTenants' => true,
+            'hasProducts' => true, 'hasAgreements' => true, 'hasScreened' => true, 'usedSms' => true,
+        ], $o);
+    }
+
     public function test_free_owner_with_rent_gets_the_transaction_pull_with_their_1pct(): void
     {
-        $out = $this->svc()->rules([
-            'pricingModel' => 'free', 'unitCap' => 30, 'unitsUsed' => 10,
-            'rentGmv' => 200000.0, 'hasModule' => true, 'hasProperty' => true,
-        ]);
+        $out = $this->svc()->rules($this->st(['rentGmv' => 200000.0]));
 
         $this->assertContains('upgrade_transaction', $this->keys($out));
         $upgrade = collect($out)->firstWhere('key', 'upgrade_transaction');
@@ -63,29 +70,49 @@ class OwnerAdvisorTest extends TestCase
 
     public function test_paid_owner_gets_no_transaction_upgrade_nudge(): void
     {
-        $txn  = $this->svc()->rules(['pricingModel' => 'transaction', 'unitCap' => 1000, 'unitsUsed' => 40, 'rentGmv' => 500000.0, 'hasModule' => true, 'hasProperty' => true]);
+        $txn  = $this->svc()->rules($this->st(['pricingModel' => 'transaction', 'rentGmv' => 500000.0]));
         $this->assertNotContains('upgrade_transaction', $this->keys($txn));
     }
 
     public function test_owner_without_infra_gets_financing_and_with_infra_does_not(): void
     {
-        $without = $this->svc()->rules(['pricingModel' => 'free', 'unitCap' => 30, 'unitsUsed' => 5, 'rentGmv' => 0.0, 'hasModule' => false, 'hasProperty' => true]);
+        $without = $this->svc()->rules($this->st(['hasModule' => false, 'hasProperty' => true]));
         $this->assertContains('financing', $this->keys($without));
 
-        $with = $this->svc()->rules(['pricingModel' => 'free', 'unitCap' => 30, 'unitsUsed' => 5, 'rentGmv' => 0.0, 'hasModule' => true, 'hasProperty' => true]);
+        $with = $this->svc()->rules($this->st(['hasModule' => true, 'hasProperty' => true]));
         $this->assertNotContains('financing', $this->keys($with));
 
-        $noProperty = $this->svc()->rules(['pricingModel' => 'free', 'unitCap' => 30, 'unitsUsed' => 0, 'rentGmv' => 0.0, 'hasModule' => false, 'hasProperty' => false]);
+        $noProperty = $this->svc()->rules($this->st(['hasModule' => false, 'hasProperty' => false]));
         $this->assertNotContains('financing', $this->keys($noProperty));
     }
 
     public function test_free_owner_near_cap_gets_informational_nudge(): void
     {
-        $near = $this->svc()->rules(['pricingModel' => 'free', 'unitCap' => 30, 'unitsUsed' => 27, 'rentGmv' => 0.0, 'hasModule' => true, 'hasProperty' => true]);
+        $near = $this->svc()->rules($this->st(['unitsUsed' => 27]));
         $this->assertContains('approaching_cap', $this->keys($near));
 
-        $far = $this->svc()->rules(['pricingModel' => 'free', 'unitCap' => 30, 'unitsUsed' => 10, 'rentGmv' => 0.0, 'hasModule' => true, 'hasProperty' => true]);
+        $far = $this->svc()->rules($this->st(['unitsUsed' => 10]));
         $this->assertNotContains('approaching_cap', $this->keys($far));
+    }
+
+    public function test_value_rules_fire_only_when_the_feature_is_unused_and_context_exists(): void
+    {
+        // Free owner, tenants present, nothing tried yet → all four value nudges fire, value-first.
+        $all = $this->svc()->rules($this->st([
+            'rentGmv' => 100000.0, // so the transaction push also fires, to test ordering
+            'hasProducts' => false, 'usedSms' => false, 'hasAgreements' => false, 'hasScreened' => false,
+        ]));
+        $keys = $this->keys($all);
+        foreach (['try_marketplace', 'try_sms', 'try_agreements', 'try_screening'] as $k) {
+            $this->assertContains($k, $keys);
+        }
+        // Value exposure ranks ABOVE the transaction push in the ordering.
+        $this->assertLessThan(array_search('upgrade_transaction', $keys), array_search('try_marketplace', $keys));
+
+        // Using a feature silences its nudge; SMS needs tenants; a paid owner sees no value nudges.
+        $this->assertNotContains('try_sms', $this->keys($this->svc()->rules($this->st(['usedSms' => true, 'hasProducts' => false]))));
+        $this->assertNotContains('try_sms', $this->keys($this->svc()->rules($this->st(['hasTenants' => false, 'usedSms' => false]))));
+        $this->assertNotContains('try_marketplace', $this->keys($this->svc()->rules($this->st(['pricingModel' => 'transaction', 'hasProducts' => false]))));
     }
 
     public function test_dismiss_hides_a_suggestion_and_snooze_expiry_reveals_it(): void
