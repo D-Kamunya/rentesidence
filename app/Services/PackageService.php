@@ -126,6 +126,11 @@ class PackageService
             $package->commission_discount = $request->commission_discount;
             $package->max_marketplace_listings = $request->max_marketplace_listings;
             $package->monthly_sms_credits = $request->monthly_sms_credits;
+            // Per-plan SMS rate: blank = fall back to the standard rate (CreditService floors it
+            // above the cost floor). Kept out of the "used" set so an empty field never zeroes it.
+            $package->sms_price_per_credit = $request->filled('sms_price_per_credit')
+                ? (float) $request->sms_price_per_credit
+                : null;
             $package->status = $request->status;
             $package->is_trail = $request->is_trail;
             $package->is_default = $request->is_default;

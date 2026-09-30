@@ -232,6 +232,17 @@
                                             class="form-control" placeholder="Package sms credits">
                                     </div>
                                 </div>
+
+                                <div class="col-md-6 mb-25">
+                                    <label class="label-text-title color-heading font-medium mb-2">
+                                        {{ __('SMS price per credit') }}
+                                    </label>
+                                    <div class="input-group">
+                                        <input type="number" min="0" step="0.01" name="sms_price_per_credit"
+                                            class="form-control" placeholder="{{ __('Blank = standard rate') }}">
+                                    </div>
+                                    <small class="text-muted">{{ __('What owners on this plan pay per SMS credit. Leave blank to use the standard rate. Floored at the platform cost floor.') }}</small>
+                                </div>
                             </div>
                         </div>
                         <div class="modal-inner-form-box">
@@ -460,6 +471,17 @@
                                         <input type="number" min="0" step="any" name="monthly_sms_credits"
                                             class="form-control" placeholder="Package sms credits">
                                     </div>
+                                </div>
+
+                                <div class="col-md-6 mb-25">
+                                    <label class="label-text-title color-heading font-medium mb-2">
+                                        {{ __('SMS price per credit') }}
+                                    </label>
+                                    <div class="input-group">
+                                        <input type="number" min="0" step="0.01" name="sms_price_per_credit"
+                                            class="form-control" placeholder="{{ __('Blank = standard rate') }}">
+                                    </div>
+                                    <small class="text-muted">{{ __('What owners on this plan pay per SMS credit. Leave blank to use the standard rate. Floored at the platform cost floor.') }}</small>
                                 </div>
                             </div>
                         </div>
