@@ -24,6 +24,10 @@ class BrandingSeeder extends Seeder
 
         $this->installImageSetting('app_logo', $assets . '/cs-logo.png', 'cs-logo.png');
         $this->installImageSetting('app_fav_icon', $assets . '/cs-favicon.png', 'cs-favicon.png');
+        // The loading splash reads the app_preloader setting (falls back to cs-icon.png only when
+        // empty). A legacy install carries an OLD preloader image here, so point it at the CS icon
+        // authoritatively too — otherwise the splash keeps showing the pre-rebrand logo.
+        $this->installImageSetting('app_preloader', public_path('assets/images/cs-icon.png'), 'cs-icon.png');
 
         // Login copy (the layout already renders these; keep them authoritative).
         setOption('app_name', 'Centresidence');
