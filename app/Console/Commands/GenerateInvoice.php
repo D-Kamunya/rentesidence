@@ -121,6 +121,7 @@ class GenerateInvoice extends Command
                     }
                 }
             }
+            
         }
     }
 
