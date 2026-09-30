@@ -29,6 +29,7 @@ class DatabaseSeeder extends Seeder
             BrandingSeeder::class,
             SystemDefaultsSeeder::class,
             TermsConditionsSeeder::class,
+            PolicyContentSeeder::class,
             PackageCatalogSeeder::class,
             MarketingTemplateSeeder::class,
             DemoPrepSeeder::class,

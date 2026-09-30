@@ -75,7 +75,7 @@ class PropertyService
                 return '<span style="font-weight:600;color:#1f2937;">' . e($u->unit_name) . '</span>';
             })
             ->addColumn('image', function ($u) {
-                $placeholder = asset('assets/images/no-image.jpg');
+                $placeholder = asset('assets/images/unit.png');
                 return '<img class="ul-unit-thumb" src="' . e($u->first_image_url) . '" alt="'
                     . '" onerror="this.onerror=null;this.src=\'' . $placeholder . '\';">';
             })

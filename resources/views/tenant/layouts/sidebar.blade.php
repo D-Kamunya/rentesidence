@@ -13,13 +13,13 @@
                     </a>
                 </li>
                 <li class="{{ @$navInvoiceMMActiveClass }}">
-                    <a href="{{ route('tenant.invoice.index') }}" class="{{ @$navInvoiceActiveClass }}">
+                    <a href="{{ route('tenant.invoice.index') }}" data-tour="tenant-invoices" class="{{ @$navInvoiceActiveClass }}">
                         <i class="ri-bill-line"></i>
                         <span>{{ __('Invoices') }}@include('partials.nav-count', ['n' => $navBadges['invoices_unpaid'] ?? 0])</span>
                     </a>
                 </li>
                 <li class="{{ @$navRentalScoreMMActiveClass }}">
-                    <a href="{{ route('tenant.rental-score.index') }}" class="{{ @$navRentalScoreActiveClass }}">
+                    <a href="{{ route('tenant.rental-score.index') }}" data-tour="tenant-score" class="{{ @$navRentalScoreActiveClass }}">
                         <i class="ri-shield-star-line"></i>
                         <span>{{ __('My Rental Score') }}</span>
                     </a>
@@ -44,7 +44,7 @@
                     </a>
                 </li>
                 <li class="{{ @$navProductOrdersMMActiveClass }}">
-                    <a href="{{ route('tenant.order.index') }}" class="{{ @$navProductOrderActiveClass }}">
+                    <a href="{{ route('tenant.order.index') }}" data-tour="tenant-shop" class="{{ @$navProductOrderActiveClass }}">
                         <i class="ri-bill-line"></i>
                         <span>{{ __('Product Orders') }}</span>
                     </a>
@@ -60,7 +60,7 @@
                 @endif
                 @if (ownerCurrentPackage(auth()->user()->owner_user_id)?->ticket_support == ACTIVE || isAddonInstalled('PROTYSAAS') < 1)
                     <li class="{{ @$navTicketMMActiveClass }}">
-                        <a href="{{ route('tenant.ticket.index') }}" class="{{ @$navTicketActiveClass }}">
+                        <a href="{{ route('tenant.ticket.index') }}" data-tour="tenant-tickets" class="{{ @$navTicketActiveClass }}">
                             <i class="ri-bookmark-2-line"></i>
                             <span>{{ __('My Tickets') }}</span>
                         </a>
@@ -73,7 +73,7 @@
                     </a>
                 </li>
                 <li>
-                    <a href="{{ route('tenant.maintenance-request.index') }}">
+                    <a href="{{ route('tenant.maintenance-request.index') }}" data-tour="tenant-maintenance">
                         <i class="ri-folder-info-line"></i>
                         <span>{{ __('Maintenance Request') }}</span>
                     </a>
@@ -105,7 +105,7 @@
                 </li>
                 {{-- Support — reach our team (reusable support rail). --}}
                 <li>
-                    <a href="{{ route('support.index') }}">
+                    <a href="{{ route('support.index') }}" data-tour="tenant-support">
                         <i class="ri-customer-service-2-line"></i>
                         <span>{{ __('Support') }}@include('partials.nav-count', ['n' => $navBadges['support'] ?? 0])</span>
                     </a>

@@ -27,6 +27,105 @@
                 <div class="asc-stat"><span class="asc-stat__n">{{ number_format($stats['disputes_open']) }}</span><span class="asc-stat__l">{{ __('Open disputes') }}</span></div>
             </div>
 
+            {{-- The data bank — the Global Tenant ID backbone, growing from real payment behaviour --}}
+            <div class="asc-card asc-bank">
+                <div class="asc-bank__head">
+                    <div>
+                        <h3 class="asc-card__title" style="margin-bottom:4px;">{{ __('Rental data bank') }}</h3>
+                        <p class="asc-bank__sub">{{ __('Objective payment-behaviour records aggregated across every tenancy — the backbone of the Global Tenant ID. Rows are computed from real invoices, never hand-entered.') }}</p>
+                    </div>
+                    <form action="{{ route('admin.screening.rebuild') }}" method="POST">
+                        @csrf
+                        <button type="submit" class="asc-btn asc-btn--ghost"
+                                data-cs-confirm="{{ __('Rebuild every rental profile from the latest invoice records? This can take a moment on a large tenant base.') }}"
+                                data-cs-confirm-yes="{{ __('Rebuild now') }}">
+                            <i class="ri-refresh-line"></i> {{ __('Rebuild from records') }}
+                        </button>
+                    </form>
+                </div>
+
+                <div class="asc-bank__metrics">
+                    <div class="asc-bank__metric">
+                        <span class="asc-bank__n">{{ number_format($bank['profiles']) }}</span>
+                        <span class="asc-bank__l">{{ __('Profiles in the bank') }}</span>
+                    </div>
+                    <div class="asc-bank__metric">
+                        <span class="asc-bank__n">{{ $bank['coverage'] }}%</span>
+                        <span class="asc-bank__l">{{ __('Coverage') }} <small>({{ number_format($bank['profiles']) }}/{{ number_format($bank['reach']) }} {{ __('tenants') }})</small></span>
+                    </div>
+                    <div class="asc-bank__metric">
+                        <span class="asc-bank__n">{{ number_format($bank['rated']) }}</span>
+                        <span class="asc-bank__l">{{ __('Rated (thick file)') }} <small>· {{ number_format($bank['thin_files']) }} {{ __('thin') }}</small></span>
+                    </div>
+                    <div class="asc-bank__metric">
+                        <span class="asc-bank__n">+{{ number_format($bank['new_this_month']) }}</span>
+                        <span class="asc-bank__l">{{ __('New this month') }}</span>
+                    </div>
+                    <div class="asc-bank__metric">
+                        <span class="asc-bank__n">{{ number_format($bank['invoices_seen']) }}</span>
+                        <span class="asc-bank__l">{{ __('Invoices observed') }}</span>
+                    </div>
+                </div>
+
+                @if (!empty($bank['bands']))
+                    <div class="asc-bank__bands">
+                        @foreach ($bank['bands'] as $band => $n)
+                            <span class="asc-bank__band asc-bank__band--{{ $band ?: 'unrated' }}">{{ ucfirst(str_replace('_', ' ', $band ?: 'unrated')) }}: {{ number_format($n) }}</span>
+                        @endforeach
+                    </div>
+                @endif
+
+                {{-- Searchable list of what's in the bank --}}
+                <form method="GET" action="{{ route('admin.screening.index') }}" class="asc-bank__search">
+                    <input type="text" name="q" value="{{ $bankSearch }}" class="asc-input asc-input--sm" placeholder="{{ __('Search by name or phone…') }}">
+                    <button type="submit" class="asc-btn asc-btn--ghost"><i class="ri-search-line"></i></button>
+                    @if ($bankSearch !== '')<a href="{{ route('admin.screening.index') }}" class="asc-btn asc-btn--ghost">{{ __('Clear') }}</a>@endif
+                </form>
+
+                @if ($profiles->count())
+                    <div class="asc-bank__tablewrap">
+                        <table class="asc-bank__table">
+                            <thead>
+                                <tr>
+                                    <th>{{ __('Tenant') }}</th>
+                                    <th>{{ __('Phone') }}</th>
+                                    <th class="num">{{ __('Score') }}</th>
+                                    <th>{{ __('Band') }}</th>
+                                    <th class="num">{{ __('Owners') }}</th>
+                                    <th class="num">{{ __('Paid') }}</th>
+                                    <th class="num">{{ __('On-time') }}</th>
+                                    <th>{{ __('Last activity') }}</th>
+                                    <th></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach ($profiles as $p)
+                                    <tr>
+                                        <td>{{ $p->display_name ?: __('—') }}</td>
+                                        <td class="mono">{{ $p->phone }}</td>
+                                        <td class="num"><strong>{{ $p->score !== null ? rtrim(rtrim(number_format($p->score, 1), '0'), '.') : '—' }}</strong></td>
+                                        <td><span class="asc-bank__band asc-bank__band--{{ $p->score_band ?: 'unrated' }}">{{ ucfirst(str_replace('_', ' ', $p->score_band ?: 'unrated')) }}@if($p->is_thin_file) · {{ __('thin') }}@endif</span></td>
+                                        <td class="num">{{ number_format($p->owners_count) }}</td>
+                                        <td class="num">{{ number_format($p->invoices_paid) }}/{{ number_format($p->invoices_total) }}</td>
+                                        <td class="num">{{ $p->on_time_rate !== null ? number_format($p->on_time_rate, 0) . '%' : '—' }}</td>
+                                        <td>{{ $p->last_activity_at ? \Illuminate\Support\Carbon::parse($p->last_activity_at)->diffForHumans() : '—' }}</td>
+                                        <td>
+                                            <form action="{{ route('admin.screening.recompute', $p->id) }}" method="POST">
+                                                @csrf
+                                                <button type="submit" class="asc-btn asc-btn--ghost asc-btn--xs" title="{{ __('Recompute this profile from records') }}"><i class="ri-refresh-line"></i></button>
+                                            </form>
+                                        </td>
+                                    </tr>
+                                @endforeach
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="mt-3">{{ $profiles->links() }}</div>
+                @else
+                    <p class="asc-empty">{{ $bankSearch !== '' ? __('No profiles match that search.') : __('The data bank is empty. As tenants pay rent through the system, their profiles build automatically — or rebuild from existing records above.') }}</p>
+                @endif
+            </div>
+
             <div class="asc-grid">
                 {{-- Settings --}}
                 <div class="asc-card">
@@ -191,5 +290,32 @@
     .asc-dispute__ack { display:flex; gap:6px; align-items:center; font-size:11.5px; color:#0F6E56; margin:0 0 8px; }
     .asc-dispute__date { display:block; font-size:11px; color:#9ca3af; margin-top:9px; }
     .asc-empty { font-size:13px; color:#9ca3af; margin:0; }
+
+    /* Data bank */
+    .asc-bank { margin-bottom:20px; }
+    .asc-bank__head { display:flex; align-items:flex-start; justify-content:space-between; gap:16px; flex-wrap:wrap; margin-bottom:18px; }
+    .asc-bank__sub { font-size:12.5px; color:#6b7280; margin:0; max-width:72ch; line-height:1.6; }
+    .asc-bank__metrics { display:grid; grid-template-columns:repeat(5,1fr); gap:12px; margin-bottom:14px; }
+    @media (max-width:820px){ .asc-bank__metrics { grid-template-columns:repeat(2,1fr); } }
+    .asc-bank__metric { background:#F7FAFD; border:0.5px solid #e5eaf0; border-radius:12px; padding:14px; }
+    .asc-bank__n { display:block; font-size:22px; font-weight:800; color:#185FA5; font-variant-numeric:tabular-nums; }
+    .asc-bank__l { font-size:11.5px; color:#6b7280; line-height:1.4; }
+    .asc-bank__l small { color:#9ca3af; }
+    .asc-bank__bands { display:flex; flex-wrap:wrap; gap:7px; margin-bottom:16px; }
+    .asc-bank__band { font-size:11px; font-weight:600; padding:3px 10px; border-radius:99px; background:#eef2f6; color:#4b5563; }
+    .asc-bank__band--excellent, .asc-bank__band--very_good { background:#E1F5EE; color:#0F6E56; }
+    .asc-bank__band--good { background:#E6F1FB; color:#185FA5; }
+    .asc-bank__band--fair { background:#FEF3E7; color:#B45309; }
+    .asc-bank__band--poor, .asc-bank__band--high_risk { background:#FBE9E7; color:#B42318; }
+    .asc-bank__band--unrated { background:#f3f4f6; color:#9ca3af; }
+    .asc-bank__search { display:flex; gap:8px; align-items:center; margin-bottom:12px; }
+    .asc-bank__search input { flex:1; max-width:340px; }
+    .asc-bank__tablewrap { overflow-x:auto; }
+    .asc-bank__table { width:100%; border-collapse:collapse; font-size:12.5px; }
+    .asc-bank__table th { text-align:left; font-size:11px; font-weight:600; color:#9ca3af; text-transform:uppercase; letter-spacing:.04em; padding:8px 10px; border-bottom:1px solid #eef2f6; white-space:nowrap; }
+    .asc-bank__table td { padding:10px; border-bottom:0.5px solid #f3f4f6; color:#374151; vertical-align:middle; }
+    .asc-bank__table th.num, .asc-bank__table td.num { text-align:right; font-variant-numeric:tabular-nums; }
+    .asc-bank__table td.mono { font-family:ui-monospace,SFMono-Regular,Menlo,monospace; color:#6b7280; }
+    .asc-btn--xs { padding:5px 8px; font-size:12px; line-height:1; }
 </style>
 @endsection

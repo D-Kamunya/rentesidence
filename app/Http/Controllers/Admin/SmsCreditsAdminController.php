@@ -12,7 +12,7 @@ class SmsCreditsAdminController extends Controller
 {
     public function index()
     {
-        $pricePerSms  = getOption('sms_credit_price', 1.00);
+        $pricePerSms  = getOption('sms_credit_price', 2.00); // standard/free-tier rate; matches SystemDefaultsSeeder
         $lowThreshold = getOption('sms_low_credit_threshold', 30);
 
         $recentPurchases = OwnerCreditTransaction::where('bucket', 'sms')

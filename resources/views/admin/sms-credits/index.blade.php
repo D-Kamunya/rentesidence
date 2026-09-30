@@ -39,11 +39,11 @@
                                 @csrf @method('PUT')
 
                                 <div class="adm-field mb-3">
-                                    <label class="adm-field-label">{{ __('Price per SMS Credit (KSh)') }}</label>
+                                    <label class="adm-field-label">{{ __('Standard price per SMS credit (KSh)') }}</label>
                                     <input type="number" step="0.01" min="0.01" name="sms_credit_price"
                                            class="adm-input"
                                            value="{{ old('sms_credit_price', $pricePerSms) }}">
-                                    <span class="adm-field-hint">{{ __('Owners pay this amount per credit purchased.') }}</span>
+                                    <span class="adm-field-hint">{{ __('The rate for free-tier owners. Paid plans set their own (cheaper) SMS rate per plan in the plan catalog, so this field does not affect them.') }}</span>
                                 </div>
 
                                 <div class="adm-field mb-4">

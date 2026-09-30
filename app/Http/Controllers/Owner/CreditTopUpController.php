@@ -49,12 +49,13 @@ class CreditTopUpController extends Controller
             $gatewayCurrency = GatewayCurrency::where('gateway_id', $gateway->id)->first();
             if (! $gatewayCurrency) throw new Exception('Payment currency not configured.');
 
-            $quantity  = (int) $request->quantity;
-            // SERVER-computed price — never trust a client-supplied amount.
-            $unitPrice = CreditService::pricePerUnit($bucket);
+            $quantity    = (int) $request->quantity;
+            $ownerUserId = auth()->id();
+            // SERVER-computed price — never trust a client-supplied amount. SMS is priced per the
+            // owner's plan (paid domains cheaper); other buckets use the global price.
+            $unitPrice = CreditService::pricePerUnit($bucket, $ownerUserId);
             if ($unitPrice <= 0) throw new Exception($cfg['label'] . ' pricing is not configured.');
             $amountPaid  = round($quantity * $unitPrice, 2);
-            $ownerUserId = auth()->id();
 
             $units   = Str::plural($cfg['unit'], $quantity);
             $pending = CreditService::openPendingPurchase(

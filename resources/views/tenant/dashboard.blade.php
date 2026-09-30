@@ -7,6 +7,9 @@
             <div class="page-content-wrapper bg-white p-30 radius-20">
                 <div class="container">
 
+                    {{-- First-login welcome tour (auto-opens once; replayable via "How it works"). --}}
+                    @include('tenant.partials.welcome-tour')
+
                     {{-- Page Header --}}
                     <div class="dash-header mb-4">
                         <div>
@@ -14,6 +17,7 @@
                             <p class="dash-subtitle">
                                 {{ __('Welcome back') }}, <strong>{{ auth()->user()->name }}</strong>
                                 <span class="iconify font-24" data-icon="openmoji:waving-hand"></span>
+                                <a href="javascript:void(0)" onclick="if(window.csOpenTour)csOpenTour()" style="margin-left:10px;font-size:12.5px;font-weight:600;color:#185FA5;text-decoration:none;white-space:nowrap;">{{ __('How it works') }} ›</a>
                             </p>
                         </div>
                         @if (empty($tenancyEnded))

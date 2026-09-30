@@ -7,33 +7,16 @@
             <div class="page-content-wrapper bg-white p-30 radius-20">
                 <div class="container">
 
-                    {{-- Centresidence financing nudge (responsive + dismissible; starts
-                         hidden and is revealed by JS so a snoozed banner never flashes). --}}
-                    <div class="cs-fin-nudge" id="csFinNudge" hidden>
-                        <a href="{{ route('owner.financing.index') }}" class="cs-fin-nudge__link">
-                            <span class="cs-fin-nudge__ico"><i class="ri-funds-line"></i></span>
-                            <span class="cs-fin-nudge__txt">
-                                <span class="cs-fin-nudge__title">{{ __('Boost your property cashflow with smart modules') }}</span>
-                                <span class="cs-fin-nudge__sub">{{ __('Add water/gas meters, smart locks and more — finance them through a partner, or self-finance and own them outright.') }}</span>
-                            </span>
-                            <span class="cs-fin-nudge__cta">{{ __('Explore modules') }}</span>
-                        </a>
-                        <button type="button" class="cs-fin-nudge__x" aria-label="{{ __('Dismiss') }}" onclick="csDismissFinNudge()">&times;</button>
-                    </div>
-                    <script>
-                        (function () {
-                            var KEY = 'cs_fin_nudge_snooze', DAYS = 30;
-                            var el = document.getElementById('csFinNudge');
-                            if (!el) return;
-                            var until = 0;
-                            try { until = parseInt(localStorage.getItem(KEY) || '0', 10) || 0; } catch (e) {}
-                            if (Date.now() > until) { el.hidden = false; }
-                            window.csDismissFinNudge = function () {
-                                el.hidden = true;
-                                try { localStorage.setItem(KEY, String(Date.now() + DAYS * 864e5)); } catch (e) {}
-                            };
-                        })();
-                    </script>
+                    {{-- Owner setup checklist — live "get set up to collect rent" tracker for new owners
+                         (auto-hides once complete or dismissed). --}}
+                    @include('owner.partials.setup-checklist')
+
+                    {{-- First-login owner walk-around (desktop spotlight / mobile carousel); replay via "How it works". --}}
+                    @include('owner.partials.welcome-tour')
+
+                    {{-- Owner Upgrade Advisor — the top personalised nudge (subsumes the old static
+                         financing banner; now targeted + server-side dismiss). --}}
+                    @include('owner.partials.upgrade-advisor')
 
                     {{-- Page Header --}}
                     <div class="dash-header mb-4">
@@ -42,6 +25,7 @@
                             <p class="dash-subtitle">
                                 {{ __('Welcome back') }}, <strong>{{ auth()->user()->name }}</strong>
                                 <span class="iconify font-24" data-icon="openmoji:waving-hand"></span>
+                                <a href="javascript:void(0)" onclick="if(window.csOpenTour)csOpenTour()" style="margin-left:10px;font-size:12.5px;font-weight:600;color:#185FA5;text-decoration:none;white-space:nowrap;">{{ __('How it works') }} ›</a>
                             </p>
                         </div>
                         @php
@@ -871,6 +855,12 @@
     border-radius:6px; transition:all .13s;
 }
 .cs-fin-nudge__x:hover { color:#111827; background:rgba(0,0,0,.06); }
+.cs-fin-nudge__learn {
+    display:inline-flex; align-items:center; gap:5px; margin:9px 0 0 20px;
+    font-size:12.5px; font-weight:500; color:#185FA5; text-decoration:none;
+}
+.cs-fin-nudge__learn:hover { text-decoration:underline; }
+.cs-fin-nudge__learn i { font-size:14px; }
 @media (max-width:600px) {
     .cs-fin-nudge__link { padding:14px 40px 14px 14px; gap:12px; }
     /* Row 1 = icon + text fill the width; Row 2 = full-width CTA (no one-word columns). */

@@ -17,7 +17,7 @@
 <div class="main-content">
   <div class="page-content">
     <div class="container-fluid">
-      <div class="page-content-wrapper p-30 radius-20" style="background:#f6f7f9;">
+      <div class="page-content-wrapper bg-white p-30 radius-20">
 
         <a href="{{ route('admin.support.index') }}" class="sup-btn sup-btn--ghost" style="margin-bottom:16px;">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M15 6l-6 6 6 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>

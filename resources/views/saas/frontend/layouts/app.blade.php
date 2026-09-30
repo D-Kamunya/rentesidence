@@ -42,14 +42,7 @@
 <body class="{{ selectedLanguage()->rtl == 1 ? 'direction-rtl' : 'direction-ltr' }}">
 
     <!-- Pre Loader Area start -->
-    @if (getOption('app_preloader_status') == 1)
-        <div id="preloader">
-            <div id="preloaderInner">
-                <img src="{{ getSettingImage('app_preloader') }}" alt="img">
-                <img id="ajaxLoader" src="{{asset('assets/images/ajaxloader.svg')}}" alt="img">
-            </div>
-        </div>
-    @endif
+    @include('common.layouts.preloader')
     <!-- Pre Loader Area End -->
 
     <!--Main Menu/Navbar Area Start -->

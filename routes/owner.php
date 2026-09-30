@@ -48,6 +48,8 @@ Route::group(['prefix' => 'owner', 'as' => 'owner.', 'middleware' => ['auth', 'o
 
 Route::group(['prefix' => 'owner', 'as' => 'owner.', 'middleware' => ['auth', 'owner', 'owner.active', 'infra.standing', 'terms.accepted']], function () {
     Route::get('/', [DashboardController::class, 'dashboard'])->name('dashboard');
+    // Owner Upgrade Advisor — dismiss/snooze a suggestion (server-side).
+    Route::post('advisor/dismiss', [\App\Http\Controllers\Owner\AdvisorController::class, 'dismiss'])->name('advisor.dismiss');
     Route::get('top-search', [DashboardController::class, 'topSearch'])->name('top.search');
     Route::get('notification', [DashboardController::class, 'notification'])->name('notification');
     Route::post('tenant/resend-login', [TenantController::class, 'resendLogin'])->name('tenant.resend-login');
@@ -107,6 +109,8 @@ Route::group(['prefix' => 'owner', 'as' => 'owner.', 'middleware' => ['auth', 'o
     Route::post('infrastructure-bill/pay', [\App\Http\Controllers\Owner\InfraBillController::class, 'pay'])->name('infra-bill.pay');
 
     Route::group(['prefix' => 'property', 'as' => 'property.'], function () {
+        // Printable per-property tenant onboarding card (QR → get-started).
+        Route::get('{property}/onboarding-card', [\App\Http\Controllers\Owner\OnboardingCardController::class, 'show'])->name('onboarding-card');
         Route::get('all-property', [PropertyController::class, 'allProperty'])->name('allProperty');
         Route::get('all-unit', [PropertyController::class, 'allUnit'])->name('allUnit');
         Route::get('own-property', [PropertyController::class, 'ownProperty'])->name('ownProperty');
