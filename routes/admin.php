@@ -237,6 +237,7 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'middleware' => ['auth', 'a
         Route::put('/settings',               [\App\Http\Controllers\Admin\ScreeningAdminController::class, 'updateSettings'])->name('settings');
         Route::put('/disputes/{dispute}',     [\App\Http\Controllers\Admin\ScreeningAdminController::class, 'updateDispute'])->name('disputes.update');
         Route::post('/recompute/{profile}',   [\App\Http\Controllers\Admin\ScreeningAdminController::class, 'recompute'])->name('recompute');
+        Route::post('/rebuild',               [\App\Http\Controllers\Admin\ScreeningAdminController::class, 'rebuild'])->name('rebuild');
         Route::post('/disputes/{dispute}/notify-owners', [\App\Http\Controllers\Admin\ScreeningAdminController::class, 'notifyOwners'])->name('disputes.notify');
     });
 
