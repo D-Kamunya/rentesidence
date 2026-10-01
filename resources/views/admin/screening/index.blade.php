@@ -5,6 +5,7 @@
 <div class="main-content">
     <div class="page-content">
         <div class="container-fluid">
+            <div class="page-content-wrapper bg-white p-3 p-md-4 radius-20">
 
             <div class="asc-head">
                 <nav aria-label="breadcrumb">
@@ -229,6 +230,7 @@
                     @endif
                 </div>
             </div>
+            </div>{{-- /.page-content-wrapper --}}
 
         </div>
     </div>
