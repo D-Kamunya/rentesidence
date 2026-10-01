@@ -61,7 +61,16 @@ class SubscriptionService
     public function getCurrencyByGatewayId($id)
     {
         $userId = User::where('role', USER_ROLE_ADMIN)->first()->id;
-        $currencies = GatewayCurrency::where(['owner_user_id' => $userId, 'gateway_id' => $id])->get();
+        $query = GatewayCurrency::where(['owner_user_id' => $userId, 'gateway_id' => $id]);
+
+        // Safeguard: Safaricom M-Pesa STK settles in KES only. Never offer a foreign currency on
+        // M-Pesa even if one was mis-configured — so an owner can always transact in KES there.
+        $gateway = \App\Models\Gateway::find($id);
+        if ($gateway && str_contains(strtolower((string) $gateway->slug), 'mpesa')) {
+            $query->where('currency', 'KES');
+        }
+
+        $currencies = $query->get();
         foreach ($currencies as $currency) {
             $currency->symbol =  $currency->symbol;
         }
@@ -195,9 +204,15 @@ class SubscriptionService
     {
         $user = auth()->user();
         
-        // Get the active owner package for this user
+        // Get the active, NON-EXPIRED owner package for this user. An expired plan (status still
+        // ACTIVE but end_date in the past) grants no allowance — so "X left" doesn't mislead an
+        // owner into thinking they can add more while expired; they get the renew CTA instead.
+        // (A null end_date = never-expiring, so it still counts.)
         $activePackage = \App\Models\OwnerPackage::where('user_id', $user->id)
             ->where('status', ACTIVE)
+            ->where(function ($q) {
+                $q->whereNull('end_date')->orWhereDate('end_date', '>=', now());
+            })
             ->latest()
             ->first();
         
