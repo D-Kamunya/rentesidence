@@ -90,14 +90,14 @@ class SubscriptionController extends Controller
         // modules, plus what they actually pay for the plan — so the My
         // Subscription page can show package + modules = total transparently.
         // Guarded so the legacy page never breaks on non-Centresidence installs.
-        // Price of the owner's CURRENT plan, tied to the active package's OWN
-        // order — not the latest paid order globally, which lingers after a
-        // switch to a free/transaction plan (no new payment) and showed a stale
-        // amount. Free plans carry no order → 0.
-        $activePackage = \App\Models\OwnerPackage::where('user_id', $ownerId)
-            ->where('status', ACTIVE)->latest('id')->first();
-        $data['packageAmount'] = ($activePackage && $activePackage->order_id)
-            ? (float) (\App\Models\SubscriptionOrder::where('id', $activePackage->order_id)->value('amount') ?? 0)
+        // Show the CURRENT catalog price for the owner's plan band — not the historically-paid
+        // order amount — so a price change reflects here and matches the renew checkout (no
+        // "billed 5,700 but renew says 3,000" confusion on a repriced/legacy plan). Free and
+        // transaction plans carry no monthly subscription price → 0.
+        $displayPlan = $data['userPlan'];
+        $catalogPkg  = ($displayPlan && $displayPlan->package_id) ? \App\Models\Package::find($displayPlan->package_id) : null;
+        $data['packageAmount'] = $catalogPkg
+            ? (float) (($displayPlan->duration_type == PACKAGE_DURATION_TYPE_MONTHLY) ? $catalogPkg->monthly_price : $catalogPkg->yearly_price)
             : 0.0;
         $data['moduleCosts'] = ['lines' => [], 'total' => '0.00', 'has_modules' => false];
         $data['moduleInvoiceStatus'] = null;
