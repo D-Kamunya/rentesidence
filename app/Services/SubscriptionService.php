@@ -47,6 +47,43 @@ class SubscriptionService
         ]);
     }
 
+    /**
+     * The plan to SHOW on the subscription page: the active plan if there is one, otherwise the
+     * most recent (expired) plan — so the page always renders a plan card with a Renew CTA
+     * instead of going blank when the plan lapses (renewal was only reachable via the expiry
+     * notification before). Display-only; getCurrentPlan() stays the authority on an ACTIVE plan.
+     */
+    public function getPlanForDisplay($userId = null)
+    {
+        $userId = $userId ?? auth()->id();
+
+        if ($active = $this->getCurrentPlan($userId)) {
+            return $active;
+        }
+
+        $ownerPackage = OwnerPackage::query()
+            ->leftJoin('subscription_orders', 'subscription_orders.id', '=', 'owner_packages.order_id')
+            ->leftJoin('packages', 'packages.id', '=', 'owner_packages.package_id')
+            ->where('owner_packages.user_id', $userId)
+            ->whereIn('owner_packages.status', [ACTIVE])
+            ->select([
+                'owner_packages.*',
+                'subscription_orders.duration_type',
+                'packages.commission_markup',
+                'packages.commission_discount',
+                'packages.max_marketplace_listings',
+                'packages.monthly_sms_credits',
+                'packages.name as package_name',
+            ])
+            ->orderByDesc('owner_packages.end_date')
+            ->first();
+
+        return $ownerPackage?->makeHidden([
+            'created_at', 'updated_at', 'deleted_at',
+            'is_trail', 'order_id', 'package_id', 'user_id',
+        ]);
+    }
+
     public function getAllPackages()
     {
         return Package::where('status', ACTIVE)->where('is_trail', '!=', ACTIVE)->get();
@@ -61,7 +98,16 @@ class SubscriptionService
     public function getCurrencyByGatewayId($id)
     {
         $userId = User::where('role', USER_ROLE_ADMIN)->first()->id;
-        $currencies = GatewayCurrency::where(['owner_user_id' => $userId, 'gateway_id' => $id])->get();
+        $query = GatewayCurrency::where(['owner_user_id' => $userId, 'gateway_id' => $id]);
+
+        // Safeguard: Safaricom M-Pesa STK settles in KES only. Never offer a foreign currency on
+        // M-Pesa even if one was mis-configured — so an owner can always transact in KES there.
+        $gateway = \App\Models\Gateway::find($id);
+        if ($gateway && str_contains(strtolower((string) $gateway->slug), 'mpesa')) {
+            $query->where('currency', 'KES');
+        }
+
+        $currencies = $query->get();
         foreach ($currencies as $currency) {
             $currency->symbol =  $currency->symbol;
         }
@@ -195,9 +241,15 @@ class SubscriptionService
     {
         $user = auth()->user();
         
-        // Get the active owner package for this user
+        // Get the active, NON-EXPIRED owner package for this user. An expired plan (status still
+        // ACTIVE but end_date in the past) grants no allowance — so "X left" doesn't mislead an
+        // owner into thinking they can add more while expired; they get the renew CTA instead.
+        // (A null end_date = never-expiring, so it still counts.)
         $activePackage = \App\Models\OwnerPackage::where('user_id', $user->id)
             ->where('status', ACTIVE)
+            ->where(function ($q) {
+                $q->whereNull('end_date')->orWhereDate('end_date', '>=', now());
+            })
             ->latest()
             ->first();
         

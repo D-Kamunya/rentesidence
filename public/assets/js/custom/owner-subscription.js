@@ -79,10 +79,33 @@ window.addEventListener("load", function () {
 });
 
 function setPaymentModal(response) {
+    // The order endpoint returns gateway HTML on success, but the app's JSON error object
+    // {status:false, message} when the plan change is blocked (e.g. an active financing
+    // facility). Detect that — whether it arrives parsed or as responseText — and show the
+    // styled cs-modal warning instead of dumping JSON into the payment modal.
+    var errObj = null;
+    if (response && typeof response === "object" && response.status === false) {
+        errObj = response;
+    } else if (response && typeof response.responseText === "string") {
+        var t = response.responseText.trim();
+        if (t.charAt(0) === "{") {
+            try { var p = JSON.parse(t); if (p && p.status === false) errObj = p; } catch (e) {}
+        }
+    }
+    if (errObj) {
+        if (window.csAlert) {
+            csAlert({ title: "Can’t change plan", message: errObj.message || "", tone: "primary" });
+        } else if (window.toastr) {
+            toastr.info(errObj.message || "");
+        }
+        return; // never open the broken payment modal on a blocked change
+    }
+
+    var html = (response && response.responseText != null) ? response.responseText : response;
     var selector = $("#paymentMethodModal");
     selector.modal("show");
     $("#choosePlanModal").modal("hide");
-    selector.find("#gatewayListBlock").html(response.responseText);
+    selector.find("#gatewayListBlock").html(html);
 }
 
 $(document).on("click", ".paymentGateway", function (e) {
@@ -244,11 +267,20 @@ $(document).on("click", "#subscribeBtn", function (e) {
             method: "GET",
             cache: false,
             data: { package_id: planId },
-            success: function (html) {
-                $("#choosePlanModal").find("#planListBlock").html(html);
+            success: function (resp) {
+                // A blocked change (active facility) comes back as {status:false,message};
+                // show the styled cs-alert instead of rendering the confirm screen.
+                if (resp && typeof resp === "object" && resp.status === false) {
+                    if (window.csAlert) csAlert({ title: "Can’t change plan", message: resp.message || "", tone: "primary" });
+                    return;
+                }
+                $("#choosePlanModal").find("#planListBlock").html(resp);
             },
-            error: function () {
-                toastr.error("Could not load confirmation. Please try again.");
+            error: function (xhr) {
+                var msg = null;
+                try { var p = JSON.parse(xhr.responseText); if (p && p.status === false) msg = p.message; } catch (e) {}
+                if (msg) { if (window.csAlert) csAlert({ title: "Can’t change plan", message: msg, tone: "primary" }); return; }
+                if (window.toastr) toastr.error("Could not load confirmation. Please try again.");
             }
         });
     } else {

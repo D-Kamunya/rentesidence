@@ -57,6 +57,17 @@
     }
     #offcanvasNavbarDark .nav-link{color:#2A2F37!important}
     #offcanvasNavbarDark .btn-close{filter:none}
+
+    /* Mid-size laptop fix (~1280px): the rigid col-lg-2/6/4 split let the wordmark overflow
+       its column into the first nav link, and the two-word labels (House Hunt, Contact Us,
+       How It Works) wrapped to two lines. At lg+ size the three regions to their content —
+       brand auto, middle grows and centres, actions auto — and keep every link on one line. */
+    @media (min-width:992px){
+        #mainNav .navbar-nav-brand-box{flex:0 0 auto;width:auto;max-width:none;padding-right:18px}
+        #mainNav .navbar-nav-middle{flex:1 1 auto;width:auto;max-width:none;justify-content:center;column-gap:2px}
+        #mainNav .navbar-nav-right{flex:0 0 auto;width:auto;max-width:none}
+        #mainNav .nav-link{white-space:nowrap;padding-left:11px;padding-right:11px}
+    }
 </style>
 @if (env('LOGIN_HELP') == 'active')
     <div class="alert alert-danger text-center mb-0" role="alert">

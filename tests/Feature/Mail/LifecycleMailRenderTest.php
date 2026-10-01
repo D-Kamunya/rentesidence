@@ -99,7 +99,7 @@ class LifecycleMailRenderTest extends TestCase
             'title'  => 'Hi',
             'blocks' => [['type' => 'text', 'html' => 'body']],
         ]);
-        $this->assertStringContainsString('you have a', $withoutFootnote);
+        $this->assertStringContainsString('regarding your recent request or activity', $withoutFootnote);
     }
 
     /** @test */

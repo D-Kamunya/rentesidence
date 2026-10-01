@@ -35,7 +35,7 @@ class OwnerSetupChecklistTest extends TestCase
     public function test_a_fresh_owner_has_everything_to_do(): void
     {
         $c = $this->svc()->checklist(1);
-        $this->assertSame(4, $c['total']);
+        $this->assertSame(5, $c['total']); // property, units, tenant, recurring + Load SMS credits
         $this->assertSame(0, $c['done']);
         $this->assertFalse($c['complete']);
     }

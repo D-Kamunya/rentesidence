@@ -113,6 +113,22 @@ class AffiliateService
                 return $affiliate->referral_code;
             })
             ->addColumn('status', function ($affiliate) {
+                // Archive (soft-delete) — for clearing out stale/test records. The controller
+                // blocks it on any unpaid balance or in-flight withdrawal, so funds are never
+                // orphaned; history is preserved by the soft delete. Shown in either state.
+                $archiveBtn = '
+                    <form action="' . route('admin.affiliates.delete', $affiliate->affiliate_id) . '" method="POST" style="display:inline;"
+                        data-cs-confirm="' . __('Archive this affiliate? Use this to clear out old or test records. It is blocked if they have any unpaid balance or a withdrawal in progress. Their commission history is kept for audit.') . '"
+                        data-cs-confirm-title="' . __('Archive affiliate?') . '"
+                        data-cs-confirm-ok="' . __('Yes, archive') . '"
+                        data-cs-confirm-tone="danger">
+                        ' . csrf_field() . '
+                        <button type="submit" class="btn" style="display:inline-flex; align-items:center; gap:5px; background:#F4F5F7; border:0.5px solid #D9DEE6; color:#4B5563; border-radius:99px; font-size:11px; font-weight:500; padding:4px 11px; white-space:nowrap; cursor:pointer; line-height:1.4;">
+                            <svg width="10" height="10" viewBox="0 0 16 16" fill="none"><path d="M3 5h10M6 5V3.5h4V5M5 5l.4 8h5.2l.4-8" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                            Archive
+                        </button>
+                    </form>';
+
                 if ($affiliate->affiliate_status == AFFILIATE_STATUS_ACTIVE) {
                     return '
                         <div style="display:inline-flex; align-items:center; gap:8px; flex-wrap:wrap;">
@@ -135,7 +151,7 @@ class AffiliateService
                                     </svg>
                                     Suspend
                                 </button>
-                            </form>
+                            </form>' . $archiveBtn . '
                         </div>';
                 }
 
@@ -159,7 +175,7 @@ class AffiliateService
                                 </svg>
                                 Reinstate
                             </button>
-                        </form>
+                        </form>' . $archiveBtn . '
                     </div>';
             })
             ->rawColumns(['name', 'status', 'trail', 'action'])

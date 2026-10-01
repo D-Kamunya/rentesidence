@@ -116,7 +116,12 @@
           credentials: 'same-origin', body: 'key=' + encodeURIComponent(KEY) });
       } catch (e) {}
     }
-    function close() { root.style.display = 'none'; markDone(); }
+    function close() {
+      root.style.display = 'none'; markDone();
+      // Hand off to the "what's new" announcement (if one was deferred) so the two never
+      // stack on first login — the tour runs first, the announcement follows.
+      if (window.__csFaShow) window.__csFaShow();
+    }
 
     next.addEventListener('click', function () { if (cur === STEPS.length - 1) close(); else show(cur + 1); });
     back.addEventListener('click', function () { show(cur - 1); });
@@ -127,6 +132,8 @@
     window.csOpenTour = function () { marked = false; root.style.display = 'block'; show(0); };
 
     @if ($tourAutoshow)
+      // Claim priority over the "what's new" announcement so it defers until the tour closes.
+      window.__csTourWillRun = true;
       root.style.display = 'block'; show(0);
     @endif
   })();

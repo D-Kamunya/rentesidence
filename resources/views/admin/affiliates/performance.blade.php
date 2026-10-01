@@ -41,10 +41,10 @@
                     {{-- Summary Stat Cards --}}
                     <div class="row g-3 mb-4">
                         @php
-                            $total      = count($affiliates);
-                            $certified  = collect($affiliates)->where('certified', true)->count();
-                            $inProgress = collect($affiliates)->filter(fn($a) => !$a['certified'] && $a['completed_modules'] > 0 && !$a['needs_review'])->count();
-                            $needsReview = collect($affiliates)->where('needs_review', true)->count();
+                            $total       = $summary['total'];
+                            $certified   = $summary['certified'];
+                            $inProgress  = $summary['in_progress'];
+                            $needsReview = $summary['needs_review'];
                         @endphp
 
                         <div class="col-6 col-md-3">
@@ -179,6 +179,7 @@
                                     </tbody>
                                 </table>
                             </div>
+                            <div class="mt-3">{{ $affiliates->links() }}</div>
                         </div>
                     </div>
 
