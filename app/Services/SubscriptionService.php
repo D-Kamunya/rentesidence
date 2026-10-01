@@ -47,6 +47,43 @@ class SubscriptionService
         ]);
     }
 
+    /**
+     * The plan to SHOW on the subscription page: the active plan if there is one, otherwise the
+     * most recent (expired) plan — so the page always renders a plan card with a Renew CTA
+     * instead of going blank when the plan lapses (renewal was only reachable via the expiry
+     * notification before). Display-only; getCurrentPlan() stays the authority on an ACTIVE plan.
+     */
+    public function getPlanForDisplay($userId = null)
+    {
+        $userId = $userId ?? auth()->id();
+
+        if ($active = $this->getCurrentPlan($userId)) {
+            return $active;
+        }
+
+        $ownerPackage = OwnerPackage::query()
+            ->leftJoin('subscription_orders', 'subscription_orders.id', '=', 'owner_packages.order_id')
+            ->leftJoin('packages', 'packages.id', '=', 'owner_packages.package_id')
+            ->where('owner_packages.user_id', $userId)
+            ->whereIn('owner_packages.status', [ACTIVE])
+            ->select([
+                'owner_packages.*',
+                'subscription_orders.duration_type',
+                'packages.commission_markup',
+                'packages.commission_discount',
+                'packages.max_marketplace_listings',
+                'packages.monthly_sms_credits',
+                'packages.name as package_name',
+            ])
+            ->orderByDesc('owner_packages.end_date')
+            ->first();
+
+        return $ownerPackage?->makeHidden([
+            'created_at', 'updated_at', 'deleted_at',
+            'is_trail', 'order_id', 'package_id', 'user_id',
+        ]);
+    }
+
     public function getAllPackages()
     {
         return Package::where('status', ACTIVE)->where('is_trail', '!=', ACTIVE)->get();

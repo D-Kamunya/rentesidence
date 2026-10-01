@@ -82,7 +82,9 @@ class SubscriptionController extends Controller
         //         }
         //     }
         // }
-        $data['userPlan'] = $this->subscriptionService->getCurrentPlan();
+        // Display the active plan, or fall back to the latest (expired) one so the card + its
+        // Renew CTA stay on the page when the plan has lapsed (not only in the expiry notice).
+        $data['userPlan'] = $this->subscriptionService->getPlanForDisplay();
 
         // Centresidence: the live monthly cost of this owner's subscription-billed
         // modules, plus what they actually pay for the plan — so the My

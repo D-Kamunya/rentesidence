@@ -485,7 +485,11 @@
                             {{-- Head --}}
                             <div class="sub-plan-head">
                                 <div>
-                                    <p class="sub-plan-eyebrow">Current Plan</p>
+                                    @php
+                                        $planExpired = !empty($userPlan->end_date)
+                                            && \Carbon\Carbon::parse($userPlan->end_date)->endOfDay()->isPast();
+                                    @endphp
+                                    <p class="sub-plan-eyebrow">{{ $planExpired ? __('Expired Plan') : __('Current Plan') }}</p>
                                     @php $pm = $userPlan->pricing_model ?? 'subscription'; @endphp
                                     <h2 class="sub-plan-name">
                                         {{ $userPlan->name }}
@@ -495,6 +499,9 @@
                                             <span class="sub-plan-cadence">
                                                 / {{ $userPlan->duration_type == PACKAGE_DURATION_TYPE_MONTHLY ? 'Monthly' : 'Yearly' }}
                                             </span>
+                                        @endif
+                                        @if ($planExpired)
+                                            <span class="sub-badge sub-badge--expired" style="margin-left:8px;font-size:11px;font-weight:600;padding:2px 10px;border-radius:99px;vertical-align:middle;">{{ __('Expired') }}</span>
                                         @endif
                                     </h2>
                                 </div>
