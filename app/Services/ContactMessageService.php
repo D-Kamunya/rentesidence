@@ -39,9 +39,13 @@ class ContactMessageService
             ->addColumn('action', function ($message) {
                 return '<div class="tbl-action-btns d-inline-flex">
                     <button type="button" class="p-1 tbl-action-btn reply" data-id="' . $message->id . '" title="' . __('reply') . '"><span class="iconify" data-icon="bi:reply"></span></button>
-                    <form method="POST" action="' . route('admin.message.destroy', $message->id) . '" style="display:inline;">
+                    <form method="POST" action="' . route('admin.message.destroy', $message->id) . '" style="display:inline;"
+                        data-cs-confirm="' . __('Delete this enquiry permanently? This cannot be undone.') . '"
+                        data-cs-confirm-title="' . __('Delete enquiry?') . '"
+                        data-cs-confirm-ok="' . __('Yes, delete') . '"
+                        data-cs-confirm-tone="danger">
                         ' . csrf_field() . method_field('DELETE') . '
-                        <button type="submit" class="p-1 tbl-action-btn delete" title="' . __('delete') . '" onclick="return confirm(\'Are you sure?\')">
+                        <button type="submit" class="p-1 tbl-action-btn delete" title="' . __('delete') . '">
                             <span class="iconify" data-icon="bi:trash"></span>
                         </button>
                     </form>
