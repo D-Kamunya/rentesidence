@@ -90,6 +90,10 @@
    from the screen edges rather than sitting flush against them. */
 @media (max-width: 640px) {
     .sub-page { padding-left: 12px; padding-right: 12px; }
+    /* Plan-card header: stack the name block above the status badge and shrink the band name so
+       it doesn't break mid-phrase ("31 - 60 / units") at the large desktop size. */
+    .sub-plan-head { flex-direction: column; align-items: flex-start; gap: 10px; }
+    .sub-plan-name { font-size: 19px; flex-wrap: wrap; }
 }
 
 /* ─── Card Base ───────────────────────────────────── */
@@ -500,17 +504,18 @@
                                                 / {{ $userPlan->duration_type == PACKAGE_DURATION_TYPE_MONTHLY ? 'Monthly' : 'Yearly' }}
                                             </span>
                                         @endif
-                                        @if ($planExpired)
-                                            <span class="sub-badge sub-badge--expired" style="margin-left:8px;font-size:11px;font-weight:600;padding:2px 10px;border-radius:99px;vertical-align:middle;">{{ __('Expired') }}</span>
-                                        @endif
                                     </h2>
                                 </div>
-                                <span class="sub-badge sub-badge--active">
-                                    <svg width="7" height="7" viewBox="0 0 7 7" fill="currentColor">
-                                        <circle cx="3.5" cy="3.5" r="3.5"/>
-                                    </svg>
-                                    Active
-                                </span>
+                                @if ($planExpired)
+                                    <span class="sub-badge sub-badge--expired">{{ __('Expired') }}</span>
+                                @else
+                                    <span class="sub-badge sub-badge--active">
+                                        <svg width="7" height="7" viewBox="0 0 7 7" fill="currentColor">
+                                            <circle cx="3.5" cy="3.5" r="3.5"/>
+                                        </svg>
+                                        {{ __('Active') }}
+                                    </span>
+                                @endif
                             </div>
 
                             <hr class="sub-divider">
