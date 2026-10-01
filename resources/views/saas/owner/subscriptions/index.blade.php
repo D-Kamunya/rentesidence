@@ -439,6 +439,23 @@
 <div class="main-content">
     <div class="page-content">
         <div class="container-fluid sub-page">
+            @if (!empty($renewBlockedMessage ?? null))
+                <script>
+                    document.addEventListener('DOMContentLoaded', function () {
+                        var msg = @json($renewBlockedMessage);
+                        if (window.csAlert) {
+                            csAlert({ title: @json(__('Can’t change plan')), message: msg, tone: 'primary' });
+                        } else {
+                            var d = document.createElement('div');
+                            d.className = 'alert alert-warning';
+                            d.style.cssText = 'border-radius:12px;margin-bottom:18px;';
+                            d.textContent = msg;
+                            var host = document.querySelector('.sub-page');
+                            if (host) host.prepend(d);
+                        }
+                    });
+                </script>
+            @endif
 
             {{-- ── Page Header ── --}}
             <div class="sub-page-header">
@@ -468,7 +485,11 @@
                             {{-- Head --}}
                             <div class="sub-plan-head">
                                 <div>
-                                    <p class="sub-plan-eyebrow">Current Plan</p>
+                                    @php
+                                        $planExpired = !empty($userPlan->end_date)
+                                            && \Carbon\Carbon::parse($userPlan->end_date)->endOfDay()->isPast();
+                                    @endphp
+                                    <p class="sub-plan-eyebrow">{{ $planExpired ? __('Expired Plan') : __('Current Plan') }}</p>
                                     @php $pm = $userPlan->pricing_model ?? 'subscription'; @endphp
                                     <h2 class="sub-plan-name">
                                         {{ $userPlan->name }}
@@ -478,6 +499,9 @@
                                             <span class="sub-plan-cadence">
                                                 / {{ $userPlan->duration_type == PACKAGE_DURATION_TYPE_MONTHLY ? 'Monthly' : 'Yearly' }}
                                             </span>
+                                        @endif
+                                        @if ($planExpired)
+                                            <span class="sub-badge sub-badge--expired" style="margin-left:8px;font-size:11px;font-weight:600;padding:2px 10px;border-radius:99px;vertical-align:middle;">{{ __('Expired') }}</span>
                                         @endif
                                     </h2>
                                 </div>
@@ -932,9 +956,9 @@
     </div>
 </div>
 
-@if (!is_null(request()->id))
+@if (!is_null(request()->id) && !empty($gateways ?? null))
     <input type="hidden" id="requestPlanId" value="{{ request()->id }}">
-    <input type="text" id="gatewayResponse" value="{{ $gateways }}">
+    <input type="hidden" id="gatewayResponse" value="{{ $gateways }}">
 @endif
 <input type="hidden" id="requestCurrentPlan" value="{{ request()->current_plan }}">
 

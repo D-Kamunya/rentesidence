@@ -83,9 +83,15 @@ class PackageCatalogSeeder extends Seeder
                 $monthlyPrice = $perMonthly * $maxUnit;
                 $yearlyPrice  = $perYearly  * $maxUnit;
 
-                Package::updateOrCreate(
-                    ['name' => $name],
-                    [
+                // withTrashed + restore: a package unique index is on `name` regardless of
+                // soft-delete, so a plain updateOrCreate can't see a TRASHED same-name row and
+                // then collides on insert (hit in prod: a soft-deleted legacy "Trial"). Restore
+                // and update it instead — keeping any owner_packages link to its id intact.
+                $package = Package::withTrashed()->firstWhere('name', $name) ?? new Package();
+                if ($package->exists && $package->trashed()) {
+                    $package->restore();
+                }
+                $package->forceFill(array_merge(['name' => $name], [
                         'slug'                     => $name, // existing rows use name-as-slug
                         'type'                     => 2,
                         'pricing_model'            => $model,
@@ -114,8 +120,7 @@ class PackageCatalogSeeder extends Seeder
                         'is_default'               => $isDefault,
                         'is_trail'                 => $isTrail,
                         'status'                   => ACTIVE,
-                    ]
-                );
+                ]))->save();
             }
 
             // Retire stale legacy bands not in the canonical ladder (e.g. Platinum @5u) so a

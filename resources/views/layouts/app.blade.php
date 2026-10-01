@@ -56,7 +56,7 @@
     <link rel="stylesheet" href="{{ asset('/') }}assets/css/responsive.css">
 
     <!-- FAVICONS -->
-    <link rel="icon" href="{{ getSettingImage('app_fav_icon') }}.png" type="image/png" sizes="16x16">
+    <link rel="icon" href="{{ getSettingImage('app_fav_icon') }}" type="image/png" sizes="16x16">
     <link rel="shortcut icon" href="{{ getSettingImage('app_fav_icon') }}" type="image/x-icon">
     <link rel="shortcut icon" href="{{ getSettingImage('app_fav_icon') }}">
     <link rel="stylesheet" href="{{ asset('assets/css/toastr.min.css') }}">

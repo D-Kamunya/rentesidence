@@ -261,6 +261,7 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'middleware' => ['auth', 'a
         // suspend / reinstate an affiliate
         Route::post('{affiliate}/suspend', [AffiliateController::class, 'suspend'])->name('suspend');
         Route::post('{affiliate}/reinstate', [AffiliateController::class, 'reinstate'])->name('reinstate');
+        Route::post('{affiliate}/delete', [AffiliateController::class, 'destroy'])->name('delete');
 
         // Prospective-affiliate applications (from the public "become an affiliate" page).
         Route::group(['prefix' => 'applications', 'as' => 'applications.'], function () {

@@ -229,10 +229,10 @@ class AcademyAdminController extends Controller
     {
         $totalModules = AcademyModule::where('is_active', true)->count();
 
-        // $affiliates = Affiliate::with(['user', 'academyProgress'])->get();//can be improved for performance
-        $affiliates = Affiliate::with(['academyProgress.module'])->get();
-
-        $affiliatesData = $affiliates->map(function ($affiliate) use ($totalModules) {
+        // Build every affiliate's performance row, keep the GLOBAL summary from the full set, then
+        // paginate the rows for display — so the summary cards stay accurate across all pages.
+        $all = Affiliate::with(['user', 'academyProgress.module'])->orderByDesc('id')->get()
+            ->map(function ($affiliate) use ($totalModules) {
 
             $progressNeedsReview = $affiliate->academyProgress->firstWhere('needs_review', true);
 
@@ -270,8 +270,27 @@ class AcademyAdminController extends Controller
             ];
         });
 
+        // Global summary — computed across ALL affiliates, independent of the visible page.
+        $summary = [
+            'total'        => $all->count(),
+            'certified'    => $all->where('certified', true)->count(),
+            'in_progress'  => $all->filter(fn ($a) => !$a['certified'] && $a['completed_modules'] > 0 && !$a['needs_review'])->count(),
+            'needs_review' => $all->where('needs_review', true)->count(),
+        ];
+
+        $perPage = 20;
+        $page = \Illuminate\Pagination\Paginator::resolveCurrentPage();
+        $affiliates = new \Illuminate\Pagination\LengthAwarePaginator(
+            $all->forPage($page, $perPage)->values(),
+            $all->count(),
+            $perPage,
+            $page,
+            ['path' => \Illuminate\Pagination\Paginator::resolveCurrentPath()]
+        );
+
         return view('admin.affiliates.performance', [
-            'affiliates' => $affiliatesData
+            'affiliates' => $affiliates,
+            'summary'    => $summary,
         ]);
     }
 

@@ -82,7 +82,9 @@ class SubscriptionController extends Controller
         //         }
         //     }
         // }
-        $data['userPlan'] = $this->subscriptionService->getCurrentPlan();
+        // Display the active plan, or fall back to the latest (expired) one so the card + its
+        // Renew CTA stay on the page when the plan has lapsed (not only in the expiry notice).
+        $data['userPlan'] = $this->subscriptionService->getPlanForDisplay();
 
         // Centresidence: the live monthly cost of this owner's subscription-billed
         // modules, plus what they actually pay for the plan — so the My
@@ -148,7 +150,16 @@ class SubscriptionController extends Controller
         }
 
         if (!is_null($request->id)) {
-            $data['gateways'] = $this->order($request);
+            // Renew/switch flow. Run the facility lock here so a blocked owner gets a clean
+            // message — never the raw JSON error object rendered into a hidden input (which
+            // leaked into the payment modal). $gateways only ever holds the gateway HTML.
+            $targetPlan = Package::find($request->id);
+            if ($lockMsg = $this->facilityLockMessage($targetPlan->pricing_model ?? null)) {
+                $data['renewBlockedMessage'] = $lockMsg;
+            } else {
+                $gateways = $this->order($request);
+                $data['gateways'] = is_string($gateways) ? $gateways : null;
+            }
         }
         return view('saas.owner.subscriptions.index', $data);
     }
@@ -243,7 +254,14 @@ class SubscriptionController extends Controller
         if (!in_array($package->pricing_model ?? '', ['free', 'transaction'])) {
             abort(403, 'Confirmation view only available for free and transaction plans.');
         }
- 
+
+        // Same facility lock as the paid flow — block switching to free while a financing facility
+        // is active, HERE (at selection) rather than letting the owner click all the way through
+        // only to be refused at the end. Surfaced as a clean message → shown in a cs-alert.
+        if ($msg = $this->facilityLockMessage($package->pricing_model)) {
+            return $this->error([], $msg);
+        }
+
         return view('saas.owner.subscriptions.partials.confirm-free')->render();
     }
  

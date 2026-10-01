@@ -52,6 +52,8 @@
     if (!modal) return;
     var url = '{{ route('feature-announcement.seen', $fa->id) }}';
     var token = '{{ csrf_token() }}';
+    var shown = false;
+    function reveal() { if (shown) return; shown = true; modal.style.display = 'flex'; }
     function dismiss() {
       modal.style.display = 'none';
       try {
@@ -60,6 +62,15 @@
     }
     modal.querySelectorAll('[data-cs-fa-dismiss]').forEach(function (el) { el.addEventListener('click', dismiss); });
     modal.addEventListener('click', function (e) { if (e.target === modal) dismiss(); });
+
+    // Start hidden and coordinate with the welcome tour: if a tour will auto-run on this page,
+    // let the tour reveal us when it closes (no two overlays stacking on first login — which
+    // also caused the "dismiss twice"). Otherwise reveal once everything has loaded.
+    window.__csFaShow = reveal;
+    modal.style.display = 'none';
+    window.addEventListener('load', function () {
+      if (!window.__csTourWillRun) reveal();
+    });
   })();
 </script>
 @endif

@@ -52,7 +52,10 @@
                                     <span class="q-order">{{ $question->question_order }}</span>
                                     <p class="q-text" style="flex:1;">{{ $question->question }}</p>
                                     <form method="POST" action="{{ route('admin.academy.questions.destroy', $question->id) }}"
-                                          onsubmit="return confirm('Delete this question and all its options?');" style="flex-shrink:0;">
+                                          data-cs-confirm="{{ __('Delete this question and all its options? This cannot be undone.') }}"
+                                          data-cs-confirm-title="{{ __('Delete question?') }}"
+                                          data-cs-confirm-ok="{{ __('Yes, delete') }}"
+                                          data-cs-confirm-tone="danger" style="flex-shrink:0;">
                                         @csrf @method('DELETE')
                                         <button type="submit" title="Delete question" style="background:none;border:none;color:#B42318;cursor:pointer;padding:4px;line-height:0;">
                                             <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M4 7h16M9 7V5a1 1 0 011-1h4a1 1 0 011 1v2m2 0v13a1 1 0 01-1 1H7a1 1 0 01-1-1V7M10 11v5M14 11v5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>
