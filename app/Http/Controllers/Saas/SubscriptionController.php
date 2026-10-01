@@ -254,7 +254,14 @@ class SubscriptionController extends Controller
         if (!in_array($package->pricing_model ?? '', ['free', 'transaction'])) {
             abort(403, 'Confirmation view only available for free and transaction plans.');
         }
- 
+
+        // Same facility lock as the paid flow — block switching to free while a financing facility
+        // is active, HERE (at selection) rather than letting the owner click all the way through
+        // only to be refused at the end. Surfaced as a clean message → shown in a cs-alert.
+        if ($msg = $this->facilityLockMessage($package->pricing_model)) {
+            return $this->error([], $msg);
+        }
+
         return view('saas.owner.subscriptions.partials.confirm-free')->render();
     }
  
