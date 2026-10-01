@@ -439,6 +439,12 @@
 <div class="main-content">
     <div class="page-content">
         <div class="container-fluid sub-page">
+            @if (!empty($renewBlockedMessage ?? null))
+                <div class="alert alert-warning d-flex align-items-start" role="alert" style="gap:10px;border-radius:12px;margin-bottom:18px;">
+                    <i class="ri-information-line" style="font-size:18px;flex:none;margin-top:1px;"></i>
+                    <div>{{ $renewBlockedMessage }}</div>
+                </div>
+            @endif
 
             {{-- ── Page Header ── --}}
             <div class="sub-page-header">
@@ -932,9 +938,9 @@
     </div>
 </div>
 
-@if (!is_null(request()->id))
+@if (!is_null(request()->id) && !empty($gateways ?? null))
     <input type="hidden" id="requestPlanId" value="{{ request()->id }}">
-    <input type="text" id="gatewayResponse" value="{{ $gateways }}">
+    <input type="hidden" id="gatewayResponse" value="{{ $gateways }}">
 @endif
 <input type="hidden" id="requestCurrentPlan" value="{{ request()->current_plan }}">
 

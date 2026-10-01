@@ -148,7 +148,16 @@ class SubscriptionController extends Controller
         }
 
         if (!is_null($request->id)) {
-            $data['gateways'] = $this->order($request);
+            // Renew/switch flow. Run the facility lock here so a blocked owner gets a clean
+            // message — never the raw JSON error object rendered into a hidden input (which
+            // leaked into the payment modal). $gateways only ever holds the gateway HTML.
+            $targetPlan = Package::find($request->id);
+            if ($lockMsg = $this->facilityLockMessage($targetPlan->pricing_model ?? null)) {
+                $data['renewBlockedMessage'] = $lockMsg;
+            } else {
+                $gateways = $this->order($request);
+                $data['gateways'] = is_string($gateways) ? $gateways : null;
+            }
         }
         return view('saas.owner.subscriptions.index', $data);
     }
