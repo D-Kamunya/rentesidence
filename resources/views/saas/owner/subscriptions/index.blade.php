@@ -440,10 +440,21 @@
     <div class="page-content">
         <div class="container-fluid sub-page">
             @if (!empty($renewBlockedMessage ?? null))
-                <div class="alert alert-warning d-flex align-items-start" role="alert" style="gap:10px;border-radius:12px;margin-bottom:18px;">
-                    <i class="ri-information-line" style="font-size:18px;flex:none;margin-top:1px;"></i>
-                    <div>{{ $renewBlockedMessage }}</div>
-                </div>
+                <script>
+                    document.addEventListener('DOMContentLoaded', function () {
+                        var msg = @json($renewBlockedMessage);
+                        if (window.csAlert) {
+                            csAlert({ title: @json(__('Can’t change plan')), message: msg, tone: 'primary' });
+                        } else {
+                            var d = document.createElement('div');
+                            d.className = 'alert alert-warning';
+                            d.style.cssText = 'border-radius:12px;margin-bottom:18px;';
+                            d.textContent = msg;
+                            var host = document.querySelector('.sub-page');
+                            if (host) host.prepend(d);
+                        }
+                    });
+                </script>
             @endif
 
             {{-- ── Page Header ── --}}
