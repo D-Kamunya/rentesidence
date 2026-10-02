@@ -158,6 +158,14 @@ class InvoiceController extends Controller
    
     public function pay($id)
     {
+        // No active landlord relationship → an old balance can't be paid to a closed/released
+        // tenancy (the money would go to a defunct account). The invoice stays on record and in
+        // the credit history, but there's no pay path here.
+        if (auth()->user()->isOwnerlessTenant()) {
+            return redirect()->route('tenant.invoice.index')
+                ->with('error', __('This invoice can no longer be paid — your tenancy has ended.'));
+        }
+
         $data['pageTitle']              = __('Invoices Pay');
         $data['navInvoiceMMActiveClass'] = 'mm-active';
         $data['navInvoiceActiveClass']   = 'active';
@@ -251,6 +259,9 @@ class InvoiceController extends Controller
         $invoice = Invoice::where('payment_token', $token)
             ->where('payment_token_expires_at', '>', now())
             ->firstOrFail();
+
+        // A closed/released tenancy has no active landlord to receive payment — kill the link.
+        abort_if(optional($invoice->tenant)->status == TENANT_STATUS_CLOSE, 410, __('This payment link is no longer active — the tenancy has ended.'));
 
         return view('tenant.invoices.instant-pay', compact('invoice'));
     }
