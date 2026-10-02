@@ -405,8 +405,20 @@
                                                         Print
                                                     </a>
 
-                                                    {{-- Pay Now --}}
-                                                    @if (!$isPaid)
+                                                    {{-- Pay Now only on an unpaid invoice with an ACTIVE landlord relationship.
+                                                         A released (ownerless/ended) tenancy keeps the invoice on record but can't
+                                                         pay it — there's no active landlord to receive it. --}}
+                                                    @if ($isPaid)
+                                                        <a href="{{ route('tenant.invoice.receipt', $invoice->id) }}"
+                                                           class="inv-btn inv-btn--receipt"
+                                                           title="{{ __('View payment receipt') }}">
+                                                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none">
+                                                                <path d="M9 11l3 3L22 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+                                                                <path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+                                                            </svg>
+                                                            Receipt
+                                                        </a>
+                                                    @elseif (empty($ownerless) && empty($tenancyEnded))
                                                         <a href="{{ route('tenant.invoice.pay', $invoice->id) }}"
                                                            class="inv-btn inv-btn--pay {{ $isOverdue ? 'inv-btn--pay-overdue' : '' }}"
                                                            title="{{ __('Pay Now') }}">
@@ -416,16 +428,6 @@
                                                                 <path d="M6 15h4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
                                                             </svg>
                                                             Pay Now
-                                                        </a>
-                                                    @else
-                                                        <a href="{{ route('tenant.invoice.receipt', $invoice->id) }}"
-                                                           class="inv-btn inv-btn--receipt"
-                                                           title="{{ __('View payment receipt') }}">
-                                                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none">
-                                                                <path d="M9 11l3 3L22 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
-                                                                <path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
-                                                            </svg>
-                                                            Receipt
                                                         </a>
                                                     @endif
 
