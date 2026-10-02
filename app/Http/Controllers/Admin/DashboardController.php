@@ -32,6 +32,10 @@ class DashboardController extends Controller
         $data['totalTenant'] = Tenant::where('status', TENANT_STATUS_ACTIVE)->count();
         // Free "Tenant Helper" accounts — self-registered tenants with no landlord (owner_user_id null).
         $data['freeTenant'] = User::where('role', USER_ROLE_TENANT)->whereNull('owner_user_id')->count();
+        // Standalone tenants — ownerless-with-lineage: a CLOSE tenancy that DID have a landlord
+        // (moved-out / released from an owner). They use the same standalone experience as a Helper
+        // but kept owner_user_id, so they're not in the "Helper" (self-registered) count above.
+        $data['standaloneTenant'] = Tenant::where('status', TENANT_STATUS_CLOSE)->whereNotNull('owner_user_id')->count();
         // The rest of the user base, for uptake tracking across every account type.
         $data['totalAffiliate']      = User::where('role', USER_ROLE_AFFILIATE)->count();
         $data['totalMaintainer']     = User::where('role', USER_ROLE_MAINTAINER)->count();
