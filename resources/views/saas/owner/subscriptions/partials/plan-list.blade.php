@@ -576,8 +576,10 @@
             <div class="cpm-simple-body">
                 <p class="cpm-simple-name">{{ $plan->name }}</p>
                 <p class="cpm-simple-desc">
-                    @if($plan->max_property ?? null)
-                        - Up to {{ $plan->max_property }} {{ $plan->max_property == 1 ? 'property' : 'properties' }}
+                    @if(($plan->max_property ?? 0) != 0)
+                        {{-- Gating is unit-only, so every plan carries unlimited properties (max_property = -1).
+                             Render that as "Unlimited properties", never a literal "-1". --}}
+                        - {{ $plan->max_property == -1 ? 'Unlimited properties' : 'Up to ' . $plan->max_property . ' ' . ($plan->max_property == 1 ? 'property' : 'properties') }}
                     @endif
 
                     @if($plan->max_unit ?? null)
