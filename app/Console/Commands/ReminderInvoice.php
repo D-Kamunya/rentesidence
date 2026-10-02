@@ -26,7 +26,12 @@ class ReminderInvoice extends Command
                 throw new Exception('Remainder status inactive');
             }
             $mailService = new MailService;
-            $invoices = Invoice::where('status', INVOICE_STATUS_PENDING)->get();
+            // Only remind ACTIVE tenancies. A closed/released tenancy (e.g. a tenant moved out, or
+            // released from an owner) must never be chased for an old balance — the data stays on
+            // record, but the person isn't dunned.
+            $invoices = Invoice::where('status', INVOICE_STATUS_PENDING)
+                ->whereHas('tenant', fn ($q) => $q->where('status', TENANT_STATUS_ACTIVE))
+                ->get();
 
             $sendEveryday = getOption('remainder_everyday_status') == REMAINDER_EVERYDAY_STATUS_ACTIVE;
             $reminderDays = explode(',', getOption('reminder_days'));
