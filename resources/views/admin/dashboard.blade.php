@@ -551,6 +551,20 @@
             </div>
         </div>
 
+        {{-- Standalone tenants — ownerless-with-lineage (moved-out / released from an owner) --}}
+        <div class="dash-stat">
+            <div class="dash-stat__top">
+                <div class="dash-stat__icon dash-stat__icon--blue">
+                    <svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="4"/><path d="M2 21v-1a6 6 0 0 1 10-4.4"/><path d="M15 12l3 3 5-5"/></svg>
+                </div>
+                <span class="dash-stat__badge">{{ __('Standalone') }}</span>
+            </div>
+            <div>
+                <p class="dash-stat__value">{{ $standaloneTenant }}</p>
+                <p class="dash-stat__label">{{ __('Standalone Tenants') }}</p>
+            </div>
+        </div>
+
         {{-- Affiliates --}}
         <div class="dash-stat">
             <div class="dash-stat__top">
