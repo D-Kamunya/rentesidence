@@ -271,6 +271,14 @@ class PaymentController extends Controller
             ->whereIn('status', [INVOICE_STATUS_PENDING, INVOICE_STATUS_OVER_DUE])
             ->firstOrFail();
 
+        // Refuse payment on a closed/released tenancy — no active landlord to receive it.
+        if (optional($invoice->tenant)->status == TENANT_STATUS_CLOSE) {
+            return response()->json([
+                'success' => false,
+                'error'   => __('This payment link is no longer active — the tenancy has ended.'),
+            ], 410);
+        }
+
         // ── Transaction model: resolve company gateway and return early ────────
         // Mirrors the same pattern as checkout(). Owner may have no M-Pesa
         // gateway of their own — we must not look it up before checking this.
