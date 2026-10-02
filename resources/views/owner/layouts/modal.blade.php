@@ -58,7 +58,7 @@
                     <!-- Choose a plan content Start -->
                     <div class="payment-method-area">
                         <h2 class="text-center payment-method-area-title">{{ __('Select Payment Method') }}</h2>
-                        <div class="payment-method-wrap px-5">
+                        <div class="payment-method-wrap px-3 px-md-5">
                             <form id="pay-subscription-form" class="" action="{{ route('payment.subscription.checkout') }}" method="POST"
                                 enctype="multipart/form-data">
                                 @csrf
@@ -102,7 +102,7 @@
                     <!-- Choose a plan content Start -->
                     <div class="payment-method-area">
                         <h2 class="text-center payment-method-area-title">{{ __('Mpesa Payment Details') }}</h2>
-                        <div class="payment-method-wrap px-5">
+                        <div class="payment-method-wrap px-3 px-md-5">
                             <form id="" class="" action="{{ route('payment.subscription.checkout') }}" method="POST"
                                 enctype="multipart/form-data">
                                 @csrf
