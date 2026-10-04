@@ -14,7 +14,7 @@
  *
  * Bump CACHE_VERSION to invalidate the static cache on the next activate.
  */
-const CACHE_VERSION = 'cs-v1';
+const CACHE_VERSION = 'cs-v2';
 const STATIC_CACHE = `${CACHE_VERSION}-static`;
 const OFFLINE_URL = '/offline.html';
 const PRECACHE = [

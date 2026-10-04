@@ -23,6 +23,7 @@
 <!-- Icons -->
 <link href="{{ asset('assets/css/icons.min.css') }}" rel="stylesheet">
 <link rel="stylesheet" href="{{ asset('assets/css/toastr.min.css') }}">
+@include('common.partials.toast-style')
 
 <style>
     :root {
