@@ -276,8 +276,12 @@ function goToList(stepClassName) {
     if (stepClassName === "lastStep") {
         var listUrl = $("#tenantListRoute").val();
         // Carry the just-created tenant id so the list auto-opens the move-in first-invoice modal.
+        // ONLY for a brand-new tenancy — the edit form carries an `edit_form` hidden field, and an
+        // existing tenant is usually already billed, so firing the move-in modal on edit just
+        // surfaces a confusing "create first invoice" step that no-ops against the current period.
         var tenantId = $("input[name='id']").val();
-        if (tenantId) {
+        var isEdit = $("input[name='edit_form']").length > 0 && $("input[name='edit_form']").val();
+        if (tenantId && !isEdit) {
             listUrl += (listUrl.indexOf("?") === -1 ? "?" : "&") + "first_invoice=" + tenantId;
         }
         window.location.href = listUrl;
