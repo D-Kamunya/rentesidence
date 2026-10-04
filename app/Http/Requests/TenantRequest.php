@@ -27,22 +27,18 @@ class TenantRequest extends FormRequest
             'step' => 'required'
         ];
         if ($this->step == FORM_STEP_ONE) {
-            // Which user to EXCLUDE from the unique email/phone checks. On a fresh add this is null.
-            // But step 1 also runs when EDITING or when the owner goes Back then Next again — and the
-            // wizard only carries the tenant `id` (not user_id), so the exclusion was silently lost
-            // and re-submitting threw "email/contact number has already been taken." Resolve the
-            // user from the tenant id (owner-scoped) so their OWN record never collides with itself.
-            $userId = $this->user_id ?: null;
-            if (!$userId && $this->id) {
-                $userId = \App\Models\Tenant::where('id', $this->id)
-                    ->where('owner_user_id', auth()->id())
-                    ->value('user_id');
-            }
+            // Email/phone identity is resolved in TenantService::step1, NOT by a unique: rule here.
+            // A match may be the owner's OWN returning tenant (closed or soft-deleted) that should be
+            // RECONNECTED rather than blocked (detect-and-link, Phase 1). A hard unique: here would
+            // reject that before the service runs — and because unique: ignores the soft-delete scope,
+            // it also let a deleted tenant permanently burn an email/phone. The service blocks anything
+            // that belongs elsewhere; the DB keeps its unique index as the final guard. See
+            // TenantService::resolveTenantIdentity().
             $rules = [
                 'first_name' => 'required',
                 'last_name' => 'required',
-                'email' => 'required|unique:users,email,' . $userId,
-                'contact_number' => 'required|unique:users,contact_number,' . $userId,
+                'email' => 'required|email',
+                'contact_number' => 'required',
                 'password' => 'nullable', // auto-generated for new tenants; sent + changed on first login
                 'permanent_address' => 'required',
                 'permanent_country_id' => 'required',
