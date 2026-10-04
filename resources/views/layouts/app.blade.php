@@ -60,6 +60,7 @@
     <link rel="shortcut icon" href="{{ getSettingImage('app_fav_icon') }}" type="image/x-icon">
     <link rel="shortcut icon" href="{{ getSettingImage('app_fav_icon') }}">
     <link rel="stylesheet" href="{{ asset('assets/css/toastr.min.css') }}">
+    @include('common.partials.toast-style')
     @stack('style')
     <style>
         :root {
