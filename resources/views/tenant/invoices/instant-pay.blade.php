@@ -36,12 +36,32 @@
 
 @section('content')
 <style>
-    
-    /* Header: Deep Gradient with High Contrast Text */
+    :root {
+        --cs-blue: #185FA5;
+        --cs-blue-hover: #0F4A84;
+        --cs-checkout-bg: #f4f6f9;
+    }
+
+    /* Standalone, viewport-centred checkout. This is a guest page with NO dashboard
+       sidebar, so it must NOT inherit .main-content's 240px sidebar margin (which was
+       shoving the card off-centre to the right on desktop). */
+    .cs-checkout-wrap {
+        min-height: 100vh;
+        display: flex;
+        align-items: flex-start;
+        justify-content: center;
+        background: var(--cs-checkout-bg);
+        padding: 48px 16px;
+    }
+
+    /* Header: CS-blue gradient with the authentic M-Pesa green accent border */
     .custom-card-header {
-        background: linear-gradient(135deg, #1a237e 0%, #0d47a1 100%);
+        background: linear-gradient(135deg, var(--cs-blue) 0%, var(--cs-blue-hover) 100%);
         border-bottom: 4px solid #3ab54a; /* M-Pesa Green Border */
     }
+
+    /* Amount in CS-blue (not Bootstrap's generic primary) */
+    .cs-amount { color: var(--cs-blue) !important; }
 
     /* Authentic M-Pesa Green Button */
     .btn-mpesa {
@@ -65,11 +85,8 @@
     }
 </style>
 
-<div class="main-content">
-
-    <div class="container-fluid py-4">
-        <div class="row justify-content-center">
-            <div class="col-12 col-md-8 col-lg-5">
+<div class="cs-checkout-wrap">
+    <div class="w-100" style="max-width: 460px;">
                 <div class="card shadow-lg border-0 radius-20 overflow-hidden">
                     
                     {{--  Card Header --}}
@@ -143,7 +160,7 @@
 
                             <div class="row mb-2 border-top pt-2 mt-2">
                                 <div class="col-6 text-muted">Amount</div>
-                                <div class="col-6 text-end fw-bold text-primary fs-5">
+                                <div class="col-6 text-end fw-bold cs-amount fs-5">
                                     KES {{ number_format($invoice->amount, 2) }}
                                 </div>
                             </div>
@@ -217,8 +234,6 @@
                 </div>
                 <p class="text-center mt-4 text-muted small">© {{ date('Y') }} Centresidence. All Rights Reserved.</p>
             </div>
-        </div>
-    </div>
 </div>
 @endsection
 
