@@ -258,11 +258,21 @@ class InvoiceRecurringService
         // Fire the same SMS (offline pay link) + bell/email as the recurring cron — but ONLY for a
         // freshly-created invoice. If generateRentInvoiceForPeriod returned an EXISTING one (the
         // cron already billed this period), wasRecentlyCreated is false → we don't re-notify/spam.
-        if ($invoice->wasRecentlyCreated) {
+        $created = $invoice->wasRecentlyCreated;
+        if ($created) {
             $this->notifyInvoiceGenerated($tenant, $invoice);
         }
 
-        return ['ok' => true, 'message' => __('First invoice created.'), 'invoice_id' => $invoice->id];
+        // Tell the truth: when an invoice for this period already existed we returned it unchanged
+        // (no new row, no notification) — so don't claim "created", which looked like a silent
+        // failure to owners checking the billing centre for a new invoice that was never made.
+        return [
+            'ok'         => true,
+            'message'    => $created
+                ? __('First invoice created.')
+                : __('This tenant already has an invoice for this period — no new one was created.'),
+            'invoice_id' => $invoice->id,
+        ];
     }
 
     /**

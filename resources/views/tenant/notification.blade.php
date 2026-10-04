@@ -29,14 +29,24 @@
                             <tbody>
                                 @foreach (getNotification(auth()->id()) as $notification)
                                     @php
+                                        // Notifications historically stored an ABSOLUTE route() URL (APP_URL-based). If
+                                        // APP_URL's scheme/host didn't match the browsing origin, opening it dropped the
+                                        // session cookie and bounced an already-logged-in user to login. Reduce any absolute
+                                        // URL to a same-origin relative path so it always resolves against the current host.
                                         $url = $notification->url ?? route('tenant.notification');
+                                        if ($url && preg_match('#^https?://#i', $url)) {
+                                            $parts = parse_url($url);
+                                            $url = ($parts['path'] ?? '/')
+                                                . (isset($parts['query']) ? '?' . $parts['query'] : '')
+                                                . (isset($parts['fragment']) ? '#' . $parts['fragment'] : '');
+                                        }
                                     @endphp
                                     <tr>
                                         <td>{{ $loop->iteration }}</td>
                                         <td><img src="{{ getFileUrl($notification->folder_name, $notification->file_name) }}"
                                                 class="me-3 rounded-circle avatar-xs" alt="user-pic"></td>
                                         <td>{{ $notification->first_name }} {{ $notification->last_name }}</td>
-                                        <td>{{ $notification->title }}. <a href="{{ $url }}" target="_blank" class="notification-item">{{ __('Click here to view') }}</a></td>
+                                        <td>{{ $notification->title }}. <a href="{{ $url }}" class="notification-item">{{ __('Click here to view') }}</a></td>
                                         <td>{{ $notification->body }}</td>
                                         <td>{{ $notification->created_at->diffForHumans() }}</td>
                                     </tr>

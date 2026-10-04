@@ -29,7 +29,17 @@
                             <tbody>
                                 @foreach (getNotification(auth()->id()) as $notification)
                                     @php
+                                        // Notifications historically stored an ABSOLUTE route() URL (APP_URL-based). If
+                                        // APP_URL's scheme/host didn't match the browsing origin, opening it dropped the
+                                        // session cookie and bounced an already-logged-in user to login. Reduce any absolute
+                                        // URL to a same-origin relative path so it always resolves against the current host.
                                         $url = $notification->url ?? route('maintainer.notification');
+                                        if ($url && preg_match('#^https?://#i', $url)) {
+                                            $parts = parse_url($url);
+                                            $url = ($parts['path'] ?? '/')
+                                                . (isset($parts['query']) ? '?' . $parts['query'] : '')
+                                                . (isset($parts['fragment']) ? '#' . $parts['fragment'] : '');
+                                        }
                                     @endphp
                                     <tr>
                                         <td>{{ $loop->iteration }}</td>
