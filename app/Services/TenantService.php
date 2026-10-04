@@ -331,6 +331,7 @@ class TenantService
         DB::beginTransaction();
         try {
             $id = $request->get('id', '');
+            $isRelink = false; // true when a fresh add reconnects the owner's own returning tenant
             if ($id != '') {
                 $tenant = Tenant::where('owner_user_id', auth()->id())->findOrFail($request->id);
                 $user = User::where('owner_user_id', auth()->id())->findOrFail($tenant->user_id);
@@ -339,7 +340,23 @@ class TenantService
                 if (!getOwnerLimit(RULES_TENANT) > 0) {
                     throw new Exception(__('Your Tenant Limit is Finished. Choose or Renew Package Plan'));
                 }
-                $user = new User();
+                // Detect-and-link (Phase 1): the entered email/phone may already belong to a person.
+                // Reconnect the owner's OWN returning tenant (closed/soft-deleted) rather than blocking;
+                // block anything that belongs elsewhere (cross-owner claim-with-consent is Phase 2).
+                [$relinkUser, $identityError] = $this->resolveTenantIdentity($request->email, $request->contact_number);
+                if ($identityError) {
+                    DB::rollBack();
+                    return $this->error([], $identityError);
+                }
+                if ($relinkUser) {
+                    if ($relinkUser->trashed()) {
+                        $relinkUser->restore();
+                    }
+                    $user = $relinkUser;   // reuse the existing account; a NEW tenancy is created below
+                    $isRelink = true;
+                } else {
+                    $user = new User();
+                }
                 $tenant = new Tenant();
                 $details = new TenantDetails();
             }
@@ -354,7 +371,10 @@ class TenantService
             // The plaintext is captured here (the only moment we hold it) so we can send it, then
             // it's never recoverable again. An owner-supplied reset on edit also forces a change.
             $plainPassword = null;
-            if ($id == '') {
+            if ($id == '' && !$isRelink) {
+                // Brand-new account: system password, sent + forced-changed on first login. A relink
+                // reuses an existing account, so we keep their current login (owner can "resend
+                // login details" if the returning tenant forgot it) — never silently reset it.
                 $plainPassword = Str::random(10);
                 $user->password = Hash::make($plainPassword);
                 $user->must_change_password = 1;
@@ -438,13 +458,73 @@ class TenantService
             }
             $data = $tenant;
             $data->step = 'nextStep1';
-            $message = $request->id ? __(UPDATED_SUCCESSFULLY) : __(CREATED_SUCCESSFULLY);
+            $message = $isRelink
+                ? __(':name already had an account — reconnected it and started a new tenancy; their history carries over.', ['name' => $user->first_name])
+                : ($request->id ? __(UPDATED_SUCCESSFULLY) : __(CREATED_SUCCESSFULLY));
             return $this->success($data, $message);
         } catch (Exception $e) {
             DB::rollBack();
             $message = getErrorMessage($e, $e->getMessage());
             return $this->error([],  $message);
         }
+    }
+
+    /**
+     * Detect-and-link onboarding, Phase 1. A fresh tenant's email/phone may already belong to a
+     * person in the system. Resolve what to do instead of the old hard "already taken" wall (which,
+     * because unique: ignores the soft-delete scope, also let a deleted tenant permanently burn an
+     * identity):
+     *   - RELINK  : the OWNER'S OWN returning tenant (closed or soft-deleted) → reconnect the account
+     *               (restored by the caller) and create a NEW tenancy against it, so their payment /
+     *               screening history carries over ([[global-tenant-id-vision]]).
+     *   - BLOCK   : a non-tenant account, someone else's tenant, an unclaimed self-registered Helper,
+     *               or a person who is ALREADY an active tenant with this owner. Cross-owner / Helper
+     *               linking needs the tenant's consent (OTP/claim) and is Phase 2.
+     *
+     * Returns [User|null $relinkTarget, string|null $errorMessage]. A neutral message is used for
+     * "belongs elsewhere" so this can't become an email/phone enumeration oracle.
+     */
+    private function resolveTenantIdentity(?string $email, ?string $contact): array
+    {
+        $existing = User::withTrashed()
+            ->where(function ($q) use ($email, $contact) {
+                if ($email) {
+                    $q->where('email', $email);
+                }
+                if ($contact) {
+                    $q->orWhere('contact_number', $contact);
+                }
+            })
+            ->first();
+
+        if (! $existing) {
+            return [null, null]; // brand-new person — create fresh
+        }
+
+        $neutral = __('An account already exists with this email or phone number.');
+
+        // Only tenant accounts can ever be reconnected here; owners/admins/affiliates/etc. are off-limits.
+        if ((int) $existing->role !== USER_ROLE_TENANT) {
+            return [null, $neutral];
+        }
+
+        // Is this the CURRENT owner's own person? Lineage is kept on both the user and tenancy rows,
+        // so a released (closed) tenant of mine still resolves to me.
+        $tenancy   = Tenant::withTrashed()->where('user_id', $existing->id)->latest('id')->first();
+        $ownedByMe = ((int) $existing->owner_user_id === (int) auth()->id())
+                   || ($tenancy && (int) $tenancy->owner_user_id === (int) auth()->id());
+
+        if (! $ownedByMe) {
+            // Another owner's tenant, or an unclaimed self-registered Helper → Phase 2 (claim + consent).
+            return [null, $neutral];
+        }
+
+        // Their own person: never create a duplicate ACTIVE tenancy; otherwise reconnect.
+        if (! $existing->trashed() && $tenancy && (int) $tenancy->status === TENANT_STATUS_ACTIVE) {
+            return [null, __(':name is already an active tenant with you.', ['name' => $existing->first_name])];
+        }
+
+        return [$existing, null]; // relink target
     }
 
     // The old cross-owner rating lookup (broken — queried non-existent columns and leaked a
