@@ -1,6 +1,7 @@
 @include('common.layouts._kb-nav-style')
 <div class="vertical-menu">
     <div data-simplebar class="h-100">
+        @include('common.partials.menu-brand')
 
         <!--- Sidemenu -->
         <div id="sidebar-menu">

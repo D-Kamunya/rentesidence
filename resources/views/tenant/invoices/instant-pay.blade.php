@@ -91,6 +91,15 @@
         background-color: #a5d6a7;
         border-color: #a5d6a7;
     }
+
+    /* Printing the paid page as a receipt: drop the form/buttons/overlay and the page chrome,
+       keep the invoice summary + header so what prints reads as a clean receipt. */
+    @media print {
+        body, .cs-checkout-wrap { background:#fff !important; padding:0 !important; }
+        .custom-card-header { -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+        form, .cs-print-hide, .msw-overlay { display:none !important; }
+        .card { box-shadow:none !important; border:1px solid #ddd !important; }
+    }
 </style>
 
 <div class="cs-checkout-wrap">
@@ -231,12 +240,20 @@
                             <input type="hidden" name="invoice_id" value="{{ $invoice->id }}">
 
                             <div class="d-grid mt-4">
-                                <button type="button"
-                                        id="instantPayBtn"
-                                        class="btn btn-mpesa btn-lg shadow-sm fw-bold py-3" 
-                                        {{ $invoice->status == 1 ? 'disabled' : '' }}>
-                                     {{ $invoice->status == 1 ? 'Invoice Already Paid' : 'PAY WITH MPESA' }}
-                                </button>
+                                @if ($invoice->status == 1)
+                                    {{-- Paid: this page IS the receipt. Let the payer print / save it as a PDF —
+                                         works for a guest who paid via the link without ever logging in. --}}
+                                    <button type="button" class="btn btn-mpesa btn-lg shadow-sm fw-bold py-3" onclick="window.print()">
+                                        <i class="fas fa-print me-2"></i> {{ __('Print / Save receipt') }}
+                                    </button>
+                                    <p class="text-center text-muted small mt-3 mb-0 cs-print-hide">{{ __('This page is your receipt — print it or save it as a PDF.') }}</p>
+                                @else
+                                    <button type="button"
+                                            id="instantPayBtn"
+                                            class="btn btn-mpesa btn-lg shadow-sm fw-bold py-3">
+                                        {{ __('PAY WITH MPESA') }}
+                                    </button>
+                                @endif
                             </div>
                             @guest
                                 <div class="text-center mt-4">
