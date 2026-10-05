@@ -1454,6 +1454,12 @@ button:focus {
     left: 0;
     right: 0;
     z-index: 9999999999999999;
+    /* Center the splash on the fixed, guaranteed-viewport layer itself. #preloaderInner's
+       height:100% collapses on some mobile webviews (parent height comes from the top/bottom
+       insets, not an explicit height), which dropped the logo + loader to the top-left on phones. */
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 #ajaxLoader {
