@@ -2034,7 +2034,10 @@ button:focus {
 
     body.sidebar-enable .vertical-menu {
         display: block;
-        top: 0; /* cover the full height from under the address bar, not starting below the header */
+        /* !important beats the inline top:100px custom.js sets for the DESKTOP header offset — scoped
+           to this mobile media query, so desktop + its scroll behaviour are untouched. The overlay
+           drawer then covers the full height from under the address bar. */
+        top: 0 !important;
     }
 
     /* Dim + blur the page behind the mobile slide-in menu so it reads as focused and less
