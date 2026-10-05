@@ -2031,6 +2031,19 @@ button:focus {
     body.sidebar-enable .vertical-menu {
         display: block;
     }
+
+    /* Dim + blur the page behind the mobile slide-in menu so it reads as focused and less
+       "busy". Sits below the menu (z-index 1001) and above the content; a tap on it closes the
+       menu via custom.js's existing click-outside handler (the target is the body, not the menu). */
+    body.sidebar-enable::before {
+        content: "";
+        position: fixed;
+        inset: 0;
+        z-index: 1000;
+        background: rgba(17, 24, 39, 0.4);
+        -webkit-backdrop-filter: blur(3px);
+        backdrop-filter: blur(3px);
+    }
 }
 
 .vertical-collpsed .main-content {
