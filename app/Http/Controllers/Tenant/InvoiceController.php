@@ -11,6 +11,7 @@ use App\Models\PaymentCheck;
 use App\Models\Gateway;
 use App\Models\Invoice;
 use App\Traits\ResponseTrait;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Session;
@@ -155,7 +156,50 @@ class InvoiceController extends Controller
         return view('tenant.invoices.receipt', $data);
     }
 
-   
+    /**
+     * PUBLIC, bearer-token receipt PDF for the instant-pay flow — so a guest who paid via the link
+     * can download a receipt without logging in (the authed receipt above needs a tenant session).
+     * Only works once the invoice is PAID. Mirrors the PDF the success email attaches.
+     */
+    public function instantReceiptPdf($token)
+    {
+        $invoice = Invoice::with(['tenant.user', 'landlord', 'property', 'propertyUnit', 'order'])
+            ->where('payment_token', $token)
+            ->firstOrFail();
+
+        abort_unless((int) $invoice->status === INVOICE_STATUS_PAID, 404);
+
+        $order  = $invoice->order;
+        $paidAt = $order?->updated_at ?? $order?->created_at ?? now();
+        $tenantUser   = optional($invoice->tenant)->user;
+        $tenantName   = $tenantUser ? trim($tenantUser->first_name . ' ' . $tenantUser->last_name) : null;
+        $landlord     = $invoice->landlord;
+        $landlordName = $landlord ? ($landlord->print_name ?: trim($landlord->first_name . ' ' . $landlord->last_name)) : null;
+        $propertyLine = trim(
+            (optional($invoice->property)->name ?? '')
+            . (optional($invoice->propertyUnit)->unit_name ? ' · ' . $invoice->propertyUnit->unit_name : '')
+        );
+        $code = optional($order)->mpesa_transaction_code;
+
+        $r = [
+            'appName'      => getOption('app_name') ?: config('app.name'),
+            'receiptNo'    => $invoice->invoice_no,
+            'issuedAt'     => $paidAt,
+            'billingMonth' => trim($invoice->month . ' ' . optional($paidAt)->format('Y')),
+            'tenantName'   => $tenantName ?: null,
+            'landlordName' => $landlordName ?: null,
+            'propertyLine' => $propertyLine ?: null,
+            'method'       => $code ? 'M-Pesa' : __('Payment'),
+            'code'         => $code,
+            'amount'       => currencyPrice($invoice->amount),
+            'paid'         => true,
+        ];
+
+        $pdf = Pdf::loadView('mail.pdf.rent-receipt', ['r' => $r]);
+        return $pdf->download('Receipt-' . ($invoice->invoice_no ?: $invoice->id) . '.pdf');
+    }
+
+
     public function pay($id)
     {
         // No active landlord relationship → an old balance can't be paid to a closed/released

@@ -241,12 +241,16 @@
 
                             <div class="d-grid mt-4">
                                 @if ($invoice->status == 1)
-                                    {{-- Paid: this page IS the receipt. Let the payer print / save it as a PDF —
-                                         works for a guest who paid via the link without ever logging in. --}}
-                                    <button type="button" class="btn btn-mpesa btn-lg shadow-sm fw-bold py-3" onclick="window.print()">
-                                        <i class="fas fa-print me-2"></i> {{ __('Print / Save receipt') }}
+                                    {{-- Paid: one-tap PDF download (easiest for everyone, works for a guest who paid
+                                         via the link without logging in) + Print as a fallback. --}}
+                                    <a href="{{ route('instant.invoice.receipt', ['token' => $invoice->payment_token]) }}"
+                                       class="btn btn-mpesa btn-lg shadow-sm fw-bold py-3">
+                                        <i class="fas fa-download me-2"></i> {{ __('Download receipt (PDF)') }}
+                                    </a>
+                                    <button type="button" class="btn btn-outline-secondary btn-lg mt-2 cs-print-hide" onclick="window.print()">
+                                        <i class="fas fa-print me-2"></i> {{ __('Print') }}
                                     </button>
-                                    <p class="text-center text-muted small mt-3 mb-0 cs-print-hide">{{ __('This page is your receipt — print it or save it as a PDF.') }}</p>
+                                    <p class="text-center text-muted small mt-3 mb-0 cs-print-hide">{{ __('This page is your receipt.') }}</p>
                                 @else
                                     <button type="button"
                                             id="instantPayBtn"
