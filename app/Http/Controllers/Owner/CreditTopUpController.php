@@ -76,6 +76,11 @@ class CreditTopUpController extends Controller
                 'currency'     => $gatewayCurrency->currency,
                 'type'         => 'credit:' . $bucket,   // callback maps this back to the bucket
                 'phone'        => $phone,
+                // BasePaymentService resolves the gateway by owner_user_id, falling back to this
+                // when the buyer's own owner_user_id is null — which it IS for an owner buying
+                // credits (that's a tenant-only field). Point it at the CENTRAL account's owner so
+                // the platform gateway is found (without this it hit "Undefined array key owner_id").
+                'owner_id'     => $mpesaAccount->owner_user_id,
             ];
 
             $payment     = new Payment($gateway->slug, $object);
