@@ -50,6 +50,9 @@ class EmailGuardTest extends TestCase
         $this->assertNotNull(EmailGuard::shouldSuppress('test@gmail.com'));
         $this->assertNotNull(EmailGuard::shouldSuppress('owner@gmail.com'));
         $this->assertNotNull(EmailGuard::shouldSuppress('noreply@gmail.com'));
+        // System default/placeholder users left over from v1.
+        $this->assertNotNull(EmailGuard::shouldSuppress('tenant@gmail.com'));
+        $this->assertNotNull(EmailGuard::shouldSuppress('maintainer@gmail.com'));
     }
 
     public function test_real_addresses_pass(): void
