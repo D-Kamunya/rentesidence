@@ -273,6 +273,27 @@
         dateFormat: "yy-mm-dd",
         duration: "fast",
     });
+
+    // When an invoice MONTH is chosen, open its due-date picker AT that month (a due date can't
+    // precede the invoice month), so creating an invoice for a far-off month doesn't make the owner
+    // page the datepicker forward by hand. Works in any invoice modal (billing + tenant profile).
+    $(document).on("change", "select[name='month']", function () {
+        var monthName = $(this).val();
+        if (!monthName) return;
+        var $due = $(this).closest("form").find("input[name='due_date'].datepicker");
+        if (!$due.length || typeof $due.datepicker !== "function") return;
+        var monthIndex = new Date(Date.parse(monthName + " 1, 2000")).getMonth();
+        if (isNaN(monthIndex)) return;
+        var now = new Date();
+        var year = now.getFullYear();
+        if (monthIndex < now.getMonth()) year += 1; // a month already past this year → next year
+        var target = new Date(year, monthIndex, 1);
+        try {
+            $due.datepicker("option", { minDate: target, defaultDate: target });
+        } catch (e) { return; }
+        var cur = $due.datepicker("getDate");
+        if (!cur || cur < target) { $due.val(""); } // drop an out-of-range due date so it re-opens at the month
+    });
     /*---------------------------------
     Custom Datepicker JS End
   -----------------------------------*/

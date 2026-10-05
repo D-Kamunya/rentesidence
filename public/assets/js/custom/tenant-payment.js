@@ -16,33 +16,34 @@
     });
 
     $(document).on("click", ".add-field", function () {
+        // Clone must match the ow-styled first row (ow-form-section/ow-label/ow-input), carry the
+        // amount-label (so selecting "Rent" hides Amount on clones too), and the + Add type link.
         $(this).closest('form').find('.multi-fields').append(
-            `<div class="multi-field border-bottom pb-25 mb-25">
-                <input type="hidden" name="invoiceItem[id][]" class="" value="">
-                <!-- Modal Inner Form Box Start -->
-                <div class="modal-inner-form-box bg-off-white theme-border radius-4 p-20 mb-20">
+            `<div class="multi-field mb-3">
+                <div class="ow-form-section mb-2">
+                    <input type="hidden" name="invoiceItem[id][]" value="">
                     <div class="row">
-                        <div class="col-md-6 mb-25">
-                            <label class="label-text-title color-heading font-medium mb-2">Invoice Type</label>
-                            <select class="form-select flex-shrink-0 invoiceItem-invoice_type_id" name="invoiceItem[invoice_type_id][]">
-                                <option value="">--Select Type--</option>
-                               ${typesHtml}
+                        <div class="col-md-6 mb-3">
+                            <div class="d-flex justify-content-between align-items-center mb-1">
+                                <label class="ow-label mb-0">Invoice type</label>
+                                <button type="button" class="ow-link-btn" data-bs-toggle="modal" data-bs-target="#addInvoiceTypeModal">+ Add type</button>
+                            </div>
+                            <select class="form-select ow-input invoiceItem-invoice_type_id" name="invoiceItem[invoice_type_id][]">
+                                <option value="">-- Select type --</option>
+                                ${typesHtml}
                             </select>
                         </div>
-                        <div class="col-md-6 mb-25">
-                            <label class="label-text-title color-heading font-medium mb-2">Amount</label>
-                            <input type="text" name="invoiceItem[amount][]" class="form-control invoiceItem-amount" placeholder="Amount">
+                        <div class="col-md-6 mb-3">
+                            <label class="ow-label amount-label">Amount</label>
+                            <input type="number" name="invoiceItem[amount][]" class="form-control ow-input invoiceItem-amount" placeholder="0.00">
                         </div>
-                    </div>
-                    <div class="row">
                         <div class="col-md-12">
-                            <label class="label-text-title color-heading font-medium mb-2">Description</label>
-                            <textarea class="form-control invoiceItem-description" name="invoiceItem[description][]" placeholder="Description"></textarea>
+                            <label class="ow-label">Description</label>
+                            <textarea class="form-control ow-input invoiceItem-description" name="invoiceItem[description][]" placeholder="Optional notes…" rows="2"></textarea>
                         </div>
                     </div>
                 </div>
-                <!-- Modal Inner Form Box End -->
-                <button type="button" class="remove-field red-color">Remove</button>
+                <button type="button" class="remove-field ow-remove-btn">Remove item</button>
             </div>`
         )
     });

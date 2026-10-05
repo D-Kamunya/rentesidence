@@ -283,20 +283,19 @@ class TenantService
                 return $invoice->amount ?? 0;
             })
             ->addColumn('status', function ($invoice) {
+                // Match the Billing Center badge styling (ow-badge) for consistency; keep the
+                // inline "change status" action for anything not yet paid.
+                $btn = '<button type="button" class="p-1 tbl-action-btn payStatus" data-detailsurl="'
+                     . route('owner.invoice.details', $invoice->id)
+                     . '" title="' . __('Payment Status Change') . '"><span class="iconify" data-icon="ic:outline-payments"></span></button>';
+
                 if ($invoice->status == INVOICE_STATUS_PAID) {
-                    $html =  '<div class="status-btn status-btn-green font-13 radius-4">' . __('Paid') . '</div>';
-                } elseif ($invoice->status == INVOICE_STATUS_PENDING) {
-                    $html = '<div class="d-flex justify-content-start">';
-                    $html .=  '<div class="status-btn status-btn-orange font-13 radius-4">' . __('Unpaid') . '</div>';
-                    $html .= '<button type="button" class="p-1 tbl-action-btn payStatus" data-detailsurl="' . route('owner.invoice.details', $invoice->id) . '" title="Payment Status Change"><span class="iconify" data-icon="ic:outline-payments"></span></button>';
-                    $html .= '</div>';
-                } else {
-                    $html = '<div class="d-flex justify-content-start">';
-                    $html =  '<div class="status-btn status-btn-red font-13 radius-4">' . __('Due') . '</div>';
-                    $html .= '<button type="button" class="p-1 tbl-action-btn payStatus" data-detailsurl="' . route('owner.invoice.details', $invoice->id) . '" title="Payment Status Change"><span class="iconify" data-icon="ic:outline-payments"></span></button>';
-                    $html .= '</div>';
+                    return '<span class="ow-badge ow-badge--paid">' . __('Paid') . '</span>';
                 }
-                return $html;
+                if ($invoice->status == INVOICE_STATUS_PENDING) {
+                    return '<div class="d-flex justify-content-start align-items-center gap-1"><span class="ow-badge ow-badge--pending">' . __('Unpaid') . '</span>' . $btn . '</div>';
+                }
+                return '<div class="d-flex justify-content-start align-items-center gap-1"><span class="ow-badge ow-badge--overdue">' . __('Overdue') . '</span>' . $btn . '</div>';
             })
             ->rawColumns(['amount', 'created_at', 'status', 'invoice'])
             ->make(true);
