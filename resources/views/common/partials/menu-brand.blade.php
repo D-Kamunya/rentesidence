@@ -5,6 +5,8 @@
     Shared by every account type's sidebar.
 --}}
 <div class="ow-menu-brand d-lg-none">
-    <img src="{{ getSettingImage('app_logo', asset('assets/images/cs-icon.png')) }}"
+    {{-- The square CS icon (favicon), not the wide wordmark — it fits the narrow drawer without
+         bleeding off the edge. --}}
+    <img src="{{ getSettingImage('app_fav_icon', asset('assets/images/cs-icon.png')) }}"
          alt="{{ getOption('app_name') ?: 'Centresidence' }}">
 </div>
