@@ -235,6 +235,12 @@
                 <p class="text-center mt-4 text-muted small">© {{ date('Y') }} Centresidence. All Rights Reserved.</p>
             </div>
 </div>
+
+{{-- The shared "check your phone" STK overlay (defines window.mpesaWait). This page extends the
+     minimal layouts.app, which doesn't pull in common.layouts.script where this is included
+     globally — so without this the preloader silently no-op'd (showMpesaPreloader guards on
+     window.mpesaWait), leaving the tenant with no progress feedback after tapping Pay. --}}
+@include('common.partials.mpesa-stk-waiting')
 @endsection
 
 @push('script')
