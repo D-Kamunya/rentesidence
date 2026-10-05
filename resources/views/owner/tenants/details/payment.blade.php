@@ -1,6 +1,8 @@
 @extends('owner.layouts.app')
 
 @section('content')
+{{-- ow-modal styling for the New Invoice modal (matches the Billing Center). --}}
+@include('common.partials.ow-modal-style')
 <div class="main-content">
     <div class="page-content">
         <div class="container-fluid">
@@ -305,83 +307,87 @@
     </div>
 </div>
 
-{{-- New Invoice modal (unchanged) --}}
+{{-- New Invoice modal — styled to match the Billing Center modal (ow-modal). Tenant-scoped:
+     property + unit are fixed to THIS tenant, so they stay hidden inputs (not dropdowns); all
+     the functional hooks (multi-field / invoiceItem-* / add-field / remove-field) are kept. --}}
 <div class="modal fade" id="createNewInvoiceModal" tabindex="-1" aria-labelledby="createNewInvoiceModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content">
-            <div class="modal-header">
+        <div class="modal-content ow-modal">
+            <div class="modal-header ow-modal__header">
                 <h4 class="modal-title" id="createNewInvoiceModalLabel">{{ __('New Invoice') }}</h4>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close">
-                    <span class="iconify" data-icon="akar-icons:cross"></span>
+                <button type="button" class="ow-modal__close" data-bs-dismiss="modal" aria-label="Close">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M18 6L6 18M6 6l12 12" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
                 </button>
             </div>
             <form class="ajax" action="{{ route('owner.invoice.store') }}" method="post" data-handler="getShowMessage">
                 @csrf
-                <div class="modal-body">
-                    <div class="modal-inner-form-box bg-off-white theme-border radius-4 p-20 mb-20 pb-0">
+                <div class="modal-body ow-modal__body">
+                    <div class="ow-form-section mb-4">
                         <div class="row">
-                            <div class="col-md-12 mb-25">
-                                <label class="label-text-title color-heading font-medium mb-2">{{ __('Invoice Prefix') }}</label>
-                                <input type="text" name="name" value="INV" class="form-control">
+                            <div class="col-md-12 mb-3">
+                                <label class="ow-label">{{ __('Invoice prefix') }}</label>
+                                <input type="text" name="name" value="INV" class="form-control ow-input">
                             </div>
+                            {{-- This invoice is for THIS tenant's unit — property + unit are fixed. --}}
                             <input type="hidden" name="property_id" value="{{ $tenant->property_id }}">
                             <input type="hidden" name="property_unit_id" value="{{ $tenant->unit_id }}">
-                            <div class="col-md-6 mb-25">
-                                <label class="label-text-title color-heading font-medium mb-2">{{ __('Month') }}</label>
-                                <select class="form-select flex-shrink-0" name="month">
-                                    <option value="">--{{ __('Select Month') }}--</option>
+                            <div class="col-md-6 mb-3">
+                                <label class="ow-label">{{ __('Month') }}</label>
+                                <select class="form-select ow-input" name="month">
+                                    <option value="">-- {{ __('Select month') }} --</option>
                                     @foreach (month() as $month)
                                         <option value="{{ $month }}">{{ $month }}</option>
                                     @endforeach
                                 </select>
                             </div>
-                            <div class="col-md-6 mb-25">
-                                <label class="label-text-title color-heading font-medium mb-2">{{ __('Due Date') }}</label>
+                            <div class="col-md-6 mb-3">
+                                <label class="ow-label">{{ __('Due date') }}</label>
                                 <div class="custom-datepicker">
                                     <div class="custom-datepicker-inner position-relative">
-                                        <input type="text" name="due_date" class="datepicker form-control" autocomplete="off" placeholder="{{ __('Due Date') }}">
+                                        <input type="text" name="due_date" class="datepicker form-control ow-input" autocomplete="off" placeholder="{{ __('Select date') }}">
                                         <i class="ri-calendar-2-line"></i>
                                     </div>
                                 </div>
                             </div>
                         </div>
                     </div>
+
                     <div class="multi-field-wrapper">
                         <div class="multi-fields">
-                            <div class="multi-field border-bottom pb-25 mb-25">
-                                <div class="modal-inner-form-box bg-off-white theme-border radius-4 p-20 mb-20">
-                                    <input type="hidden" name="invoiceItem[id][]" class="" value="">
+                            <div class="multi-field mb-3">
+                                <div class="ow-form-section mb-2">
+                                    <input type="hidden" name="invoiceItem[id][]" value="">
                                     <div class="row">
-                                        <div class="col-md-6 mb-25">
-                                            <label class="label-text-title color-heading font-medium mb-2">{{ __('Invoice Type') }}</label>
-                                            <select class="form-select flex-shrink-0 invoiceItem-invoice_type_id" name="invoiceItem[invoice_type_id][]">
-                                                <option value="">--{{ __('Select Type') }}--</option>
+                                        <div class="col-md-6 mb-3">
+                                            <label class="ow-label">{{ __('Invoice type') }}</label>
+                                            <select class="form-select ow-input invoiceItem-invoice_type_id" name="invoiceItem[invoice_type_id][]">
+                                                <option value="">-- {{ __('Select type') }} --</option>
                                                 @foreach ($invoiceTypes as $invoiceType)
                                                     <option value="{{ $invoiceType->id }}">{{ $invoiceType->name }}</option>
                                                 @endforeach
                                             </select>
                                         </div>
-                                        <div class="col-md-6 mb-25">
-                                            <label class="label-text-title color-heading font-medium mb-2">{{ __('Amount') }}</label>
-                                            <input type="number" name="invoiceItem[amount][]" class="form-control invoiceItem-amount" placeholder="{{ __('Amount') }}">
+                                        <div class="col-md-6 mb-3">
+                                            <label class="ow-label amount-label">{{ __('Amount') }}</label>
+                                            <input type="number" name="invoiceItem[amount][]" class="form-control ow-input invoiceItem-amount" placeholder="{{ __('0.00') }}">
                                         </div>
-                                    </div>
-                                    <div class="row">
                                         <div class="col-md-12">
-                                            <label class="label-text-title color-heading font-medium mb-2">{{ __('Description') }}</label>
-                                            <textarea class="form-control invoiceItem-description" name="invoiceItem[description][]" placeholder="{{ __('Description') }}"></textarea>
+                                            <label class="ow-label">{{ __('Description') }}</label>
+                                            <textarea class="form-control ow-input invoiceItem-description" name="invoiceItem[description][]" placeholder="{{ __('Optional notes…') }}" rows="2"></textarea>
                                         </div>
                                     </div>
                                 </div>
-                                <button type="button" class="remove-field red-color">{{ __('Remove') }}</button>
+                                <button type="button" class="remove-field ow-remove-btn">{{ __('Remove item') }}</button>
                             </div>
                         </div>
-                        <button type="button" class="add-field theme-btn-purple pull-right">+ {{ __('Add Items') }}</button>
+                        <button type="button" class="add-field ow-btn ow-btn--purple mt-2">
+                            + {{ __('Add item') }}
+                        </button>
                     </div>
                 </div>
-                <div class="modal-footer justify-content-start">
-                    <button type="button" class="theme-btn-back me-3" data-bs-dismiss="modal" title="{{ __('Back') }}">{{ __('Back') }}</button>
-                    <button type="submit" class="theme-btn me-3" title="{{ __('Create Invoice') }}">{{ __('Create Invoice') }}</button>
+                <div class="modal-footer ow-modal__footer">
+                    <button type="button" class="ow-btn ow-btn--ghost" data-bs-dismiss="modal">{{ __('Cancel') }}</button>
+                    <button type="submit" class="ow-btn ow-btn--primary">{{ __('Create invoice') }}</button>
                 </div>
             </form>
         </div>
