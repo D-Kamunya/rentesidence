@@ -11,6 +11,14 @@
 
     $status = $statusMap[$invoice->status] ?? ['label' => 'Unknown', 'class' => 'secondary'];
 
+    // What the invoice is FOR — this page isn't rent-only (repairs, utilities, etc. are paid here
+    // too), so show the actual invoice type(s) instead of assuming "Rent".
+    $typeLabel = $invoice->invoiceItems
+        ->map(fn ($i) => optional($i->invoiceType)->name)
+        ->filter()
+        ->unique()
+        ->implode(', ');
+
     $mpesaNumber = old('mpesa_number');
 
     if (!$mpesaNumber) {
@@ -110,8 +118,15 @@
                                 <div class="col-6 text-end fw-bold">#{{ $invoice->invoice_no }}</div>
                             </div>
 
+                            @if ($typeLabel)
                             <div class="row mb-2">
-                                <div class="col-6 text-muted">Rent Month</div>
+                                <div class="col-6 text-muted">Type</div>
+                                <div class="col-6 text-end fw-semibold">{{ $typeLabel }}</div>
+                            </div>
+                            @endif
+
+                            <div class="row mb-2">
+                                <div class="col-6 text-muted">Billing Month</div>
                                 <div class="col-6 text-end fw-semibold">{{ $invoice->month }}</div>
                             </div>
 
