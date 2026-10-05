@@ -729,4 +729,22 @@
 @push('script')
     @include('common.layouts.datatable-script')
     <script src="{{ asset('assets/js/custom/tenant-payment.js') }}"></script>
+    <script>
+        // Selecting the "Rent" invoice type hides the Amount field — the system already knows this
+        // unit's rent (the modal is tenant/unit-scoped), so the owner shouldn't retype it. Mirrors
+        // the Billing Center modal (invoice.js), which isn't loaded on this page.
+        $(document).on("change", ".invoiceItem-invoice_type_id", function () {
+            var text        = $(this).find("option:selected").text().trim();
+            var amountLabel = $(this).closest(".multi-field").find(".amount-label");
+            var amountField = $(this).closest(".multi-field").find(".invoiceItem-amount");
+            if (text === "Rent") {
+                amountLabel.hide();
+                amountField.hide().val(1);
+            } else {
+                amountLabel.show();
+                amountField.show();
+                if (amountField.val() == 1) amountField.val("");
+            }
+        });
+    </script>
 @endpush

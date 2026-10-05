@@ -20,10 +20,15 @@
     // --- Service worker registration (secure context only: https or localhost) ---
     if ('serviceWorker' in navigator) {
         window.addEventListener('load', function () {
-            navigator.serviceWorker.register('{{ asset('service-worker.js') }}').catch(function (e) {
-                // Non-fatal — the app works without the SW.
-                console.warn('SW registration failed:', e);
-            });
+            // updateViaCache:'none' makes the browser fetch service-worker.js past the HTTP cache on
+            // every update check, so a CACHE_VERSION bump is picked up on the next load instead of
+            // being masked for up to 24h by a cached SW script (why cs-v2 didn't take even on reload).
+            navigator.serviceWorker.register('{{ asset('service-worker.js') }}', { updateViaCache: 'none' })
+                .then(function (reg) { reg.update(); })
+                .catch(function (e) {
+                    // Non-fatal — the app works without the SW.
+                    console.warn('SW registration failed:', e);
+                });
         });
     }
 

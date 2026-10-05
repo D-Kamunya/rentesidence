@@ -36,7 +36,10 @@ class AlertFailedJobs extends Command
         );
 
         User::where('role', USER_ROLE_ADMIN)->pluck('id')->each(function ($adminId) use ($message) {
-            addNotification(__('Background jobs need attention'), $message, null, null, $adminId, $adminId);
+            // Link to System Health (incidents), where each failure is recorded as a JOB_FAILED
+            // incident (AppServiceProvider's Queue::failing hook) — so the admin lands on the actual
+            // failed jobs instead of the notification page linking back to itself.
+            addNotification(__('Background jobs need attention'), $message, route('admin.incidents.index'), null, $adminId, $adminId);
         });
 
         Log::channel('sms-mail')->warning("Failed-jobs alert: {$count} job(s) in failed_jobs.");
