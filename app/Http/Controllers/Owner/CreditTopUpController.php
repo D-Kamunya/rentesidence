@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Owner;
 
+use App\Exceptions\PaymentConfigException;
 use App\Http\Controllers\Controller;
 use App\Models\Gateway;
 use App\Models\GatewayCurrency;
@@ -42,19 +43,23 @@ class CreditTopUpController extends Controller
         DB::beginTransaction();
         try {
             $accountId = getOption('centresidence_mpesa_account_id');
-            if (! $accountId) throw new Exception('Payments are not configured. Please contact support.');
+            if (! $accountId) throw new PaymentConfigException(__('Payments are not set up yet. Please contact support.'));
 
-            $mpesaAccount    = MpesaAccount::findOrFail($accountId);
-            $gateway         = Gateway::findOrFail($mpesaAccount->gateway_id);
+            // find (not findOrFail) so a stale/missing account id gives the owner a clear
+            // "not set up" message instead of a leaky ModelNotFound swallowed as "Payment failed".
+            $mpesaAccount = MpesaAccount::find($accountId);
+            if (! $mpesaAccount) throw new PaymentConfigException(__('Payments are not set up yet. Please contact support.'));
+            $gateway = Gateway::find($mpesaAccount->gateway_id);
+            if (! $gateway) throw new PaymentConfigException(__('Payments are not set up yet. Please contact support.'));
             $gatewayCurrency = GatewayCurrency::where('gateway_id', $gateway->id)->first();
-            if (! $gatewayCurrency) throw new Exception('Payment currency not configured.');
+            if (! $gatewayCurrency) throw new PaymentConfigException(__('Payment currency is not set up yet. Please contact support.'));
 
             $quantity    = (int) $request->quantity;
             $ownerUserId = auth()->id();
             // SERVER-computed price — never trust a client-supplied amount. SMS is priced per the
             // owner's plan (paid domains cheaper); other buckets use the global price.
             $unitPrice = CreditService::pricePerUnit($bucket, $ownerUserId);
-            if ($unitPrice <= 0) throw new Exception($cfg['label'] . ' pricing is not configured.');
+            if ($unitPrice <= 0) throw new PaymentConfigException(__(':label pricing is not set up yet. Please contact support.', ['label' => $cfg['label']]));
             $amountPaid  = round($quantity * $unitPrice, 2);
 
             $units   = Str::plural($cfg['unit'], $quantity);
@@ -111,6 +116,13 @@ class CreditTopUpController extends Controller
 
             $pending->update(['status' => 'failed']);
             return response()->json(['success' => false, 'error' => $responseData['message']]);
+        } catch (PaymentConfigException $e) {
+            // Platform-config gap (central M-Pesa account / currency / pricing not set up). The
+            // message is owner-safe, so surface it instead of the generic "Payment failed" — an
+            // owner seeing "not set up yet, contact support" knows it isn't their fault or card.
+            DB::rollBack();
+            Log::warning(ucfirst($bucket) . ' credits checkout — not configured: ' . $e->getMessage());
+            return response()->json(['success' => false, 'error' => $e->getMessage()]);
         } catch (Exception $e) {
             DB::rollBack();
             Log::error(ucfirst($bucket) . ' credits checkout failed: ' . $e->getMessage());
