@@ -167,5 +167,35 @@ class AppServiceProvider extends ServiceProvider
                 //
             }
         });
+
+        // Deliverability safety net: on EVERY outbound email, suppress sends to dead/test/
+        // already-flagged addresses (EmailGuard) so automated mail can't erode sender reputation —
+        // and surface each suppression on System Health so a human can review (and un-suppress a
+        // false positive). FAIL-OPEN: a guard error must never block legitimate mail.
+        \Illuminate\Support\Facades\Event::listen(\Illuminate\Mail\Events\MessageSending::class, function ($event) {
+            try {
+                foreach ((array) $event->message->getTo() as $addr) {
+                    $to     = method_exists($addr, 'getAddress') ? $addr->getAddress() : (string) $addr;
+                    $reason = \App\Services\Mail\EmailGuard::shouldSuppress($to);
+                    if ($reason !== null) {
+                        app(\App\Services\SystemIncidentService::class)->report(
+                            \App\Models\SystemIncident::TYPE_COMMS_FAILURE,
+                            \App\Models\SystemIncident::SEVERITY_WARNING,
+                            'Email suppressed to protect deliverability',
+                            'Skipped an email to ' . $to . ' (' . $reason . '). If this address is genuine, remove it from the suppression list.',
+                            ['email' => $to, 'reason' => $reason],
+                            'comms_suppressed',
+                            1,
+                            25 // a burst of suppressions escalates to CRITICAL — something is mass-mailing bad addresses
+                        );
+                        return false; // cancel this send
+                    }
+                }
+            } catch (\Throwable $e) {
+                // FAIL-OPEN — never block mail because the guard itself errored.
+            }
+
+            return null;
+        });
     }
 }
