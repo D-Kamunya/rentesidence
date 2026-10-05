@@ -359,7 +359,10 @@
                                     <input type="hidden" name="invoiceItem[id][]" value="">
                                     <div class="row">
                                         <div class="col-md-6 mb-3">
-                                            <label class="ow-label">{{ __('Invoice type') }}</label>
+                                            <div class="d-flex justify-content-between align-items-center mb-1">
+                                                <label class="ow-label mb-0">{{ __('Invoice type') }}</label>
+                                                <button type="button" class="ow-link-btn" data-bs-toggle="modal" data-bs-target="#addInvoiceTypeModal">+ {{ __('Add type') }}</button>
+                                            </div>
                                             <select class="form-select ow-input invoiceItem-invoice_type_id" name="invoiceItem[invoice_type_id][]">
                                                 <option value="">-- {{ __('Select type') }} --</option>
                                                 @foreach ($invoiceTypes as $invoiceType)
@@ -388,6 +391,43 @@
                 <div class="modal-footer ow-modal__footer">
                     <button type="button" class="ow-btn ow-btn--ghost" data-bs-dismiss="modal">{{ __('Cancel') }}</button>
                     <button type="submit" class="ow-btn ow-btn--primary">{{ __('Create invoice') }}</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+{{-- Add invoice type — same modal as the Billing Center, so "+ Add type" works here too. --}}
+<div class="modal fade" id="addInvoiceTypeModal" tabindex="-1" aria-labelledby="addInvoiceTypeModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content ow-modal">
+            <div class="modal-header ow-modal__header">
+                <h4 class="modal-title">{{ __('Add invoice type') }}</h4>
+                <button type="button" class="ow-modal__close" data-bs-dismiss="modal" aria-label="Close">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M18 6L6 18M6 6l12 12" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+                </button>
+            </div>
+            <form class="ajax" action="{{ route('owner.setting.invoice-type.store') }}" method="post" data-handler="invoiceTypeStoreDataRes">
+                <div class="modal-body ow-modal__body">
+                    <div class="ow-form-section">
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="ow-label">{{ __('Name') }}</label>
+                                <input type="text" name="name" class="form-control ow-input" placeholder="{{ __('e.g. Rent, Water…') }}">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="ow-label">
+                                    {{ __('Tax') }}
+                                    <span class="ow-label-hint">({{ taxSetting(auth()->id())->type == TAX_TYPE_PERCENTAGE ? '%' : 'Fixed' }})</span>
+                                </label>
+                                <input type="text" name="tax" class="form-control ow-input" placeholder="0">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer ow-modal__footer">
+                    <button type="button" class="ow-btn ow-btn--ghost" data-bs-dismiss="modal">{{ __('Cancel') }}</button>
+                    <button type="submit" class="ow-btn ow-btn--primary">{{ __('Add type') }}</button>
                 </div>
             </form>
         </div>
@@ -729,6 +769,8 @@
 @push('script')
     @include('common.layouts.datatable-script')
     <script src="{{ asset('assets/js/custom/tenant-payment.js') }}"></script>
+    {{-- Handles the "+ Add type" modal (invoiceTypeStoreDataRes + refreshes the type dropdowns). --}}
+    <script src="{{ asset('assets/js/custom/invoice-type2.js') }}"></script>
     <script>
         // Selecting the "Rent" invoice type hides the Amount field — the system already knows this
         // unit's rent (the modal is tenant/unit-scoped), so the owner shouldn't retype it. Mirrors

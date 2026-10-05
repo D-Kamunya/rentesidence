@@ -76,4 +76,15 @@
         transition:color .13s;
     }
     .ow-remove-btn:hover { color:#712B13; }
+
+    /* Status badges — shared with the Billing Center so paid/unpaid/overdue read the same everywhere. */
+    .ow-badge {
+        display:inline-flex; align-items:center; gap:4px;
+        font-size:11px; font-weight:500; padding:3px 9px;
+        border-radius:99px; white-space:nowrap;
+    }
+    .ow-badge--paid    { background:#E1F5EE; color:#0F6E56; }
+    .ow-badge--pending { background:#FAEEDA; color:#854F0B; border:0.5px solid #F5D9A8; }
+    .ow-badge--overdue { background:#FAECE7; color:#993C1D; border:0.5px solid #F5C4B3; }
+    .ow-badge--bank    { background:#EEEDFE; color:#534AB7; border:0.5px solid #CECBF6; }
 </style>
