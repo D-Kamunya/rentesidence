@@ -393,9 +393,14 @@ class PaymentController extends Controller
         $payment_token     = $request->get('payment_token', null);
         $isRentTransaction = filter_var($request->get('is_rent_transaction', false), FILTER_VALIDATE_BOOLEAN);
 
-        $redirect = auth()->check()
-            ? route('tenant.invoice.index')
-            : route('instant.invoice.pay', ['token' => $payment_token]);
+        // The instant-pay link is a BEARER link, not tied to a logged-in session — a guest, the
+        // tenant, or an owner/admin testing may all tap it. So whenever we have a payment_token,
+        // land on the PUBLIC instant-pay page (which renders the paid receipt). Redirecting an
+        // authenticated NON-tenant (or a guarded tenant) to tenant.invoice.index 403'd on the
+        // ['auth','tenant'] middleware, so the payer couldn't see the receipt they just paid for.
+        $redirect = $payment_token
+            ? route('instant.invoice.pay', ['token' => $payment_token])
+            : (auth()->check() ? route('tenant.invoice.index') : route('login'));
 
         // ── Guard: missing order ID ────────────────────────────────────────────
         // Prevents findOrFail('') throwing an unhandled ModelNotFoundException
