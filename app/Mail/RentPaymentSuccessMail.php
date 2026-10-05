@@ -24,12 +24,20 @@ class RentPaymentSuccessMail extends Mailable
     public function build()
     {
         $invoiceId = $this->content['invoiceId'] ?? null;
+        $invoice   = $invoiceId
+            ? Invoice::with(['tenant.user', 'landlord', 'property', 'propertyUnit', 'order'])->find($invoiceId)
+            : null;
 
-        // Deep-link the email straight to the styled receipt page (falls back to
-        // the login/invoices list when we don't have the invoice id).
-        $this->content['receiptUrl'] = $invoiceId
-            ? route('tenant.invoice.receipt', $invoiceId)
-            : route('login');
+        // Link to the PUBLIC instant-pay page (which doubles as the receipt once paid), so the
+        // tenant can open it whether or not they're logged in. The old link went to the auth-gated
+        // receipt page, which 403'd anyone who paid via the bearer link without a session.
+        if ($invoice && $invoice->payment_token) {
+            $this->content['receiptUrl'] = route('instant.invoice.pay', ['token' => $invoice->payment_token]);
+        } elseif ($invoiceId) {
+            $this->content['receiptUrl'] = route('tenant.invoice.receipt', $invoiceId);
+        } else {
+            $this->content['receiptUrl'] = route('login');
+        }
 
         $mail = $this->subject($this->subject)
             ->view('mail.rent-payment-success')
@@ -37,16 +45,11 @@ class RentPaymentSuccessMail extends Mailable
 
         // Attach a downloadable PDF receipt so the tenant has it straight from the
         // email — best-effort: a PDF failure must never block the confirmation email.
-        if ($invoiceId) {
+        if ($invoice) {
             try {
-                $invoice = Invoice::with(['tenant.user', 'landlord', 'property', 'propertyUnit', 'order'])
-                    ->find($invoiceId);
-
-                if ($invoice) {
-                    $pdf = Pdf::loadView('mail.pdf.rent-receipt', ['r' => $this->receiptData($invoice)]);
-                    $fileName = 'Receipt-' . ($invoice->invoice_no ?: $invoiceId) . '.pdf';
-                    $mail->attachData($pdf->output(), $fileName, ['mime' => 'application/pdf']);
-                }
+                $pdf = Pdf::loadView('mail.pdf.rent-receipt', ['r' => $this->receiptData($invoice)]);
+                $fileName = 'Receipt-' . ($invoice->invoice_no ?: $invoiceId) . '.pdf';
+                $mail->attachData($pdf->output(), $fileName, ['mime' => 'application/pdf']);
             } catch (\Throwable $e) {
                 Log::warning('Rent receipt PDF attach failed: ' . $e->getMessage());
             }
