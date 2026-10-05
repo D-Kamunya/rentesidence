@@ -1446,6 +1446,10 @@ button:focus {
 /*-------------------------------------------
     4. Preloader Area Start
 -------------------------------------------*/
+/* Mobile-only brand header at the top of the slide-in menu (fills the gap above Dashboard on phones). */
+.ow-menu-brand { display:flex; align-items:center; justify-content:center; padding:20px 16px 14px; }
+.ow-menu-brand img { max-height:42px; max-width:78%; width:auto; height:auto; }
+
 #preloader {
     background-color: #fff;
     position: fixed;
