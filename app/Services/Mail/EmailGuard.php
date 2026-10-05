@@ -30,7 +30,8 @@ class EmailGuard
     /** Obvious placeholder local-parts (exact match) that almost always mean test data. */
     private const TEST_LOCALS = [
         'test', 'test1', 'test123', 'tests', 'testing', 'testuser',
-        'owner', 'admin', 'example', 'sample', 'demo', 'placeholder',
+        'owner', 'admin', 'tenant', 'maintainer', 'affiliate',  // system default/placeholder users
+        'example', 'sample', 'demo', 'placeholder',
         'asdf', 'asdfgh', 'qwerty', 'fake', 'fakeemail', 'dummy',
         'noreply', 'no-reply', 'donotreply', 'none', 'null', 'nobody',
     ];
