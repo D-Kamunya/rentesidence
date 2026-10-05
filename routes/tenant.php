@@ -121,6 +121,10 @@ Route::group(['prefix' => 'tenant', 'as' => 'tenant.', 'middleware' => ['auth', 
 Route::get('/pay/invoice/{token}', [InvoiceController::class, 'instantRentPayShow'])
     ->name('instant.invoice.pay');
 
+// Public receipt PDF download for the instant-pay flow (paid invoices only).
+Route::get('/pay/invoice/{token}/receipt', [InvoiceController::class, 'instantReceiptPdf'])
+    ->name('instant.invoice.receipt');
+
 // Throttled: unauthenticated STK-trigger endpoint — cap attempts per IP so a leaked
 // pay link can't be used to spam STK prompts at an arbitrary phone number.
 Route::post('/instant-invoice-pay/{token}', [PaymentController::class, 'instantCheckout'])

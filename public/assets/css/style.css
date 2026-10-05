@@ -1447,8 +1447,8 @@ button:focus {
     4. Preloader Area Start
 -------------------------------------------*/
 /* Mobile-only brand header at the top of the slide-in menu (fills the gap above Dashboard on phones). */
-.ow-menu-brand { display:flex; align-items:center; justify-content:center; padding:20px 16px 14px; }
-.ow-menu-brand img { max-height:42px; max-width:78%; width:auto; height:auto; }
+.ow-menu-brand { display:flex; align-items:center; justify-content:center; padding:26px 16px 18px; }
+.ow-menu-brand img { max-height:56px; max-width:72px; width:auto; height:auto; }
 
 #preloader {
     background-color: #fff;
@@ -2034,6 +2034,7 @@ button:focus {
 
     body.sidebar-enable .vertical-menu {
         display: block;
+        top: 0; /* cover the full height from under the address bar, not starting below the header */
     }
 
     /* Dim + blur the page behind the mobile slide-in menu so it reads as focused and less
