@@ -49,9 +49,15 @@ class TenantRequest extends FormRequest
                 'permanent_state_id' => 'nullable',
                 'permanent_city_id' => 'nullable',
                 'permanent_zip_code' => 'nullable',
-                'family_member' => 'required|numeric',
-                'age' => 'numeric',
-                'job' => 'required',
+                // Job / age / household are OPTIONAL at owner-onboarding. They're PII best known by
+                // the person themselves — an owner forced to fill them just fabricates data, which
+                // POLLUTES the Global Tenant ID (whose value is objective, person-owned data). They
+                // stay on the form (captured when the owner genuinely knows them) and are authored
+                // for real by the tenant on their own profile (ProfileController / my-profile).
+                // Self-register already blanks these, and the profile view null-guards with '—'.
+                'family_member' => 'nullable|numeric',
+                'age' => 'nullable|numeric',
+                'job' => 'nullable',
             ];
         }
         if ($this->step == FORM_STEP_TWO) {

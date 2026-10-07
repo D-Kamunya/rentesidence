@@ -710,19 +710,19 @@
                                         </div>
                                         <div class="col-md-6">
                                             <div class="ten-field">
-                                                <label class="ten-label">{{ __('Job') }} <span class="req">*</span></label>
+                                                <label class="ten-label">{{ __('Job') }}</label>
                                                 <input type="text" name="job" class="ten-input form-control" placeholder="{{ __('Job') }}">
                                             </div>
                                         </div>
                                         <div class="col-md-6">
                                             <div class="ten-field">
-                                                <label class="ten-label">{{ __('Age') }} <span class="req">*</span></label>
+                                                <label class="ten-label">{{ __('Age') }}</label>
                                                 <input type="number" name="age" class="ten-input form-control" placeholder="{{ __('Age') }}">
                                             </div>
                                         </div>
                                         <div class="col-md-6">
                                             <div class="ten-field">
-                                                <label class="ten-label">{{ __('Family Members') }} <span class="req">*</span></label>
+                                                <label class="ten-label">{{ __('Family Members') }}</label>
                                                 <input type="number" name="family_member" class="ten-input form-control" placeholder="{{ __('Family Members') }}">
                                             </div>
                                         </div>
