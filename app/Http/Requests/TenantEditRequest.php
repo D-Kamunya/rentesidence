@@ -40,9 +40,11 @@ class TenantEditRequest extends FormRequest
                 'permanent_state_id' => 'nullable',
                 'permanent_city_id' => 'nullable',
                 'permanent_zip_code' => 'nullable',
-                'family_member' => 'required|numeric',
-                'age' => 'numeric',
-                'job' => 'required',
+                // Optional — see TenantRequest: job/age/household are PII best authored by the tenant
+                // themselves (profile), never forced on the owner where they'd just be guessed.
+                'family_member' => 'nullable|numeric',
+                'age' => 'nullable|numeric',
+                'job' => 'nullable',
             ];
         }
 
