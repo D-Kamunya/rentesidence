@@ -25,7 +25,7 @@ class RentPaymentSuccessMail extends Mailable
     {
         $invoiceId = $this->content['invoiceId'] ?? null;
         $invoice   = $invoiceId
-            ? Invoice::with(['tenant.user', 'landlord', 'property', 'propertyUnit', 'order'])->find($invoiceId)
+            ? Invoice::with(['tenant.user', 'landlord', 'property', 'propertyUnit', 'order', 'invoiceItems.invoiceType'])->find($invoiceId)
             : null;
 
         // Link to the PUBLIC instant-pay page (which doubles as the receipt once paid), so the
@@ -77,9 +77,14 @@ class RentPaymentSuccessMail extends Mailable
             . (optional($invoice->propertyUnit)->unit_name ? ' · ' . $invoice->propertyUnit->unit_name : '')
         );
 
+        $type = $invoice->invoiceItems
+            ->map(fn ($i) => optional($i->invoiceType)->name)
+            ->filter()->unique()->implode(', ');
+
         return [
             'appName'      => getOption('app_name') ?: config('app.name'),
             'receiptNo'    => $invoice->invoice_no,
+            'type'         => $type ?: null,
             'issuedAt'     => $paidAt,
             'billingMonth' => trim($invoice->month . ' ' . optional($paidAt)->format('Y')),
             'tenantName'   => $tenantName ?: null,

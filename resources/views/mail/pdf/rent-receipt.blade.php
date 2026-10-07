@@ -90,6 +90,12 @@
             <td class="k">Billing period</td>
             <td class="v">{{ $r['billingMonth'] }}</td>
         </tr>
+        @if (!empty($r['type']))
+        <tr>
+            <td class="k">Invoice type</td>
+            <td class="v">{{ $r['type'] }}</td>
+        </tr>
+        @endif
         <tr>
             <td class="k">Payment method</td>
             <td class="v">{{ $r['method'] }}</td>
