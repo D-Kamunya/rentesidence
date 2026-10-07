@@ -69,7 +69,7 @@
             </td>
             @endif
             @if ($r['landlordName'])
-            <td>
+            <td style="text-align:right; padding-right:0;">
                 <div class="lbl">Received by</div>
                 <div class="nm">{{ $r['landlordName'] }}</div>
             </td>

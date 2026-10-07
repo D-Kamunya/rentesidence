@@ -92,6 +92,20 @@
         border-color: #a5d6a7;
     }
 
+    /* Secondary "Print" action — clean CS ghost button that matches the premium feel of the page
+       (same shape as the download button, outlined instead of filled). */
+    .btn-cs-ghost {
+        background: #fff;
+        border: 1.5px solid #e5e7eb;
+        color: #185FA5;
+        transition: border-color .15s ease, background .15s ease, color .15s ease;
+    }
+    .btn-cs-ghost:hover {
+        border-color: #185FA5;
+        background: #f0f4fa;
+        color: #0F4A84;
+    }
+
     /* Prominent "it's paid" cue — the Download button took the spot the big Paid button used to own. */
     .cs-paid-check {
         width: 58px; height: 58px; border-radius: 50%;
@@ -264,7 +278,7 @@
                                        class="btn btn-mpesa btn-lg shadow-sm fw-bold py-3">
                                         <i class="fas fa-download me-2"></i> {{ __('Download receipt (PDF)') }}
                                     </a>
-                                    <button type="button" class="btn btn-outline-secondary btn-lg mt-2 cs-print-hide" onclick="window.print()">
+                                    <button type="button" class="btn btn-cs-ghost btn-lg mt-2 shadow-sm fw-bold py-3 cs-print-hide" onclick="window.print()">
                                         <i class="fas fa-print me-2"></i> {{ __('Print') }}
                                     </button>
                                     <p class="text-center text-muted small mt-3 mb-0 cs-print-hide">{{ __('This page is your receipt.') }}</p>
