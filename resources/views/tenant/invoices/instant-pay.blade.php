@@ -92,6 +92,13 @@
         border-color: #a5d6a7;
     }
 
+    /* Prominent "it's paid" cue — the Download button took the spot the big Paid button used to own. */
+    .cs-paid-check {
+        width: 58px; height: 58px; border-radius: 50%;
+        background: #E1F5EE; color: #0F6E56;
+        display: flex; align-items: center; justify-content: center;
+    }
+
     /* Printing the paid page as a receipt: drop the form/buttons/overlay and the page chrome,
        keep the invoice summary + header so what prints reads as a clean receipt. */
     @media print {
@@ -120,6 +127,16 @@
                     </div>
 
                     <div class="card-body p-4">
+                        @if ($invoice->status == 1)
+                            {{-- Keep the clear "it's paid" feeling the big green pay button used to carry. --}}
+                            <div class="text-center mb-4 cs-print-hide">
+                                <div class="cs-paid-check mx-auto mb-2">
+                                    <svg width="30" height="30" viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4L19 7" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                                </div>
+                                <h5 class="fw-bold mb-0" style="color:#0F6E56;">{{ __('Payment received') }}</h5>
+                                <p class="text-muted small mb-0">{{ __('This invoice is fully paid.') }}</p>
+                            </div>
+                        @endif
                         {{-- Invoice summary --}}
                         <div class="border rounded-3 p-3 mb-4 bg-light shadow-sm">
                             <div class="row mb-2">
