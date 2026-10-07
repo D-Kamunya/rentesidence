@@ -123,9 +123,11 @@ class ReminderInvoice extends Command
         ];
         SendInvoiceNotificationAndEmailJob::dispatch($invoice,$emailData,$notificationData);
 
+        // Reminders fire for ALL invoice types (not just rent), so the copy stays neutral ("invoice")
+        // to avoid mislabelling a repair/utility reminder as rent.
         $message = $overDue
-            ? __('Reminder: :month rent from :app is overdue (due :date). Pay instantly: :url', ['month' => $invoice->month, 'app' => $appName, 'date' => $invoice->due_date, 'url' => $link])
-            : __('Reminder: :month rent from :app is due on :date. Pay instantly: :url', ['month' => $invoice->month, 'app' => $appName, 'date' => $invoice->due_date, 'url' => $link]);
+            ? __('Reminder: your :month invoice from :app is overdue (due :date). Pay instantly: :url', ['month' => $invoice->month, 'app' => $appName, 'date' => $invoice->due_date, 'url' => $link])
+            : __('Reminder: your :month invoice from :app is due on :date. Pay instantly: :url', ['month' => $invoice->month, 'app' => $appName, 'date' => $invoice->due_date, 'url' => $link]);
         SendSmsJob::dispatch([$invoice->tenant->user->contact_number], $message, $invoice->owner_user_id);
     }
 }

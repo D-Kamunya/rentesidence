@@ -41,11 +41,21 @@
 <body>
 <div class="sheet">
 
+    @php
+        // DomPDF renders local images reliably when embedded as base64 — use the square CS mark.
+        $csLogo = public_path('assets/images/cs-icon.png');
+        $csLogoData = is_file($csLogo) ? 'data:image/png;base64,' . base64_encode(file_get_contents($csLogo)) : null;
+    @endphp
     <table class="head">
         <tr>
             <td>
-                <div class="brand">{{ $r['appName'] }}</div>
-                <div class="brand-sub">Rent Payment Receipt</div>
+                <table><tr>
+                    @if ($csLogoData)<td style="width:44px;vertical-align:middle;padding:0;"><img src="{{ $csLogoData }}" style="width:38px;height:38px;display:block;border-radius:8px;"></td>@endif
+                    <td style="vertical-align:middle;padding:0 0 0 {{ $csLogoData ? '10px' : '0' }};">
+                        <div class="brand">{{ $r['appName'] }}</div>
+                        <div class="brand-sub">Rent Payment Receipt</div>
+                    </td>
+                </tr></table>
             </td>
             <td style="text-align:right;">
                 <div class="rc-title">RECEIPT</div>

@@ -995,7 +995,13 @@ class PropertyService
     public function getUnitsByPropertyId($id,$activeTenants=False)
     {
         $propertyUnits = PropertyUnit::query()
-            ->leftJoin('tenants', 'property_units.id', '=', 'tenants.unit_id')
+            ->leftJoin('tenants', function ($q) {
+                // Only an ACTIVE tenancy occupies a unit — a released/closed (CLOSE) tenant must not
+                // keep the unit marked "Not Available" (availability is derived from this join in the
+                // property view). Filtering in the JOIN keeps vacant units in the list (leftJoin).
+                $q->on('property_units.id', '=', 'tenants.unit_id')
+                  ->where('tenants.status', TENANT_STATUS_ACTIVE);
+            })
             ->leftJoin('users', function ($q) {
                 $q->on('tenants.user_id', 'users.id')->whereNull('users.deleted_at');
             })
