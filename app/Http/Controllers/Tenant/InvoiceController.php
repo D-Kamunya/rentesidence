@@ -163,7 +163,7 @@ class InvoiceController extends Controller
      */
     public function instantReceiptPdf($token)
     {
-        $invoice = Invoice::with(['tenant.user', 'landlord', 'property', 'propertyUnit', 'order'])
+        $invoice = Invoice::with(['tenant.user', 'landlord', 'property', 'propertyUnit', 'order', 'invoiceItems.invoiceType'])
             ->where('payment_token', $token)
             ->firstOrFail();
 
@@ -180,10 +180,14 @@ class InvoiceController extends Controller
             . (optional($invoice->propertyUnit)->unit_name ? ' · ' . $invoice->propertyUnit->unit_name : '')
         );
         $code = optional($order)->mpesa_transaction_code;
+        $type = $invoice->invoiceItems
+            ->map(fn ($i) => optional($i->invoiceType)->name)
+            ->filter()->unique()->implode(', ');
 
         $r = [
             'appName'      => getOption('app_name') ?: config('app.name'),
             'receiptNo'    => $invoice->invoice_no,
+            'type'         => $type ?: null,
             'issuedAt'     => $paidAt,
             'billingMonth' => trim($invoice->month . ' ' . optional($paidAt)->format('Y')),
             'tenantName'   => $tenantName ?: null,

@@ -87,4 +87,9 @@
     .ow-badge--pending { background:#FAEEDA; color:#854F0B; border:0.5px solid #F5D9A8; }
     .ow-badge--overdue { background:#FAECE7; color:#993C1D; border:0.5px solid #F5C4B3; }
     .ow-badge--bank    { background:#EEEDFE; color:#534AB7; border:0.5px solid #CECBF6; }
+
+    /* Status-tinted rows (matches the Billing Center) — applies wherever a DataTable sets these
+       row classes on a page that loads this partial (the tenant-profile payment list). */
+    tbody tr.ow-row--paid    > td { background:#F0FAF5 !important; }
+    tbody tr.ow-row--overdue > td { background:#FDF3F0 !important; }
 </style>

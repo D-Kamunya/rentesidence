@@ -957,6 +957,10 @@
        group overflowed LEFT onto the status/date column. Wrapping lets it drop to a second line
        inside its own cell instead — no overlap at any width / invoice-label length. */
     .ow-row-actions { display:flex; align-items:center; justify-content:flex-end; gap:6px; flex-wrap:wrap; }
+    /* On phones the table collapses to DataTables' responsive child rows; there the action buttons
+       sat flush-right (detached from their "Action" label and looking misplaced). Align them to the
+       start so they read as part of the row's detail list. */
+    .dtr-details .ow-row-actions { justify-content:flex-start; margin-top:2px; }
 
     .ow-act {
         display:inline-flex; align-items:center; gap:4px;

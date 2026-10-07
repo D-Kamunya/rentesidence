@@ -298,6 +298,14 @@ class TenantService
                 return '<div class="d-flex justify-content-start align-items-center gap-1"><span class="ow-badge ow-badge--overdue">' . __('Overdue') . '</span>' . $btn . '</div>';
             })
             ->rawColumns(['amount', 'created_at', 'status', 'invoice'])
+            // Tint rows by status (matches the Billing Center) so paid/overdue read at a glance.
+            ->setRowClass(function ($invoice) {
+                $isOverdue = $invoice->status == INVOICE_STATUS_OVER_DUE
+                          || ($invoice->status == INVOICE_STATUS_PENDING && $invoice->due_date < date('Y-m-d'));
+                if ($isOverdue) return 'ow-row--overdue';
+                if ($invoice->status == INVOICE_STATUS_PAID) return 'ow-row--paid';
+                return '';
+            })
             ->make(true);
     }
 
