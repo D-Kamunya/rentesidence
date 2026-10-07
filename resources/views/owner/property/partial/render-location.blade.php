@@ -349,6 +349,14 @@
                         </button>
                     </div>
 
+                    {{-- Make the search's purpose obvious + guide owners when the finder comes up empty. --}}
+                    <p class="font-12 color-gray mb-20" style="margin-top:-12px;line-height:1.6;">
+                        <strong>{{ __('Start here:') }}</strong>
+                        {{ __('type your estate, building or road and pick it from the list — we\'ll fill in the address for you.') }}
+                        <br>
+                        {{ __('Can\'t find the exact spot? Pick the closest match, or just type the address below (nearest landmark / estate / road). The zip code and map pin are optional.') }}
+                    </p>
+
                     <div class="row">
                         <div class="col-md-4 mb-25">
                             <label class="label-text-title color-heading font-medium mb-2">

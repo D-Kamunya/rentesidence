@@ -27,9 +27,13 @@ class LocationRequest extends FormRequest
 //            'country' => 'required',
 //            'city' => 'required',
 //            'state' => 'required',
-            'zip_code' => 'required',
+            // Zip is rarely used/known in Kenya; the map link can't be produced manually when the
+            // location search finds nothing — so both are OPTIONAL (a missing search result must
+            // still let an owner save with a typed address). The address itself stays required —
+            // a property's location is essential — and is auto-filled by the search when it hits.
+            'zip_code' => 'nullable',
             'address' => 'required',
-            'map_link' => 'required|url',
+            'map_link' => 'nullable|url',
         ];
         return $rules;
     }

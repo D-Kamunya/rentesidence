@@ -744,10 +744,11 @@
                                     </div>
                                 </div>
 
-                                <!-- Previous Address -->
+                                <!-- Previous Address (optional — collapsed to declutter; kept because it shows on the tenant profile) -->
                                 <div class="ten-inner-card">
-                                    <div class="ten-inner-title">{{ __('Previous Address') }}</div>
-                                    <div class="row">
+                                    <details>
+                                    <summary class="ten-inner-title" style="cursor:pointer;">{{ __('Previous Address') }} <span style="font-weight:400;color:#9ca3af;font-size:12px;">({{ __('optional — add only if you have it') }})</span></summary>
+                                    <div class="row" style="margin-top:12px;">
                                         <div class="col-md-12">
                                             <div class="ten-field">
                                                 <label class="ten-label">{{ __('Address') }}</label>
@@ -781,15 +782,16 @@
                                             </div>
                                         </div>
                                     </div>
+                                    </details>
                                 </div>
 
-                                <!-- Permanent Address -->
+                                <!-- Permanent Address (optional) -->
                                 <div class="ten-inner-card">
-                                    <div class="ten-inner-title">{{ __('Permanent Address') }}</div>
+                                    <div class="ten-inner-title">{{ __('Permanent Address') }} <span style="font-weight:400;color:#9ca3af;font-size:12px;">({{ __('optional') }})</span></div>
                                     <div class="row">
                                         <div class="col-md-12">
                                             <div class="ten-field">
-                                                <label class="ten-label">{{ __('Address') }} <span class="req">*</span></label>
+                                                <label class="ten-label">{{ __('Address') }}</label>
                                                 <input type="text" name="permanent_address" class="ten-input form-control" placeholder="{{ __('Address') }}">
                                             </div>
                                         </div>
@@ -797,25 +799,25 @@
                                     <div class="row location" id="permanent">
                                         <div class="col-md-3">
                                             <div class="ten-field">
-                                                <label class="ten-label">{{ __('Country') }} <span class="req">*</span></label>
+                                                <label class="ten-label">{{ __('Country') }}</label>
                                                 <input type="text" name="permanent_country_id" class="ten-input form-control" placeholder="{{ __('Country') }}">
                                             </div>
                                         </div>
                                         <div class="col-md-3">
                                             <div class="ten-field">
-                                                <label class="ten-label">{{ __('State') }} <span class="req">*</span></label>
+                                                <label class="ten-label">{{ __('State') }}</label>
                                                 <input type="text" name="permanent_state_id" class="ten-input form-control" placeholder="{{ __('State') }}">
                                             </div>
                                         </div>
                                         <div class="col-md-3">
                                             <div class="ten-field">
-                                                <label class="ten-label">{{ __('City') }} <span class="req">*</span></label>
+                                                <label class="ten-label">{{ __('City') }}</label>
                                                 <input type="text" name="permanent_city_id" class="ten-input form-control" placeholder="{{ __('City') }}">
                                             </div>
                                         </div>
                                         <div class="col-md-3">
                                             <div class="ten-field">
-                                                <label class="ten-label">{{ __('Zip Code') }} <span class="req">*</span></label>
+                                                <label class="ten-label">{{ __('Zip Code') }}</label>
                                                 <input type="text" name="permanent_zip_code" class="ten-input form-control" placeholder="{{ __('Zip Code') }}">
                                             </div>
                                         </div>
