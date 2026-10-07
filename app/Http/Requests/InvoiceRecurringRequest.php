@@ -32,7 +32,7 @@ class InvoiceRecurringRequest extends FormRequest
             'cycle_day' => 'required_if:recurring_type,3',
             'invoiceItem.invoice_type_id.*' => 'required',
             'invoiceItem.amount.*' => 'required',
-            'invoiceItem.description.*' => 'required',
+            'invoiceItem.description.*' => 'nullable',
         ];
     }
 

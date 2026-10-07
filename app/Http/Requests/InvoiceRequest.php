@@ -35,7 +35,7 @@ class InvoiceRequest extends FormRequest
             'month' => 'required',
             'invoiceItem.invoice_type_id.*' => 'required',
             'invoiceItem.amount.*' => 'required',
-            'invoiceItem.description.*' => 'required',
+            'invoiceItem.description.*' => 'nullable',
         ];
     }
 
