@@ -743,10 +743,11 @@
                                     </div>
                                 </div>
 
-                                <!-- Previous Address -->
+                                <!-- Previous Address (optional — collapsed to declutter; kept because it shows on the tenant profile) -->
                                 <div class="ten-inner-card">
-                                    <div class="ten-inner-title">{{ __('Previous Address') }}</div>
-                                    <div class="row">
+                                    <details @if($tenant->previous_address || $tenant->previous_country_id || $tenant->previous_state_id || $tenant->previous_city_id || $tenant->previous_zip_code) open @endif>
+                                    <summary class="ten-inner-title" style="cursor:pointer;">{{ __('Previous Address') }} <span style="font-weight:400;color:#9ca3af;font-size:12px;">({{ __('optional — add only if you have it') }})</span></summary>
+                                    <div class="row" style="margin-top:12px;">
                                         <div class="col-md-12">
                                             <div class="ten-field">
                                                 <label class="ten-label">{{ __('Address') }}</label>
@@ -780,11 +781,12 @@
                                             </div>
                                         </div>
                                     </div>
+                                    </details>
                                 </div>
 
-                                <!-- Permanent Address -->
+                                <!-- Permanent Address (optional) -->
                                 <div class="ten-inner-card">
-                                    <div class="ten-inner-title">{{ __('Permanent Address') }}</div>
+                                    <div class="ten-inner-title">{{ __('Permanent Address') }} <span style="font-weight:400;color:#9ca3af;font-size:12px;">({{ __('optional') }})</span></div>
                                     <div class="row">
                                         <div class="col-md-12">
                                             <div class="ten-field">

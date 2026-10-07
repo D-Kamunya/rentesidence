@@ -40,11 +40,15 @@ class TenantRequest extends FormRequest
                 'email' => 'required|email',
                 'contact_number' => 'required',
                 'password' => 'nullable', // auto-generated for new tenants; sent + changed on first login
-                'permanent_address' => 'required',
-                'permanent_country_id' => 'required',
-                'permanent_state_id' => 'required',
-                'permanent_city_id' => 'required',
-                'permanent_zip_code' => 'required',
+                // Address is OPTIONAL: an owner often can't reliably know a tenant's permanent
+                // address (and there's no way to validate it) — forcing it just yields fabricated
+                // data. Capture it when known; never block onboarding on it. Contact + unit are
+                // what matter operationally and stay required.
+                'permanent_address' => 'nullable',
+                'permanent_country_id' => 'nullable',
+                'permanent_state_id' => 'nullable',
+                'permanent_city_id' => 'nullable',
+                'permanent_zip_code' => 'nullable',
                 'family_member' => 'required|numeric',
                 'age' => 'numeric',
                 'job' => 'required',
