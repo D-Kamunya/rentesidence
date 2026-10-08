@@ -50,6 +50,7 @@
         @include('tenant.layouts.sidebar')
         @yield('content')
     @include('partials.feature-announcement')
+    @include('tenant.partials.confirm-receipt-modal')
     </div>
 
     @include('common.layouts.script')
