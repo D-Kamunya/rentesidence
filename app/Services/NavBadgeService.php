@@ -154,6 +154,13 @@ class NavBadgeService
 
             // Genuine platform failures awaiting admin attention (unresolved incidents).
             'incidents' => $this->safe(fn () => app(SystemIncidentService::class)->openCount()),
+
+            // Marketplace refunds awaiting the admin's action — a buyer-requested refund (or one
+            // whose B2C payout failed and needs a retry). Mirrors the MarketplaceRefunds queue.
+            'marketplace_refunds' => $this->safe(fn () => ProductOrder::whereIn(
+                'refund_status',
+                [REFUND_STATUS_REQUESTED, REFUND_STATUS_FAILED]
+            )->count()),
         ];
     }
 
