@@ -66,10 +66,28 @@ class SendPaymentsSuccessEmailJob implements ShouldQueue
                 );
             }
         }  elseif ($this->paymentType == 'ProductOrder') {
+                // Summarise the ordered items (name × qty + thumbnail) so the receipt isn't a bare
+                // amount — the buyer sees WHAT they paid for. Guarded: a missing product/image just
+                // drops that line, never breaks the receipt.
+                $items = [];
+                try {
+                    $order = $this->order->relationLoaded('orderItems')
+                        ? $this->order
+                        : \App\Models\ProductOrder::with('orderItems.product')->find($this->order->id);
+                    foreach ($order?->orderItems ?? [] as $it) {
+                        $items[] = [
+                            'name'  => $it->product->name ?? __('Item'),
+                            'qty'   => (int) ($it->quantity ?? 1),
+                            'image' => $it->product->first_image_url ?? null,
+                        ];
+                    }
+                } catch (\Throwable $e) {
+                    $items = [];
+                }
                 $mailService->sendProductOrderSuccessMail(
                     $this->order->user_id, $this->emails, $this->subject,
                     $this->message, $this->title, $this->method,
-                    $this->status, $this->amount
+                    $this->status, $this->amount, $items
                 );
             } elseif ($this->paymentType == 'RentPayment') {
                 // Rent receipt email (mirrors the product order success email). Pull the
