@@ -80,13 +80,30 @@ class SendSellerDispatchAlertJob implements ShouldQueue
         try {
             if ($ownerUser?->email) {
                 $ownerFirst = e($ownerUser->first_name ?: __('there'));
+
+                // What to dispatch: product name × qty + thumbnail, so the owner knows exactly what
+                // to pack without opening the app. Guarded — a missing product/image just renders a
+                // placeholder tile, never breaks the alert.
+                $itemsHtml = '';
+                foreach ($order->orderItems as $it) {
+                    $nm  = e($it->product->name ?? __('Item'));
+                    $qty = (int) ($it->quantity ?? 1);
+                    $img = $it->product->first_image_url ?? null;
+                    $thumb = $img
+                        ? '<img src="' . e($img) . '" width="40" height="40" style="width:40px;height:40px;border-radius:6px;object-fit:cover;border:1px solid #CDEBDD;vertical-align:middle;">'
+                        : '<span style="display:inline-block;width:40px;height:40px;border-radius:6px;background:#D6EEE2;text-align:center;line-height:40px;vertical-align:middle;">📦</span>';
+                    $itemsHtml .= '<div style="margin:0 0 8px;">' . $thumb
+                        . ' <span style="font-weight:600;color:#1F2A37;">' . $nm . '</span>'
+                        . ' <span style="color:#8A97A8;">× ' . $qty . '</span></div>';
+                }
+
                 $this->sendCs(
                     [$ownerUser->email],
                     __('New paid order #:id — ready to dispatch', ['id' => $orderRef]),
                     [
                         'eyebrow' => __('Marketplace'), 'eyebrowColor' => '#0F6E56',
                         'title'   => __('A new order is paid and ready to dispatch'),
-                        'blocks'  => [
+                        'blocks'  => array_values(array_filter([
                             ['type' => 'text', 'html' => __('Hello :name,', ['name' => "<strong>{$ownerFirst}</strong>"])
                                 . ' ' . __('A marketplace order has been paid and is waiting to be dispatched.')],
                             ['type' => 'panel', 'variant' => 'green', 'title' => __('Order details'), 'rows' => array_values(array_filter([
@@ -94,11 +111,14 @@ class SendSellerDispatchAlertJob implements ShouldQueue
                                 ['k' => __('Amount'), 'v' => currencyPrice($order->transaction_amount ?? $order->amount), 'amount' => true],
                                 ['k' => __('Buyer'),  'v' => $buyerName],
                             ], fn ($r) => $r['v'] !== '' && $r['v'] !== null))],
+                            $itemsHtml !== ''
+                                ? ['type' => 'text', 'html' => '<strong>' . __('Items to dispatch') . ':</strong><br>' . $itemsHtml]
+                                : null,
                             ['type' => 'text', 'html' => $ownerRecord->caretaker_dispatch_enabled
                                 ? __('Your on-site caretaker has also been notified to handle dispatch.')
                                 : __('Please arrange dispatch to the buyer.')],
                             ['type' => 'button', 'url' => $ordersUrl, 'label' => __('View orders')],
-                        ],
+                        ])),
                     ]
                 );
             }
