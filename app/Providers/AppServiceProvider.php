@@ -80,6 +80,32 @@ class AppServiceProvider extends ServiceProvider
             $view->with('featureAnnouncements', $unseen);
         });
 
+        // Confirm-receipt nudge: a buyer's held marketplace order only releases payment to the
+        // seller once the buyer confirms receipt — but buyers often never log back in to do it.
+        // Surface a modal (once per login session) listing their delivered-but-unconfirmed orders
+        // so the common case settles fast; auto-release still backstops the rest. Cheap: the query
+        // is skipped entirely once the session flag is set.
+        \Illuminate\Support\Facades\View::composer('tenant.partials.confirm-receipt-modal', function ($view) {
+            $orders = collect();
+            try {
+                $uid = auth()->id();
+                if ($uid && ! session()->has('cs_confirm_receipt_seen')) {
+                    $orders = \App\Models\ProductOrder::where('user_id', $uid)
+                        ->where('fulfilment_status', '>=', FULFILMENT_DELIVERED)
+                        ->where('settlement_status', SETTLEMENT_STATUS_HELD)
+                        ->whereNotIn('refund_status', [REFUND_STATUS_REQUESTED, REFUND_STATUS_PROCESSING, REFUND_STATUS_REFUNDED])
+                        ->with('orderItems.product')
+                        ->latest()->take(6)->get();
+                    if ($orders->isNotEmpty()) {
+                        session()->put('cs_confirm_receipt_seen', true);
+                    }
+                }
+            } catch (\Throwable $e) {
+                $orders = collect();
+            }
+            $view->with('pendingConfirmOrders', $orders);
+        });
+
         // Graduation account switch — offer the "Switch to tenant/affiliate" control in the
         // navbar only when the current user has a linked counterpart account.
         \Illuminate\Support\Facades\View::composer(['tenant.layouts.navbar', 'affiliate.layouts.navbar'], function ($view) {
