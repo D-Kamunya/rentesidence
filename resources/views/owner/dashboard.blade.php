@@ -340,6 +340,60 @@
                         </div>
                     @endif
 
+                    {{-- Wallet balance (at-a-glance, with a privacy blur toggle) --}}
+                    <div class="row g-3 mb-4">
+                        <div class="col-12">
+                            <div style="display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;
+                                        background:linear-gradient(120deg,#0F2A4A 0%,#185FA5 100%);border-radius:14px;padding:16px 20px;">
+                                <div style="display:flex;align-items:center;gap:14px;">
+                                    <div style="width:44px;height:44px;border-radius:11px;background:rgba(255,255,255,.14);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                                        <i class="ri-wallet-3-line" style="font-size:22px;color:#fff;"></i>
+                                    </div>
+                                    <div>
+                                        <div style="font-size:12px;color:rgba(255,255,255,.72);letter-spacing:.02em;">{{ __('Wallet balance') }}</div>
+                                        <div style="display:flex;align-items:center;gap:10px;">
+                                            <span id="walletBalanceValue" style="font-size:22px;font-weight:800;color:#fff;transition:filter .15s;">{{ currencyPrice($walletBalance) }}</span>
+                                            <button type="button" id="walletBalanceToggle" aria-label="{{ __('Show or hide balance') }}"
+                                                    style="background:transparent;border:0;cursor:pointer;color:rgba(255,255,255,.7);padding:2px;line-height:0;">
+                                                <i class="ri-eye-line" style="font-size:18px;"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                                <a href="{{ route('owner.wallet.index') }}"
+                                   style="background:rgba(255,255,255,.16);color:#fff;font-size:13px;font-weight:600;padding:9px 16px;border-radius:9px;text-decoration:none;white-space:nowrap;">
+                                    {{ __('View wallet') }} <i class="ri-arrow-right-line" style="vertical-align:-1px;"></i>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+
+                    @push('script')
+                    <script>
+                        (function () {
+                            var val = document.getElementById('walletBalanceValue');
+                            var btn = document.getElementById('walletBalanceToggle');
+                            if (!val || !btn) return;
+                            var icon = btn.querySelector('i');
+                            var KEY = 'cs_wallet_hidden';
+                            function apply(hidden) {
+                                val.style.filter = hidden ? 'blur(8px)' : 'none';
+                                val.style.userSelect = hidden ? 'none' : 'auto';
+                                if (icon) icon.className = hidden ? 'ri-eye-off-line' : 'ri-eye-line';
+                                if (icon) icon.style.fontSize = '18px';
+                            }
+                            var hidden = false;
+                            try { hidden = localStorage.getItem(KEY) === '1'; } catch (e) {}
+                            apply(hidden);
+                            btn.addEventListener('click', function () {
+                                hidden = !hidden;
+                                try { localStorage.setItem(KEY, hidden ? '1' : '0'); } catch (e) {}
+                                apply(hidden);
+                            });
+                        })();
+                    </script>
+                    @endpush
+
                     {{-- Summary Cards --}}
                     <div class="row g-3 mb-4">
 

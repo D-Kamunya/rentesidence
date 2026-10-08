@@ -85,6 +85,9 @@ class DashboardController extends Controller
             session()->put('marketplace_prompt_shown', true);
         }
     
+        // ── Wallet balance (surfaced on the dashboard so the owner sees it at a glance) ──
+        $data['walletBalance'] = (float) \App\Models\OwnerWallet::forUser(auth()->id())->balance;
+
         // ── SMS Credits ───────────────────────────────────────────
         $data['smsCredits']       = (int) $owner->sms_credits;
         $data['smsLowThreshold']  = (int) getOption('sms_low_credit_threshold', 30);
