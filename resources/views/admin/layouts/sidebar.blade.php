@@ -50,7 +50,7 @@
                     <li>
                         <a href="{{ route('admin.marketplace.refunds') }}">
                             <i class="ri-refund-2-line"></i>
-                            <span>{{ __('Marketplace Refunds') }}</span>
+                            <span>{{ __('Marketplace Refunds') }}@include('partials.nav-count', ['n' => $navBadges['marketplace_refunds'] ?? 0])</span>
                         </a>
                     </li>
                     <li>

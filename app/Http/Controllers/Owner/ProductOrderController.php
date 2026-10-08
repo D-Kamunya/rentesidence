@@ -92,7 +92,7 @@ class ProductOrderController extends Controller
         $emailData = (object) [
             'subject' => __('Your order #:id is complete — please confirm receipt', ['id' => $order->order_id]),
             'title'   => __('Order complete'),
-            'message' => __('Your order #:id has been completed. Once you have your product in good order, please tap "Confirm receipt" so the seller can be paid.', ['id' => $order->order_id]),
+            'message' => __('Your order #:id has been completed. Once you have your product in good order, open the :app app and tap "Confirm receipt" so the seller can be paid.', ['id' => $order->order_id, 'app' => getOption('app_name') ?: 'Centresidence']),
         ];
 
         $notificationData = (object) [

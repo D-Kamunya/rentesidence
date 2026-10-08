@@ -245,7 +245,7 @@ class MailService
         }
     }
 
-    public static function sendProductOrderSuccessMail($tenantUserId, $emails = [], $subject = null, $message = null, $title = null, $method = null, $status = null, $amount = 0)
+    public static function sendProductOrderSuccessMail($tenantUserId, $emails = [], $subject = null, $message = null, $title = null, $method = null, $status = null, $amount = 0, $items = [])
     {
         if (config('mail.status') == 1 && config('mail.mailers.smtp.username')) {
             if (count($emails)) {
@@ -258,6 +258,7 @@ class MailService
                             $details['method'] = $method;
                             $details['status'] = $status;
                             $details['amount'] = $amount;
+                            $details['items'] = $items;
                             // send mail
                             Mail::to($email)->send(new ProductOrderSuccessMail($details));
                             // log generate

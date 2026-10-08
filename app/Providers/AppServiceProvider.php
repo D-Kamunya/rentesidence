@@ -173,6 +173,28 @@ class AppServiceProvider extends ServiceProvider
         // and surface each suppression on System Health so a human can review (and un-suppress a
         // false positive). FAIL-OPEN: a guard error must never block legitimate mail.
         \Illuminate\Support\Facades\Event::listen(\Illuminate\Mail\Events\MessageSending::class, function ($event) {
+            // Sender identity: make every automated email say WHO it's from. On many deploys
+            // MAIL_FROM_NAME is left as a bare "no-reply" literal, so inboxes show "no-reply"
+            // with no brand — unprofessional. Force the From DISPLAY NAME to the brand (keeping
+            // the configured no-reply ADDRESS) whenever it's empty or a no-reply/placeholder
+            // literal. Self-healing + env-independent; the "please don't reply" cue lives in the
+            // email body/footer instead. FAIL-OPEN — never block mail over a cosmetic header.
+            try {
+                $from = $event->message->getFrom();
+                if (! empty($from)) {
+                    $addr = $from[0];
+                    $name = method_exists($addr, 'getName') ? trim((string) $addr->getName()) : '';
+                    $lc   = strtolower($name);
+                    if ($name === '' || str_contains($lc, 'no-reply') || str_contains($lc, 'no reply')
+                        || str_contains($lc, 'noreply') || $lc === 'example') {
+                        $brand = getOption('app_name') ?: 'Centresidence';
+                        $event->message->from(new \Symfony\Component\Mime\Address($addr->getAddress(), $brand));
+                    }
+                }
+            } catch (\Throwable $e) {
+                // cosmetic only — ignore
+            }
+
             try {
                 foreach ((array) $event->message->getTo() as $addr) {
                     $to     = method_exists($addr, 'getAddress') ? $addr->getAddress() : (string) $addr;
