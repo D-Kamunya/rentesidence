@@ -95,8 +95,18 @@
                                          alt="M-Pesa" class="mpesa-brand-block__logo">
                                     <div>
                                         <p class="mpesa-brand-block__title">{{ __('Pay via M-Pesa') }}</p>
-                                        <p class="mpesa-brand-block__sub">{{ __('You will receive an STK push on your registered Safaricom number to complete payment.') }}</p>
+                                        <p class="mpesa-brand-block__sub">{{ __('You will receive an STK push on the Safaricom number below to complete payment.') }}</p>
                                     </div>
+                                </div>
+
+                                {{-- Editable STK number (defaults to the registered number) --}}
+                                <div class="mb-3">
+                                    <label for="mpesa_number" style="display:block;font-size:12px;font-weight:600;color:#374151;margin-bottom:6px;">{{ __('M-Pesa number') }}</label>
+                                    <input type="tel" id="mpesa_number" name="mpesa_number"
+                                           value="{{ auth()->user()->contact_number }}"
+                                           placeholder="07XXXXXXXX"
+                                           style="width:100%;padding:11px 14px;border:1.5px solid #e5e7eb;border-radius:9px;font-size:14px;outline:none;">
+                                    <span style="display:block;font-size:11.5px;color:#9ca3af;margin-top:5px;">{{ __('Edit if you want the prompt on a different Safaricom line.') }}</span>
                                 </div>
 
                                 {{-- What happens note --}}
@@ -243,10 +253,14 @@
         const grouped = {};
         items.forEach(item => {
             if (!item.quantity) item.quantity = 1;
-            if (grouped[item.name]) {
-                grouped[item.name].quantity += item.quantity;
+            // Group by product id (fall back to name for any legacy entry without an id) — two
+            // different products that happen to share a name must never merge.
+            const key = (item.id !== undefined && item.id !== null && item.id !== '')
+                ? ('id:' + item.id) : ('name:' + item.name);
+            if (grouped[key]) {
+                grouped[key].quantity += item.quantity;
             } else {
-                grouped[item.name] = { ...item };
+                grouped[key] = { ...item };
             }
         });
         return Object.values(grouped);
@@ -330,10 +344,18 @@
             return;
         }
 
+        // M-Pesa number the STK push goes to (editable; defaults to registered).
+        var mpesaNumber = (document.getElementById('mpesa_number').value || '').replace(/[\s-]/g, '');
+        if (!/^(?:\+?254|0)?[17]\d{8}$/.test(mpesaNumber)) {
+            toastr.error('{{ __("Enter a valid Safaricom M-Pesa number (e.g. 0712345678).") }}');
+            return;
+        }
+
         showPreloader('{{ getCurrencySymbol() }}' + Number(total).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
 
         const form     = document.getElementById('pay-products-order-form');
         const formData = new FormData(form);
+        formData.append('mpesa_number', mpesaNumber);
 
         // Append cart items
         cartItems.forEach((item, index) => {

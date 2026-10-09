@@ -35,6 +35,19 @@ class CheckoutRequest extends FormRequest
      * treated as optional/ignored so neither breaks the other.
      */
 
+    /**
+     * Strip spaces/dashes from the (optional) M-Pesa number before validating, so
+     * "0712 345 678" is accepted and a clean MSISDN reaches the STK push.
+     */
+    protected function prepareForValidation(): void
+    {
+        if ($this->has('mpesa_number')) {
+            $this->merge([
+                'mpesa_number' => preg_replace('/[\s-]/', '', (string) $this->input('mpesa_number')),
+            ]);
+        }
+    }
+
     public function rules(): array
     {
         if ($this->isInvoiceFlow()) {
@@ -63,6 +76,11 @@ class CheckoutRequest extends FormRequest
             // amount directly from the invoice record.
             'cart_total'       => $isTransactionModel ? ['nullable'] : ['required'],
 
+            // Editable M-Pesa number — only validated on the M-Pesa path, so a tenant paying
+            // by bank/cash is never blocked by the (always-present) field. Kenyan MSISDN only;
+            // blank falls back to the registered number server-side.
+            'mpesa_number'     => ['exclude_unless:gateway,mpesa', 'nullable', 'regex:/^(?:\+?254|0)?[17]\d{8}$/'],
+
             // Gateway-specific — only validated when present
             'mpesa_account_id' => ['sometimes', 'nullable', 'integer', 'exists:mpesa_accounts,id'],
             'bank_id'          => ['sometimes', 'nullable', 'required_with:bank_slip', 'integer'],
@@ -85,6 +103,9 @@ class CheckoutRequest extends FormRequest
             'products'            => ['required', 'array', 'min:1'],
             'products.*.id'       => ['required', 'integer', 'exists:products,id'],
             'products.*.quantity' => ['required', 'integer', 'min:1'],
+
+            // Editable M-Pesa number (marketplace checkout is always M-Pesa STK).
+            'mpesa_number'        => ['required', 'regex:/^(?:\+?254|0)?[17]\d{8}$/'],
 
             // Gateway fields — optional since server may resolve these
             // server-side for transaction-model owners (same pattern as invoices)
@@ -140,6 +161,7 @@ class CheckoutRequest extends FormRequest
             'bank_id.required_with'    => 'The bank field is required.',
             'bank_slip.required_with'  => 'The bank slip field is required.',
             'mpesa_account_id.exists'  => 'Mpesa Account is required.',
+            'mpesa_number.regex'       => 'Enter a valid Safaricom M-Pesa number (e.g. 0712345678).',
 
             // Product flow
             'cartTotal.required'           => 'The cart total field is required.',

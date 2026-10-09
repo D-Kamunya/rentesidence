@@ -162,8 +162,19 @@
         
         document.getElementById('buy-now-btn').addEventListener('click', function () {
             const payUrl = this.dataset.url;
-            window._buyingNow = true;
-            document.querySelector('.add-to-cart-button').click();
+
+            // Buy Now = "take me to checkout with this product in the cart" — it must NOT add a
+            // second unit if the item is already there. Only trigger the add when it's absent.
+            var pidEl = document.querySelector('.product-id');
+            var pid = pidEl ? pidEl.textContent.trim() : '';
+            var cart = [];
+            try { cart = JSON.parse(localStorage.getItem('cartItems') || '[]') || []; } catch (e) { cart = []; }
+            var present = cart.some(function (ci) { return String(ci.id) === String(pid); });
+
+            if (!present) {
+                window._buyingNow = true;
+                document.querySelector('.add-to-cart-button').click();
+            }
 
             window.location.href = payUrl;
         });

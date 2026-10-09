@@ -39,6 +39,12 @@ class PaymentController extends Controller
             ->where('tenant_id', auth()->user()->tenant->id)
             ->findOrFail($request->invoice_id);
 
+        // Editable STK target (defaults to the tenant's registered number when blank —
+        // MpesaService falls back to auth()->user()->contact_number). Set once up front so
+        // every M-Pesa path below (transaction-model and standard owner-gateway) uses it.
+        $paymentData = [];
+        $paymentData['mpesaNumber'] = $request->filled('mpesa_number') ? $request->mpesa_number : null;
+
         // ── Transaction model: resolve company gateway and return early ────────
         // STK push fires to the company's M-Pesa account.
         // Completely bypasses owner gateway lookup — nothing below this block
