@@ -133,17 +133,27 @@ document.addEventListener("DOMContentLoaded", () => {
                 .trim();
     
             var unitPrice = parseFloat(numericPrice);
-            var totalPrice = unitPrice * quantity;
-            
-            // Add the product to the cart
-            cartItems.push({
-                id: productId,
-                name: productName,
-                price: totalPrice.toFixed(2),
-                image: productImage,
-            });
 
-            // Update the counter badge
+            // De-dupe by product id: if it's already in the cart, bump its quantity rather than
+            // pushing a duplicate line. The line stores a UNIT price + quantity, so the checkout
+            // total = price × quantity (no double-counting). This also means "Add to Cart" then
+            // "Buy Now" can't silently create two separate lines of the same product.
+            var existing = cartItems.find(function (ci) {
+                return String(ci.id) === String(productId);
+            });
+            if (existing) {
+                existing.quantity = (parseInt(existing.quantity) || 1) + quantity;
+            } else {
+                cartItems.push({
+                    id: productId,
+                    name: productName,
+                    price: unitPrice.toFixed(2),
+                    image: productImage,
+                    quantity: quantity,
+                });
+            }
+
+            // Update the counter badge (distinct products in the cart)
             cartCounter.textContent = cartItems.length;
 
             // Optionally, store cart items in local storage for persistence
