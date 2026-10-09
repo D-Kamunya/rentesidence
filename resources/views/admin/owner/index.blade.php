@@ -128,10 +128,9 @@
                 // Only warn when we're CHANGING or CLEARING an existing attribution.
                 if (currentId && val !== currentId) {
                     if (val === '') {
-                        warn.textContent = '{{ __('This removes :name as this owner\'s affiliate — they stop earning on this owner going forward.') }}'.replace(':name', currentName);
+                        warn.textContent = @json(__('This removes :name as this owner\'s affiliate — they stop earning on this owner going forward.')).replace(':name', currentName);
                     } else {
-                        var newName = select.options[select.selectedIndex] ? select.options[select.selectedIndex].text : '';
-                        warn.textContent = '{{ __('This moves future commission from :old to the newly selected affiliate.') }}'.replace(':old', currentName);
+                        warn.textContent = @json(__('This moves future commission from :old to the newly selected affiliate.')).replace(':old', currentName);
                     }
                     warn.hidden = false;
                 }
