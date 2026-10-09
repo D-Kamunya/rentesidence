@@ -131,6 +131,16 @@
                                             <span>{{ __('Ensure your Safaricom line is active and your phone is unlocked before proceeding.') }}</span>
                                         </div>
 
+                                        {{-- Editable STK number (defaults to the registered number) --}}
+                                        <div class="mt-3">
+                                            <label for="mpesa_number_txn" style="display:block;font-size:12px;font-weight:600;color:#374151;margin-bottom:6px;">{{ __('M-Pesa number') }}</label>
+                                            <input type="tel" id="mpesa_number_txn" name="mpesa_number"
+                                                   value="{{ auth()->user()->contact_number }}"
+                                                   placeholder="07XXXXXXXX"
+                                                   style="width:100%;padding:11px 14px;border:1.5px solid #e5e7eb;border-radius:9px;font-size:14px;outline:none;">
+                                            <span style="display:block;font-size:11.5px;color:#9ca3af;margin-top:5px;">{{ __('Edit if you want the prompt on a different Safaricom line.') }}</span>
+                                        </div>
+
                                     @else
                                         {{-- ── Standard flow: gateway selection ── --}}
                                         <div class="gateway-grid" id="gatewaySection" role="tablist">
@@ -234,13 +244,21 @@
                                                         </select>
                                                         @error('mpesa_account_id')<span class="form-field__error">{{ $message }}</span>@enderror
                                                     </div>
+                                                    <div class="form-field">
+                                                        <label class="form-field__label" for="mpesa_number_std">{{ __('M-Pesa number') }}</label>
+                                                        <input type="tel" id="mpesa_number_std" name="mpesa_number"
+                                                               value="{{ auth()->user()->contact_number }}"
+                                                               placeholder="07XXXXXXXX" class="form-select-custom"
+                                                               style="width:100%;">
+                                                        <span style="display:block;font-size:11.5px;color:#9ca3af;margin-top:5px;">{{ __('Edit if you want the prompt on a different Safaricom line.') }}</span>
+                                                    </div>
                                                     <div class="mpesa-info-note">
                                                         <svg width="15" height="15" viewBox="0 0 24 24" fill="none">
                                                             <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="1.8"/>
                                                             <line x1="12" y1="8" x2="12" y2="12" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
                                                             <line x1="12" y1="16" x2="12.01" y2="16" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
                                                         </svg>
-                                                        {{ __('You will receive an STK push on your registered M-Pesa number.') }}
+                                                        {{ __('You will receive an STK push on the M-Pesa number above.') }}
                                                     </div>
                                                 </div>
                                                 </div>
