@@ -35,8 +35,59 @@ class OwnerController extends Controller
             return $this->ownerService->getAllData($request);
         } else {
             $data['pageTitle'] = __('Owners');
+            // Active affiliates for the "assign affiliate" picker on each owner row.
+            $data['affiliates'] = \App\Models\Affiliate::with('user')
+                ->where('status', AFFILIATE_STATUS_ACTIVE)
+                ->get()
+                ->map(fn ($a) => (object) [
+                    'id'   => $a->id,
+                    'name' => trim(($a->user->first_name ?? '') . ' ' . ($a->user->last_name ?? '')),
+                    'email' => $a->user->email ?? '',
+                ])
+                ->filter(fn ($a) => $a->name !== '' || $a->email !== '')
+                ->sortBy('name')
+                ->values();
             return view('admin.owner.index', $data);
         }
+    }
+
+    /**
+     * Assign / change / clear the affiliate attributed to an EXISTING owner. Admin-only money
+     * surface: it decides who earns commission on this owner going forward. PROSPECTIVE ONLY —
+     * the commission engine reads owners.affiliate_id live at each earning event, so changing it
+     * affects FUTURE events only; nothing past is backfilled or reversed. Audited to the log.
+     */
+    public function assignAffiliate(Request $request, $id)
+    {
+        $request->validate([
+            // nullable = clear the attribution; otherwise must be an existing affiliate.
+            'affiliate_id' => ['nullable', 'integer', 'exists:affiliates,id'],
+        ]);
+
+        $owner = Owner::findOrFail($id);
+        $newId = $request->filled('affiliate_id') ? (int) $request->affiliate_id : null;
+        $oldId = $owner->affiliate_id ? (int) $owner->affiliate_id : null;
+
+        if ($newId === $oldId) {
+            return back()->with('info', __('No change — that affiliate is already attributed to this owner.'));
+        }
+
+        $owner->affiliate_id = $newId;
+        $owner->save();
+
+        \Illuminate\Support\Facades\Log::info('Owner affiliate attribution changed', [
+            'admin_user_id'   => auth()->id(),
+            'owner_id'        => $owner->id,
+            'from_affiliate'  => $oldId,
+            'to_affiliate'    => $newId,
+            'at'              => now()->toDateTimeString(),
+        ]);
+
+        $msg = $newId === null
+            ? __('Affiliate attribution cleared for this owner. They earn no affiliate commission going forward.')
+            : __('Affiliate assigned. They earn commission on this owner\'s activity from now on (past periods are not backfilled).');
+
+        return back()->with('success', $msg);
     }
 
     public function owner_register_form()
