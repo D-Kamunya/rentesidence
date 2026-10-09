@@ -258,6 +258,9 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'middleware' => ['auth', 'a
          // register affiliate
         Route::get('register', [AffiliateController::class, 'affiliate_register_form'])->name('register.form');
         Route::post('register', [AffiliateController::class, 'affiliate_register_store'])->name('register.store');
+        // edit an affiliate's contact details (name/email/phone — NOT password)
+        Route::get('{affiliate}/edit', [AffiliateController::class, 'edit'])->name('edit');
+        Route::post('{affiliate}/update', [AffiliateController::class, 'update'])->name('update');
         // suspend / reinstate an affiliate
         Route::post('{affiliate}/suspend', [AffiliateController::class, 'suspend'])->name('suspend');
         Route::post('{affiliate}/reinstate', [AffiliateController::class, 'reinstate'])->name('reinstate');

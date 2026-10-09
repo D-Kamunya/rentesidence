@@ -129,10 +129,20 @@ class AffiliateService
                         </button>
                     </form>';
 
+                // Edit contact details (name/email/phone — never the password). Shown in both
+                // states so an admin can fix a demo/typo email or changed number for any affiliate.
+                $editBtn = '
+                    <a href="' . route('admin.affiliates.edit', $affiliate->affiliate_id) . '" class="btn"
+                        title="' . __('Edit contact details') . '"
+                        style="display:inline-flex; align-items:center; gap:5px; background:#EEF4FB; border:0.5px solid #BCD5EE; color:#185FA5; border-radius:99px; font-size:11px; font-weight:500; padding:4px 11px; white-space:nowrap; cursor:pointer; line-height:1.4; text-decoration:none;">
+                        <svg width="10" height="10" viewBox="0 0 16 16" fill="none"><path d="M11.5 2.5l2 2L6 12l-2.5.5L4 10l7.5-7.5z" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                        Edit
+                    </a>';
+
                 if ($affiliate->affiliate_status == AFFILIATE_STATUS_ACTIVE) {
                     return '
                         <div style="display:inline-flex; align-items:center; gap:8px; flex-wrap:wrap;">
-                            <span class="status-btn status-btn-green font-13 radius-4">Active</span>
+                            <span class="status-btn status-btn-green font-13 radius-4">Active</span>' . $editBtn . '
                             <form action="' . route('admin.affiliates.suspend', $affiliate->affiliate_id) . '" method="POST" style="display:inline;"
                                 data-cs-confirm="' . __('Suspend this affiliate? They immediately lose access to their account until you reinstate them. Earned commissions, referrals and history are kept.') . '"
                                 data-cs-confirm-title="' . __('Suspend affiliate?') . '"
@@ -157,7 +167,7 @@ class AffiliateService
 
                 return '
                     <div style="display:inline-flex; align-items:center; gap:8px; flex-wrap:wrap;">
-                        <span class="status-btn status-btn-orange font-13 radius-4">Suspended</span>
+                        <span class="status-btn status-btn-orange font-13 radius-4">Suspended</span>' . $editBtn . '
                         <form action="' . route('admin.affiliates.reinstate', $affiliate->affiliate_id) . '" method="POST" style="display:inline;"
                             data-cs-confirm="' . __('Reinstate this affiliate and restore their access to the platform?') . '"
                             data-cs-confirm-title="' . __('Reinstate affiliate?') . '"

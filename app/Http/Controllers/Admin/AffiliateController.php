@@ -54,6 +54,53 @@ class AffiliateController extends Controller
     }
 
     /**
+     * Edit an affiliate's CONTACT DETAILS only (name / email / phone) — for special cases like a
+     * demo/typo email or a changed number where the affiliate can't reach their own Profile. The
+     * PASSWORD is deliberately NOT here: it stays the affiliate's own domain (they set it on first
+     * login and reset it via forgot-password), so an admin can never set or see it.
+     */
+    public function edit($id)
+    {
+        $affiliate = Affiliate::with('user')->findOrFail($id);
+        if (! $affiliate->user) {
+            return redirect()->route('admin.affiliates.index')->with('error', __('This affiliate has no linked account to edit.'));
+        }
+        $data['pageTitle'] = __('Edit Affiliate');
+        $data['affiliate'] = $affiliate;
+        $data['user']      = $affiliate->user;
+        return view('admin.affiliates.edit', $data);
+    }
+
+    public function update(Request $request, $id)
+    {
+        $affiliate = Affiliate::with('user')->findOrFail($id);
+        $user = $affiliate->user;
+        if (! $user) {
+            return redirect()->route('admin.affiliates.index')->with('error', __('This affiliate has no linked account to edit.'));
+        }
+
+        // Uniqueness excludes this user's own row. No password field by design.
+        $validated = $request->validate([
+            'first_name'     => ['required', 'string', 'max:255'],
+            'last_name'      => ['required', 'string', 'max:255'],
+            'contact_number' => ['required', 'string', 'unique:users,contact_number,' . $user->id],
+            'email'          => ['required', 'string', 'email', 'max:255', 'unique:users,email,' . $user->id],
+        ]);
+
+        try {
+            $user->first_name     = $validated['first_name'];
+            $user->last_name      = $validated['last_name'];
+            $user->contact_number = $validated['contact_number'];
+            $user->email          = $validated['email'];
+            $user->save();
+
+            return redirect()->route('admin.affiliates.index')->with('success', __('Affiliate details updated.'));
+        } catch (Exception $e) {
+            return back()->with('error', $e->getMessage())->withInput();
+        }
+    }
+
+    /**
      * Suspend an affiliate (breach of operational rules). Reversible.
      * Blocks their access at the affiliate middleware; earned commissions,
      * referrals and history are preserved.
