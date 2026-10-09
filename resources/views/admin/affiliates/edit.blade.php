@@ -104,11 +104,14 @@
                                                 </div>
                                             </div>
                                         </div>
-                                        <button type="submit"
-                                            class="action-button theme-btn mt-25"
-                                            title="{{ __('Save changes') }}">{{ __('Save changes') }}</button>
-                                        <a href="{{ route('admin.affiliates.index') }}"
-                                           class="btn btn-link mt-25">{{ __('Cancel') }}</a>
+                                        <div class="d-flex align-items-center flex-wrap mt-25" style="gap:12px;">
+                                            <button type="submit"
+                                                class="action-button theme-btn"
+                                                title="{{ __('Save changes') }}">{{ __('Save changes') }}</button>
+                                            <a href="{{ route('admin.affiliates.index') }}"
+                                               class="btn"
+                                               style="display:inline-flex; align-items:center; justify-content:center; background:#F4F5F7; border:1px solid #D9DEE6; color:#4B5563; border-radius:8px; font-size:14px; font-weight:500; padding:10px 22px; text-decoration:none; line-height:1.4;">{{ __('Cancel') }}</a>
+                                        </div>
                                     </form>
                                 </fieldset>
                             </div>
