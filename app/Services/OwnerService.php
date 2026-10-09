@@ -23,6 +23,7 @@ class OwnerService
                 'owner_user.email as owner_email',
                 'owner_user.contact_number as owner_contact_number',
                 'owners.status as status',
+                'owners.affiliate_id as affiliate_id',
                 'affiliate_user.first_name as affiliate_first_name',
                 'affiliate_user.last_name as affiliate_last_name'
             )
@@ -41,11 +42,28 @@ class OwnerService
                 return $owner->owner_contact_number;
             })
             ->addColumn('affiliate', function ($owner) {
-                if ($owner->affiliate_first_name) {
-                    return $owner->affiliate_first_name . ' ' . $owner->affiliate_last_name;
-                } else {
-                    return '';
-                }
+                // Interactive assign/change control — opens the shared picker modal. Shows the
+                // current affiliate (if any) or a dashed "Assign" affordance.
+                $affName   = $owner->affiliate_first_name
+                    ? e(trim($owner->affiliate_first_name . ' ' . $owner->affiliate_last_name))
+                    : '';
+                $ownerName = e(trim($owner->owner_first_name . ' ' . $owner->owner_last_name));
+                $hasAff    = $affName !== '';
+                $label     = $hasAff ? $affName : __('Assign');
+                $style     = $hasAff
+                    ? 'background:#EEF4FB;border:0.5px solid #BCD5EE;color:#185FA5;'
+                    : 'background:#F4F5F7;border:0.5px dashed #C7CDD6;color:#6B7280;';
+                $icon = $hasAff
+                    ? '<svg width="10" height="10" viewBox="0 0 16 16" fill="none"><path d="M11.5 2.5l2 2L6 12l-2.5.5L4 10l7.5-7.5z" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>'
+                    : '<svg width="10" height="10" viewBox="0 0 16 16" fill="none"><path d="M8 3.5v9M3.5 8h9" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>';
+                return '<button type="button" class="btn js-assign-affiliate"
+                        data-owner-id="' . $owner->owner_id . '"
+                        data-owner-name="' . $ownerName . '"
+                        data-current-id="' . ($owner->affiliate_id ?? '') . '"
+                        data-current-name="' . $affName . '"
+                        title="' . __('Assign or change the affiliate for this owner') . '"
+                        style="display:inline-flex;align-items:center;gap:5px;' . $style . 'border-radius:99px;font-size:11px;font-weight:500;padding:4px 11px;white-space:nowrap;cursor:pointer;line-height:1.4;">'
+                        . $icon . $label . '</button>';
             })
             ->addColumn('status', function ($owner) {
                 if ($owner->status == ACTIVE) {
@@ -96,7 +114,7 @@ class OwnerService
                     </form>';
             })
 
-            ->rawColumns(['name', 'status', 'contact_number', 'trail', 'action'])
+            ->rawColumns(['name', 'status', 'contact_number', 'affiliate', 'trail', 'action'])
             ->make(true);
     }
 
