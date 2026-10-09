@@ -65,6 +65,9 @@ class ProductPaymentController extends Controller
 
             // ── Route to STK push via centresidence account ──────────
             $paymentData['mpesaAccount'] = $mpesaAccount;
+            // Editable STK target (defaults to the buyer's registered number when blank —
+            // MpesaService falls back to auth()->user()->contact_number).
+            $paymentData['mpesaNumber'] = $request->filled('mpesa_number') ? $request->mpesa_number : null;
 
             $object = [
                 'id'           => $order->id,
