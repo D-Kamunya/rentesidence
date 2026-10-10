@@ -32,7 +32,7 @@ class SmsCreditsController extends Controller
             ")
             ->first();
 
-        $failedMessages = SmsCreditsService::getRetryableFailed(auth()->id(), 30);
+        $failedMessages = SmsCreditsService::getRetryableFailedPaginated(auth()->id(), 10, 30);
 
         // Attach the recipient's NAME so an owner can verify "I never got a message" claims by
         // name, not just a number. Match the SMS number to one of the owner's people (tenants,
