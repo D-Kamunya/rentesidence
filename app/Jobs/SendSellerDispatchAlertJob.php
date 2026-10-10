@@ -63,6 +63,17 @@ class SendSellerDispatchAlertJob implements ShouldQueue
         $ordersUrl = route('owner.order.index');
         $buyerName = $order->user->name ?? '';
 
+        // Resolve the actual caretaker (maintainer) for the buyer's property UP FRONT — the owner
+        // email must only claim "your caretaker was notified" when one truly exists and gets the
+        // alert, not merely because the toggle is on.
+        $maintainerUser = null;
+        if ($ownerRecord->caretaker_dispatch_enabled) {
+            $buyerTenant      = Tenant::where('user_id', $order->user_id)->first();
+            $maintainerUserId = $buyerTenant ? (int) optional(Property::find($buyerTenant->property_id))->maintainer_id : 0;
+            $maintainerUser   = $maintainerUserId ? User::find($maintainerUserId) : null;
+        }
+        $caretakerWillDispatch = (bool) $maintainerUser;
+
         // ── Owner: in-app (always) ────────────────────────────────────────
         try {
             addNotification(
@@ -114,7 +125,7 @@ class SendSellerDispatchAlertJob implements ShouldQueue
                             $itemsHtml !== ''
                                 ? ['type' => 'text', 'html' => '<strong>' . __('Items to dispatch') . ':</strong><br>' . $itemsHtml]
                                 : null,
-                            ['type' => 'text', 'html' => $ownerRecord->caretaker_dispatch_enabled
+                            ['type' => 'text', 'html' => $caretakerWillDispatch
                                 ? __('Your on-site caretaker has also been notified to handle dispatch.')
                                 : __('Please arrange dispatch to the buyer.')],
                             ['type' => 'button', 'url' => $ordersUrl, 'label' => __('View orders')],
@@ -136,35 +147,29 @@ class SendSellerDispatchAlertJob implements ShouldQueue
             Log::error('Seller dispatch alert: owner SMS failed', ['order_id' => $order->id, 'error' => $e->getMessage()]);
         }
 
-        // ── Maintainer (only when the owner delegates dispatch) ───────────
-        if (! $ownerRecord->caretaker_dispatch_enabled) {
+        // ── Maintainer (only when the owner delegates dispatch AND one actually exists) ──
+        if (! $maintainerUser) {
             return;
         }
 
         try {
-            $buyerTenant      = Tenant::where('user_id', $order->user_id)->first();
-            $maintainerUserId = $buyerTenant ? (int) optional(Property::find($buyerTenant->property_id))->maintainer_id : 0;
-            $maintainerUser   = $maintainerUserId ? User::find($maintainerUserId) : null;
+            // Maintainer in-app → their dispatch queue.
+            try {
+                addNotification(
+                    __('Order to dispatch'),
+                    __('Order #:id is paid and ready to dispatch.', ['id' => $orderRef]),
+                    route('maintainer.dispatch.index'),
+                    null,
+                    (int) $maintainerUser->id,
+                );
+            } catch (\Throwable $e) {
+                Log::error('Seller dispatch alert: maintainer in-app failed', ['order_id' => $order->id, 'error' => $e->getMessage()]);
+            }
 
-            if ($maintainerUser) {
-                // Maintainer in-app → their dispatch queue.
-                try {
-                    addNotification(
-                        __('Order to dispatch'),
-                        __('Order #:id is paid and ready to dispatch.', ['id' => $orderRef]),
-                        route('maintainer.dispatch.index'),
-                        null,
-                        $maintainerUserId,
-                    );
-                } catch (\Throwable $e) {
-                    Log::error('Seller dispatch alert: maintainer in-app failed', ['order_id' => $order->id, 'error' => $e->getMessage()]);
-                }
-
-                // Maintainer SMS — carved from the OWNER's credits (maintainer acts for the owner).
-                if (! empty($maintainerUser->contact_number)) {
-                    $msg = __('Order #:id is paid and ready to dispatch. Check your dispatch queue.', ['id' => $orderRef]);
-                    SendSmsJob::dispatch([$maintainerUser->contact_number], $msg, $ownerUserId);
-                }
+            // Maintainer SMS — carved from the OWNER's credits (maintainer acts for the owner).
+            if (! empty($maintainerUser->contact_number)) {
+                $msg = __('Order #:id is paid and ready to dispatch. Check your dispatch queue.', ['id' => $orderRef]);
+                SendSmsJob::dispatch([$maintainerUser->contact_number], $msg, $ownerUserId);
             }
         } catch (\Throwable $e) {
             Log::error('Seller dispatch alert: maintainer notify failed', ['order_id' => $order->id, 'error' => $e->getMessage()]);

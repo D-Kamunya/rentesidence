@@ -61,8 +61,13 @@ class ProductController extends Controller
                 'category' => $category,
             ]);
 
+        // Caretaker-dispatch can only be delegated if the owner actually has a maintainer to
+        // receive the queue — gate the toggle on it (an empty "caretaker handles dispatch" state
+        // otherwise claims a dispatch actor that doesn't exist).
+        $hasMaintainer = \App\Models\Maintainer::where('owner_user_id', Auth::id())->exists();
+
         // Pass the products and filter values to the view
-        return view('owner.products.index', compact('products', 'type', 'category', 'packageMarkup', 'packageDiscount'));
+        return view('owner.products.index', compact('products', 'type', 'category', 'packageMarkup', 'packageDiscount', 'owner', 'hasMaintainer'));
     }
 
     // For owners to create a new product/service
