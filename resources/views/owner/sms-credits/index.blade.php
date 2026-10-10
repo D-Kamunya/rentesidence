@@ -197,16 +197,17 @@
                                     @foreach($failedMessages as $msg)
                                     <tr>
                                         <td style="white-space:nowrap;">{{ $msg->created_at->format('d M Y H:i') }}</td>
-                                        <td>{{ $msg->mobile }}</td>
+                                        <td>{{ $msg->phone_number ?: '—' }}</td>
                                         <td class="sms-desc">{{ \Illuminate\Support\Str::limit($msg->message, 60) }}</td>
                                         <td>
                                             {{-- Open the message in a modal with a single, standalone Retry — avoids a row of
                                                  inline retry buttons that are easy to mis-tap. --}}
-                                            <button type="button" class="ow-btn ow-btn--ghost js-sms-view"
+                                            <button type="button" class="ow-btn ow-btn--primary js-sms-view"
                                                     data-id="{{ $msg->id }}"
                                                     data-date="{{ $msg->created_at->format('d M Y H:i') }}"
-                                                    data-mobile="{{ $msg->mobile }}"
-                                                    data-message="{{ e($msg->message) }}">
+                                                    data-mobile="{{ $msg->phone_number }}"
+                                                    data-message="{{ $msg->message }}">
+                                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" style="vertical-align:-1px;"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7S1 12 1 12z" stroke="currentColor" stroke-width="1.8"/><circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="1.8"/></svg>
                                                 {{ __('View & retry') }}
                                             </button>
                                         </td>
