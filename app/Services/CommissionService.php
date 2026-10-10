@@ -297,8 +297,17 @@ class CommissionService
             return ['ok' => false, 'message' => __('Nothing to refund on this order.')];
         }
 
-        $result = app(\App\Services\Payment\MpesaB2CService::class)
-            ->send($phone, $amount, 'Marketplace refund #' . $order->order_id, 'MarketplaceRefund');
+        // B2C can throw outright (missing/invalid initiator cert, bad config, network) — not just
+        // return success=false. Guard it so a failure marks the refund FAILED (retryable) and shows
+        // a clean message, instead of a 500. (B2C go-live needs the cert + creds on disk.)
+        try {
+            $result = app(\App\Services\Payment\MpesaB2CService::class)
+                ->send($phone, $amount, 'Marketplace refund #' . $order->order_id, 'MarketplaceRefund');
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::error('Marketplace refund B2C threw: ' . $e->getMessage(), ['order_id' => $order->id]);
+            $order->forceFill(['refund_status' => REFUND_STATUS_FAILED])->save();
+            return ['ok' => false, 'message' => __('The refund payout could not be initiated (M-Pesa B2C is not available right now). It has been marked failed — retry once B2C is configured.')];
+        }
 
         if (! ($result['success'] ?? false)) {
             $order->forceFill(['refund_status' => REFUND_STATUS_FAILED])->save();

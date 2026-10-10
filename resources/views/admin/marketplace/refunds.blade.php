@@ -70,6 +70,17 @@
                                                     {{ $order->refund_status === REFUND_STATUS_FAILED ? __('Retry refund') : __('Approve & Refund') }}
                                                 </button>
                                             </form>
+                                            @if($order->refund_status === REFUND_STATUS_REQUESTED)
+                                                <form method="POST" action="{{ route('admin.marketplace.refunds.decline', $order->id) }}" style="display:inline;">
+                                                    @csrf
+                                                    <button type="submit" class="cs-btn cs-btn--ghost cs-btn--sm"
+                                                        data-cs-confirm="{{ __('Decline this refund request for order #:id? No money moves — the order returns to normal and the buyer is told.', ['id' => $order->order_id]) }}"
+                                                        data-cs-confirm-title="{{ __('Decline refund?') }}"
+                                                        data-cs-confirm-ok="{{ __('Yes, decline') }}">
+                                                        {{ __('Decline') }}
+                                                    </button>
+                                                </form>
+                                            @endif
                                         @else
                                             <span style="color:#9ca3af;font-size:12px;">{{ __('awaiting M-Pesa') }}</span>
                                         @endif
