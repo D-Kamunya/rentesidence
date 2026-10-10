@@ -101,6 +101,51 @@ class AffiliateController extends Controller
     }
 
     /**
+     * Admin view of ONE affiliate's earnings — available balance, lifetime earned, total withdrawn,
+     * this-month payout, and a 12-month per-source breakdown. Reachable for EVERY affiliate from the
+     * Affiliates list (the Accounts & Withdrawals "View earnings" overlay only lists affiliates who
+     * have made a withdrawal, so an affiliate who earned but never withdrew was invisible to admin).
+     */
+    public function earnings($id)
+    {
+        $affiliate = \App\Models\Affiliate::with('user')->findOrFail($id);
+        $svc = app(\App\Services\AffiliateCommissionService::class);
+
+        $data['pageTitle']          = __('Affiliate Earnings');
+        $data['affiliate']          = $affiliate;
+        $data['availableBalance']   = $svc->getAvailableBalance((int) $id);
+        $data['lifetimeEarned']     = $svc->getLifeTimeGrossCommissions((int) $id);
+        $data['totalWithdrawn']     = (float) \App\Models\AffiliateWithdrawal::where('affiliate_id', $id)
+            ->where('status', AFFILIATE_WITHDRAWAL_APPROVED)->sum('amount');
+        $data['currentMonthPayout'] = $svc->getLatestPeriodPayout((int) $id, (int) now()->format('n'), (int) now()->format('Y'));
+
+        $data['monthly'] = \App\Models\AffiliateCommissionPayment::where('affiliate_id', $id)
+            ->whereIn('id', function ($q) use ($id) {
+                $q->selectRaw('MAX(id)')->from('affiliate_commission_payments')
+                  ->where('affiliate_id', $id)->groupBy('period_year', 'period_month');
+            })
+            ->orderByDesc('period_year')->orderByDesc('period_month')->take(12)->get()
+            ->map(function ($row) {
+                $subscription = $row->new_commission_payout + $row->recurring_commission_payout;
+                $other = max(0, $row->total_commission_payout - $subscription
+                    - $row->rent_commission_payout - $row->marketplace_commission_payout);
+                return (object) [
+                    'period'       => \Carbon\Carbon::createFromDate($row->period_year, $row->period_month, 1)->format('M Y'),
+                    'subscription' => $subscription,
+                    'rent'         => $row->rent_commission_payout,
+                    'marketplace'  => $row->marketplace_commission_payout,
+                    'other'        => $other,
+                    'total'        => $row->total_commission_payout,
+                ];
+            });
+
+        $data['recentWithdrawals'] = \App\Models\AffiliateWithdrawal::where('affiliate_id', $id)
+            ->latest()->take(10)->get();
+
+        return view('admin.affiliates.earnings', $data);
+    }
+
+    /**
      * Suspend an affiliate (breach of operational rules). Reversible.
      * Blocks their access at the affiliate middleware; earned commissions,
      * referrals and history are preserved.

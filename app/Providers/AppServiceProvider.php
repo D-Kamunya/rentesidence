@@ -86,19 +86,21 @@ class AppServiceProvider extends ServiceProvider
         // so the common case settles fast; auto-release still backstops the rest. Cheap: the query
         // is skipped entirely once the session flag is set.
         \Illuminate\Support\Facades\View::composer('tenant.partials.confirm-receipt-modal', function ($view) {
+            // Always surface delivered-but-unconfirmed, still-held orders (no server "seen" flag —
+            // that previously stuck for a whole login session, so a second pending order never
+            // showed, and a page where the reveal missed left it suppressed forever). The modal
+            // itself throttles the auto-open to once per browser session on the client, so this is
+            // show-until-confirmed without nagging on every page. The query is a cheap indexed read.
             $orders = collect();
             try {
                 $uid = auth()->id();
-                if ($uid && ! session()->has('cs_confirm_receipt_seen')) {
+                if ($uid) {
                     $orders = \App\Models\ProductOrder::where('user_id', $uid)
                         ->where('fulfilment_status', '>=', FULFILMENT_DELIVERED)
                         ->where('settlement_status', SETTLEMENT_STATUS_HELD)
                         ->whereNotIn('refund_status', [REFUND_STATUS_REQUESTED, REFUND_STATUS_PROCESSING, REFUND_STATUS_REFUNDED])
                         ->with('orderItems.product')
                         ->latest()->take(6)->get();
-                    if ($orders->isNotEmpty()) {
-                        session()->put('cs_confirm_receipt_seen', true);
-                    }
                 }
             } catch (\Throwable $e) {
                 $orders = collect();

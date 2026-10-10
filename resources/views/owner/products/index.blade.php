@@ -85,13 +85,23 @@
                                     : __('Marketplace orders won\'t appear in any caretaker\'s queue — you\'ll organise delivery yourself.') }}</span>
                             </div>
                         </div>
-                        <form action="{{ route('owner.productOrder.dispatchSetting') }}" method="POST">
-                            @csrf
-                            <input type="hidden" name="caretaker_dispatch_enabled" value="{{ $owner->caretaker_dispatch_enabled ? 0 : 1 }}">
-                            <button type="submit" class="dispatch-cfg__btn">
-                                {{ $owner->caretaker_dispatch_enabled ? __('I\'ll dispatch myself') : __('Let my caretaker dispatch') }}
-                            </button>
-                        </form>
+                        @if($owner->caretaker_dispatch_enabled || ($hasMaintainer ?? false))
+                            {{-- Can toggle: either it's currently on (always allow turning off) or a caretaker exists to delegate to. --}}
+                            <form action="{{ route('owner.productOrder.dispatchSetting') }}" method="POST">
+                                @csrf
+                                <input type="hidden" name="caretaker_dispatch_enabled" value="{{ $owner->caretaker_dispatch_enabled ? 0 : 1 }}">
+                                <button type="submit" class="dispatch-cfg__btn">
+                                    {{ $owner->caretaker_dispatch_enabled ? __('I\'ll dispatch myself') : __('Let my caretaker dispatch') }}
+                                </button>
+                            </form>
+                        @else
+                            {{-- No caretaker on the account — can't delegate dispatch to a non-existent actor. --}}
+                            <div style="text-align:right;">
+                                <button type="button" class="dispatch-cfg__btn" disabled
+                                        style="opacity:.5;cursor:not-allowed;">{{ __('Let my caretaker dispatch') }}</button>
+                                <div style="font-size:11.5px;color:#9ca3af;margin-top:5px;max-width:220px;">{{ __('Add a caretaker (maintainer) to your account first to delegate dispatch.') }}</div>
+                            </div>
+                        @endif
                     </div>
                     <style>
                         .dispatch-cfg { display:flex; align-items:center; justify-content:space-between; gap:16px; flex-wrap:wrap; background:#F5F9FD; border:0.5px solid #d7e3f2; border-radius:12px; padding:14px 18px; }

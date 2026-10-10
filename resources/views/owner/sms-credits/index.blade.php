@@ -198,24 +198,51 @@
                                     <tr>
                                         <td style="white-space:nowrap;">{{ $msg->created_at->format('d M Y H:i') }}</td>
                                         <td>{{ $msg->mobile }}</td>
-                                        <td class="sms-desc">{{ $msg->message }}</td>
+                                        <td class="sms-desc">{{ \Illuminate\Support\Str::limit($msg->message, 60) }}</td>
                                         <td>
-                                            @if($balance >= 1)
-                                            <form action="{{ route('owner.sms.credits.retry.one') }}" method="POST">
-                                                @csrf
-                                                <input type="hidden" name="sms_history_id" value="{{ $msg->id }}">
-                                                <button type="submit" class="ow-btn ow-btn--primary">
-                                                    {{ __('Retry') }}
-                                                </button>
-                                            </form>
-                                            @else
-                                                <span class="ow-badge ow-badge--danger">{{ __('Top up to retry') }}</span>
-                                            @endif
+                                            {{-- Open the message in a modal with a single, standalone Retry — avoids a row of
+                                                 inline retry buttons that are easy to mis-tap. --}}
+                                            <button type="button" class="ow-btn ow-btn--ghost js-sms-view"
+                                                    data-id="{{ $msg->id }}"
+                                                    data-date="{{ $msg->created_at->format('d M Y H:i') }}"
+                                                    data-mobile="{{ $msg->mobile }}"
+                                                    data-message="{{ e($msg->message) }}">
+                                                {{ __('View & retry') }}
+                                            </button>
                                         </td>
                                     </tr>
                                     @endforeach
                                 </tbody>
                             </table>
+                        </div>
+                    </div>
+
+                    {{-- Failed-message detail + single Retry (opened from the table "View & retry") --}}
+                    <div id="smsFailModal" class="smsfx-modal" role="dialog" aria-modal="true" aria-labelledby="smsFailTitle">
+                        <div class="smsfx-modal__card">
+                            <div class="smsfx-modal__head">
+                                <h4 id="smsFailTitle" class="smsfx-modal__title">{{ __('Failed message') }}</h4>
+                                <button type="button" class="smsfx-modal__x" data-smsfx-close aria-label="{{ __('Close') }}">&times;</button>
+                            </div>
+                            <div class="smsfx-modal__meta">
+                                <div><span>{{ __('To') }}</span><strong id="smsFailMobile">—</strong></div>
+                                <div><span>{{ __('Date') }}</span><strong id="smsFailDate">—</strong></div>
+                            </div>
+                            <div class="smsfx-modal__label">{{ __('Message') }}</div>
+                            <div id="smsFailMessage" class="smsfx-modal__msg"></div>
+                            <div class="smsfx-modal__note">{{ __('This message was blocked because your SMS credits ran out. Retrying re-sends exactly this text — it can\'t be edited.') }}</div>
+                            <div class="smsfx-modal__actions">
+                                <button type="button" class="ow-btn ow-btn--ghost" data-smsfx-close>{{ __('Close') }}</button>
+                                @if($balance >= 1)
+                                    <form action="{{ route('owner.sms.credits.retry.one') }}" method="POST" style="margin:0;">
+                                        @csrf
+                                        <input type="hidden" name="sms_history_id" id="smsFailId" value="">
+                                        <button type="submit" class="ow-btn ow-btn--primary">{{ __('Retry this message') }}</button>
+                                    </form>
+                                @else
+                                    <span class="ow-badge ow-badge--danger">{{ __('Top up above to retry') }}</span>
+                                @endif
+                            </div>
                         </div>
                     </div>
                     @endif
@@ -498,7 +525,53 @@
 </style>
 @endpush
 
+@push('style')
+<style>
+    .smsfx-modal { position:fixed; inset:0; z-index:1300; background:rgba(17,24,34,.3); backdrop-filter:blur(4px);
+        -webkit-backdrop-filter:blur(4px); display:none; align-items:center; justify-content:center; padding:20px; overflow-y:auto; }
+    .smsfx-modal.open { display:flex; }
+    .smsfx-modal__card { background:#fff; border-radius:16px; max-width:440px; width:100%; padding:22px 22px 18px;
+        box-shadow:0 18px 52px rgba(20,23,28,.22); max-height:calc(100vh - 2rem); overflow-y:auto; }
+    .smsfx-modal__head { display:flex; align-items:center; justify-content:space-between; margin-bottom:14px; }
+    .smsfx-modal__title { font-size:16px; font-weight:700; color:#1b1e22; margin:0; }
+    .smsfx-modal__x { background:none; border:none; font-size:24px; line-height:1; color:#9ca3af; cursor:pointer; }
+    .smsfx-modal__meta { display:flex; gap:24px; margin-bottom:14px; }
+    .smsfx-modal__meta span { display:block; font-size:10.5px; text-transform:uppercase; letter-spacing:.05em; color:#9ca3af; }
+    .smsfx-modal__meta strong { font-size:13.5px; color:#1F2A37; }
+    .smsfx-modal__label { font-size:10.5px; font-weight:600; text-transform:uppercase; letter-spacing:.05em; color:#9ca3af; margin-bottom:6px; }
+    .smsfx-modal__msg { background:#f9fafb; border:1px solid #e5e7eb; border-radius:9px; padding:12px 14px; font-size:13.5px;
+        color:#1F2A37; line-height:1.55; white-space:pre-wrap; word-break:break-word; margin-bottom:12px; }
+    .smsfx-modal__note { font-size:12px; color:#92400E; background:#FFFBEB; border:1px solid #FDE68A; border-radius:8px; padding:9px 12px; margin-bottom:16px; }
+    .smsfx-modal__actions { display:flex; align-items:center; justify-content:flex-end; gap:10px; }
+</style>
+@endpush
+
 @push('script')
+<script>
+(function () {
+    'use strict';
+    // Failed-SMS "View & retry" modal.
+    var sModal = document.getElementById('smsFailModal');
+    if (sModal) {
+        var sMsg = document.getElementById('smsFailMessage');
+        var sMobile = document.getElementById('smsFailMobile');
+        var sDate = document.getElementById('smsFailDate');
+        var sId = document.getElementById('smsFailId');
+        function sClose() { sModal.classList.remove('open'); }
+        document.querySelectorAll('.js-sms-view').forEach(function (btn) {
+            btn.addEventListener('click', function () {
+                if (sMobile) sMobile.textContent = btn.getAttribute('data-mobile') || '—';
+                if (sDate) sDate.textContent = btn.getAttribute('data-date') || '—';
+                if (sMsg) sMsg.textContent = btn.getAttribute('data-message') || '';
+                if (sId) sId.value = btn.getAttribute('data-id') || '';
+                sModal.classList.add('open');
+            });
+        });
+        sModal.querySelectorAll('[data-smsfx-close]').forEach(function (el) { el.addEventListener('click', sClose); });
+        sModal.addEventListener('click', function (e) { if (e.target === sModal) sClose(); });
+    }
+})();
+</script>
 <script>
 (function () {
     'use strict';

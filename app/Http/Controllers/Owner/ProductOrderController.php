@@ -58,6 +58,13 @@ class ProductOrderController extends Controller
     public function updateDispatchSetting(Request $request)
     {
         $enabled = $request->boolean('caretaker_dispatch_enabled');
+
+        // Can't delegate dispatch to a caretaker that doesn't exist — refuse enabling when the
+        // owner has no maintainer (mirrors the UI gate; defends against a direct POST).
+        if ($enabled && ! \App\Models\Maintainer::where('owner_user_id', auth()->id())->exists()) {
+            return back()->with('error', __('Add a caretaker (maintainer) to your account first to delegate dispatch.'));
+        }
+
         Owner::where('user_id', auth()->id())->update(['caretaker_dispatch_enabled' => $enabled]);
 
         return back()->with('success', $enabled

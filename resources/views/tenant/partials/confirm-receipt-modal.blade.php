@@ -99,8 +99,27 @@
       });
     });
 
-    // Reveal after load. Sits above the feature-announcement modal (z 1300 > 1200) if both exist.
-    window.addEventListener('load', function () { modal.style.display = 'flex'; });
+    // Auto-open once per browser session (not once per page), and only if the viewer hasn't
+    // already dismissed/confirmed it this session. Reveal reliably whether or not 'load' has
+    // already fired. Sits above the feature-announcement modal (z 1300 > 1200) if both exist.
+    var SEEN = 'cs_cr_modal_seen';
+    function markSeen() { try { sessionStorage.setItem(SEEN, '1'); } catch (e) {} }
+    var alreadySeen = false;
+    try { alreadySeen = sessionStorage.getItem(SEEN) === '1'; } catch (e) {}
+
+    function reveal() {
+        if (alreadySeen) return;
+        modal.style.display = 'flex';
+        markSeen();
+    }
+    // "Later" / confirm should also stop it re-opening this session.
+    modal.querySelectorAll('[data-cr-dismiss]').forEach(function (el) { el.addEventListener('click', markSeen); });
+    modal.querySelectorAll('.cs-cr__confirm').forEach(function (el) { el.addEventListener('click', markSeen); });
+
+    if (!alreadySeen) {
+        if (document.readyState === 'complete') { reveal(); }
+        else { window.addEventListener('load', reveal); }
+    }
   })();
 </script>
 @endif
