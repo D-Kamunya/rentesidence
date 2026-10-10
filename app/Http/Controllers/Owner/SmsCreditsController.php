@@ -33,6 +33,26 @@ class SmsCreditsController extends Controller
             ->first();
 
         $failedMessages = SmsCreditsService::getRetryableFailed(auth()->id(), 30);
+
+        // Attach the recipient's NAME so an owner can verify "I never got a message" claims by
+        // name, not just a number. Match the SMS number to one of the owner's people (tenants,
+        // maintainers, or the owner themselves) by its last 9 digits — format-agnostic (254… vs 07…).
+        if ($failedMessages->isNotEmpty()) {
+            $people = \App\Models\User::where('owner_user_id', auth()->id())
+                ->orWhere('id', auth()->id())
+                ->get(['id', 'first_name', 'last_name', 'contact_number']);
+            $byPhone = [];
+            foreach ($people as $p) {
+                $key = substr(preg_replace('/\D/', '', (string) $p->contact_number), -9);
+                if ($key !== '') {
+                    $byPhone[$key] = trim(($p->first_name ?? '') . ' ' . ($p->last_name ?? ''));
+                }
+            }
+            $failedMessages->each(function ($m) use ($byPhone) {
+                $key = substr(preg_replace('/\D/', '', (string) $m->phone_number), -9);
+                $m->recipient_name = ($key !== '' && ! empty($byPhone[$key])) ? $byPhone[$key] : null;
+            });
+        }
         // The OWNER's plan rate (paid domains cheaper), so the shown price matches what checkout charges.
         $pricePerSms    = SmsCreditsService::pricePerUnit();
         $globalSmsPrice = (float) getOption('sms_credit_price', 1.00); // for a "you save vs standard" hint
