@@ -150,6 +150,14 @@ class SmsCreditsService
             ->get();
     }
 
+    /** Paginated for the SMS Credits page so a long blocked backlog doesn't overstretch it. */
+    public static function getRetryableFailedPaginated(int $ownerUserId, int $perPage = 10, int $days = 30): \Illuminate\Contracts\Pagination\LengthAwarePaginator
+    {
+        return self::blockedQuery($days)->where('owner_user_id', $ownerUserId)
+            ->orderByDesc('created_at')
+            ->paginate($perPage, ['*'], 'failed_page');
+    }
+
     /**
      * Owners with a paused SMS backlog — at least one message blocked by insufficient credits in
      * the last N days — as [owner_user_id => blocked_count]. Feeds the scheduled re-engagement
