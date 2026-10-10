@@ -62,6 +62,10 @@ class NavBadgeService
 
             // Support tickets with an unread reply from admin.
             'support' => $this->safe(fn () => app(SupportTicketService::class)->requesterUnreadCount($ownerUserId)),
+
+            // SMS that failed for want of credits and can still be retried — a red cue on the
+            // SMS Credits menu so the owner knows messages are paused and need a top-up/retry.
+            'sms_failed' => $this->safe(fn () => \App\Services\Sms\SmsCreditsService::getRetryableFailed($ownerUserId, 30)->count()),
         ];
     }
 

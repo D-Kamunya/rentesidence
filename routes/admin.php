@@ -244,6 +244,7 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'middleware' => ['auth', 'a
     // Marketplace refunds — admin green-lights the B2C payout to the buyer.
     Route::get('marketplace-refunds', [\App\Http\Controllers\Admin\MarketplaceRefundController::class, 'index'])->name('marketplace.refunds');
     Route::post('marketplace-refunds/{id}/approve', [\App\Http\Controllers\Admin\MarketplaceRefundController::class, 'approve'])->name('marketplace.refunds.approve');
+    Route::post('marketplace-refunds/{id}/decline', [\App\Http\Controllers\Admin\MarketplaceRefundController::class, 'decline'])->name('marketplace.refunds.decline');
 
     Route::group(['prefix' => 'owner', 'as' => 'owner.'], function () {
         Route::get('/', [OwnerController::class, 'index'])->name('index');
