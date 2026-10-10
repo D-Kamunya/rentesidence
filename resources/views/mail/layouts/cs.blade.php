@@ -42,7 +42,7 @@
                             <div style="font-family:-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif; font-size:13px; font-weight:700; color:#0F2A4A;">{{ $appName }}</div>
                             <div style="font-family:-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif; font-size:11px; color:#8A97A8; margin:3px 0 12px; letter-spacing:0.03em;">{{ __('Real Estate. Simplified. Connected.') }}</div>
                             <div style="font-family:-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif; font-size:11px; line-height:1.6; color:#8A97A8;">@yield('footnote', __('You received this email from :app regarding your recent request or activity.', ['app' => $appName]))</div>
-                            <div style="font-family:-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif; font-size:11px; line-height:1.6; color:#A7B2C0; margin-top:6px;">{{ __('This is an automated message sent from a no-reply address — please don\'t reply to it. Reach us any time from the Help &amp; Support section in your account.') }}</div>
+                            <div style="font-family:-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif; font-size:11px; line-height:1.6; color:#A7B2C0; margin-top:6px;">{{ __('This is an automated message sent from a no-reply address — please don\'t reply to it. Reach us any time from the Help & Support section in your account.') }}</div>
                         </td>
                     </tr>
 

@@ -143,7 +143,7 @@
                     </div>
 
                     {{-- Failed messages --}}
-                    @if($failedMessages->isNotEmpty())
+                    @if($failedMessages->total() > 0)
                     <div class="ow-card sms-section-card mb-4">
                         <div class="dash-card__head">
                             <div style="display:flex;align-items:center;gap:10px;">
@@ -156,7 +156,7 @@
                                 </div>
                                 <span class="sms-panel-title">
                                     {{ __('Failed Messages') }}
-                                    <span class="ow-badge ow-badge--danger" style="margin-left:6px;">{{ $failedMessages->count() }}</span>
+                                    <span class="ow-badge ow-badge--danger" style="margin-left:6px;">{{ $failedMessages->total() }}</span>
                                 </span>
                             </div>
                             {{-- Retry is only offered once credits exist — retrying while
@@ -222,6 +222,9 @@
                                 </tbody>
                             </table>
                         </div>
+                        @if($failedMessages->hasPages())
+                            <div class="mt-3">{{ $failedMessages->links() }}</div>
+                        @endif
                     </div>
 
                     {{-- Failed-message detail + single Retry (opened from the table "View & retry") --}}
