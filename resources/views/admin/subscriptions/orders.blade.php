@@ -283,6 +283,16 @@
 
 @push('style')
     @include('common.layouts.datatable-style')
+    <style>
+        /* Long owner names + emails (e.g. "Centresidence Realestate(almond…@gmail.com)") were
+           overflowing into the next column — let order-table cells wrap and break long tokens. */
+        #allOrderDataTable td, #allPaidDataTable td, #allPendingDataTable td,
+        #bankPendingInvoiceDataTable td, #allCancelledDataTable td {
+            white-space: normal;
+            word-break: break-word;
+            overflow-wrap: anywhere;
+        }
+    </style>
 @endpush
 
 @push('script')
