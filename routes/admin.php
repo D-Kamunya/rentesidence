@@ -264,6 +264,8 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'middleware' => ['auth', 'a
         // edit an affiliate's contact details (name/email/phone — NOT password)
         Route::get('{affiliate}/edit', [AffiliateController::class, 'edit'])->name('edit');
         Route::post('{affiliate}/update', [AffiliateController::class, 'update'])->name('update');
+        // admin view of an affiliate's earnings (every affiliate, not just those who withdrew)
+        Route::get('{affiliate}/earnings', [AffiliateController::class, 'earnings'])->name('earnings');
         // suspend / reinstate an affiliate
         Route::post('{affiliate}/suspend', [AffiliateController::class, 'suspend'])->name('suspend');
         Route::post('{affiliate}/reinstate', [AffiliateController::class, 'reinstate'])->name('reinstate');
