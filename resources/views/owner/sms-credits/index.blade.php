@@ -197,7 +197,12 @@
                                     @foreach($failedMessages as $msg)
                                     <tr>
                                         <td style="white-space:nowrap;">{{ $msg->created_at->format('d M Y H:i') }}</td>
-                                        <td>{{ $msg->phone_number ?: '—' }}</td>
+                                        <td>
+                                            @if(!empty($msg->recipient_name))
+                                                <div style="font-weight:600;color:#1F2A37;">{{ $msg->recipient_name }}</div>
+                                            @endif
+                                            <div style="color:#6b7280;">{{ $msg->phone_number ?: '—' }}</div>
+                                        </td>
                                         <td class="sms-desc">{{ \Illuminate\Support\Str::limit($msg->message, 60) }}</td>
                                         <td>
                                             {{-- Open the message in a modal with a single, standalone Retry — avoids a row of
@@ -205,6 +210,7 @@
                                             <button type="button" class="ow-btn ow-btn--primary js-sms-view"
                                                     data-id="{{ $msg->id }}"
                                                     data-date="{{ $msg->created_at->format('d M Y H:i') }}"
+                                                    data-name="{{ $msg->recipient_name }}"
                                                     data-mobile="{{ $msg->phone_number }}"
                                                     data-message="{{ $msg->message }}">
                                                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" style="vertical-align:-1px;"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7S1 12 1 12z" stroke="currentColor" stroke-width="1.8"/><circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="1.8"/></svg>
@@ -226,7 +232,7 @@
                                 <button type="button" class="smsfx-modal__x" data-smsfx-close aria-label="{{ __('Close') }}">&times;</button>
                             </div>
                             <div class="smsfx-modal__meta">
-                                <div><span>{{ __('To') }}</span><strong id="smsFailMobile">—</strong></div>
+                                <div><span>{{ __('To') }}</span><strong id="smsFailName" style="display:none;"></strong><strong id="smsFailMobile">—</strong></div>
                                 <div><span>{{ __('Date') }}</span><strong id="smsFailDate">—</strong></div>
                             </div>
                             <div class="smsfx-modal__label">{{ __('Message') }}</div>
@@ -556,12 +562,22 @@
     if (sModal) {
         var sMsg = document.getElementById('smsFailMessage');
         var sMobile = document.getElementById('smsFailMobile');
+        var sName = document.getElementById('smsFailName');
         var sDate = document.getElementById('smsFailDate');
         var sId = document.getElementById('smsFailId');
         function sClose() { sModal.classList.remove('open'); }
         document.querySelectorAll('.js-sms-view').forEach(function (btn) {
             btn.addEventListener('click', function () {
-                if (sMobile) sMobile.textContent = btn.getAttribute('data-mobile') || '—';
+                var nm = btn.getAttribute('data-name') || '';
+                if (sName) {
+                    sName.textContent = nm;
+                    sName.style.display = nm ? 'block' : 'none';
+                }
+                if (sMobile) {
+                    sMobile.textContent = btn.getAttribute('data-mobile') || '—';
+                    sMobile.style.fontWeight = nm ? '400' : '700';
+                    sMobile.style.color = nm ? '#6b7280' : '#1F2A37';
+                }
                 if (sDate) sDate.textContent = btn.getAttribute('data-date') || '—';
                 if (sMsg) sMsg.textContent = btn.getAttribute('data-message') || '';
                 if (sId) sId.value = btn.getAttribute('data-id') || '';
