@@ -130,7 +130,7 @@
                 <li>
                     <a href="{{ route('owner.sms.credits.index') }}" data-tour="owner-sms">
                         <i class="ri-message-2-line"></i>
-                        <span>{{ __('SMS Credits') }}</span>
+                        <span>{{ __('SMS Credits') }}@include('partials.nav-count', ['n' => $navBadges['sms_failed'] ?? 0])</span>
                     </a>
                 </li>
 
