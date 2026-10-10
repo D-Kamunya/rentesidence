@@ -358,7 +358,10 @@ class OwnerWalletController extends Controller
             ->latest()
             ->paginate(30);
 
+        $pageTitle = __('Commissions & Wallets');
+
         return view('admin.wallet.commissions', compact(
+            'pageTitle',
             'totalGmv',
             'totalCommission',
             'totalOwnerBalance',
