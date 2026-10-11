@@ -227,8 +227,8 @@
                                         for you this month — you earn from what your owners <em>do</em>, not just their plan. Keep them active and this grows.
                                     </p>
                                 </div>
-                                <a href="{{ route('affiliate.commissions.index') }}"
-                                   style="flex-shrink:0;display:inline-flex;align-items:center;gap:5px;background:#185FA5;color:#fff;font-size:12.5px;font-weight:600;padding:8px 14px;border-radius:8px;text-decoration:none;white-space:nowrap;">
+                                <a href="{{ route('affiliate.commissions.index') }}" class="btn"
+                                   style="flex-shrink:0;display:inline-flex;align-items:center;gap:5px;background:#185FA5;color:#fff !important;font-size:12.5px;font-weight:600;padding:8px 14px;border-radius:8px;text-decoration:none;white-space:nowrap;">
                                     {{ __('View breakdown') }} <i class="ri-arrow-right-line"></i>
                                 </a>
                             </div>

@@ -101,8 +101,8 @@ class LeaderboardController extends Controller
             });
         }
 
-        $topEarners = $topEarnersQuery->take(20)->get();
-        $topRecruiters = $topRecruitersQuery->take(20)->get();
+        $topEarners = $topEarnersQuery->take(6)->get();
+        $topRecruiters = $topRecruitersQuery->take(6)->get();
 
         // ── Current Affiliate's Earnings ──
         $currentAffiliateEarnings = AffiliateCommission::where('affiliate_id', $currentAffiliateId);
