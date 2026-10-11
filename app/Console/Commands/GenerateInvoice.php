@@ -55,6 +55,7 @@ class GenerateInvoice extends Command
 
         $standing     = app(OwnerBillingStandingService::class);
         $overdueCache = []; // owner_user_id => bool (computed once per owner per run)
+        $ownerInvoiceCounts = []; // owner_user_id => invoices generated this run (for the SMS pre-flight)
 
         foreach ($invoiceRecurringSettings as $invoiceRecurring) {
             // Enforcement: pause auto-invoicing for owners whose module-infra bill is
@@ -89,6 +90,7 @@ class GenerateInvoice extends Command
                         ->exists();
                     if (!$invoiceExist) {
                         $this->generateInvoice($tenant,$invoiceRecurring);
+                        if ($ownerUserId) { $ownerInvoiceCounts[$ownerUserId] = ($ownerInvoiceCounts[$ownerUserId] ?? 0) + 1; }
                         echo "Created \n";
                     } else {
                         echo "Already Created \n";
@@ -102,6 +104,7 @@ class GenerateInvoice extends Command
                         ->exists();
                     if (!$invoiceExist) {
                         $this->generateInvoice($tenant,$invoiceRecurring);
+                        if ($ownerUserId) { $ownerInvoiceCounts[$ownerUserId] = ($ownerInvoiceCounts[$ownerUserId] ?? 0) + 1; }
                         echo "Created \n";
                     } else {
                         echo "Already Created \n";
@@ -115,13 +118,22 @@ class GenerateInvoice extends Command
                         ->exists();
                     if (!$invoiceExist) {
                         $this->generateInvoice($tenant,$invoiceRecurring);
+                        if ($ownerUserId) { $ownerInvoiceCounts[$ownerUserId] = ($ownerInvoiceCounts[$ownerUserId] ?? 0) + 1; }
                         echo "Created \n";
                     } else {
                         echo "Already Created \n";
                     }
                 }
             }
-            
+
+        }
+
+        // SMS pre-flight: nudge any owner whose credit balance won't cover one invoice SMS per
+        // tenant billed this run, so they top up and the blocked texts can be retried.
+        try {
+            \App\Services\Sms\SmsCreditsService::preflightInvoiceRun($ownerInvoiceCounts);
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::error('Invoice SMS pre-flight failed: ' . $e->getMessage());
         }
     }
 

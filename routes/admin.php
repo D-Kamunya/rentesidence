@@ -241,6 +241,11 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'middleware' => ['auth', 'a
         Route::post('/disputes/{dispute}/notify-owners', [\App\Http\Controllers\Admin\ScreeningAdminController::class, 'notifyOwners'])->name('disputes.notify');
     });
 
+    // Email suppression list — deliverability safety net (view/add/un-suppress).
+    Route::get('email-suppressions', [\App\Http\Controllers\Admin\EmailSuppressionController::class, 'index'])->name('email-suppressions.index');
+    Route::post('email-suppressions', [\App\Http\Controllers\Admin\EmailSuppressionController::class, 'store'])->name('email-suppressions.store');
+    Route::post('email-suppressions/{id}/remove', [\App\Http\Controllers\Admin\EmailSuppressionController::class, 'destroy'])->name('email-suppressions.remove');
+
     // Marketplace refunds — admin green-lights the B2C payout to the buyer.
     Route::get('marketplace-refunds', [\App\Http\Controllers\Admin\MarketplaceRefundController::class, 'index'])->name('marketplace.refunds');
     Route::post('marketplace-refunds/{id}/approve', [\App\Http\Controllers\Admin\MarketplaceRefundController::class, 'approve'])->name('marketplace.refunds.approve');

@@ -27,10 +27,18 @@ class SmsCreditsController extends Controller
             ->where('bucket', 'sms')
             ->selectRaw("
                 SUM(CASE WHEN type = 'deduct'   AND status = 'success' THEN quantity ELSE 0 END) as total_sent,
-                SUM(CASE WHEN status = 'failed'                         THEN quantity ELSE 0 END) as total_failed,
                 SUM(CASE WHEN type IN ('purchase','package_grant','manual_topup') AND status = 'success' THEN quantity ELSE 0 END) as total_purchased
             ")
             ->first();
+
+        // Failed/blocked must come from sms_histories, NOT owner_credit_transactions: a
+        // credit-blocked SMS never creates a failed credit transaction (deductOne just returns
+        // false), so counting failed transactions always read 0. Count the actual failed sends.
+        if ($stats) {
+            $stats->total_failed = SmsHistory::where('owner_user_id', auth()->id())
+                ->where('status', SMS_STATUS_FAILED)
+                ->count();
+        }
 
         $failedMessages = SmsCreditsService::getRetryableFailedPaginated(auth()->id(), 10, 30);
 
@@ -58,9 +66,12 @@ class SmsCreditsController extends Controller
         $globalSmsPrice = (float) getOption('sms_credit_price', 1.00); // for a "you save vs standard" hint
         $lowThreshold   = (int)   getOption('sms_low_credit_threshold', 30);
 
+        // Advisory: how many credits cover a full rent cycle for this owner's tenants.
+        $smsAdvisory = SmsCreditsService::suggestedCredits(auth()->id());
+
         return view('owner.sms-credits.index', compact(
             'balance', 'creditPools', 'transactions', 'stats',
-            'failedMessages', 'pricePerSms', 'globalSmsPrice', 'lowThreshold'
+            'failedMessages', 'pricePerSms', 'globalSmsPrice', 'lowThreshold', 'smsAdvisory'
         ));
     }
 
