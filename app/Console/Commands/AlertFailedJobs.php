@@ -35,10 +35,27 @@ class AlertFailedJobs extends Command
             ['count' => $count]
         );
 
+        // Raise a matching System Health incident for the backlog so the bell notification and the
+        // System Health page RECONCILE. (The per-failure Queue::failing incidents can be resolved by
+        // an admin while the failed_jobs rows linger, which previously left this daily notification
+        // pointing to an empty page.) Dedup'd to one growing row; clearing the backlog — `php
+        // artisan queue:flush` — is the actual fix, after which the next run raises nothing.
+        try {
+            app(\App\Services\SystemIncidentService::class)->report(
+                \App\Models\SystemIncident::TYPE_JOB_FAILED,
+                \App\Models\SystemIncident::SEVERITY_WARNING,
+                'Jobs in the failed queue',
+                $count . ' background job(s) are sitting in the failed queue. Investigate, then clear them (queue:flush) once handled.',
+                ['failed_jobs' => $count],
+                'failed_jobs_backlog',
+            );
+        } catch (\Throwable $e) {
+            // never let the incident write break the alert
+        }
+
         User::where('role', USER_ROLE_ADMIN)->pluck('id')->each(function ($adminId) use ($message) {
-            // Link to System Health (incidents), where each failure is recorded as a JOB_FAILED
-            // incident (AppServiceProvider's Queue::failing hook) — so the admin lands on the actual
-            // failed jobs instead of the notification page linking back to itself.
+            // Link to System Health, where the backlog now shows as a "Jobs in the failed queue"
+            // incident (above) — so the admin lands on an actual, matching entry.
             addNotification(__('Background jobs need attention'), $message, route('admin.incidents.index'), null, $adminId, $adminId);
         });
 
