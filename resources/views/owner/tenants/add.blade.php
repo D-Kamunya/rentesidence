@@ -710,19 +710,19 @@
                                         </div>
                                         <div class="col-md-6">
                                             <div class="ten-field">
-                                                <label class="ten-label">{{ __('Job') }}</label>
+                                                <label class="ten-label">{{ __('Job') }} <span style="font-weight:400;color:#9ca3af;font-size:11px;">({{ __('optional') }})</span></label>
                                                 <input type="text" name="job" class="ten-input form-control" placeholder="{{ __('Job') }}">
                                             </div>
                                         </div>
                                         <div class="col-md-6">
                                             <div class="ten-field">
-                                                <label class="ten-label">{{ __('Age') }}</label>
+                                                <label class="ten-label">{{ __('Age') }} <span style="font-weight:400;color:#9ca3af;font-size:11px;">({{ __('optional') }})</span></label>
                                                 <input type="number" name="age" class="ten-input form-control" placeholder="{{ __('Age') }}">
                                             </div>
                                         </div>
                                         <div class="col-md-6">
                                             <div class="ten-field">
-                                                <label class="ten-label">{{ __('Family Members') }}</label>
+                                                <label class="ten-label">{{ __('Family Members') }} <span style="font-weight:400;color:#9ca3af;font-size:11px;">({{ __('optional') }})</span></label>
                                                 <input type="number" name="family_member" class="ten-input form-control" placeholder="{{ __('Family Members') }}">
                                             </div>
                                         </div>

@@ -31,6 +31,12 @@ class DashboardController extends Controller
         // it must NOT read as "your tenancy has ended", so gate on having actually had an owner.
         $data['tenancyEnded'] = (int) $tenantUser->status === TENANT_STATUS_CLOSE
             && ! is_null(auth()->user()->owner_user_id);
+
+        // Nudge the tenant to complete their own job/age/household — PII best authored by them, and
+        // the data that gives the Global Tenant ID its value (an owner's guess would pollute it).
+        // Only while the tenancy is live (an ended one shouldn't be asked to fill a profile).
+        $data['profileIncomplete'] = ! $data['tenancyEnded']
+            && (empty($tenantUser->job) || empty($tenantUser->age) || empty($tenantUser->family_member));
         $data['invoices'] = Invoice::where('tenant_id', $tenantUser->id)
             ->with(['invoiceItems.invoiceType'])
             ->latest()
