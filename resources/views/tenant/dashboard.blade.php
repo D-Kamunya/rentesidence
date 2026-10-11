@@ -49,6 +49,18 @@
 
                     {{-- Live-tenancy nudges — suppressed once the tenancy has ended (see banner above). --}}
                     @if (empty($tenancyEnded))
+                    {{-- Complete-your-profile nudge — your own job/age/household strengthens your
+                         rental record (Global Tenant ID). Self-resolves once filled. --}}
+                    @if (!empty($profileIncomplete))
+                        <a href="{{ route('profile') }}" class="tmo-nudge">
+                            <span class="tmo-nudge__ic"><i class="ri-user-settings-line"></i></span>
+                            <span class="tmo-nudge__body">
+                                <strong>{{ __('Complete your profile') }}</strong>
+                                <span>{{ __('Add your job, age and household on your profile — it strengthens your rental record and takes a moment.') }}</span>
+                            </span>
+                            <span class="tmo-nudge__go"><i class="ri-arrow-right-line"></i></span>
+                        </a>
+                    @endif
                     {{-- Move-out status — surfaced up top; links to the actual thing on Invoices --}}
                     @if (!empty($pendingSettlement))
                         <a href="{{ route('tenant.invoice.index') }}" class="tmo-nudge tmo-nudge--action">
