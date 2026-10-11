@@ -159,6 +159,75 @@ class SmsCreditsService
     }
 
     /**
+     * Advisory estimate of credits to keep so a full rent cycle reaches every tenant. Per active
+     * tenant we assume `sms_advisory_per_tenant` credits (invoice notification ≈2 segments + ~1
+     * reminder) plus a `sms_advisory_margin_percent` buffer — both config knobs. Returns the tenant
+     * count, suggested balance, current balance and whether they're covered.
+     */
+    public static function suggestedCredits(int $ownerUserId): array
+    {
+        $tenants   = \App\Models\Tenant::where('owner_user_id', $ownerUserId)
+            ->where('status', TENANT_STATUS_ACTIVE)->count();
+        $perTenant = (float) getOption('sms_advisory_per_tenant', 3);
+        $marginPct = (float) getOption('sms_advisory_margin_percent', 20);
+        $suggested = (int) ceil($tenants * $perTenant * (1 + $marginPct / 100));
+        $balance   = self::balance($ownerUserId);
+
+        return [
+            'tenants'   => $tenants,
+            'suggested' => $suggested,
+            'balance'   => $balance,
+            'covered'   => ($tenants === 0 || $balance >= $suggested),
+            'shortfall' => max(0, $suggested - $balance),
+        ];
+    }
+
+    /**
+     * Invoice-run pre-flight: after a rent-invoice batch, nudge any owner whose SMS balance won't
+     * cover one message per invoiced tenant, so they top up and the blocked texts can be retried.
+     * Throttled to once/day per owner. Email + in-app (platform → owner), fail-safe.
+     *
+     * @param array<int,int> $ownerInvoiceCounts owner_user_id => invoices generated this run
+     */
+    public static function preflightInvoiceRun(array $ownerInvoiceCounts): void
+    {
+        foreach ($ownerInvoiceCounts as $ownerUserId => $count) {
+            if ($count <= 0) {
+                continue;
+            }
+            try {
+                $balance = self::balance((int) $ownerUserId);
+                if ($balance >= $count) {
+                    continue; // enough to reach everyone
+                }
+                $cacheKey = 'sms_invoice_preflight_' . $ownerUserId;
+                if (\Illuminate\Support\Facades\Cache::has($cacheKey)) {
+                    continue;
+                }
+                \Illuminate\Support\Facades\Cache::put($cacheKey, 1, now()->addDay());
+
+                $owner = self::getOwner((int) $ownerUserId);
+                if (! $owner || ! $owner->user) {
+                    continue;
+                }
+
+                $title   = __('Low SMS credits for this invoice run');
+                $body    = __('Rent invoices were generated for :count tenant(s), but your SMS balance is :bal — some invoice texts may not send. Top up to reach everyone.', ['count' => $count, 'bal' => $balance]);
+                $subject = __('Top up SMS — some invoice notifications may not reach your tenants');
+                $message = __('Your monthly rent invoices were generated for :count tenant(s), but your SMS credit balance is :bal, so some invoice-notification texts may not have reached all tenants. Top up your SMS credits to re-send the rest.', ['count' => $count, 'bal' => $balance]);
+
+                SendSmsCreditsEmailJob::dispatch(
+                    $owner->user,
+                    (object) ['subject' => $subject, 'message' => $message],
+                    (object) ['title'   => $title,   'body'    => $body, 'url' => route('owner.sms.credits.index')],
+                );
+            } catch (\Throwable $e) {
+                Log::error('SmsCreditsService: invoice-run pre-flight failed – ' . $e->getMessage());
+            }
+        }
+    }
+
+    /**
      * Owners with a paused SMS backlog — at least one message blocked by insufficient credits in
      * the last N days — as [owner_user_id => blocked_count]. Feeds the scheduled re-engagement
      * digest (SmsPausedDigest): the caller still filters to those STILL out of credit + throttles.
