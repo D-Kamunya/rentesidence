@@ -64,15 +64,17 @@
                                     <td style="text-align:right;">
                                         @if(in_array($order->refund_status, [REFUND_STATUS_REQUESTED, REFUND_STATUS_FAILED], true))
                                             @php $isRetry = $order->refund_status === REFUND_STATUS_FAILED; @endphp
-                                            <form method="POST" action="{{ route('admin.marketplace.refunds.approve', $order->id) }}" style="display:inline;">
+                                            {{-- cs-confirm binds to the FORM (the click handler deliberately skips submit
+                                                 buttons), so the data-cs-confirm attributes must live here, not on the button. --}}
+                                            <form method="POST" action="{{ route('admin.marketplace.refunds.approve', $order->id) }}" style="display:inline;"
+                                                data-cs-confirm="{{ $isRetry
+                                                    ? __('Retry the M-Pesa refund of KES :amt to :buyer for order #:id? This re-attempts a real-money payout and cannot be undone.', ['amt' => number_format($amount, 2), 'buyer' => optional($order->user)->name ?: __('the buyer'), 'id' => $order->order_id])
+                                                    : __('Send an M-Pesa refund of KES :amt to :buyer for order #:id? This moves real money and cannot be undone.', ['amt' => number_format($amount, 2), 'buyer' => optional($order->user)->name ?: __('the buyer'), 'id' => $order->order_id]) }}"
+                                                data-cs-confirm-title="{{ $isRetry ? __('Retry refund?') : __('Send refund?') }}"
+                                                data-cs-confirm-ok="{{ $isRetry ? __('Yes, retry') : __('Yes, send refund') }}"
+                                                data-cs-confirm-tone="danger">
                                                 @csrf
-                                                <button type="submit" class="cs-btn cs-btn--primary cs-btn--sm"
-                                                    data-cs-confirm="{{ $isRetry
-                                                        ? __('Retry the M-Pesa refund of KES :amt to :buyer for order #:id? This re-attempts a real-money payout and cannot be undone.', ['amt' => number_format($amount, 2), 'buyer' => optional($order->user)->name ?: __('the buyer'), 'id' => $order->order_id])
-                                                        : __('Send an M-Pesa refund of KES :amt to :buyer for order #:id? This moves real money and cannot be undone.', ['amt' => number_format($amount, 2), 'buyer' => optional($order->user)->name ?: __('the buyer'), 'id' => $order->order_id]) }}"
-                                                    data-cs-confirm-title="{{ $isRetry ? __('Retry refund?') : __('Send refund?') }}"
-                                                    data-cs-confirm-ok="{{ $isRetry ? __('Yes, retry') : __('Yes, send refund') }}"
-                                                    data-cs-confirm-tone="danger">
+                                                <button type="submit" class="cs-btn cs-btn--primary cs-btn--sm">
                                                     {{ $isRetry ? __('Retry refund') : __('Approve & Refund') }}
                                                 </button>
                                             </form>
