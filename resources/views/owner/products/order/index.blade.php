@@ -210,6 +210,19 @@
                                                     @elseif ($order->settlement_status === SETTLEMENT_STATUS_RELEASED)
                                                         <span style="display:block;font-size:10px;color:#0F6E56;margin-top:3px;">{{ __('Settled to wallet') }}</span>
                                                     @endif
+                                                    {{-- Refund in play on a PAID order (buyer's fast-path request) — admin-gated; the
+                                                         owner sees the state so a refund isn't invisible behind "Paid · Held". --}}
+                                                    @if(in_array($order->refund_status, [REFUND_STATUS_REQUESTED, REFUND_STATUS_PROCESSING, REFUND_STATUS_FAILED, REFUND_STATUS_REFUNDED], true))
+                                                        @php
+                                                            $rlabel = $order->refund_status === REFUND_STATUS_REQUESTED ? __('Refund requested — under review')
+                                                                : ($order->refund_status === REFUND_STATUS_PROCESSING ? __('Refund processing')
+                                                                : ($order->refund_status === REFUND_STATUS_REFUNDED ? __('Refunded to buyer') : __('Refund failed — admin retry')));
+                                                        @endphp
+                                                        <span style="display:block;margin-top:4px;padding:2px 8px;border-radius:999px;font-size:10px;font-weight:600;background:#FBEAE7;color:#B42318;"
+                                                              title="{{ __('A refund is handled by the platform (admin-approved M-Pesa payout to the buyer). No action needed from you.') }}">
+                                                            {{ $rlabel }}
+                                                        </span>
+                                                    @endif
                                                 @elseif ($isCancelled)
                                                     <span class="inv-badge inv-badge--cancelled">
                                                         <svg width="10" height="10" viewBox="0 0 16 16" fill="none">
