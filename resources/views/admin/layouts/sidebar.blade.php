@@ -72,6 +72,12 @@
                         </a>
                     </li>
                     <li>
+                        <a href="{{ route('admin.email-suppressions.index') }}">
+                            <i class="ri-mail-close-line"></i>
+                            <span>{{ __('Email Suppression') }}</span>
+                        </a>
+                    </li>
+                    <li>
                         <a href="{{ route('admin.feature-announcements.index') }}">
                             <i class="ri-volume-up-line"></i>
                             <span>{{ __('Announcements') }}</span>
