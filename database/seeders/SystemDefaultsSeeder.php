@@ -78,6 +78,8 @@ class SystemDefaultsSeeder extends Seeder
             'sms_reminder_cooldown_hours' => 24, // min gap between the same SMS reminder
             'sms_paused_digest_days'      => 7,  // look-back window for the paused-backlog re-engagement digest
             'sms_paused_digest_throttle_days' => 7, // min gap between paused-digest nudges per owner
+            'sms_advisory_per_tenant'     => 3,  // advisory: est. SMS credits per tenant over a rent cycle (invoice ~2 segments + ~1 reminder)
+            'sms_advisory_margin_percent' => 20, // advisory: headroom % on top of the per-tenant estimate
 
             // ── Reminder day-lists (tunable — WHEN to remind; the ON/OFF status is forced below) ──
             // These are only-if-absent so an admin can retune the cadence. The status flags that
