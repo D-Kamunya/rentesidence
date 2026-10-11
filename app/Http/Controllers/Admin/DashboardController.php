@@ -42,11 +42,16 @@ class DashboardController extends Controller
         $data['totalFinancePartner'] = User::where('role', USER_ROLE_FINANCE_PARTNER)->count();
 
         // Owners by their CURRENT active plan (latest active owner_package per owner) — plan-mix uptake.
+        // Restrict to REAL owners (a non-deleted owners row) so stale/old owner_packages for accounts
+        // that no longer exist as owners don't inflate the chart (it was showing 42 "Trial pack" vs
+        // 3 actual owners — those were orphaned packages).
         $data['ownersByPackage'] = \App\Models\OwnerPackage::query()
             ->whereIn('owner_packages.id', function ($q) {
                 $q->selectRaw('MAX(id)')->from('owner_packages')->where('status', ACTIVE)->groupBy('user_id');
             })
             ->join('packages', 'owner_packages.package_id', '=', 'packages.id')
+            ->join('owners', 'owner_packages.user_id', '=', 'owners.user_id')
+            ->whereNull('owners.deleted_at')
             ->selectRaw('packages.name as name, COUNT(*) as c')
             ->groupBy('packages.name')
             ->orderByDesc('c')

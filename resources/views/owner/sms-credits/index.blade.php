@@ -238,7 +238,7 @@
                             </table>
                         </div>
                         @if($failedMessages->hasPages())
-                            <div style="margin-top:14px;padding-bottom:14px;">{{ $failedMessages->links() }}</div>
+                            <div style="margin-top:14px;padding:0 6px 16px 6px;">{{ $failedMessages->links() }}</div>
                         @endif
                     </div>
 

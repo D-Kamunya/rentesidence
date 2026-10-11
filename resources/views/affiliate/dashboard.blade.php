@@ -216,13 +216,22 @@
                             <span style="font-size:12px;color:#9ca3af;">This month</span>
                         </div>
                         <div class="dash-card__body" style="padding:1.25rem 1.5rem;">
-                            <p style="margin:0 0 4px;font-size:13px;color:#6b7280;">Your owners generated</p>
-                            <p style="margin:0 0 2px;font-weight:700;font-size:26px;color:#111827;line-height:1.1;">
-                                Ksh {{ number_format($ownersGeneratedThisMonth, 2) }}
-                            </p>
-                            <p style="margin:0 0 16px;font-size:12px;color:#9ca3af;">
-                                for you this month — you earn from what your owners <em>do</em>, not just their plan. Keep them active and this grows.
-                            </p>
+                            {{-- Earnings headline on a light CS-blue card so it stands out, with a link to the full breakdown. --}}
+                            <div style="background:#EEF4FB;border:1px solid #D6E6F5;border-radius:12px;padding:16px 18px;margin-bottom:16px;display:flex;align-items:flex-start;justify-content:space-between;gap:12px;flex-wrap:wrap;">
+                                <div>
+                                    <p style="margin:0 0 4px;font-size:13px;color:#4a6b8a;">Your owners generated</p>
+                                    <p style="margin:0 0 2px;font-weight:800;font-size:28px;color:#0F2A4A;line-height:1.1;">
+                                        Ksh {{ number_format($ownersGeneratedThisMonth, 2) }}
+                                    </p>
+                                    <p style="margin:0;font-size:12px;color:#6b8bab;">
+                                        for you this month — you earn from what your owners <em>do</em>, not just their plan. Keep them active and this grows.
+                                    </p>
+                                </div>
+                                <a href="{{ route('affiliate.commissions.index') }}"
+                                   style="flex-shrink:0;display:inline-flex;align-items:center;gap:5px;background:#185FA5;color:#fff;font-size:12.5px;font-weight:600;padding:8px 14px;border-radius:8px;text-decoration:none;white-space:nowrap;">
+                                    {{ __('View breakdown') }} <i class="ri-arrow-right-line"></i>
+                                </a>
+                            </div>
                             <div style="display:flex;flex-direction:column;gap:8px;">
                                 @foreach($earningsBySource as $line)
                                     @php $active = $line['amount'] > 0; @endphp
