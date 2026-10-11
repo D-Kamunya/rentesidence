@@ -374,7 +374,9 @@
 .ref-avatar--inactive { background: var(--ref-gray-100); color: var(--ref-gray-400); }
 .ref-owner-name { font-size: 13px; font-weight: 600; color: var(--ref-gray-900); }
 .ref-owner-email { font-size: 11px; color: var(--ref-gray-400); }
-.ref-active-dot { flex-shrink: 0; margin-right: 10px; }
+.ref-active-dot { flex-shrink: 0; }
+/* Give the Client Type column clear separation from the owner cell's active dot. */
+.ref-table td:nth-child(2), .ref-table th:nth-child(2) { padding-left: 20px; }
 .ref-pulse {
     display: block; width: 8px; height: 8px;
     border-radius: 50%; background: #22c55e;
