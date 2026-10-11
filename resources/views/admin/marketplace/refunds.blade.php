@@ -66,7 +66,10 @@
                                             <form method="POST" action="{{ route('admin.marketplace.refunds.approve', $order->id) }}" style="display:inline;">
                                                 @csrf
                                                 <button type="submit" class="cs-btn cs-btn--primary cs-btn--sm"
-                                                    data-cs-confirm="{{ __('Send an M-Pesa refund of KES :amt to :buyer for order #:id? This moves real money.', ['amt' => number_format($amount, 2), 'buyer' => optional($order->user)->name ?: __('the buyer'), 'id' => $order->order_id]) }}">
+                                                    data-cs-confirm="{{ __('Send an M-Pesa refund of KES :amt to :buyer for order #:id? This moves real money and cannot be undone.', ['amt' => number_format($amount, 2), 'buyer' => optional($order->user)->name ?: __('the buyer'), 'id' => $order->order_id]) }}"
+                                                    data-cs-confirm-title="{{ __('Send refund?') }}"
+                                                    data-cs-confirm-ok="{{ __('Yes, send refund') }}"
+                                                    data-cs-confirm-tone="danger">
                                                     {{ $order->refund_status === REFUND_STATUS_FAILED ? __('Retry refund') : __('Approve & Refund') }}
                                                 </button>
                                             </form>
