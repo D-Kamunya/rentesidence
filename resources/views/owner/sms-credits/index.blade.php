@@ -97,7 +97,7 @@
                         @else
                             <div style="display:flex;align-items:flex-start;gap:8px;font-size:13px;color:#854F0B;background:#FEF9EE;border:1px solid #FAC775;border-radius:9px;padding:9px 13px;margin-bottom:1rem;">
                                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" style="flex-shrink:0;margin-top:2px;"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="1.8"/><line x1="12" y1="8" x2="12" y2="12" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><line x1="12" y1="16" x2="12.01" y2="16" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
-                                <span>{{ __('You have :tenants tenant(s). A full rent cycle uses about :need credits (invoices + reminders); you have :bal. Topping up to around :need keeps everyone covered.', ['tenants' => $smsAdvisory['tenants'], 'need' => number_format($smsAdvisory['suggested']), 'bal' => number_format($smsAdvisory['balance'])]) }}</span>
+                                <span>{!! __('You have :tenants tenant(s). A full rent cycle uses about <strong>:need</strong> credits (invoices + reminders); you have :bal. Topping up to around <strong>:need</strong> keeps everyone covered.', ['tenants' => (int) $smsAdvisory['tenants'], 'need' => number_format($smsAdvisory['suggested']), 'bal' => number_format($smsAdvisory['balance'])]) !!}</span>
                             </div>
                         @endif
                     @endif

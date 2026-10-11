@@ -100,11 +100,15 @@
                                                 <span class="lb-you-badge">{{ __('YOU') }}</span>
                                             @endif
                                         </span>
-                                        <span class="lb-row__sub">{{ $earner->total_referrals }} {{ __('referrals') }}</span>
+                                        {{-- Others' numbers are hidden — the board is about your RANK, not peeking at
+                                             what everyone earns. Your own figures show on your highlighted row. --}}
+                                        @if($earner->id == $currentAffiliateId)
+                                            <span class="lb-row__sub">{{ $earner->total_referrals }} {{ __('referrals') }}</span>
+                                        @endif
                                     </div>
-                                    <div class="lb-row__earnings">
-                                        KSh {{ number_format($earner->total_earned, 2) }}
-                                    </div>
+                                    @if($earner->id == $currentAffiliateId)
+                                        <div class="lb-row__earnings">KSh {{ number_format($earner->total_earned, 2) }}</div>
+                                    @endif
                                 </div>
                                 @empty
                                 <div class="lb-empty">{{ __('No data for this period') }}</div>
@@ -145,12 +149,16 @@
                                                 <span class="lb-you-badge">{{ __('YOU') }}</span>
                                             @endif
                                         </span>
-                                        <span class="lb-row__sub">KSh {{ number_format($recruiter->total_earned, 0) }} {{ __('earned') }}</span>
+                                        @if($recruiter->id == $currentAffiliateId)
+                                            <span class="lb-row__sub">KSh {{ number_format($recruiter->total_earned, 0) }} {{ __('earned') }}</span>
+                                        @endif
                                     </div>
-                                    <div class="lb-row__referrals">
-                                        {{ $recruiter->total_referrals }}
-                                        <span style="font-size:10px;color:var(--lb-gray-400);">refs</span>
-                                    </div>
+                                    @if($recruiter->id == $currentAffiliateId)
+                                        <div class="lb-row__referrals">
+                                            {{ $recruiter->total_referrals }}
+                                            <span style="font-size:10px;color:var(--lb-gray-400);">refs</span>
+                                        </div>
+                                    @endif
                                 </div>
                                 @empty
                                 <div class="lb-empty">{{ __('No data for this period') }}</div>
@@ -188,14 +196,14 @@
                         <div class="lb-wins-grid">
                             @foreach($recentBigWins as $win)
                             <div class="lb-win-card">
+                                {{-- Anonymous social proof — no affiliate/owner identities (that would expose
+                                     other people's — and owners' — data to unrelated affiliates). --}}
                                 <div class="lb-win-card__top">
-                                    <span class="lb-win-card__affiliate">{{ $win['affiliate_name'] }}</span>
+                                    <span class="lb-win-card__affiliate">{{ __('An affiliate') }}</span>
                                     <span class="lb-win-card__amount">+KSh {{ number_format($win['amount'], 2) }}</span>
                                 </div>
                                 <div class="lb-win-card__bottom">
-                                    <span class="lb-win-card__detail">
-                                        {{ $win['source'] }} · {{ $win['owner_name'] }}
-                                    </span>
+                                    <span class="lb-win-card__detail">{{ $win['source'] }}</span>
                                     <span class="lb-win-card__time">{{ $win['when'] }}</span>
                                 </div>
                             </div>
