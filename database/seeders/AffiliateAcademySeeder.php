@@ -179,6 +179,29 @@ class AffiliateAcademySeeder extends Seeder
                     ]],
                 ],
             ],
+            // ─────────────────────────────────────────────────────────────────
+            [
+                'title' => 'The Lead Marketplace — claim ready leads',
+                'duration' => 6,
+                'content' => '<h3>Two ways to get leads</h3><p>You will find many owners yourself (the previous module). But you are not limited to your own contacts — Centresidence also gives you a shared <strong>Lead Marketplace</strong>: a pool of prospective owners (people who enquired through the website, and leads the company sources) that <strong>any affiliate can claim and work</strong>. It is extra pipeline on top of your own hustle.</p><h3>How it works</h3><ol><li>Open <strong>Leads → Lead Marketplace</strong>. Browse the available (unclaimed) leads; filter by location, property type or how warm they are.</li><li><strong>Claim</strong> a lead you can actively work. The moment you claim it, it becomes <em>yours</em> — it moves into your pipeline and no other affiliate can take it.</li><li>Work it like any lead: reach out, qualify, demo, and convert. If that owner signs up, the commission is <strong>yours</strong>, first-time and recurring.</li></ol><h3>Claim responsibly</h3><p>A claimed lead is protected to you for an ownership window — but only claim what you can genuinely follow up on soon. A lead you grab and ignore helps no one and may return to the pool for another affiliate. Claim fewer, work them well.</p><h3>Use both</h3><p>The strongest affiliates combine <strong>their own warm leads</strong> (highest conversion) with the <strong>marketplace</strong> (extra volume when your own pipeline is thin). Register your own prospects under Leads to protect them, and top up from the marketplace when you have capacity.</p>',
+                'questions' => [
+                    ['q' => 'What is the Lead Marketplace?', 'options' => [
+                        'A shared pool of prospective owners that any affiliate can claim and work' => true,
+                        'A place to buy products from other affiliates' => false,
+                        'A list of owners who have already converted' => false,
+                    ]],
+                    ['q' => 'What happens when you claim a lead from the marketplace?', 'options' => [
+                        'It becomes yours — it moves into your pipeline and others can no longer take it' => true,
+                        'Nothing changes; anyone can still take it' => false,
+                        'You are charged a fee to keep it' => false,
+                    ]],
+                    ['q' => 'What is the smart way to use the marketplace?', 'options' => [
+                        'Claim only what you can actively follow up on, and combine it with your own warm leads' => true,
+                        'Claim as many leads as possible and worry about them later' => false,
+                        'Only ever use the marketplace and never find your own leads' => false,
+                    ]],
+                ],
+            ],
             // 6 ──────────────────────────────────────────────────────────────
             [
                 'title' => 'Running a great demo',
