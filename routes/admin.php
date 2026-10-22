@@ -77,6 +77,8 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'middleware' => ['auth', 'a
     Route::get('academy/{module}/questions', [AcademyAdminController::class, 'questions'])->name('academy.questions');
     Route::get('academy/{module}/questions/create', [AcademyAdminController::class, 'createQuestion'])->name('academy.questions.create');
     Route::post('academy/{module}/questions', [AcademyAdminController::class, 'storeQuestion'])->name('academy.questions.store');
+    Route::get('academy/questions/{question}/edit', [AcademyAdminController::class, 'editQuestion'])->name('academy.questions.edit');
+    Route::put('academy/questions/{question}', [AcademyAdminController::class, 'updateQuestion'])->name('academy.questions.update');
     Route::delete('academy/questions/{question}', [AcademyAdminController::class, 'destroyQuestion'])->name('academy.questions.destroy');
     Route::delete('academy/options/{option}', [AcademyAdminController::class, 'destroyOption'])->name('academy.options.destroy');
     // Affiliate performance

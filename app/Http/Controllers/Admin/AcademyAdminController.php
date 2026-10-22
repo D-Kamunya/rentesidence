@@ -163,7 +163,48 @@ class AcademyAdminController extends Controller
 
     public function createQuestion(AcademyModule $module)
     {
-        return view('admin.academy.questions.create', compact('module'));
+        $pageTitle = __('Add Question');
+        return view('admin.academy.questions.create', compact('module', 'pageTitle'));
+    }
+
+    /** Edit an existing question + its options (was delete-and-recreate only). */
+    public function editQuestion(AcademyQuestion $question)
+    {
+        $question->load('options');
+        $module    = $question->module;
+        $pageTitle = __('Edit Question');
+        return view('admin.academy.questions.edit', compact('question', 'module', 'pageTitle'));
+    }
+
+    public function updateQuestion(Request $request, AcademyQuestion $question)
+    {
+        $request->validate([
+            'question'              => 'required|string|max:500',
+            'question_order'        => 'required|integer',
+            'options'               => 'required|array|min:2',
+            'options.*.option_text' => 'required|string|max:255',
+            'correct_option'        => 'required|integer',
+        ]);
+
+        DB::transaction(function () use ($request, $question) {
+            $question->update([
+                'question'       => $request->question,
+                'question_order' => $request->question_order,
+            ]);
+
+            // Replace options wholesale (simplest correct approach — add/remove/edit + re-mark correct).
+            $question->options()->delete();
+            foreach ($request->options as $index => $opt) {
+                $question->options()->create([
+                    'option_text' => $opt['option_text'],
+                    'is_correct'  => $request->correct_option == $index ? 1 : 0,
+                ]);
+            }
+        });
+
+        return redirect()
+            ->route('admin.academy.questions', $question->module_id)
+            ->with('success', __('Question updated successfully.'));
     }
 
     public function storeQuestion(Request $request, AcademyModule $module)

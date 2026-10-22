@@ -202,20 +202,26 @@
 
             .academy-btn-success{
             background:linear-gradient(135deg,#22c55e,#16a34a);
-            color:white;
+            color:#fff !important;
+            text-decoration:none !important;
             }
 
             .academy-btn-success:hover{
+            color:#fff !important;
+            text-decoration:none !important;
             transform:translateY(-2px);
             box-shadow:0 8px 20px rgba(22,163,74,0.25);
             }
 
             .academy-btn-warning{
             background:linear-gradient(135deg,#f59e0b,#d97706);
-            color:white;
+            color:#fff !important;
+            text-decoration:none !important;
             }
 
             .academy-btn-warning:hover{
+            color:#fff !important;
+            text-decoration:none !important;
             transform:translateY(-2px);
             box-shadow:0 8px 20px rgba(217,119,6,0.25);
             }
@@ -233,10 +239,13 @@
 
             .academy-btn-cert{
             background:linear-gradient(135deg,#6366f1,#4f46e5);
-            color:white;
+            color:#fff !important;
+            text-decoration:none !important;
             }
 
             .academy-btn-cert:hover{
+            color:#fff !important;
+            text-decoration:none !important;
             transform:translateY(-2px);
             box-shadow:0 8px 20px rgba(79,70,229,0.25);
             }

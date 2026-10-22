@@ -29,7 +29,7 @@
                 <li>
                     <a href="{{ route('affiliate.academy.index') }}">
                         <i class="fa fa-graduation-cap"></i>
-                        <span>{{ __('Academy') }}</span>
+                        <span>{{ __('Academy') }}@include('partials.nav-count', ['n' => $navBadges['academy'] ?? 0])</span>
                     </a>
                 </li>
                 <li>

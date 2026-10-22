@@ -27,8 +27,16 @@
 
                     <div class="container mt-4">
 
+                        {{-- Back link --}}
+                        <a href="{{ route('admin.academy.index') }}" class="mod-back-link mb-4 d-inline-flex align-items-center gap-2">
+                            <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
+                                <path d="M10 3L5 8l5 5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+                            </svg>
+                            Back to Modules
+                        </a>
+
                         {{-- Header --}}
-                        <div class="d-flex justify-content-between align-items-start flex-wrap gap-3 mb-4">
+                        <div class="d-flex justify-content-between align-items-start flex-wrap gap-3 mb-4 mt-3">
                             <div>
                                 <h5 class="mb-1" style="font-weight:500;">{{ $module->title }}</h5>
                                 <p class="mb-0" style="font-size:13px;color:#9ca3af;">
@@ -51,6 +59,10 @@
                                 <div class="q-card__header" style="display:flex;align-items:flex-start;gap:10px;">
                                     <span class="q-order">{{ $question->question_order }}</span>
                                     <p class="q-text" style="flex:1;">{{ $question->question }}</p>
+                                    <a href="{{ route('admin.academy.questions.edit', $question->id) }}"
+                                       class="q-edit-btn" title="{{ __('Edit question') }}" style="flex-shrink:0;">
+                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M4 20h4L18.5 9.5a2.1 2.1 0 00-3-3L5 17v3z M13.5 6.5l3 3" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                                    </a>
                                     <form method="POST" action="{{ route('admin.academy.questions.destroy', $question->id) }}"
                                           data-cs-confirm="{{ __('Delete this question and all its options? This cannot be undone.') }}"
                                           data-cs-confirm-title="{{ __('Delete question?') }}"
@@ -124,6 +136,29 @@
             transform: translateY(-1px);
             box-shadow: 0 5px 14px rgba(24,95,165,.22);
         }
+
+        /* ── Back link ───────────────────────────────────────── */
+        .mod-back-link {
+            font-size: 13px;
+            font-weight: 500;
+            color: #6b7280 !important;
+            text-decoration: none;
+            transition: color .15s;
+        }
+        .mod-back-link:hover { color: #111827 !important; }
+
+        /* ── Edit question icon button (anchor — force color past global a:hover) ── */
+        .q-edit-btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 4px;
+            line-height: 0;
+            color: #6b7280 !important;
+            text-decoration: none;
+            transition: color .15s;
+        }
+        .q-edit-btn:hover { color: #185FA5 !important; }
 
         /* ── Question card ───────────────────────────────────── */
         .q-card {
