@@ -20,7 +20,7 @@
                             </p>
                         </div>
                         @if($isCertified)
-                            <a href="{{ route('affiliate.academy.certificate') }}" class="certified-badge">
+                            <a href="{{ route('affiliate.academy.certificate') }}" class="certified-badge cert-dl-btn">
                                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none">
                                     <path d="M12 2l2.9 6 6.6.9-4.8 4.6 1.1 6.5L12 17l-5.8 3 1.1-6.5L2.5 9l6.6-.9L12 2z" fill="currentColor"/>
                                 </svg>
