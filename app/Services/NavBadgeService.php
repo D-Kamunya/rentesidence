@@ -111,6 +111,21 @@ class NavBadgeService
                 return LeadSuggestion::where('status', 'pending')->whereIn('lead_id', $leadIds)->count();
             }),
 
+            // Academy modules this affiliate hasn't completed yet — so a NEWLY ADDED module
+            // surfaces as a number on the Academy nav link (the "new training available" cue),
+            // for everyone including graduates. Zero = all current modules done = no badge.
+            'academy' => $this->safe(function () use ($affiliateUserId) {
+                $affiliateId = \App\Models\Affiliate::where('user_id', $affiliateUserId)->value('id');
+                if (! $affiliateId) {
+                    return 0;
+                }
+                $total = \App\Models\AcademyModule::where('is_active', true)->count();
+                $completed = \App\Models\AffiliateAcademyProgress::where('affiliate_id', $affiliateId)
+                    ->whereNotNull('completed_at')
+                    ->count();
+                return max(0, $total - $completed);
+            }),
+
             'support' => $this->safe(fn () => app(SupportTicketService::class)->requesterUnreadCount($affiliateUserId)),
         ];
     }
