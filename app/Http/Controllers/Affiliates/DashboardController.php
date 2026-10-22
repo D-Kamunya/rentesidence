@@ -145,8 +145,11 @@ class DashboardController extends Controller
                 ->whereNotNull('completed_at')
                 ->count();
             
-            $isCertified = $totalModules > 0 && $completedModules === $totalModules;
-            $newModules = $completedModules < $totalModules;
+            // Certification follows the STICKY academy_status flag, not a live module count — so a
+            // graduate stays "certified" even after we add new modules. New content then shows as an
+            // optional "new modules available" nudge (recommended, never a decertification).
+            $isCertified = ($user->affiliate->academy_status === 'completed');
+            $newModules  = $isCertified && $completedModules < $totalModules;
             // Leads and Suggestions display
             $totalLeads = Lead::where('affiliate_id', $leadsaffiliateId)->count();
             $leadIds = Lead::where('affiliate_id', $leadsaffiliateId)->pluck('id');
