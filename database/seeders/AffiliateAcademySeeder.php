@@ -29,20 +29,22 @@ class AffiliateAcademySeeder extends Seeder
         });
 
         foreach ($this->modules() as $i => $def) {
-            $module = AcademyModule::updateOrCreate(
-                ['title' => $def['title']],
-                [
-                    'content'          => $def['content'],
-                    'youtube_url'      => $def['youtube_url'] ?? null,
-                    'duration_minutes' => $def['duration'] ?? 5,
-                    'module_order'     => $i + 1,
-                    'is_active'        => true,
-                ]
-            );
+            // ONLY-IF-ABSENT: never overwrite an existing module. Once seeded, the DB is the source
+            // of truth — academy content is refined LIVE via the admin editor, and re-running this
+            // seeder must not clobber those edits. A fresh install still gets the full course, and a
+            // genuinely new module (title not present) is added; existing modules are left untouched.
+            if (AcademyModule::where('title', $def['title'])->exists()) {
+                continue;
+            }
 
-            // Rebuild this module's quiz so content stays authoritative.
-            AcademyQuestion::where('module_id', $module->id)->each(fn ($q) => AcademyOption::where('question_id', $q->id)->delete());
-            AcademyQuestion::where('module_id', $module->id)->delete();
+            $module = AcademyModule::create([
+                'title'            => $def['title'],
+                'content'          => $def['content'],
+                'youtube_url'      => $def['youtube_url'] ?? null,
+                'duration_minutes' => $def['duration'] ?? 5,
+                'module_order'     => $i + 1,
+                'is_active'        => true,
+            ]);
 
             foreach ($def['questions'] as $qi => $q) {
                 $question = AcademyQuestion::create([

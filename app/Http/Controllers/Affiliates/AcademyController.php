@@ -142,10 +142,16 @@ class AcademyController extends Controller
             ->whereNotNull('completed_at')
             ->count();
         
-        if ($completedModules == $totalModules) {
+        // Graduation is STICKY and forward-only: once an affiliate has completed the course they
+        // stay 'completed' even after we ADD new modules later — new content never un-certifies
+        // them or re-locks their tools (no forced re-training). A not-yet-graduated affiliate still
+        // needs every current module to reach 'completed'; new ones surface as optional "new content".
+        if ($completedModules >= $totalModules) {
+            if ($affiliate->academy_status !== 'completed') {
+                $affiliate->academy_certified_at = now();
+            }
             $affiliate->academy_status = 'completed';
-            $affiliate->academy_certified_at = now();
-        } else {
+        } elseif ($affiliate->academy_status !== 'completed') {
             $affiliate->academy_status = 'in_progress';
         }
         $affiliate->save();
