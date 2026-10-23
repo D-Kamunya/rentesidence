@@ -36,8 +36,11 @@
          'body' => __('Install smart prepaid water/gas meters, smart locks and more — funded by a partner and repaid automatically from rent. No upfront cash from you. This is the part owners leave their old software for.'),
          'target' => '[data-tour="owner-financing"]'],
 
+        // Spotlights the Agreements menu where present (PROTYAGREEMENT, e.g. live); the tour engine
+        // gracefully centres this step on installs where that menu isn't shown.
         ['ico' => '🖊️', 'title' => __('Sign leases in-app'),
-         'body' => __('There\'s more under the hood: send a lease and your tenant signs it on their phone with a one-time code — a certified PDF with an audit trail. No printing, no scanning.')],
+         'body' => __('Send a lease and your tenant signs it on their phone with a one-time code — a certified PDF with an audit trail. No printing, no scanning.'),
+         'target' => '[data-tour="owner-agreement"]'],
 
         ['ico' => '🚀', 'title' => __('That\'s :app', ['app' => $app]),
          'body' => __('Set up your first property in minutes and collect this month\'s rent over M-Pesa. Tap "Start free" below when you\'re ready — or talk to the partner who shared this with you.')],
