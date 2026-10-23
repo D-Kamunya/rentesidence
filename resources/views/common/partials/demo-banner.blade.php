@@ -10,7 +10,7 @@
 </div>
 <div id="demoToast" aria-live="polite"></div>
 <style>
-  #demoBar{position:fixed;left:50%;bottom:18px;transform:translateX(-50%);z-index:2147483000;
+  #demoBar{position:fixed;left:50%;bottom:18px;transform:translateX(-50%);z-index:1290;
     display:flex;align-items:center;gap:12px;background:#111826;color:#fff;border-radius:999px;
     padding:9px 10px 9px 16px;box-shadow:0 10px 34px rgba(16,20,28,.34);font-size:13.5px;font-weight:600;
     max-width:calc(100vw - 24px);}
@@ -23,7 +23,7 @@
   .demoBar__btn:hover{background:rgba(255,255,255,.22);color:#fff;text-decoration:none;}
   .demoBar__btn--cta{background:#185FA5;}
   .demoBar__btn--cta:hover{background:#2f78c4;}
-  #demoToast{position:fixed;left:50%;bottom:74px;transform:translateX(-50%);z-index:2147483000;
+  #demoToast{position:fixed;left:50%;bottom:74px;transform:translateX(-50%);z-index:1290;
     display:flex;flex-direction:column;gap:8px;align-items:center;pointer-events:none;}
   .demoToast__item{background:#1b1e22;color:#fff;border-radius:12px;padding:11px 16px;font-size:13.5px;font-weight:600;
     box-shadow:0 10px 30px rgba(20,23,28,.3);max-width:min(92vw,420px);text-align:center;
@@ -55,5 +55,18 @@
   }, true);
   // Surface a server-side block notice if one was flashed.
   @if(session('demo_notice')) toast(@json(session('demo_notice'))); @endif
+
+  // Hide the pill while the guided tour overlay is open — it has its own controls, and the
+  // pill would otherwise sit over the tour's Next button on centred steps.
+  var bar = document.getElementById('demoBar');
+  var cst = document.getElementById('cstRoot');
+  if (bar && cst) {
+    var sync = function(){
+      var open = cst.style.display !== 'none' && getComputedStyle(cst).display !== 'none';
+      bar.style.visibility = open ? 'hidden' : 'visible';
+    };
+    new MutationObserver(sync).observe(cst, { attributes: true, attributeFilter: ['style', 'class'] });
+    sync();
+  }
 })();
 </script>

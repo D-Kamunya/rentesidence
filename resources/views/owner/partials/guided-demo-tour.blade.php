@@ -37,8 +37,7 @@
          'target' => '[data-tour="owner-financing"]'],
 
         ['ico' => '🖊️', 'title' => __('Sign leases in-app'),
-         'body' => __('Send a lease and your tenant signs it on their phone with a one-time code — a certified PDF with an audit trail. No printing, no scanning.'),
-         'target' => '[data-tour="owner-agreement"]'],
+         'body' => __('There\'s more under the hood: send a lease and your tenant signs it on their phone with a one-time code — a certified PDF with an audit trail. No printing, no scanning.')],
 
         ['ico' => '🚀', 'title' => __('That\'s :app', ['app' => $app]),
          'body' => __('Set up your first property in minutes and collect this month\'s rent over M-Pesa. Tap "Start free" below when you\'re ready — or talk to the partner who shared this with you.')],
