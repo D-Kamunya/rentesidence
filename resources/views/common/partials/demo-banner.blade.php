@@ -5,7 +5,7 @@
 <div id="demoBar" role="status">
   <span class="demoBar__dot"></span>
   <span class="demoBar__txt">{{ __('Live demo — read-only') }}</span>
-  <a href="{{ route('frontend') }}" class="demoBar__btn demoBar__btn--cta" data-demo-allow>{{ __('Start free') }}</a>
+  <a href="{{ route('frontend', ['intent' => 'trial']) }}#contact-us" class="demoBar__btn demoBar__btn--cta" data-demo-allow>{{ __('Start free') }}</a>
   <a href="{{ route('demo.exit') }}" class="demoBar__btn" data-demo-allow>{{ __('Exit demo') }}</a>
 </div>
 <div id="demoToast" aria-live="polite"></div>

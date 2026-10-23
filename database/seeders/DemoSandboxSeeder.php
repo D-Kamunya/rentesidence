@@ -167,9 +167,35 @@ class DemoSandboxSeeder extends Seeder
                 $this->makeInvoice($ownerId, $property->id, $unit->id, $tenant->id, $rent, $seq++, Carbon::now(), INVOICE_STATUS_PENDING);
             }
 
+            // NOTE: products.owner_user_id is a FK to owners.id (not users.id, unlike properties/invoices).
+            $this->seedShop((int) $created['owner']->id);
+
             setOption('demo_sandbox_owner_user_id', (string) $ownerId);
             setOption(self::SENTINEL, '1');
         });
+    }
+
+    /** A couple of sample marketplace products so "My Shop" (a key differentiator) looks alive. */
+    private function seedShop(int $ownerId): void
+    {
+        $cat = \App\Models\ProductCategory::where('type', 'product')->where('status', ACTIVE)->first()
+            ?? \App\Models\ProductCategory::first();
+
+        $items = [
+            ['name' => '20L Drinking Water', 'price' => 300,  'desc' => 'Clean bottled drinking water delivered to your door.'],
+            ['name' => '6kg Gas Refill',     'price' => 1350, 'desc' => 'Same-day cooking gas refill for your unit.'],
+        ];
+        foreach ($items as $p) {
+            $prod = new \App\Models\Product();
+            $prod->owner_user_id       = $ownerId;
+            $prod->name                = $p['name'];
+            $prod->description         = $p['desc'];
+            $prod->price               = $p['price'];
+            $prod->category            = $cat->name ?? 'General';
+            $prod->product_category_id = $cat->id ?? null;
+            $prod->type                = $cat->type ?? 'product';
+            $prod->save();
+        }
     }
 
     private function makeInvoice(int $ownerId, int $propertyId, int $unitId, int $tenantId, float $rent, int $seq, Carbon $period, int $status): Invoice
