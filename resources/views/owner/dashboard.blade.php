@@ -7,12 +7,18 @@
             <div class="page-content-wrapper bg-white p-30 radius-20">
                 <div class="container">
 
-                    {{-- Owner setup checklist — live "get set up to collect rent" tracker for new owners
-                         (auto-hides once complete or dismissed). --}}
-                    @include('owner.partials.setup-checklist')
+                    @unless(session('demo_mode'))
+                        {{-- Owner setup checklist — live "get set up to collect rent" tracker for new owners
+                             (auto-hides once complete or dismissed). --}}
+                        @include('owner.partials.setup-checklist')
 
-                    {{-- First-login owner walk-around (desktop spotlight / mobile carousel); replay via "How it works". --}}
-                    @include('owner.partials.welcome-tour')
+                        {{-- First-login owner walk-around (desktop spotlight / mobile carousel); replay via "How it works". --}}
+                        @include('owner.partials.welcome-tour')
+                    @else
+                        {{-- Guided DEMO sales walkthrough — replaces the owner-onboarding chrome inside the
+                             read-only sandbox, so a prospect sees one tour (the demo), not two. --}}
+                        @include('owner.partials.guided-demo-tour')
+                    @endunless
 
                     {{-- Owner Upgrade Advisor — the top personalised nudge (subsumes the old static
                          financing banner; now targeted + server-side dismiss). --}}
