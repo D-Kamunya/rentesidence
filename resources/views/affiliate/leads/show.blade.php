@@ -89,7 +89,11 @@
                                 && $latestTrialActivity?->type === 'conversion_rejected';
                             $rejectedByAffiliate = $lead->status === 'rejected';
                             $isLocked    = $lead->isClosed() || $lead->status === 'expired';
-                            $showExpiry  = !in_array($lead->status, ['converted', 'expired', 'rejected', 'lost', 'trial']);
+                            // Ownership expiry only applies to a lead that CAN expire. A protected lead
+                            // (demo_scheduled / demo_completed / pending_conversion / trial) is being actively
+                            // worked and never expires (shouldExpire() returns false), so showing it an
+                            // "Expired" chip + Renew — while a future demo is booked — is misleading.
+                            $showExpiry  = !in_array($lead->status, ['converted', 'expired', 'rejected', 'lost', 'trial']) && ! $lead->isProtected();
                             $reasons     = [
                                 'too_expensive'      => 'Too Expensive',
                                 'using_other_system' => 'Using Another System',
@@ -251,8 +255,8 @@
                                     @endif
                                 @endif
 
-                                {{-- Renew button — own expired leads only --}}
-                                @if($lead->affiliate_id === auth()->id() && $expiry->isPast() && !$lead->isClosed())
+                                {{-- Renew button — own expired leads only (not a protected/worked lead, which never expires) --}}
+                                @if($lead->affiliate_id === auth()->id() && $expiry->isPast() && !$lead->isClosed() && !$lead->isProtected())
                                     <form action="{{ route('affiliate.leads.renew', $lead->id) }}" method="POST">
                                         @csrf
                                         <button type="submit" class="ls-renew-btn">
@@ -564,7 +568,7 @@
                                                     <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
                                                         <input id="demoLinkInput" type="text" readonly value="{{ $demoLink }}" onclick="this.select()" style="flex:1;min-width:200px;font-size:12.5px;padding:9px 11px;border:1px solid #e5e7eb;border-radius:9px;background:#f9fafb;color:#374151;">
                                                         <button type="button" onclick="(function(b){try{navigator.clipboard.writeText(document.getElementById('demoLinkInput').value);}catch(e){var i=document.getElementById('demoLinkInput');i.select();document.execCommand('copy');}b.textContent='Copied';setTimeout(function(){b.textContent='Copy';},1500);})(this)" style="flex:0 0 auto;font-size:13px;font-weight:700;padding:9px 15px;border:1px solid #e5e7eb;border-radius:9px;background:#fff;color:#374151;cursor:pointer;">Copy</button>
-                                                        <a href="{{ $demoLink }}" target="_blank" rel="noopener" class="ls-btn ls-btn--blue" style="text-decoration:none;">Launch demo</a>
+                                                        <a href="{{ $demoLink }}" target="_blank" rel="noopener" class="ls-btn ls-btn--blue" style="text-decoration:none;color:#fff !important;">Launch demo</a>
                                                     </div>
                                                 </div>
                                             @endif
