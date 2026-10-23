@@ -18,7 +18,7 @@ use App\Http\Controllers\Saas\Admin\TestimonialController;
 use App\Http\Controllers\Saas\FrontendController;
 use Illuminate\Support\Facades\Route;
 
-Route::group(['middleware' => ['version.update', 'addon.update', 'isFrontend']], function () {
+Route::group(['middleware' => ['isFrontend']], function () {
     // register owner
     Route::get('owner-register', [OwnerAuthController::class, 'owner_register_form'])->name('owner.register.form');
     Route::post('owner-register', [OwnerAuthController::class, 'owner_register_store'])->name('owner.register.store');

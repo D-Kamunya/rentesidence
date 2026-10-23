@@ -19,7 +19,7 @@ Route::group(['prefix' => 'owner', 'as' => 'owner.', 'middleware' => ['auth', 'o
     });
 });
 
-Route::group(['middleware' => ['version.update', 'addon.update']], function () {
+Route::group([], function () {
     // /properties consolidated into House Hunt (the primary browse experience — shows rentals
     // + sales). Redirect keeps the `listings` route name + any old bookmarks/inbound links alive.
     Route::get('properties', fn () => redirect()->route('house.hunt'))->name('listings');

@@ -66,6 +66,9 @@
                             </div>
                         </div>
 
+                        {{-- Live earnings calculator (reads the platform's live commission rates) --}}
+                        @include('affiliate.academy.partials.earnings-calculator')
+
                         {{-- Flash Messages --}}
                         @if(session('success'))
                             <div class="alert alert-success alert-dismissible fade show" role="alert">
