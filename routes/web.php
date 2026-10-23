@@ -10,7 +10,6 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\UserEmailVerifyController;
-use App\Http\Controllers\VersionUpdateController;
 use App\Models\Language;
 use App\Http\Controllers\BlogController;
 use Carbon\Carbon;
@@ -43,14 +42,14 @@ Route::get('/local/{ln}', function ($ln) {
     return redirect()->back();
 })->name('local');
 
-Route::group(['middleware' => ['version.update', 'addon.update', 'isFrontend']], function () {
+Route::group(['middleware' => ['isFrontend']], function () {
     Route::get('/', [CommonController::class, 'index'])->name('frontend');
     Route::get('recurring-generate-invoice', [CommonController::class, 'generateInvoice'])->name('recurring.generate.invoice');
 });
 
-Route::group(['middleware' => ['auth', 'version.update']], function () {
+Route::group(['middleware' => ['auth']], function () {
     Route::get('/logout', [LoginController::class, 'logout']);
-    Route::group(['middleware' => ['addon.update']], function () {
+    Route::group([], function () {
         Route::get('profile', [ProfileController::class, 'myProfile'])->name('profile');
         Route::post('profile', [ProfileController::class, 'profileUpdate'])->name('profile.update');
         Route::get('change-password', [ProfileController::class, 'changePassword'])->name('change-password');
@@ -161,6 +160,3 @@ Route::post('/invite/{code}', [\App\Http\Controllers\PublicReferralController::c
     ->middleware('throttle:8,10')
     ->name('referral.invite.submit');
 // Route::get('/owner/tenants/applications', function () {return view('owner.tenants.applications');})->name('owner.tenants.applications');
-Route::get('version-update', [VersionUpdateController::class, 'versionUpdate'])->name('version-update');
-Route::post('process-update', [VersionUpdateController::class, 'processUpdate'])->name('process-update');
-Route::get('version-check', [VersionUpdateController::class, 'versionCheck'])->name('versionCheck');

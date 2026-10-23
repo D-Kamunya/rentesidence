@@ -1,6 +1,5 @@
 <?php
 
-use App\Http\Controllers\AddonUpdateController;
 use App\Http\Controllers\Admin\CurrencyController;
 use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\LanguageController;
@@ -22,7 +21,6 @@ use App\Http\Controllers\Admin\SmsCreditsAdminController;
 use App\Http\Controllers\Affiliates\AffiliateWithdrawalController;
 use App\Http\Controllers\Admin\SettingController;
 use App\Http\Controllers\Admin\BlogController as AdminBlogController;
-use App\Http\Controllers\VersionUpdateController;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Artisan;
 
@@ -334,19 +332,6 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'middleware' => ['auth', 'a
         Route::post('test-send', [MailController::class, 'testSend'])->name('test.send');
     });
 
-    // version update
-    Route::get('version-update', [VersionUpdateController::class, 'versionFileUpdate'])->name('file-version-update');
-    Route::post('version-update', [VersionUpdateController::class, 'versionFileUpdateStore'])->name('file-version-update-store');
-    Route::get('version-update-execute', [VersionUpdateController::class, 'versionUpdateExecute'])->name('file-version-update-execute');
-    Route::get('version-delete', [VersionUpdateController::class, 'versionFileUpdateDelete'])->name('file-version-delete');
-
-    Route::group(['prefix' => 'addon', 'as' => 'addon.'], function () {
-        Route::get('details/{code}', [AddonUpdateController::class, 'addonSaasDetails'])->name('details')->withoutMiddleware(['addon.update']);
-        Route::post('store', [AddonUpdateController::class, 'addonSaasFileStore'])->name('store')->withoutMiddleware(['addon.update']);
-        Route::post('execute', [AddonUpdateController::class, 'addonSaasFileExecute'])->name('execute')->withoutMiddleware(['addon.update']);
-        Route::post('uninstall/{code}', [AddonUpdateController::class, 'addonSaasUninstall'])->name('uninstall')->withoutMiddleware(['addon.update']);
-        Route::get('delete/{code}', [AddonUpdateController::class, 'addonSaasFileDelete'])->name('delete')->withoutMiddleware(['addon.update']);
-    });
 
     Route::resource('product-categories', ProductCategoryController::class)->except(['show', 'create', 'edit']);
 
