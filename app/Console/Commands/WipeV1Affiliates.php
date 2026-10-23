@@ -33,7 +33,7 @@ use Illuminate\Support\Facades\DB;
  */
 class WipeV1Affiliates extends Command
 {
-    protected $signature = 'affiliates:wipe-v1 {--force : Actually perform the wipe (omit for a dry run)}';
+    protected $signature = 'affiliates:wipe-v1 {--keep= : Comma-separated affiliate ids and/or emails to PRESERVE (never wiped)} {--force : Actually perform the wipe (omit for a dry run)}';
 
     protected $description = 'One-off: wipe the V1 affiliate roster (and the owner/lead records they created) for a fresh batch. Dry run unless --force.';
 
@@ -41,38 +41,83 @@ class WipeV1Affiliates extends Command
     {
         $force = (bool) $this->option('force');
 
-        $affiliates = Affiliate::with('user')->get();
-        if ($affiliates->isEmpty()) {
+        $allAffiliates = Affiliate::with('user')->get();
+        if ($allAffiliates->isEmpty()) {
             $this->info('No affiliates found — nothing to wipe.');
             return self::SUCCESS;
         }
 
-        $affiliateIds     = $affiliates->pluck('id')->map(fn ($v) => (int) $v)->all();
-        $affiliateUserIds = $affiliates->pluck('user_id')->filter()->map(fn ($v) => (int) $v)->all();
+        // ---- Resolve the --keep preserve-list (ids and/or emails) ----
+        $keepIds = [];
+        $keepEmails = [];
+        foreach (array_filter(array_map('trim', explode(',', (string) $this->option('keep')))) as $tok) {
+            if (str_contains($tok, '@')) {
+                $keepEmails[] = strtolower($tok);
+            } elseif (ctype_digit($tok)) {
+                $keepIds[] = (int) $tok;
+            }
+        }
+        $isKept = function (Affiliate $a) use ($keepIds, $keepEmails): bool {
+            $email = strtolower((string) optional($a->user)->email);
+            return in_array((int) $a->id, $keepIds, true) || ($email !== '' && in_array($email, $keepEmails, true));
+        };
 
-        // ---- Money guard (belt-and-braces, even though V1 had no usage) ----
         $commissionSvc = app(AffiliateCommissionService::class);
+        $balanceOf = fn (Affiliate $a): float => (float) $commissionSvc->getAvailableBalance((int) $a->id);
+
+        $wipeSet = $allAffiliates->reject($isKept)->values();
+        $keptSet = $allAffiliates->filter($isKept)->values();
+
+        // ---- Full roster (every affiliate, marked KEEP/WIPE, with balance) ----
+        $this->newLine();
+        $this->info('V1 affiliate wipe — ' . ($force ? 'EXECUTING' : 'DRY RUN (pass --force to apply)'));
+        $this->table(['affiliate_id', 'email', 'type', 'balance', 'disposition'], $allAffiliates->map(function ($a) use ($isKept, $balanceOf) {
+            return [
+                $a->id,
+                optional($a->user)->email ?? '(no user)',
+                $a->origin_tenant_user_id ? 'graduated' : 'standalone',
+                number_format($balanceOf($a), 2),
+                $isKept($a) ? 'KEEP' : 'WIPE',
+            ];
+        })->all());
+        if ($keptSet->isNotEmpty()) {
+            $this->info('Preserving ' . $keptSet->count() . ' affiliate(s): ' . $keptSet->map(fn ($a) => optional($a->user)->email ?? ('#' . $a->id))->implode(', '));
+        }
+        if ($wipeSet->isEmpty()) {
+            $this->warn('Nothing to wipe — every affiliate is in the --keep list.');
+            return self::SUCCESS;
+        }
+
+        $affiliateIds     = $wipeSet->pluck('id')->map(fn ($v) => (int) $v)->all();
+        $affiliateUserIds = $wipeSet->pluck('user_id')->filter()->map(fn ($v) => (int) $v)->all();
+
+        // ---- Money guard — scoped to the WIPE set only (kept affiliates' funds are irrelevant) ----
         $owed = 0.0;
-        foreach ($affiliateIds as $aid) {
-            $owed += (float) $commissionSvc->getAvailableBalance($aid);
+        $withBalance = [];
+        foreach ($wipeSet as $a) {
+            $b = $balanceOf($a);
+            $owed += $b;
+            if ($b > 0.009) {
+                $withBalance[] = (optional($a->user)->email ?? ('#' . $a->id)) . ' = ' . number_format($b, 2);
+            }
         }
         $inFlight = AffiliateWithdrawal::whereIn('affiliate_id', $affiliateIds)
             ->whereIn('status', [AFFILIATE_WITHDRAWAL_PENDING, AFFILIATE_WITHDRAWAL_PROCESSING])
             ->exists();
-        if ($owed > 0.009 || $inFlight) {
-            $this->error('ABORT — money guard tripped; refusing to delete while funds are involved:');
-            if ($owed > 0.009) {
-                $this->error('  unpaid affiliate balance total: ' . number_format($owed, 2));
+        if ($withBalance || $inFlight) {
+            $this->error('ABORT — money guard tripped on affiliates marked WIPE; refusing to delete while funds are involved:');
+            foreach ($withBalance as $line) {
+                $this->error('  unpaid balance: ' . $line);
             }
             if ($inFlight) {
                 $this->error('  a withdrawal is pending/processing.');
             }
-            $this->error('Settle or zero these first, then re-run.');
+            $this->error('Settle/zero these (or add them to --keep) first, then re-run.');
             return self::FAILURE;
         }
 
         // Graduated affiliates share a users row with a tenant → revert to tenant, never delete.
-        $graduated         = $affiliates->whereNotNull('origin_tenant_user_id');
+        $graduated         = $wipeSet->whereNotNull('origin_tenant_user_id');
         $graduatedUserIds  = $graduated->pluck('user_id')->filter()->map(fn ($v) => (int) $v)->all();
         $standaloneUserIds = array_values(array_diff($affiliateUserIds, $graduatedUserIds));
 
@@ -85,9 +130,9 @@ class WipeV1Affiliates extends Command
         $leadIds       = Lead::whereIn('affiliate_id', $affiliateUserIds)->pluck('id')->all();
         $productCount  = AffiliateProduct::whereIn('affiliate_id', $affiliateIds)->count();
 
-        // ---- Report ----
+        // ---- Plan (the WIPE set only) ----
         $this->newLine();
-        $this->info('V1 affiliate wipe — ' . ($force ? 'EXECUTING' : 'DRY RUN (pass --force to apply)'));
+        $this->line('Plan for the ' . count($affiliateIds) . ' affiliate(s) marked WIPE:');
         $this->table(['What', 'Count', 'Action'], [
             ['Affiliate records', count($affiliateIds), 'hard delete'],
             ['  - standalone affiliate users', count($standaloneUserIds), 'soft delete'],
@@ -98,16 +143,6 @@ class WipeV1Affiliates extends Command
             ['Affiliate products', $productCount, 'hard delete'],
             ['Academy progress / commissions', '(auto)', 'cascade on affiliate delete'],
         ]);
-
-        // Show WHO is being wiped, so it can be eyeballed before --force.
-        $roster = $affiliates->map(function ($a) {
-            return [
-                $a->id,
-                optional($a->user)->email ?? '(no user)',
-                $a->origin_tenant_user_id ? 'graduated' : 'standalone',
-            ];
-        })->all();
-        $this->table(['affiliate_id', 'email', 'type'], $roster);
 
         if (! $force) {
             $this->warn('Dry run only — nothing changed. Re-run with --force to perform the wipe.');
