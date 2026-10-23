@@ -46,6 +46,7 @@
         @include('owner.layouts.header')
         @include('owner.layouts.sidebar')
         @yield('content')
+    @if(session('demo_mode')) @include('common.partials.demo-banner') @endif
     @include('partials.feature-announcement')
     </div>
     @include('owner.layouts.modal')

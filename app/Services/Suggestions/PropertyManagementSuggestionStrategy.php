@@ -61,6 +61,24 @@ class PropertyManagementSuggestionStrategy implements LeadSuggestionStrategy
                 : new SuggestionCandidate('📋 Follow up with ' . $name . ' after demo', 'whatsapp', 'demo_complete', 'medium', 2);
         }
 
+        // ── GUIDED DEMO VIEWED but gone quiet ───────────────────
+        // The self-serve guided demo doesn't change the lead's status (the affiliate owns the
+        // stage), so detect the demo_viewed ACTIVITY directly: a prospect who watched the demo and
+        // then heard nothing back is the highest-risk, highest-opportunity moment. Nudge after the
+        // first ~day of silence so the affiliate never lets a hot, engaged lead cool off.
+        $demoViewed = $activities->first(fn ($a) => ($a->type ?? null) === 'demo_viewed');
+        if ($demoViewed && $demoViewed->created_at) {
+            $followedUp = $activities->contains(fn ($a) =>
+                $a->created_at && $a->created_at->gt($demoViewed->created_at)
+                && in_array(($a->type ?? null), ['note_added', 'call_made', 'whatsapp_sent', 'email_sent', 'demo_scheduled', 'trial_requested', 'trial_started', 'lead_converted'], true)
+            );
+            if (! $followedUp && $now->diffInHours($demoViewed->created_at) >= 24) {
+                $out[] = in_array($lead->temperature, ['hot', 'warm'])
+                    ? new SuggestionCandidate('🔥 ' . $name . ' watched your demo — call(recommended) now while interest is high', 'call', 'demo_complete', 'high', 1)
+                    : new SuggestionCandidate('🎬 ' . $name . ' watched your demo — follow up(recommended) to move them forward', 'whatsapp', 'demo_complete', 'high', 2);
+            }
+        }
+
         // ── TRIAL ───────────────────────────────────────────────
         if ($lead->status === 'trial' && $idleHours >= 72) {
             $out[] = new SuggestionCandidate('💬 Check in with ' . $name . ' during trial', 'whatsapp', 'trial', 'medium', 2);

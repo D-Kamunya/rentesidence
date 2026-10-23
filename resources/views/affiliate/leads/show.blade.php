@@ -552,14 +552,32 @@
                                         </div>
                                         <div class="ls-card__body">
 
+                                            @php $demoLink = !empty($referralCode) ? route('demo.enter', ['ref' => $referralCode, 'lead' => $lead->id]) : null; @endphp
+
+                                            {{-- Guided Demo — the demo PHASE only (active = before a demo, demo_scheduled =
+                                                 booked, so it can be launched during the session). Hidden once the lead moves
+                                                 to the convert/trial phase, so it never sits next to Request Trial. --}}
+                                            @if($demoLink && in_array($lead->status, ['active', 'demo_scheduled']))
+                                                <div class="ls-action-block mb-3">
+                                                    <p class="ls-action-label">Guided Demo</p>
+                                                    <p style="font-size:12px;color:#6b7280;margin:0 0 8px;line-height:1.5;">A read-only walkthrough of the live product. <strong>Launch</strong> to screen-share on a call, or <strong>copy</strong> and send it for {{ $lead->contact_person_name ?: 'your prospect' }} to explore — their view logs on this lead automatically.</p>
+                                                    <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+                                                        <input id="demoLinkInput" type="text" readonly value="{{ $demoLink }}" onclick="this.select()" style="flex:1;min-width:200px;font-size:12.5px;padding:9px 11px;border:1px solid #e5e7eb;border-radius:9px;background:#f9fafb;color:#374151;">
+                                                        <button type="button" onclick="(function(b){try{navigator.clipboard.writeText(document.getElementById('demoLinkInput').value);}catch(e){var i=document.getElementById('demoLinkInput');i.select();document.execCommand('copy');}b.textContent='Copied';setTimeout(function(){b.textContent='Copy';},1500);})(this)" style="flex:0 0 auto;font-size:13px;font-weight:700;padding:9px 15px;border:1px solid #e5e7eb;border-radius:9px;background:#fff;color:#374151;cursor:pointer;">Copy</button>
+                                                        <a href="{{ $demoLink }}" target="_blank" rel="noopener" class="ls-btn ls-btn--blue" style="text-decoration:none;">Launch demo</a>
+                                                    </div>
+                                                </div>
+                                            @endif
+
                                             {{-- Schedule Demo --}}
                                             @if($lead->status === 'active')
                                                 <div class="ls-action-block mb-3">
                                                     <p class="ls-action-label">Schedule a Demo</p>
+                                                    <p style="font-size:12px;color:#6b7280;margin:0 0 8px;line-height:1.5;">We've prefilled your <strong>guided demo</strong> link — the prospect opens it at the scheduled time. Prefer to present <strong>live</strong>? Paste a Zoom/Meet link instead and you'll screen-share the demo together (no need to also send the guided link then).</p>
                                                     <form method="POST" action="{{ route('affiliate.leads.scheduleDemo', $lead) }}" class="d-flex gap-2 flex-wrap">
                                                         @csrf
                                                         <input type="datetime-local" name="demo_date" class="lc-input" style="flex:1;min-width:180px;" required>
-                                                        <input type="url" name="demo_meeting_link" class="lc-input" style="flex:1;min-width:220px;" placeholder="Meeting link (optional) — e.g. https://meet.google.com/…">
+                                                        <input type="url" name="demo_meeting_link" class="lc-input" style="flex:1;min-width:220px;" value="{{ $demoLink }}" placeholder="Demo or meeting link — your guided demo, or https://meet.google.com/…">
                                                         <button type="submit" class="ls-btn ls-btn--blue">
                                                             <svg width="13" height="13" viewBox="0 0 16 16" fill="none">
                                                                 <rect x="2" y="3" width="12" height="11" rx="2" stroke="currentColor" stroke-width="1.5"/>
