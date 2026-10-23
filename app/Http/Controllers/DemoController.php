@@ -38,6 +38,37 @@ class DemoController extends Controller
         return redirect()->route('owner.dashboard');
     }
 
+    /**
+     * Engagement beacon — the guided tour pings this once it's been substantially viewed. If the
+     * demo link carried an affiliate ref + a lead id, record a `demo_viewed` activity on THAT lead
+     * (validated: the lead must belong to the affiliate the ref resolves to) so the lead heats
+     * itself and the suggestion engine can nudge the affiliate. A GET, so it passes the read-only
+     * guard; it writes only to the affiliate's own lead, never the demo account. Fires once.
+     */
+    public function viewed(Request $request)
+    {
+        if (! $request->session()->get('demo_mode') || $request->session()->get('demo_viewed_logged')) {
+            return response()->noContent();
+        }
+
+        $leadId = (int) $request->session()->get('demo_lead');
+        $ref    = (string) $request->session()->get('demo_ref');
+
+        if ($leadId && $ref !== '') {
+            $affiliate = \App\Models\Affiliate::where('referral_code', $ref)->first();
+            $lead      = \App\Models\Lead::find($leadId);
+
+            if ($affiliate && $lead && (int) $lead->affiliate_id === (int) $affiliate->user_id) {
+                app(\App\Services\LeadService::class)->logActivity(
+                    $lead, 'demo_viewed', __('Prospect viewed the guided demo'), (int) $affiliate->user_id
+                );
+                $request->session()->put('demo_viewed_logged', true);
+            }
+        }
+
+        return response()->noContent();
+    }
+
     public function exit(Request $request)
     {
         $request->session()->forget(['demo_mode', 'demo_autostart_tour', 'demo_ref', 'demo_lead']);

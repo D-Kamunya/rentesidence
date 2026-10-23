@@ -47,3 +47,23 @@
     ];
 @endphp
 @include('common.partials.onboarding-tour', ['tourKey' => $tourKey, 'tourSteps' => $tourSteps, 'tourAutoshow' => $tourAutoshow])
+
+{{-- Engagement signal: once the prospect has advanced through ~80% of the tour, ping the server
+     once so a demo_viewed activity is recorded on the affiliate's lead (if the link carried one). --}}
+<script>
+(function(){
+  var total = {{ count($tourSteps) }};
+  var threshold = Math.max(1, Math.ceil(0.8 * (total - 1)));
+  var step = 0, fired = false;
+  function fire(){
+    if (fired) return; fired = true;
+    try { fetch(@json(route('demo.viewed')), { method: 'GET', keepalive: true, headers: { 'X-Requested-With': 'XMLHttpRequest' } }); } catch (e) {}
+  }
+  document.addEventListener('click', function(e){
+    var t = e.target && e.target.closest ? e.target.closest('#cstNext') : null;
+    if (!t) return;
+    step++;
+    if (step >= threshold) fire();
+  }, true);
+})();
+</script>

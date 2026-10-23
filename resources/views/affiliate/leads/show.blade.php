@@ -481,6 +481,37 @@
                                     </div>
                                 </div>
 
+                                {{-- ── Guided Demo share ───────────── --}}
+                                @if(!empty($referralCode))
+                                    @php $demoLink = route('demo.enter', ['ref' => $referralCode, 'lead' => $lead->id]); @endphp
+                                    <div class="ls-card mb-4">
+                                        <div class="ls-card__head">
+                                            <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
+                                                <path d="M3 2.5v11l9-5.5-9-5.5z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/>
+                                            </svg>
+                                            Guided Demo
+                                        </div>
+                                        <div class="ls-card__body">
+                                            <p style="font-size:13px;color:#4a4f57;margin:0 0 11px;line-height:1.55;">
+                                                A read-only walkthrough of the live product. <strong>Launch it on a call</strong> to walk {{ $lead->contact_person_name ?: 'your prospect' }} through it, or <strong>send the link</strong> for them to explore themselves. When they view it, it logs on this lead automatically.
+                                            </p>
+                                            <div style="display:flex;gap:8px;align-items:center;margin-bottom:10px;">
+                                                <input id="demoLinkInput" type="text" readonly value="{{ $demoLink }}"
+                                                       onclick="this.select()"
+                                                       style="flex:1;min-width:0;font-size:12.5px;padding:9px 11px;border:1px solid #e5e7eb;border-radius:9px;background:#f9fafb;color:#374151;">
+                                                <button type="button" id="demoCopyBtn"
+                                                        onclick="(function(b){try{navigator.clipboard.writeText(document.getElementById('demoLinkInput').value);}catch(e){var i=document.getElementById('demoLinkInput');i.select();document.execCommand('copy');}b.textContent='Copied';setTimeout(function(){b.textContent='Copy';},1500);})(this)"
+                                                        style="flex:0 0 auto;font-size:13px;font-weight:700;padding:9px 15px;border:1px solid #e5e7eb;border-radius:9px;background:#fff;color:#374151;cursor:pointer;">Copy</button>
+                                            </div>
+                                            <a href="{{ $demoLink }}" target="_blank" rel="noopener"
+                                               style="display:inline-flex;align-items:center;gap:7px;font-size:13.5px;font-weight:700;color:#fff;background:#185FA5;padding:10px 16px;border-radius:10px;text-decoration:none;">
+                                                Launch demo
+                                                <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                                            </a>
+                                        </div>
+                                    </div>
+                                @endif
+
                                 {{-- ── Completeness Breakdown ───────────── --}}
                                 <div class="mps-card mb-4">
                                     <div class="mps-card__head">

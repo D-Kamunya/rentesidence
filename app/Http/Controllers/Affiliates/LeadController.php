@@ -210,7 +210,11 @@ class LeadController extends Controller
         $canActOnLead    = (int) $lead->affiliate_id === (int) auth()->id();
         $completeness    = $this->completenessScore($lead);
 
-        return view('affiliate.leads.show', compact('lead', 'suggestions', 'suggestionData', 'canActOnLead', 'completeness'));
+        // The affiliate's referral code — stamped on the guided-demo share link so a viewed demo
+        // attributes back to them (and to this lead) for the demo_viewed engagement signal.
+        $referralCode    = optional(Affiliate::where('user_id', auth()->id())->first())->referral_code;
+
+        return view('affiliate.leads.show', compact('lead', 'suggestions', 'suggestionData', 'canActOnLead', 'completeness', 'referralCode'));
     }
 
     public function renew(Lead $lead)
