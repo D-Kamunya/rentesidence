@@ -554,8 +554,10 @@
 
                                             @php $demoLink = !empty($referralCode) ? route('demo.enter', ['ref' => $referralCode, 'lead' => $lead->id]) : null; @endphp
 
-                                            {{-- Guided Demo — share/launch now (no appointment needed) --}}
-                                            @if($demoLink)
+                                            {{-- Guided Demo — the demo PHASE only (active = before a demo, demo_scheduled =
+                                                 booked, so it can be launched during the session). Hidden once the lead moves
+                                                 to the convert/trial phase, so it never sits next to Request Trial. --}}
+                                            @if($demoLink && in_array($lead->status, ['active', 'demo_scheduled']))
                                                 <div class="ls-action-block mb-3">
                                                     <p class="ls-action-label">Guided Demo</p>
                                                     <p style="font-size:12px;color:#6b7280;margin:0 0 8px;line-height:1.5;">A read-only walkthrough of the live product. <strong>Launch</strong> to screen-share on a call, or <strong>copy</strong> and send it for {{ $lead->contact_person_name ?: 'your prospect' }} to explore — their view logs on this lead automatically.</p>
