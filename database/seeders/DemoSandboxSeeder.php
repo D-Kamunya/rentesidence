@@ -55,8 +55,13 @@ class DemoSandboxSeeder extends Seeder
             $owner   = $created['user'];
             $ownerId = (int) $owner->id;
 
-            // Demo account: no forced password reset, and a long-lived full-feature window.
+            // Demo account: no forced password reset, pre-accepted T&C (so neither the shared demo
+            // nor a direct login hits the acceptance wall), and a long-lived full-feature window.
             $owner->must_change_password = 0;
+            if (\Illuminate\Support\Facades\Schema::hasColumn('users', 'terms_accepted_version')) {
+                $owner->terms_accepted_version = (string) getOption('terms_version', '1.0');
+                $owner->terms_accepted_at      = now();
+            }
             $owner->save();
             $trial = Package::where(['is_trail' => ACTIVE])->first();
             if ($trial) {

@@ -47,6 +47,11 @@ Route::group(['middleware' => ['isFrontend']], function () {
     Route::get('recurring-generate-invoice', [CommonController::class, 'generateInvoice'])->name('recurring.generate.invoice');
 });
 
+// Guided-demo sandbox — public, tokenless entry into the read-only demo owner (DemoReadonly
+// guard enforces read-only once in; the guided tour auto-runs). Throttled to blunt abuse.
+Route::get('demo', [\App\Http\Controllers\DemoController::class, 'enter'])->name('demo.enter')->middleware('throttle:30,1');
+Route::get('demo/exit', [\App\Http\Controllers\DemoController::class, 'exit'])->name('demo.exit');
+
 Route::group(['middleware' => ['auth']], function () {
     Route::get('/logout', [LoginController::class, 'logout']);
     Route::group([], function () {

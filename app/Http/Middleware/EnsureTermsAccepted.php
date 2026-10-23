@@ -20,6 +20,11 @@ class EnsureTermsAccepted
 {
     public function handle(Request $request, Closure $next)
     {
+        // The read-only guided-demo sandbox never walls the prospect behind T&C.
+        if ($request->session()->get('demo_mode')) {
+            return $next($request);
+        }
+
         $user = $request->user();
 
         if ($user && (int) $user->role === (int) USER_ROLE_OWNER && self::columnsReady()) {
