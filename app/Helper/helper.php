@@ -353,6 +353,15 @@ function currencyPrice($price)
     }
 }
 
+/**
+ * Render academy module content with its {{tokens}} substituted from live settings
+ * (commission rates, SMS prices, plan caps). Keeps the course numbers self-updating.
+ */
+function academyRender($html)
+{
+    return \App\Services\AcademyContentService::render($html);
+}
+
 function setEnvironmentValue($envKey, $envValue)
 {
     try {

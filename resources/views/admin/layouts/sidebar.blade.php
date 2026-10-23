@@ -262,13 +262,6 @@
                         <li><a href="{{ route('change-password') }}">{{ __('Change Password') }}</a></li>
                     </ul>
                 </li>
-                <li class="{{ @$subNavVersionUpdateActiveClass }}">
-                    <a href="{{ route('admin.file-version-update') }}"
-                        class="{{ @$subNavVersionUpdateActiveClass ? 'active' : '' }}">
-                        <i class="ri-refresh-line"></i>
-                        <span>{{ __('Version Update') }}</span>
-                    </a>
-                </li>
                 {{-- Install app (auto-hides once installed). --}}
                 <li>
                     <a href="#" data-cs-install onclick="return window.csPwaInstall ? (window.csPwaInstall(), false) : true;">
@@ -302,14 +295,6 @@
                             </a>
                         </li>
                     </ul>
-                </li>
-                <li class="font-semi-bold mt-20 text-center text-info">
-                    <a href="">
-                        <span>
-                            {{ __('Current Version') }} :
-                        </span>
-                        {{ getOption('current_version', 'v1.0') }}
-                    </a>
                 </li>
             </ul>
         </div>

@@ -37,10 +37,11 @@ class PackageCatalogSeeder extends Seeder
 {
     public function run(): void
     {
-        // v6 adds per-domain SMS pricing (paid bands cheaper per credit as an upgrade pull).
-        // (v5 set maintainer/invoice/auto-invoice to -1 unlimited; v4 soft-deleted stale bands;
-        // v3 zeroed the FREE SMS grant; v2 flattened/tapered the paid grants.)
-        if (getOption('package_catalog_v6')) {
+        // v7 sets FREE SMS to an explicit 3.00/credit (premium usage rail — free pays full freight;
+        // paid bands stay 0.90 = the upgrade saving). (v6 added per-domain SMS pricing; v5 set
+        // maintainer/invoice/auto-invoice to -1 unlimited; v4 soft-deleted stale bands; v3 zeroed
+        // the FREE SMS grant; v2 flattened/tapered the paid grants.)
+        if (getOption('package_catalog_v7')) {
             return;
         }
 
@@ -57,11 +58,12 @@ class PackageCatalogSeeder extends Seeder
             // earliest/most reliable usage rail — a recurring free grant would permanently blunt
             // it. Email reminders stay free, so the tier isn't crippled; SMS is paid from msg 1
             // (normalised in KE). Trial keeps a grant — it's a time-boxed conversion tool.
-            // SMS PRICE per credit (last col): Free/global = null → the standard sms_credit_price
-            // (2.00); PAID domains = 0.90 (a demonstrable saving vs the 2.00 standard, floored above
-            // our 0.80 Advanta cost = 0.10 margin). Tunable per plan later.
+            // SMS PRICE per credit (last col): Free = 3.00 (the PREMIUM usage rail — a free owner
+            // pays full freight on every usage line, SMS included; this is how we monetize free AND
+            // the upgrade lever); PAID domains = 0.90 (a demonstrable ~3x saving vs Free, floored
+            // above our 0.80 Advanta cost). null → falls back to the global sms_credit_price (2.00).
             // name             maxU   perM  model           def trail  mkup  disc   sms   smsP
-            ['Free',            30,      0,  'free',          1,   0,    2.0,  0.0,     0,  null],
+            ['Free',            30,      0,  'free',          1,   0,    2.0,  0.0,     0,  3.00],
             ['Starter',         60,     50,  'subscription',  0,   0,    1.5,  0.0,   120,  0.90],
             ['Growth',         100,     40,  'subscription',  0,   0,    1.0,  0.0,   200,  0.90],
             ['Professional',   150,     39,  'subscription',  0,   0,    0.5,  0.0,   300,  0.90],
@@ -131,6 +133,6 @@ class PackageCatalogSeeder extends Seeder
             Package::whereNotIn('name', array_column($bands, 0))->delete();
         });
 
-        setOption('package_catalog_v6', '1');
+        setOption('package_catalog_v7', '1');
     }
 }

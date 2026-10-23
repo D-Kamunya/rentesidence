@@ -70,7 +70,7 @@
                             <div class="mod-card__body">
                                 @include('common.partials.kb-prose-style')
                                 <div class="kb-prose">
-                                    {!! $module->content !!}
+                                    {!! academyRender($module->content) !!}
                                 </div>
                             </div>
                         </div>
