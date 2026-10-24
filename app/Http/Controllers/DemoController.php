@@ -68,12 +68,17 @@ class DemoController extends Controller
                 // in the app still catches the peak-interest window. Fires once per viewing session
                 // (the demo_viewed_logged guard above blocks re-fires within a session; a fresh
                 // session is a genuine new view / re-engagement worth surfacing).
+                // NOTE: the notification bell query INNER-JOINs users on sender_id, so a null sender
+                // is created-but-never-shown. Use an admin (system) as the sender, like the other
+                // system notifications; fall back to the affiliate themselves if no admin exists.
+                $senderId = \App\Models\User::where('role', USER_ROLE_ADMIN)->value('id') ?: (int) $affiliate->user_id;
                 addNotification(
                     __('A prospect watched your guided demo'),
                     __(':company just viewed the demo — follow up while interest is high.', ['company' => optional($lead->company)->company_name ?: __('A prospect')]),
                     route('affiliate.leads.show', $lead->id),
                     null,
-                    (int) $affiliate->user_id
+                    (int) $affiliate->user_id,
+                    (int) $senderId
                 );
                 \App\Jobs\Mail\SendDemoViewedMail::dispatch($lead->id);
             }
