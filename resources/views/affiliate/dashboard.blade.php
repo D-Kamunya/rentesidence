@@ -326,6 +326,7 @@
     </div>
 </div>
 
+@push('style')
 <style>
     /* ── Page header ─────────────────────────────────────── */
     .dash-header {
@@ -597,6 +598,7 @@
     }
     .notice-bar__action:hover { background: #9FE1CB; }
 </style>
+@endpush
 
 @push('scripts')
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
