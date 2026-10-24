@@ -100,6 +100,7 @@
         </div>
     </div>
 
+@push('style')
     <style>
         /* Headline metric cards use the shared .cs-statcard component (in _design). */
         .pd-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); gap:12px; }
@@ -110,4 +111,5 @@
         .pd-stat__val { display:block; font-size:19px; font-weight:700; color:#111827; line-height:1.15; font-variant-numeric:tabular-nums; }
         .pd-stat__sub { display:block; font-size:11px; color:#9ca3af; margin-top:3px; }
     </style>
+@endpush
 @endsection

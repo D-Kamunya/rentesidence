@@ -7,6 +7,7 @@
             <div class="page-content-wrapper bg-white p-30 radius-20">
                 <div class="container">
 
+@push('style')
 <style>
     /* ── Centresidence Design Tokens ── */
     :root {
@@ -370,6 +371,7 @@
     .earn-bucket { display: flex; align-items: center; justify-content: space-between; font-size: 11.5px; color: var(--gray-500); }
     .earn-bucket span:last-child { font-weight: 600; color: var(--gray-700); }
 </style>
+@endpush
 
 <div class="dash-page">
 

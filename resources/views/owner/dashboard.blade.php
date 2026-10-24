@@ -1081,6 +1081,7 @@
 </script>
 @endpush
 
+@push('style')
 <style>
     /* ── Page header ──────────────────────────────────────── */
     .dash-header {
@@ -1413,6 +1414,7 @@
         .stat-card__value { font-size: 20px; }
     }
 </style>
+@endpush
 
 @push('script')
     <script>
