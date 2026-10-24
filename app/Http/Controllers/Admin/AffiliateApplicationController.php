@@ -60,6 +60,9 @@ class AffiliateApplicationController extends Controller
                 'last_name'      => $application->last_name,
                 'email'          => $application->email,
                 'contact_number' => $application->phone,
+                'country'        => $application->country,
+                'county'         => $application->county,
+                'town'           => $application->town,
             ]);
 
             $application->update([

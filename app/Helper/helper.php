@@ -502,6 +502,51 @@ if (!function_exists('updateEnv')) {
     }
 }
 
+/**
+ * Markets (config('centresidence.markets')) are the single source of truth for the structured
+ * location on the affiliate funnel. These thin helpers keep the apply form, its server-side
+ * validation and the coverage analytics reading the same list — so a new market is one config edit.
+ */
+if (! function_exists('csMarkets')) {
+    function csMarkets(): array
+    {
+        return (array) config('centresidence.markets', []);
+    }
+}
+
+if (! function_exists('csMarketCountries')) {
+    /** Country display names we operate in, e.g. ['Kenya']. */
+    function csMarketCountries(): array
+    {
+        return array_values(array_map(fn ($m) => $m['name'], csMarkets()));
+    }
+}
+
+if (! function_exists('csMarketDivisions')) {
+    /** The sub-national divisions (counties/states) for a country NAME; [] if unknown. */
+    function csMarketDivisions(?string $countryName): array
+    {
+        foreach (csMarkets() as $m) {
+            if (($m['name'] ?? null) === $countryName) {
+                return (array) ($m['divisions'] ?? []);
+            }
+        }
+        return [];
+    }
+}
+
+if (! function_exists('csAllMarketDivisions')) {
+    /** Every division across all markets, flattened — used to validate the submitted county. */
+    function csAllMarketDivisions(): array
+    {
+        $all = [];
+        foreach (csMarkets() as $m) {
+            $all = array_merge($all, (array) ($m['divisions'] ?? []));
+        }
+        return array_values(array_unique($all));
+    }
+}
+
 function addNotification($title, $body = null, $url = null, $image = null, $user_id = null, $sender_id = null)
 {
     $notification = new Notification();

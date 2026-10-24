@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\AffiliateApplication;
 use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 
 /**
  * Public "become an affiliate" page — the shareable link the team sends to prospects in the field.
@@ -31,15 +32,20 @@ class AffiliateApplicationController extends Controller
             'last_name'        => 'required|string|max:60',
             'email'            => 'required|email|max:120',
             'phone'            => 'required|string|max:20',
-            'location'         => 'nullable|string|max:120',
-            'coverage_area'    => 'required|string|max:160',
+            'country'          => ['required', 'string', Rule::in(csMarketCountries())],
+            // County must belong to the chosen country's divisions (market-aware).
+            'county'           => ['required', 'string', Rule::in(csMarketDivisions($request->input('country')))],
+            'town'             => 'nullable|string|max:120',
             'experience'       => 'nullable|string|max:2000',
             'finance_contacts' => 'nullable|string|max:2000',
             'pitch'            => 'nullable|string|max:2000',
             'agree'            => 'accepted',
         ], [
-            'coverage_area.required' => __('Please tell us which areas you\'ll cover.'),
-            'agree.accepted'         => __('Please confirm you\'ve read and accept the commission-only Partner Terms to continue.'),
+            'country.required' => __('Please select your country.'),
+            'country.in'       => __('Please select a country we currently operate in.'),
+            'county.required'  => __('Please select your county.'),
+            'county.in'        => __('Please choose a county from the list for your country.'),
+            'agree.accepted'   => __('Please confirm you\'ve read and accept the commission-only Partner Terms to continue.'),
         ]);
 
         // Already an affiliate? Point them to sign in rather than creating a duplicate application.

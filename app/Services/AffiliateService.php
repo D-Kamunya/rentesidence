@@ -43,6 +43,10 @@ class AffiliateService
             $affiliate = new Affiliate();
             $affiliate->user_id = $user->id;
             $affiliate->referral_code = strtoupper(Str::random(12));
+            // Structured location (from the application) → powers the admin coverage analytics.
+            $affiliate->country = $data['country'] ?? null;
+            $affiliate->county  = $data['county'] ?? null;
+            $affiliate->town    = $data['town'] ?? null;
             $affiliate->save();
 
             DB::commit();

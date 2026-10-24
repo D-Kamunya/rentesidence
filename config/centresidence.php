@@ -230,6 +230,35 @@ return [
     | The only HARD guard is the system-integrity floor (owner revenue >= 0),
     | enforced in code, not here.
     */
+    /*
+    |--------------------------------------------------------------------------
+    | Markets (country → sub-national divisions)
+    |--------------------------------------------------------------------------
+    | The single source of truth for the structured location captured on the
+    | affiliate apply page and the affiliate coverage analytics. Expanding to a
+    | new market = add a country block here (name + its counties/states) — the
+    | apply page and the admin cards read from this, so neither is ever edited
+    | for a new market. Keys are ISO-3166 alpha-2 codes; `name` is what's shown
+    | and stored on the record; `divisions_label` names the sub-national unit so
+    | other markets can call theirs "State"/"Province"/"Region" etc.
+    */
+    'markets' => [
+        'KE' => [
+            'name' => 'Kenya',
+            'divisions_label' => 'County',
+            'divisions' => [
+                'Mombasa', 'Kwale', 'Kilifi', 'Tana River', 'Lamu', 'Taita-Taveta',
+                'Garissa', 'Wajir', 'Mandera', 'Marsabit', 'Isiolo', 'Meru',
+                'Tharaka-Nithi', 'Embu', 'Kitui', 'Machakos', 'Makueni', 'Nyandarua',
+                'Nyeri', 'Kirinyaga', "Murang'a", 'Kiambu', 'Turkana', 'West Pokot',
+                'Samburu', 'Trans Nzoia', 'Uasin Gishu', 'Elgeyo-Marakwet', 'Nandi',
+                'Baringo', 'Laikipia', 'Nakuru', 'Narok', 'Kajiado', 'Kericho',
+                'Bomet', 'Kakamega', 'Vihiga', 'Bungoma', 'Busia', 'Siaya', 'Kisumu',
+                'Homa Bay', 'Migori', 'Kisii', 'Nyamira', 'Nairobi',
+            ],
+        ],
+    ],
+
     'utility_tariffs' => [
         'references' => [
             'water' => [
