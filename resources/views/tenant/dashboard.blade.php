@@ -695,6 +695,7 @@
     </div>
 </div>
 
+@push('style')
 <style>
     /* ── Move-out nudge ─────────────────────────────────────── */
     .tmo-nudge { display:flex; align-items:center; gap:14px; text-decoration:none; margin-bottom:20px;
@@ -1488,6 +1489,7 @@
         .mkt-product-card__name { font-size: 12px; }
     }
 </style>
+@endpush
 
 <script>
     function switchTab(btn, tab) {

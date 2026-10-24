@@ -100,6 +100,7 @@
     </div>
 </div>
 
+@push('style')
 <style>
     .md-head { margin-bottom:22px; }
     .md-title { font-size:23px; font-weight:600; color:#111827; margin:0 0 5px; }
@@ -145,4 +146,5 @@
     .md-notice__d { font-size:12px; color:#6b7280; line-height:1.5; }
     .md-empty { font-size:13px; color:#9ca3af; margin:6px 0; }
 </style>
+@endpush
 @endsection
