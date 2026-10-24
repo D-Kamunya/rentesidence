@@ -33,6 +33,8 @@
   .aa-card { background:#fff; border:1px solid #e6e1d8; border-radius:18px; padding:28px 28px 30px; box-shadow:0 1px 2px rgba(20,23,28,.04),0 18px 44px rgba(20,23,28,.07); }
   .aa-card h2 { font-size:19px; font-weight:750; color:#1b1e22; margin:0 0 4px; }
   .aa-card .sub { font-size:13.5px; color:#6b7280; margin:0 0 20px; }
+  .aa-invite { display:flex; gap:9px; align-items:flex-start; background:#E8F5EE; border:1px solid #bfe3cd; color:#0F6E56; border-radius:11px; padding:12px 14px; font-size:13px; line-height:1.5; margin-bottom:18px; }
+  .aa-invite b, .aa-invite strong { color:#0C5A46; }
   .aa-field { margin-bottom:15px; }
   .aa-row2 { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
   @media (max-width:460px){ .aa-row2{ grid-template-columns:1fr; } }
@@ -92,9 +94,24 @@
       </div>
     </div>
 
+    @php $inviteState = $inviteState ?? 'none'; @endphp
     {{-- Form / result --}}
     <div class="aa-card">
-      @if (session('applied'))
+      @if (session('provisioned'))
+        <div class="aa-result">
+          <div class="badge" style="background:#E1F5EE;color:#0F6E56;"><svg width="30" height="30" viewBox="0 0 24 24" fill="none"><path d="M20 6L9 17l-5-5" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+          <h2>You're in — welcome aboard! 🎉</h2>
+          <p>Your partner account is ready. We've sent your login details to your <b>email and SMS</b> — sign in, set your password, and your academy and tools are waiting.</p>
+          <a href="{{ route('login') }}" class="lnk">Sign in to your dashboard <svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M5 12h14M13 6l6 6-6 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
+        </div>
+      @elseif (session('closed'))
+        <div class="aa-result">
+          <div class="badge" style="background:#FDF6EC;color:#B45309;"><svg width="30" height="30" viewBox="0 0 24 24" fill="none"><path d="M12 8v5M12 16v.5" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.8"/></svg></div>
+          <h2>We've received your application</h2>
+          <p>Your invitation window has closed, but no worries — we've still got your details and our team will review and get in touch. If you were expecting instant access, just reply to the invitation email we sent you and we'll sort it out.</p>
+          <a href="{{ route('frontend') }}" class="lnk">Back to Centresidence <svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M5 12h14M13 6l6 6-6 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
+        </div>
+      @elseif (session('applied'))
         <div class="aa-result">
           <div class="badge" style="background:#E1F5EE;color:#0F6E56;"><svg width="30" height="30" viewBox="0 0 24 24" fill="none"><path d="M20 6L9 17l-5-5" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
           <h2>Application received</h2>
@@ -109,10 +126,20 @@
           <a href="{{ route('login') }}" class="lnk">Sign in <svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M5 12h14M13 6l6 6-6 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
         </div>
       @else
-        <h2>Apply to join</h2>
-        <p class="sub">Tell us a little about you — it takes a minute.</p>
+        @if ($inviteState === 'valid')
+          <div class="aa-invite">
+            <span>🎉</span>
+            <span><strong>You've been invited.</strong> Fill this in and your partner account is created right away — no waiting for review.</span>
+          </div>
+          <h2>Set up your partner account</h2>
+          <p class="sub">A few details and you're in — it takes a minute.</p>
+        @else
+          <h2>Apply to join</h2>
+          <p class="sub">Tell us a little about you — it takes a minute.</p>
+        @endif
         <form method="POST" action="{{ route('affiliate.apply.store') }}">
           @csrf
+          @if (!empty($inviteToken))<input type="hidden" name="invite" value="{{ $inviteToken }}">@endif
           <div class="aa-row2">
             <div class="aa-field">
               <label>First name</label>
@@ -177,8 +204,13 @@
             <span>I have read and accept the <b>Centresidence Partner Terms</b>. I understand this is a <b>commission-only</b> role — no salary or retainer — and that I earn recurring commission on what the owners I introduce do on the platform.</span>
           </label>
           @error('agree')<div class="err" style="color:#B42318;font-size:12px;margin:-10px 0 12px;">{{ $message }}</div>@enderror
-          <button type="submit" class="aa-submit">Submit application</button>
-          <p class="aa-note">No account is created yet. Our team reviews every application; if approved, your login details are sent to you automatically by email and SMS.</p>
+          @if ($inviteState === 'valid')
+            <button type="submit" class="aa-submit">Create my partner account</button>
+            <p class="aa-note">By submitting, your partner account is created and your login details are sent to your email and SMS right away.</p>
+          @else
+            <button type="submit" class="aa-submit">Submit application</button>
+            <p class="aa-note">No account is created yet. Our team reviews every application; if approved, your login details are sent to you automatically by email and SMS.</p>
+          @endif
         </form>
       @endif
     </div>

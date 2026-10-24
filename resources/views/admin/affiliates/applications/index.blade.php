@@ -45,6 +45,21 @@
           #appModal .modal-footer{gap:8px;}
           /* [hidden] must beat Bootstrap's .modal-footer/.am-block display rules */
           #appModal [hidden]{display:none!important;}
+          /* invitation-link panel */
+          .inv-panel{border:1px solid #ececec;border-radius:12px;background:#fff;padding:16px 18px;margin-bottom:18px;box-shadow:0 1px 3px rgba(16,24,40,.04);}
+          .inv-top{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:4px;}
+          .inv-top h2{font-size:14px;font-weight:700;color:#1b1e22;margin:0;}
+          .inv-badge{font-size:10.5px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;padding:3px 9px;border-radius:999px;}
+          .inv-badge--on{background:#E1F5EE;color:#0F6E56;} .inv-badge--off{background:#f3f4f6;color:#6b7280;}
+          .inv-sub{font-size:12px;color:#9aa2ad;margin:0 0 12px;}
+          .inv-linkrow{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:12px;}
+          .inv-link{flex:1;min-width:240px;font-size:12.5px;font-family:ui-monospace,Menlo,monospace;color:#1b1e22;background:#f7f8fa;border:1px solid #e6e8eb;border-radius:8px;padding:9px 11px;}
+          .inv-copy{border:1px solid #d7dbe0;background:#fff;color:#185FA5;border-radius:8px;padding:8px 13px;font-size:12.5px;font-weight:650;cursor:pointer;}
+          .inv-copy:hover{border-color:#185FA5;background:#f3f8fd;}
+          .inv-controls{display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end;border-top:1px dashed #eee;padding-top:12px;}
+          .inv-controls label{display:block;font-size:11px;color:#9aa2ad;font-weight:600;margin-bottom:4px;}
+          .inv-controls input[type=number]{width:84px;border:1px solid #e6e1d8;border-radius:8px;padding:7px 10px;font-size:13px;}
+          .inv-exp{font-size:12px;color:#6b7280;}
         </style>
 
         <div class="aap-head">
@@ -55,6 +70,52 @@
         @if (session('success'))<div class="aap-flash aap-flash--ok">{{ session('success') }}</div>@endif
         @if (session('error'))<div class="aap-flash aap-flash--err">{{ session('error') }}</div>@endif
         @include('partials.dev-credentials')
+
+        {{-- Invited-campaign link: a pre-vetted applicant who arrives via this link is auto-provisioned
+             an account on submit (no admin approval needed) until it expires. Rotate to kill old links;
+             close to send invited links back to normal review. --}}
+        <div class="inv-panel">
+          <div class="inv-top">
+            <h2>{{ __('Invitation link') }}</h2>
+            @if ($invite['active'])
+              <span class="inv-badge inv-badge--on">{{ __('Active') }}</span>
+            @else
+              <span class="inv-badge inv-badge--off">{{ __('Closed') }}</span>
+            @endif
+          </div>
+          <p class="inv-sub">{{ __('Share this ONLY with people you\'ve already vetted — anyone who applies through it gets an account instantly (no review).') }}</p>
+
+          @if ($invite['active'] && $invite['link'])
+            <div class="inv-linkrow">
+              <input type="text" class="inv-link" id="invLink" value="{{ $invite['link'] }}" readonly onclick="this.select()">
+              <button type="button" class="inv-copy" onclick="(function(b){var i=document.getElementById('invLink');i.select();navigator.clipboard&&navigator.clipboard.writeText(i.value);var t=b.textContent;b.textContent='{{ __('Copied') }}';setTimeout(function(){b.textContent=t;},1400);})(this)">{{ __('Copy') }}</button>
+            </div>
+            <div class="inv-exp" style="margin-bottom:12px;">{{ __('Auto-closes') }} <strong>{{ $invite['expiresAt']?->format('M j, Y g:ia') }}</strong> ({{ $invite['expiresAt']?->diffForHumans() }}).</div>
+          @else
+            <p class="inv-exp" style="margin-bottom:12px;">{{ __('No active invitation link. Generate one to start an invited (auto-provision) campaign.') }}</p>
+          @endif
+
+          <div class="inv-controls">
+            {{-- cs-confirm is form-level, so generate + close are separate forms, each with its own prompt. --}}
+            <form method="POST" action="{{ route('admin.affiliates.applications.invite') }}" style="display:flex;gap:8px;align-items:flex-end;"
+              data-cs-confirm="{{ $invite['active'] ? __('Generate a NEW link? The current link will stop working immediately.') : __('Generate an invitation link that auto-provisions accounts for anyone who applies through it?') }}">
+              @csrf
+              <div>
+                <label>{{ __('Open for (days)') }}</label>
+                <input type="number" name="days" min="1" max="365" value="{{ $invite['default_days'] }}">
+              </div>
+              <button type="submit" class="aap-btn aap-btn--go">{{ $invite['active'] ? __('Generate new link') : __('Generate link') }}</button>
+            </form>
+            @if ($invite['active'])
+              <form method="POST" action="{{ route('admin.affiliates.applications.invite') }}"
+                data-cs-confirm="{{ __('Close invited sign-ups now? Invited links will go to normal review instead.') }}">
+                @csrf
+                <input type="hidden" name="action" value="close">
+                <button type="submit" class="aap-btn aap-btn--no">{{ __('Close invites') }}</button>
+              </form>
+            @endif
+          </div>
+        </div>
 
         <div class="aap-tabs">
           @foreach (['pending' => __('Pending'), 'approved' => __('Approved'), 'rejected' => __('Declined'), 'all' => __('All')] as $val => $label)

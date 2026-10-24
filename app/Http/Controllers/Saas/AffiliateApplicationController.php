@@ -5,7 +5,10 @@ namespace App\Http\Controllers\Saas;
 use App\Http\Controllers\Controller;
 use App\Models\AffiliateApplication;
 use App\Models\User;
+use App\Services\AffiliateService;
+use App\Support\AffiliateInvite;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\Rule;
 
 /**
@@ -20,9 +23,16 @@ use Illuminate\Validation\Rule;
  */
 class AffiliateApplicationController extends Controller
 {
-    public function create()
+    public function create(Request $request)
     {
-        return view('affiliate-apply.index');
+        // Invited visitors (pre-vetted, arriving via the campaign link) get the fast-track experience;
+        // an expired link degrades to a gentle "invite closed" notice; everyone else is organic.
+        $inviteState = AffiliateInvite::classify($request->query('invite'));
+
+        return view('affiliate-apply.index', [
+            'inviteState' => $inviteState,
+            'inviteToken' => $inviteState === 'none' ? null : $request->query('invite'),
+        ]);
     }
 
     public function store(Request $request)
@@ -63,8 +73,38 @@ class AffiliateApplicationController extends Controller
             'consent_version' => AffiliateApplication::CONSENT_VERSION,
         ];
 
-        // Idempotent: a pending application with this email re-confirms (no duplicate) — refresh both
-        // their latest details and the recorded consent rather than stacking rows.
+        $inviteState = AffiliateInvite::classify($request->input('invite'));
+        $emailTaken  = User::where('email', $data['email'])->exists(); // any role — can't provision over it
+
+        // INVITED + window open + a clean new email → these were pre-vetted, so skip the review queue
+        // and provision the account immediately (same path the admin approve button uses).
+        if ($inviteState === 'valid' && ! $emailTaken) {
+            try {
+                $user = app(AffiliateService::class)->registerAffiliate([
+                    'first_name'     => $data['first_name'],
+                    'last_name'      => $data['last_name'],
+                    'email'          => $data['email'],
+                    'contact_number' => $data['phone'],
+                    'country'        => $data['country'],
+                    'county'         => $data['county'],
+                    'town'           => $data['town'] ?? null,
+                ]);
+
+                AffiliateApplication::create($data + $consent + [
+                    'status'            => AffiliateApplication::STATUS_APPROVED,
+                    'converted_user_id' => $user->id,
+                    'source'            => 'invite',
+                ]);
+
+                return redirect()->route('affiliate.apply')->with('provisioned', true);
+            } catch (\Throwable $e) {
+                // Never lose the applicant — fall through to a normal pending application.
+                Log::error('Invited affiliate auto-provision failed: ' . $e->getMessage(), ['email' => $data['email']]);
+            }
+        }
+
+        // Otherwise: normal pending application (organic, expired/rotated-out invite, email collision,
+        // or a provision that errored). Idempotent — refresh an existing pending row rather than stack.
         $existing = AffiliateApplication::where('email', $data['email'])
             ->where('status', AffiliateApplication::STATUS_PENDING)->first();
 
@@ -72,12 +112,16 @@ class AffiliateApplicationController extends Controller
             $existing->update($data + $consent);
         } else {
             $application = AffiliateApplication::create(
-                $data + $consent + ['status' => AffiliateApplication::STATUS_PENDING]
+                $data + $consent + [
+                    'status' => AffiliateApplication::STATUS_PENDING,
+                    'source' => $inviteState === 'expired' ? 'invite_expired' : null,
+                ]
             );
             $this->notifyAdmins($application);
         }
 
-        return redirect()->route('affiliate.apply')->with('applied', true);
+        // 'closed' = an expired/rotated invite (gentle notice + assistance); 'applied' = organic review.
+        return redirect()->route('affiliate.apply')->with($inviteState === 'expired' ? 'closed' : 'applied', true);
     }
 
     /** In-app notification to every admin that a new application arrived. */
