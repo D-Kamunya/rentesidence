@@ -19,6 +19,10 @@
           .aap-name{font-weight:650;color:#1b1e22;}
           .aap-meta{font-size:12px;color:#9aa2ad;margin-top:2px;}
           .aap-pitch{font-size:12.5px;color:#6b7280;margin-top:6px;max-width:42ch;line-height:1.5;}
+          .aap-fieldrow{font-size:12.5px;color:#4a4f57;margin-top:6px;max-width:44ch;line-height:1.5;}
+          .aap-fieldrow .k{color:#9aa2ad;font-weight:600;}
+          .aap-consent{display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:600;color:#0F6E56;background:#E1F5EE;border-radius:999px;padding:3px 9px;margin-top:8px;}
+          .aap-consent--missing{color:#B45309;background:#FEF3E7;}
           .aap-pill{display:inline-block;font-size:11px;font-weight:650;padding:3px 10px;border-radius:999px;text-transform:capitalize;}
           .aap-pill--pending{background:#FEF3E7;color:#B45309;} .aap-pill--approved{background:#E1F5EE;color:#0F6E56;} .aap-pill--rejected{background:#f3f4f6;color:#6b7280;}
           .aap-btn{border:none;border-radius:8px;padding:7px 13px;font-size:12.5px;font-weight:650;cursor:pointer;}
@@ -59,8 +63,19 @@
                   <tr>
                     <td>
                       <div class="aap-name">{{ $a->name }}</div>
-                      @if ($a->location)<div class="aap-meta">{{ $a->location }}</div>@endif
-                      @if ($a->pitch)<div class="aap-pitch">{{ $a->pitch }}</div>@endif
+                      @if ($a->location)<div class="aap-meta">{{ __('Based in') }} {{ $a->location }}</div>@endif
+                      @if ($a->coverage_area)<div class="aap-fieldrow"><span class="k">{{ __('Covers') }}:</span> {{ $a->coverage_area }}</div>@endif
+                      @if ($a->experience)<div class="aap-fieldrow"><span class="k">{{ __('Experience') }}:</span> {{ $a->experience }}</div>@endif
+                      @if ($a->finance_contacts)<div class="aap-fieldrow"><span class="k">{{ __('Finance contacts') }}:</span> {{ $a->finance_contacts }}</div>@endif
+                      @if ($a->pitch)<div class="aap-pitch"><span class="k" style="color:#9aa2ad;font-weight:600;">{{ __('Plan') }}:</span> {{ $a->pitch }}</div>@endif
+                      @if ($a->agreed_at)
+                        <div class="aap-consent" title="{{ __('Version') }} {{ $a->consent_version }}{{ $a->consent_ip ? ' · IP '.$a->consent_ip : '' }}">
+                          <svg width="11" height="11" viewBox="0 0 24 24" fill="none"><path d="M20 6L9 17l-5-5" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                          {{ __('Terms accepted') }} {{ $a->agreed_at->format('M j, Y') }}
+                        </div>
+                      @else
+                        <div class="aap-consent aap-consent--missing">{{ __('No recorded consent') }}</div>
+                      @endif
                     </td>
                     <td>
                       <div>{{ $a->email }}</div>

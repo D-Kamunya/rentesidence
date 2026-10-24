@@ -11,6 +11,11 @@ use Illuminate\Http\Request;
  * Public "become an affiliate" page — the shareable link the team sends to prospects in the field.
  * A submission creates an AffiliateApplication (never an account) and pings admin; admin turns it
  * into a full affiliate in one click from their inbox.
+ *
+ * The apply page leads with the commission-only Partner Terms on purpose: reaching the form means
+ * the applicant has seen the hard terms, and the `agree` checkbox is a RECORDED consent to them
+ * (timestamp + IP + version stored on the row) — the structural fix for V1's "I didn't read the JD
+ * and thought there was a salary" commission disputes.
  */
 class AffiliateApplicationController extends Controller
 {
@@ -22,15 +27,19 @@ class AffiliateApplicationController extends Controller
     public function store(Request $request)
     {
         $data = $request->validate([
-            'first_name' => 'required|string|max:60',
-            'last_name'  => 'required|string|max:60',
-            'email'      => 'required|email|max:120',
-            'phone'      => 'required|string|max:20',
-            'location'   => 'nullable|string|max:120',
-            'pitch'      => 'nullable|string|max:2000',
-            'agree'      => 'accepted',
+            'first_name'       => 'required|string|max:60',
+            'last_name'        => 'required|string|max:60',
+            'email'            => 'required|email|max:120',
+            'phone'            => 'required|string|max:20',
+            'location'         => 'nullable|string|max:120',
+            'coverage_area'    => 'required|string|max:160',
+            'experience'       => 'nullable|string|max:2000',
+            'finance_contacts' => 'nullable|string|max:2000',
+            'pitch'            => 'nullable|string|max:2000',
+            'agree'            => 'accepted',
         ], [
-            'agree.accepted' => __('Please confirm you\'d like to join to continue.'),
+            'coverage_area.required' => __('Please tell us which areas you\'ll cover.'),
+            'agree.accepted'         => __('Please confirm you\'ve read and accept the commission-only Partner Terms to continue.'),
         ]);
 
         // Already an affiliate? Point them to sign in rather than creating a duplicate application.
@@ -39,12 +48,26 @@ class AffiliateApplicationController extends Controller
             return redirect()->route('affiliate.apply')->with('already', true);
         }
 
-        // Idempotent: a pending application with this email just re-confirms (no duplicates).
+        unset($data['agree']); // the checkbox gates submission; it isn't a column — consent is recorded below.
+
+        // Recorded consent to the commission-only Partner Terms (auditable e-consent on the row).
+        $consent = [
+            'agreed_at'       => now(),
+            'consent_ip'      => $request->ip(),
+            'consent_version' => AffiliateApplication::CONSENT_VERSION,
+        ];
+
+        // Idempotent: a pending application with this email re-confirms (no duplicate) — refresh both
+        // their latest details and the recorded consent rather than stacking rows.
         $existing = AffiliateApplication::where('email', $data['email'])
             ->where('status', AffiliateApplication::STATUS_PENDING)->first();
 
-        if (! $existing) {
-            $application = AffiliateApplication::create($data + ['status' => AffiliateApplication::STATUS_PENDING]);
+        if ($existing) {
+            $existing->update($data + $consent);
+        } else {
+            $application = AffiliateApplication::create(
+                $data + $consent + ['status' => AffiliateApplication::STATUS_PENDING]
+            );
             $this->notifyAdmins($application);
         }
 
@@ -54,14 +77,21 @@ class AffiliateApplicationController extends Controller
     /** In-app notification to every admin that a new application arrived. */
     private function notifyAdmins(AffiliateApplication $application): void
     {
-        User::where('role', USER_ROLE_ADMIN)->pluck('id')->each(function ($adminId) use ($application) {
+        // The notification bell INNER-JOINs users on sender_id, so a null sender is created-but-never-
+        // shown. Use the earliest admin as the system sender so the notice actually surfaces.
+        $systemSenderId = User::where('role', USER_ROLE_ADMIN)->min('id');
+        if (! $systemSenderId) {
+            return; // no admins → no recipients anyway
+        }
+
+        User::where('role', USER_ROLE_ADMIN)->pluck('id')->each(function ($adminId) use ($application, $systemSenderId) {
             addNotification(
                 __('New affiliate application'),
                 $application->name . ' — ' . $application->email,
                 route('admin.affiliates.applications.index'),
                 null,
                 $adminId,
-                null
+                (int) $systemSenderId
             );
         });
     }
