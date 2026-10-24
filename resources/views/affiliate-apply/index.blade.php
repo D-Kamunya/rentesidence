@@ -18,6 +18,8 @@
   .aa-terms h3 { font-size:13px; font-weight:750; letter-spacing:.02em; color:#1b1e22; margin:0 0 4px; display:flex; align-items:center; gap:8px; }
   .aa-terms h3 .dot { width:7px; height:7px; border-radius:50%; background:#C7891F; flex:none; }
   .aa-terms .cap { font-size:11.5px; color:#9aa2ad; margin:0 0 12px; }
+  .aa-terms .glabel { font-size:10.5px; font-weight:700; letter-spacing:.1em; text-transform:uppercase; color:#9aa2ad; margin:14px 0 9px; }
+  .aa-terms .glabel:first-of-type { margin-top:4px; }
   .aa-terms ul { list-style:none; padding:0; margin:0; display:flex; flex-direction:column; gap:10px; }
   .aa-terms li { display:flex; gap:10px; align-items:flex-start; font-size:13px; color:#44474d; line-height:1.55; }
   .aa-terms li svg { flex:none; margin-top:2px; color:#185FA5; }
@@ -55,22 +57,28 @@
     <div>
       <p class="aa-eyebrow">Centresidence Affiliate Program</p>
       <h1 class="aa-title">Earn by bringing landlords onto Centresidence.</h1>
-      <p class="aa-lede">Introduce property owners to Centresidence and earn <b>recurring commission</b> on what they do on the platform — with the tools, training and support to actually make it happen.</p>
-      <ul class="aa-points">
-        <li><span class="ic"><svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M4 19V5a2 2 0 012-2h9l5 5v11a2 2 0 01-2 2H6a2 2 0 01-2-2z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="M8 12h8M8 16h5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg></span><span><b>A full toolkit</b> — lead tools, marketing materials and a partner academy that certifies you.</span></li>
-        <li><span class="ic"><svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M12 2l7 3v6c0 4.5-3 8-7 9-4-1-7-4.5-7-9V5l7-3z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="M9 12l2 2 4-4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span><b>Paid straight to M-Pesa</b>, with a clear dashboard of everything your owners generate.</span></li>
-      </ul>
+      <p class="aa-lede">Introduce property owners to Centresidence and earn <b>recurring commission</b> on what they do on the platform — working remotely, on your own schedule, with the tools, training and support to actually make it happen.</p>
 
-      {{-- Up-front, plain-language terms. This is the structural fix for "I didn't read the JD". --}}
+      {{-- Up-front, plain-language terms — the honest part AND the good part, so the role is clear
+           without reading as a list of warnings. Structural fix for V1's "I didn't read the JD". --}}
       <div class="aa-terms">
-        <h3><span class="dot"></span> How the pay actually works — please read</h3>
-        <p class="cap">We'd rather you know this now than be surprised later.</p>
+        <h3><span class="dot"></span> How it works — in plain words</h3>
+        <p class="cap">The honest basics and the good parts, so nothing's a surprise later.</p>
+
+        <div class="glabel">The honest part</div>
         <ul>
-          <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M20 6L9 17l-5-5" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg><span><b>Commission-only.</b> There is no salary and no retainer. You earn when the owners you bring on use Centresidence.</span></li>
-          <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M20 6L9 17l-5-5" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg><span>You earn <b>recurring commission on what owners do</b> — subscriptions, rent, marketplace, screening, agreements and financing — not just for signing them up.</span></li>
-          <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M20 6L9 17l-5-5" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg><span>Commission on each owner runs for a <b>set period (about 12 months)</b> per earning type — it is ongoing, not forever.</span></li>
-          <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M20 6L9 17l-5-5" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg><span>You cover <b>your own costs</b> — your time, transport and any airtime or ads you choose to run.</span></li>
-          <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M20 6L9 17l-5-5" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg><span>Your earnings and every owner's activity are <b>fully visible in your dashboard</b>, and you withdraw to M-Pesa.</span></li>
+          <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M20 6L9 17l-5-5" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg><span><b>Commission-only.</b> You join as an independent partner, not a salaried employee — there's no salary or retainer. You earn when the owners you bring on use Centresidence.</span></li>
+          <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M20 6L9 17l-5-5" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg><span>You earn <b>recurring commission on what your owners do</b> — subscriptions, rent, marketplace, screening, agreements and financing — not just for signing them up.</span></li>
+          <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M20 6L9 17l-5-5" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg><span>Commission on each owner runs for a <b>set period (about 12 months)</b> per earning type — steady, ongoing income rather than a one-off.</span></li>
+          <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M20 6L9 17l-5-5" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg><span>You cover <b>your own costs</b> — time, transport and any ads you choose to run — and you keep the full upside of your effort.</span></li>
+        </ul>
+
+        <div class="glabel">The good part</div>
+        <ul>
+          <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M20 6L9 17l-5-5" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg><span><b>Fully remote.</b> Work from anywhere with an internet connection.</span></li>
+          <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M20 6L9 17l-5-5" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg><span><b>Flexible and self-paced.</b> You choose your own hours and schedule — ideal part-time or as supplemental income.</span></li>
+          <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M20 6L9 17l-5-5" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg><span><b>No targets, no pressure, no one chasing you.</b> Your earnings grow with your own effort and consistency — on your terms.</span></li>
+          <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M20 6L9 17l-5-5" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg><span><b>We set you up to win.</b> A partner academy that certifies you, ready-made marketing materials and ongoing support — with your earnings and each owner's activity visible in your dashboard and paid to M-Pesa.</span></li>
         </ul>
       </div>
     </div>
