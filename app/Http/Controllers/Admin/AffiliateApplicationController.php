@@ -97,6 +97,11 @@ class AffiliateApplicationController extends Controller
             'admin_note' => $request->input('reason'),
         ]);
 
-        return back()->with('success', __('Application declined.'));
+        // Polite applicant-facing "thanks, not this time" note (never exposes the internal admin note).
+        if ($application->email) {
+            \App\Jobs\Mail\SendAffiliateApplicationDeclinedMail::dispatch($application->email, (string) $application->first_name);
+        }
+
+        return back()->with('success', __('Application declined — the applicant has been emailed a polite notice.'));
     }
 }

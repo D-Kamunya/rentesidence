@@ -159,7 +159,7 @@
       <div class="modal-footer" id="am-actions">
         <form method="POST" id="am-reject-form">
           @csrf
-          <button type="submit" class="aap-btn aap-btn--no" id="am-reject-btn" data-cs-confirm="{{ __('Decline this application?') }}">{{ __('Decline') }}</button>
+          <button type="submit" class="aap-btn aap-btn--no" id="am-reject-btn" data-cs-confirm="{{ __('Decline this application? The applicant will be emailed a polite notice — this can\'t be undone.') }}">{{ __('Decline') }}</button>
         </form>
         <form method="POST" id="am-approve-form">
           @csrf
