@@ -185,3 +185,14 @@
 
 <!-- Select2 -->
 <link href="{{ asset('assets/css/select2.min.css') }}" rel="stylesheet" />
+
+{{-- FOUC guard (app-wide). The HTML parser can otherwise paint an early, fully UNSTYLED
+     frame of the body before these head stylesheets have applied — a raw serif flash that
+     the preloader can't mask, because with no CSS yet the preloader isn't a fixed overlay.
+     Per spec a parser-encountered <script> does not run until all preceding stylesheets have
+     loaded, and the parser won't paint past it until it runs — so this tiny inline script,
+     sitting AFTER every <link> above, forces the CSSOM to be ready before the body paints.
+     (The owner layout got this for free via its head pusher.min.js; roles without a head
+     script — e.g. affiliate — flashed. Touching a layout property flushes pending styles so
+     the statement can't be optimised away.) --}}
+<script>document.documentElement.clientWidth;</script>
