@@ -1,3 +1,25 @@
+{{-- ── FOUC guard (app-wide, robust) ──────────────────────────────────────────────
+     An external <link> stylesheet SHOULD be render-blocking, but in practice the browser
+     can still paint an early, fully UNSTYLED frame of the body (raw serif, no CSS at all)
+     before the head stylesheets apply — and the preloader can't mask it, because with no
+     CSS yet it isn't a fixed overlay. (Worst in Edge; intermittent in Chrome.) So we keep
+     the app shell hidden until the page has loaded (CSS applied), showing only the
+     preloader / a white screen in the meantime. The hiding class is added by JS, so a
+     no-JS client is NEVER affected (the rule can't match), and a 3s failsafe guarantees
+     content can never stay hidden if `load` never fires. #preloader is exempted so the
+     brand splash still shows. This supersedes the earlier clientWidth trick, which relied
+     on script-blocks-on-stylesheet timing that didn't hold across browsers. --}}
+<style>html.cs-booting body > *:not(#preloader){visibility:hidden!important}</style>
+<script>
+    document.documentElement.className += ' cs-booting';
+    (function () {
+        function reveal() { document.documentElement.classList.remove('cs-booting'); }
+        window.addEventListener('load', reveal);
+        window.addEventListener('pageshow', reveal); // bfcache restore safety
+        setTimeout(reveal, 3000);
+    })();
+</script>
+
 <link href="{{ asset('assets/libs/bootstrap/css/bootstrap.min.css') }}" rel="stylesheet">
 <link href="{{ asset('assets/libs/jquery-ui/jquery-ui.min.css') }}" rel="stylesheet">
 <link rel="stylesheet" href="{{ asset('assets/css/animate.min.css') }}">
@@ -185,14 +207,3 @@
 
 <!-- Select2 -->
 <link href="{{ asset('assets/css/select2.min.css') }}" rel="stylesheet" />
-
-{{-- FOUC guard (app-wide). The HTML parser can otherwise paint an early, fully UNSTYLED
-     frame of the body before these head stylesheets have applied — a raw serif flash that
-     the preloader can't mask, because with no CSS yet the preloader isn't a fixed overlay.
-     Per spec a parser-encountered <script> does not run until all preceding stylesheets have
-     loaded, and the parser won't paint past it until it runs — so this tiny inline script,
-     sitting AFTER every <link> above, forces the CSSOM to be ready before the body paints.
-     (The owner layout got this for free via its head pusher.min.js; roles without a head
-     script — e.g. affiliate — flashed. Touching a layout property flushes pending styles so
-     the statement can't be optimised away.) --}}
-<script>document.documentElement.clientWidth;</script>
