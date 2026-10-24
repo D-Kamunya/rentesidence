@@ -59,28 +59,23 @@ class DemoController extends Controller
             $lead      = \App\Models\Lead::find($leadId);
 
             if ($affiliate && $lead && (int) $lead->affiliate_id === (int) $affiliate->user_id) {
-                // First view for this lead? (Guards the immediate notification against re-fires from
-                // another prospect/session viewing the same lead's demo link.)
-                $firstView = ! \App\Models\LeadActivity::where('lead_id', $lead->id)
-                    ->where('type', 'demo_viewed')->exists();
-
                 app(\App\Services\LeadService::class)->logActivity(
                     $lead, 'demo_viewed', __('Prospect viewed the guided demo'), (int) $affiliate->user_id
                 );
                 $request->session()->put('demo_viewed_logged', true);
 
-                if ($firstView) {
-                    // Immediate "they're hot now" pull — in-app bell + email, so an affiliate who
-                    // isn't in the app still gets the peak-interest window.
-                    addNotification(
-                        __('A prospect watched your guided demo'),
-                        __(':company just viewed the demo — follow up while interest is high.', ['company' => optional($lead->company)->company_name ?: __('A prospect')]),
-                        route('affiliate.leads.show', $lead->id),
-                        null,
-                        (int) $affiliate->user_id
-                    );
-                    \App\Jobs\Mail\SendDemoViewedMail::dispatch($lead->id);
-                }
+                // Immediate "they're hot now" pull — in-app bell + email, so an affiliate who isn't
+                // in the app still catches the peak-interest window. Fires once per viewing session
+                // (the demo_viewed_logged guard above blocks re-fires within a session; a fresh
+                // session is a genuine new view / re-engagement worth surfacing).
+                addNotification(
+                    __('A prospect watched your guided demo'),
+                    __(':company just viewed the demo — follow up while interest is high.', ['company' => optional($lead->company)->company_name ?: __('A prospect')]),
+                    route('affiliate.leads.show', $lead->id),
+                    null,
+                    (int) $affiliate->user_id
+                );
+                \App\Jobs\Mail\SendDemoViewedMail::dispatch($lead->id);
             }
         }
 
