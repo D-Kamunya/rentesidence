@@ -27,6 +27,7 @@
                     <div class="cs-alert is-amber">{{ __('You need a property before you can apply.') }}</div>
                 @else
                     <form method="POST" action="{{ route('owner.financing.store') }}" id="csApplyForm">
+                        @include('owner.financing._transaction-consent-check', ['currentMode' => $currentMode ?? 'free'])
                         @csrf
                         <input type="hidden" name="finance_partner_module_id" value="{{ $product->id }}">
                         <input type="hidden" name="catalogue_item_id" value="{{ $catalogue->id }}">

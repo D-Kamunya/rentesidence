@@ -298,10 +298,21 @@ class SubscriptionController extends Controller
             return back()->with('error', $msg);
         }
 
+        // Record the owner's consent to the Transaction money-path change (rent → wallet) as
+        // durable legal evidence. The `confirmed` acknowledgement above is the UI gate; this logs it.
+        if ($package->pricing_model === 'transaction') {
+            \App\Models\TransactionModeConsent::record(
+                (int) auth()->id(),
+                \App\Models\TransactionModeConsent::SOURCE_SELF,
+                $request,
+                \App\Models\TransactionModeConsent::statement()
+            );
+        }
+
         // 50-year duration → effectively never expires; active until cancelled.
         // setUserPackage does Carbon::now()->addDays($duration) internally.
         $duration = 365 * 50;
- 
+
         setUserPackage(auth()->id(), $package, $duration, 1, null);
  
         $message = $package->pricing_model === 'transaction'

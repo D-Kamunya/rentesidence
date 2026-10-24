@@ -14,5 +14,6 @@
         @else
             {{ __('If approved and disbursed, your billing moves to the Transaction plan so repayment is collected from rent — 1% of rent (only on rent paid through the platform), plus unlimited units and no upfront cost. You apply on your current plan; nothing changes unless it disburses.') }}
         @endif
+        <div style="margin-top:8px;">{{ __('On Transaction mode your rent is collected into your Centresidence wallet (so repayment and the 1% are taken at source) and you withdraw it to M-Pesa — every rent payment is visible there, separate from marketplace and other income.') }}</div>
     </div>
 @endif
