@@ -63,8 +63,9 @@
                   <tr>
                     <td>
                       <div class="aap-name">{{ $a->name }}</div>
-                      @if ($a->location)<div class="aap-meta">{{ __('Based in') }} {{ $a->location }}</div>@endif
-                      @if ($a->coverage_area)<div class="aap-fieldrow"><span class="k">{{ __('Covers') }}:</span> {{ $a->coverage_area }}</div>@endif
+                      @if ($a->county || $a->country)
+                        <div class="aap-meta">{{ $a->county }}{{ $a->town ? ' · '.$a->town : '' }}{{ $a->country ? ', '.$a->country : '' }}</div>
+                      @endif
                       @if ($a->experience)<div class="aap-fieldrow"><span class="k">{{ __('Experience') }}:</span> {{ $a->experience }}</div>@endif
                       @if ($a->finance_contacts)<div class="aap-fieldrow"><span class="k">{{ __('Finance contacts') }}:</span> {{ $a->finance_contacts }}</div>@endif
                       @if ($a->pitch)<div class="aap-pitch"><span class="k" style="color:#9aa2ad;font-weight:600;">{{ __('Plan') }}:</span> {{ $a->pitch }}</div>@endif

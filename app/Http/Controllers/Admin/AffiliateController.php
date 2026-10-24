@@ -30,8 +30,48 @@ class AffiliateController extends Controller
             return $this->affiliateService->getAllData($request);
         } else {
             $data['pageTitle'] = __('Affiliates');
+            $data['coverage']  = $this->buildCoverage();
             return view('admin.affiliates.index', $data);
         }
+    }
+
+    /**
+     * Where our affiliates actually are — counts by county (+ country) and, crucially, the counties
+     * we're NOT yet represented in, so the team can aim targeted recruitment campaigns at the gaps.
+     * Reads the market list from config so it stays correct as we expand.
+     */
+    private function buildCoverage(): array
+    {
+        $base = Affiliate::query()->whereNull('deleted_at');
+
+        $total      = (clone $base)->count();
+        $unassigned = (clone $base)->where(fn ($q) => $q->whereNull('county')->orWhere('county', ''))->count();
+
+        $byCounty = (clone $base)->whereNotNull('county')->where('county', '!=', '')
+            ->selectRaw('county, count(*) as c')->groupBy('county')->orderByDesc('c')->pluck('c', 'county');
+
+        $byCountry = (clone $base)->whereNotNull('country')->where('country', '!=', '')
+            ->selectRaw('country, count(*) as c')->groupBy('country')->orderByDesc('c')->pluck('c', 'country');
+
+        // Primary market (first configured) drives the "represented vs not" gap view.
+        $markets     = csMarkets();
+        $primary     = $markets ? reset($markets) : ['name' => null, 'divisions' => [], 'divisions_label' => 'County'];
+        $divisions   = (array) ($primary['divisions'] ?? []);
+        $represented = array_values(array_intersect($divisions, $byCounty->keys()->all()));
+        $notRepresented = array_values(array_diff($divisions, $byCounty->keys()->all()));
+
+        return [
+            'total'           => $total,
+            'located'         => $total - $unassigned,
+            'unassigned'      => $unassigned,
+            'byCounty'        => $byCounty,            // county => count, desc
+            'byCountry'       => $byCountry,           // country => count, desc
+            'divisionsLabel'  => $primary['divisions_label'] ?? 'County',
+            'countiesTotal'   => count($divisions),
+            'countiesCovered' => count($represented),
+            'notRepresented'  => $notRepresented,      // the gaps
+            'multiCountry'    => $byCountry->count() > 1,
+        ];
     }
 
     public function affiliate_register_form()

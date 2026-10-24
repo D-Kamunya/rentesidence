@@ -10,8 +10,9 @@ class AffiliateApplication extends Model
     use SoftDeletes;
 
     protected $fillable = [
-        'first_name', 'last_name', 'email', 'phone', 'location',
-        'coverage_area', 'pitch', 'experience', 'finance_contacts',
+        'first_name', 'last_name', 'email', 'phone',
+        'country', 'county', 'town',
+        'pitch', 'experience', 'finance_contacts',
         'source', 'status', 'converted_user_id', 'admin_note',
         'agreed_at', 'consent_ip', 'consent_version',
     ];

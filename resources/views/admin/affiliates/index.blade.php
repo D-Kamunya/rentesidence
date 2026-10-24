@@ -24,6 +24,8 @@
                             </div>
                         </div>
                     </div>
+                    @include('admin.affiliates._coverage')
+
                     <div class="row">
                         <div class="col-xl-12 col-xxl-6">
                             <div class="row justify-content-end">
