@@ -22,6 +22,7 @@
                     <p class="cs-muted" style="margin:0 0 16px;">{{ __('Financing your surveyed quotation with :partner. You repay the financed amount from rent over the term you choose.', ['partner' => optional($product->partner)->trading_name ?? optional($product->partner)->company_name]) }}</p>
 
                     <form method="POST" action="{{ route('owner.financing.store') }}">
+                        @include('owner.financing._transaction-consent-check', ['currentMode' => $currentMode ?? 'free'])
                         @csrf
                         <input type="hidden" name="field_study_request_id" value="{{ $fsr->id }}">
                         <input type="hidden" name="finance_partner_module_id" value="{{ $product->id }}">

@@ -214,6 +214,23 @@ class FinancingController extends Controller
     /** Submit a financing application (create draft + soft underwriting). */
     public function store(Request $request, FinanceApplicationService $applications, CashflowService $cashflow, InfrastructureCostEngine $infra)
     {
+        // Recorded consent to the Transaction money-path switch (rent → the owner's wallet). Required
+        // only when the owner isn't already on Transaction — a disbursed facility moves them to it.
+        // The apply form shows the disclosure + a required acknowledgement; this records it as durable
+        // legal evidence. Covers both the catalogue and quote apply paths (both flow through here).
+        if (! app(\App\Centresidence\Services\PaymentModeService::class)->isTransactionMode((int) auth()->id())) {
+            $request->validate(
+                ['transaction_mode_consent' => 'accepted'],
+                ['transaction_mode_consent.accepted' => __('Please confirm you understand how your rent will be handled on Transaction mode before applying.')]
+            );
+            \App\Models\TransactionModeConsent::record(
+                (int) auth()->id(),
+                \App\Models\TransactionModeConsent::SOURCE_FINANCE,
+                $request,
+                \App\Models\TransactionModeConsent::statement()
+            );
+        }
+
         // Quote-based application (from an accepted site-survey quote) — a fixed all-in amount, not
         // a catalogue × qty calculation. Handled separately.
         if ($request->integer('field_study_request_id')) {
