@@ -25,6 +25,15 @@ class SendDemoScheduledMail extends BaseMailJob
         $hasLink = $this->meetingLink && preg_match('#^https?://#i', $this->meetingLink);
         $link    = $hasLink ? $this->meetingLink : null;
 
+        // Is the link our self-serve guided demo (prospect walks it alone) or an external
+        // live-meeting link (Zoom/Meet, with the affiliate present)? The wording differs — a
+        // guided demo is NOT "a live walkthrough with your account manager".
+        $isGuidedDemo = $hasLink && (bool) preg_match('#/demo\?ref=#i', $this->meetingLink);
+        $format       = ! $hasLink
+            ? __('Product demo')
+            : ($isGuidedDemo ? __('Guided walkthrough — explore at your own pace') : __('Live session with your Centresidence partner'));
+        $joinLabel    = $isGuidedDemo ? __('Start the demo') : __('Join the demo');
+
         // Escape only values interpolated into free-text (text/note) blocks; panel rows are
         // auto-escaped by the panel part, so raw model values are passed straight in there.
         $companyName = e($company->company_name);
@@ -36,15 +45,15 @@ class SendDemoScheduledMail extends BaseMailJob
                     . ' ' . __('Great news — your demo for :app has been scheduled.', ['app' => "<strong>{$appName}</strong>"])],
                 ['type' => 'panel', 'variant' => 'green', 'title' => __('Demo details'), 'rows' => [
                     ['k' => __('Date & time'), 'v' => $demoDate],
-                    ['k' => __('Format'),      'v' => __('Live walkthrough with your account manager')],
+                    ['k' => __('Format'),      'v' => $format],
                 ]],
             ];
             if ($hasLink) {
-                $blocks[] = ['type' => 'button', 'url' => $link, 'label' => __('Join the demo'), 'color' => '#0F6E56'];
+                $blocks[] = ['type' => 'button', 'url' => $link, 'label' => $joinLabel, 'color' => '#0F6E56'];
                 $blocks[] = ['type' => 'text', 'html' => "<span style='color:#6b7280;font-size:13px;'>"
                     . __('Or copy this link:') . ' ' . e($link) . '</span>'];
             } else {
-                $blocks[] = ['type' => 'note', 'text' => __('Your account manager will share the meeting details with you directly.')];
+                $blocks[] = ['type' => 'note', 'text' => __('Your Centresidence partner will share the demo details with you directly.')];
             }
             $blocks[] = ['type' => 'text', 'html' => "<span style='color:#6b7280;font-size:13px;'>"
                 . __('We look forward to showing you what :app can do for your business.', ['app' => $appName]) . '</span>'];

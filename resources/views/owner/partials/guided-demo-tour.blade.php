@@ -12,8 +12,8 @@
         ['ico' => '👋', 'title' => __('Welcome — this is a live account'),
          'body' => __('Everything here is real, working software. Give me 60 seconds and I\'ll show you how :app runs a landlord\'s whole rental business.', ['app' => $app])],
 
-        ['ico' => '💰', 'title' => __('Rent that collects itself'),
-         'body' => __('Money your tenants pay over M-Pesa lands here automatically, with an instant receipt. No chasing, no cash, no lost records.'),
+        ['ico' => '👛', 'title' => __('Your earnings wallet'),
+         'body' => __('Marketplace sales and other income we collect for you land here, ready to withdraw to M-Pesa any time. Your rent goes straight to you — or, if you pick pay-as-you-go Transaction mode, it lands here too so you withdraw it on your terms.'),
          'target' => '[data-tour="owner-wallet"]'],
 
         ['ico' => '📩', 'title' => __('Invoices on autopilot'),
