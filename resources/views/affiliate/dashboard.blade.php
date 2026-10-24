@@ -601,7 +601,9 @@
 @endpush
 
 @push('scripts')
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+{{-- Chart.js bundled locally (v4.4.1 UMD) — was an unpinned external CDN (cdn.jsdelivr.net),
+     an off-origin, offline-fragile dependency on a core surface. Served same-origin now. --}}
+<script src="{{ asset('assets/libs/chartjs/chart.umd.min.js') }}"></script>
 <script>
 document.addEventListener('DOMContentLoaded', function () {
     var ctx = document.getElementById('earningsChart').getContext('2d');
