@@ -157,11 +157,12 @@
         <div class="am-block" id="am-pitch-wrap"><div class="am-k">{{ __('How they\'ll promote Centresidence') }}</div><div class="am-v" id="am-pitch"></div></div>
       </div>
       <div class="modal-footer" id="am-actions">
-        <form method="POST" id="am-reject-form">
+        {{-- cs-confirm intercepts the FORM submit (it skips submit buttons), so the attribute lives on the form. --}}
+        <form method="POST" id="am-reject-form" data-cs-confirm="{{ __('Decline this application? The applicant will be emailed a polite notice — this can\'t be undone.') }}">
           @csrf
-          <button type="submit" class="aap-btn aap-btn--no" id="am-reject-btn" data-cs-confirm="{{ __('Decline this application? The applicant will be emailed a polite notice — this can\'t be undone.') }}">{{ __('Decline') }}</button>
+          <button type="submit" class="aap-btn aap-btn--no" id="am-reject-btn">{{ __('Decline') }}</button>
         </form>
-        <form method="POST" id="am-approve-form">
+        <form method="POST" id="am-approve-form" data-cs-confirm="{{ __('Create an affiliate account and send their login details?') }}">
           @csrf
           <button type="submit" class="aap-btn aap-btn--go" id="am-approve-btn">{{ __('Create affiliate') }}</button>
         </form>
@@ -221,7 +222,8 @@
         actions.hidden = false; done.hidden = true;
         document.getElementById('am-approve-form').action = d.approveUrl || '';
         document.getElementById('am-reject-form').action = d.rejectUrl || '';
-        document.getElementById('am-approve-btn').setAttribute(
+        // Personalise the approve confirmation (cs-confirm reads data-cs-confirm from the FORM).
+        document.getElementById('am-approve-form').setAttribute(
           'data-cs-confirm',
           'Create an affiliate account for ' + (d.name || 'this applicant') + ' and send their login details?'
         );
