@@ -38,8 +38,10 @@
   @media (max-width:460px){ .aa-row2{ grid-template-columns:1fr; } }
   .aa-field label { display:block; font-size:12.5px; font-weight:650; color:#4a4f57; margin-bottom:6px; }
   .aa-field .hint { font-weight:500; color:#9aa2ad; }
-  .aa-field input, .aa-field textarea { width:100%; background:#fff; border:1px solid #e6e1d8; border-radius:11px; padding:12px 14px; font-size:14.5px; color:#1b1e22; outline:none; transition:.15s; font-family:inherit; }
-  .aa-field input:focus, .aa-field textarea:focus { border-color:#185FA5; box-shadow:0 0 0 3px rgba(24,95,165,.14); }
+  .aa-field input, .aa-field textarea, .aa-field select { width:100%; background:#fff; border:1px solid #e6e1d8; border-radius:11px; padding:12px 14px; font-size:14.5px; color:#1b1e22; outline:none; transition:.15s; font-family:inherit; }
+  .aa-field select { appearance:none; -webkit-appearance:none; background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%239aa2ad' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E"); background-repeat:no-repeat; background-position:right 14px center; padding-right:36px; cursor:pointer; }
+  .aa-field select:disabled { background-color:#f6f5f2; color:#9aa2ad; cursor:not-allowed; }
+  .aa-field input:focus, .aa-field textarea:focus, .aa-field select:focus { border-color:#185FA5; box-shadow:0 0 0 3px rgba(24,95,165,.14); }
   .aa-field .err { color:#B42318; font-size:12px; margin-top:6px; }
   .aa-consent { display:flex; align-items:flex-start; gap:10px; font-size:13px; color:#44474d; line-height:1.55; margin:8px 0 18px; border:1px solid #e6e1d8; border-radius:12px; padding:13px 14px; background:#FBFAF7; }
   .aa-consent input { margin-top:2px; flex:none; width:16px; height:16px; accent-color:#185FA5; }
@@ -132,16 +134,30 @@
             <input type="text" name="phone" value="{{ old('phone') }}" maxlength="20" required placeholder="0700 000 000">
             @error('phone')<div class="err">{{ $message }}</div>@enderror
           </div>
+          @php $marketCountries = csMarketCountries(); @endphp
           <div class="aa-row2">
             <div class="aa-field">
-              <label>Where are you based? <span class="hint">(optional)</span></label>
-              <input type="text" name="location" value="{{ old('location') }}" maxlength="120" placeholder="Town / county">
+              <label>Country</label>
+              <select name="country" id="aaCountry" required>
+                <option value="">Select country</option>
+                @foreach ($marketCountries as $c)
+                  <option value="{{ $c }}" {{ old('country', count($marketCountries) === 1 ? $marketCountries[0] : '') === $c ? 'selected' : '' }}>{{ $c }}</option>
+                @endforeach
+              </select>
+              @error('country')<div class="err">{{ $message }}</div>@enderror
             </div>
             <div class="aa-field">
-              <label>Which areas will you cover?</label>
-              <input type="text" name="coverage_area" value="{{ old('coverage_area') }}" maxlength="160" required placeholder="e.g. Ruaka, Kiambu Rd">
-              @error('coverage_area')<div class="err">{{ $message }}</div>@enderror
+              <label>County</label>
+              <select name="county" id="aaCounty" required data-old="{{ old('county') }}" disabled>
+                <option value="">Select county</option>
+              </select>
+              @error('county')<div class="err">{{ $message }}</div>@enderror
             </div>
+          </div>
+          <div class="aa-field">
+            <label>Town / area <span class="hint">(optional)</span></label>
+            <input type="text" name="town" value="{{ old('town') }}" maxlength="120" placeholder="e.g. Ruaka">
+            @error('town')<div class="err">{{ $message }}</div>@enderror
           </div>
           <div class="aa-field">
             <label>Any sales or real-estate experience? <span class="hint">(optional)</span></label>
@@ -168,4 +184,32 @@
 
   </div>
 </div>
+
+@php
+  $marketDivisions = collect(csMarkets())->mapWithKeys(fn ($m) => [$m['name'] => array_values($m['divisions'] ?? [])])->all();
+@endphp
+<script>
+  (function () {
+    var MARKETS = @json($marketDivisions);
+    var country = document.getElementById('aaCountry');
+    var county  = document.getElementById('aaCounty');
+    if (!country || !county) return;
+
+    function fillCounties(preselect) {
+      var list = MARKETS[country.value] || [];
+      county.innerHTML = '<option value="">Select county</option>';
+      list.forEach(function (name) {
+        var o = document.createElement('option');
+        o.value = name; o.textContent = name;
+        if (name === preselect) o.selected = true;
+        county.appendChild(o);
+      });
+      county.disabled = list.length === 0;
+    }
+
+    // Prime on load (keeps a prefilled country + the old county after a validation error).
+    fillCounties(county.getAttribute('data-old') || '');
+    country.addEventListener('change', function () { fillCounties(''); });
+  })();
+</script>
 @endsection

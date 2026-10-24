@@ -13,6 +13,9 @@ class Affiliate extends Model
     protected $fillable = [
         'user_id',
         'referral_code',
+        'country',
+        'county',
+        'town',
         'origin_tenant_user_id',
         'graduated_at',
     ];
