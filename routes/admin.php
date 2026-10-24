@@ -279,6 +279,7 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'middleware' => ['auth', 'a
         // Prospective-affiliate applications (from the public "become an affiliate" page).
         Route::group(['prefix' => 'applications', 'as' => 'applications.'], function () {
             Route::get('/', [\App\Http\Controllers\Admin\AffiliateApplicationController::class, 'index'])->name('index');
+            Route::post('invite', [\App\Http\Controllers\Admin\AffiliateApplicationController::class, 'updateInvite'])->name('invite');
             Route::post('{application}/approve', [\App\Http\Controllers\Admin\AffiliateApplicationController::class, 'approve'])->name('approve');
             Route::post('{application}/reject', [\App\Http\Controllers\Admin\AffiliateApplicationController::class, 'reject'])->name('reject');
         });

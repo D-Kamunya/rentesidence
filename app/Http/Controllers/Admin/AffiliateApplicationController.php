@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\AffiliateApplication;
 use App\Models\User;
 use App\Services\AffiliateService;
+use App\Support\AffiliateInvite;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 
@@ -37,7 +38,31 @@ class AffiliateApplicationController extends Controller
             'counts'       => $counts,
             'status'       => $status,
             'pageTitle'    => __('Affiliate Applications'),
+            'invite'       => [
+                'link'      => AffiliateInvite::link(),
+                'expiresAt' => AffiliateInvite::expiresAt(),
+                'active'    => AffiliateInvite::isActive(),
+                'default_days' => AffiliateInvite::DEFAULT_WINDOW_DAYS,
+            ],
         ]);
+    }
+
+    /**
+     * Rotate / close the invited-campaign link. Rotating generates a fresh token (invalidating every
+     * old link) and reopens the window; closing sets the expiry to the past so invited links fall back
+     * to normal review immediately. The window also auto-closes on its own — this is the manual control.
+     */
+    public function updateInvite(Request $request)
+    {
+        if ($request->input('action') === 'close') {
+            AffiliateInvite::setExpiry(now()->subMinute());
+            return back()->with('success', __('Invitation link closed — invited links now go to normal review.'));
+        }
+
+        $days = (int) $request->input('days', AffiliateInvite::DEFAULT_WINDOW_DAYS);
+        AffiliateInvite::rotate($days > 0 ? $days : AffiliateInvite::DEFAULT_WINDOW_DAYS);
+
+        return back()->with('success', __('New invitation link generated. Old links no longer auto-provision.'));
     }
 
     /**
