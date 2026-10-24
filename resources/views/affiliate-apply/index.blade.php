@@ -1,6 +1,11 @@
 @extends('saas.frontend.layouts.app')
 @section('content')
-@php $pageTitle = 'Become a Centresidence Affiliate'; @endphp
+@php
+  $pageTitle = 'Become a Centresidence Affiliate';
+  // Pull the recurring-commission window from settings so this page never needs editing if the
+  // length changes (same source the commission engine + academy read).
+  $recurMonths = (int) (getOption('RECURRING_COMMISSION_MONTHS') ?: 12);
+@endphp
 
 <style>
   .aa-wrap { max-width:1040px; margin:0 auto; padding:150px 20px 70px; }
@@ -69,14 +74,15 @@
         <ul>
           <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M20 6L9 17l-5-5" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg><span><b>Commission-only.</b> You join as an independent partner, not a salaried employee — there's no salary or retainer. You earn when the owners you bring on use Centresidence.</span></li>
           <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M20 6L9 17l-5-5" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg><span>You earn <b>recurring commission on what your owners do</b> — subscriptions, rent, marketplace, screening, agreements and financing — not just for signing them up.</span></li>
-          <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M20 6L9 17l-5-5" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg><span>Commission on each owner runs for a <b>set period (about 12 months)</b> per earning type — steady, ongoing income rather than a one-off.</span></li>
+          <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M20 6L9 17l-5-5" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg><span>Commission on each owner runs for a <b>set period (about {{ $recurMonths }} months)</b> per earning type — steady, ongoing income rather than a one-off.</span></li>
           <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M20 6L9 17l-5-5" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg><span>You cover <b>your own costs</b> — time, transport and any ads you choose to run — and you keep the full upside of your effort.</span></li>
         </ul>
 
         <div class="glabel">The good part</div>
         <ul>
           <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M20 6L9 17l-5-5" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg><span><b>Fully remote.</b> Work from anywhere with an internet connection.</span></li>
-          <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M20 6L9 17l-5-5" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg><span><b>Flexible and self-paced.</b> You choose your own hours and schedule — ideal part-time or as supplemental income.</span></li>
+          <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M20 6L9 17l-5-5" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg><span><b>Flexible and self-paced.</b> You choose your own hours and schedule — fit it around your life.</span></li>
+          <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M20 6L9 17l-5-5" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg><span><b>Build real, recurring income.</b> It works beautifully as a side hustle — no need to quit your job — and because your commissions recur, it can grow into something you could one day do full-time.</span></li>
           <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M20 6L9 17l-5-5" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg><span><b>No targets, no pressure, no one chasing you.</b> Your earnings grow with your own effort and consistency — on your terms.</span></li>
           <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M20 6L9 17l-5-5" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg><span><b>We set you up to win.</b> A partner academy that certifies you, ready-made marketing materials and ongoing support — with your earnings and each owner's activity visible in your dashboard and paid to M-Pesa.</span></li>
         </ul>
