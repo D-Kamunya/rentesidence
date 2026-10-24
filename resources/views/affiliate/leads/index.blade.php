@@ -394,7 +394,16 @@
                                                         Active Trial
                                                     </span>
 
-                                                {{-- Expired --}}
+                                                {{-- Protected / being worked — ownership expiry doesn't apply (it never expires) --}}
+                                                @elseif($lead->isProtected())
+                                                    <span class="leads-expiry leads-expiry--active">
+                                                        <svg width="11" height="11" viewBox="0 0 16 16" fill="none">
+                                                            <path d="M2 10l4-4 3 3 5-6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                                                        </svg>
+                                                        In progress
+                                                    </span>
+
+                                                {{-- Expired (only for leads that can actually expire) --}}
                                                 @elseif($now->greaterThan($expiresAt))
                                                     <span class="leads-expiry leads-expiry--expired">
                                                         <svg width="11" height="11" viewBox="0 0 16 16" fill="none">
@@ -448,7 +457,9 @@
                                                             Closed
                                                         </span>
 
-                                                    @elseif($lead->affiliate_id === auth()->id() && $lead->ownership_expires_at > now())
+                                                    {{-- A protected (worked) lead never expires, so it gets Edit even if its ownership
+                                                         date is past — never a Renew (nothing to renew). --}}
+                                                    @elseif($lead->affiliate_id === auth()->id() && ($lead->ownership_expires_at > now() || $lead->isProtected()))
                                                         <a href="{{ route('affiliate.leads.edit', $lead->id) }}" class="leads-action-btn leads-action-btn--edit">
                                                             <svg width="12" height="12" viewBox="0 0 16 16" fill="none">
                                                                 <path d="M11.5 2.5a1.5 1.5 0 0 1 2 2L5 13H3v-2L11.5 2.5z" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
@@ -456,7 +467,7 @@
                                                             Edit
                                                         </a>
 
-                                                    @elseif($lead->affiliate_id === auth()->id() && $lead->ownership_expires_at < now())
+                                                    @elseif($lead->affiliate_id === auth()->id() && $lead->ownership_expires_at < now() && !$lead->isProtected())
                                                         <form action="{{ route('affiliate.leads.renew', $lead->id) }}" method="POST" style="display:inline;">
                                                             @csrf
                                                             <button type="submit" class="leads-action-btn leads-action-btn--renew">

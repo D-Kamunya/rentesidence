@@ -63,7 +63,9 @@ class LeadController extends Controller
                 SUM(CASE WHEN temperature = 'hot' THEN 1 ELSE 0 END) as hot,
                 SUM(CASE WHEN temperature = 'warm' THEN 1 ELSE 0 END) as warm,
                 SUM(CASE WHEN temperature = 'cold' THEN 1 ELSE 0 END) as cold,
-                SUM(CASE WHEN ownership_expires_at < NOW() THEN 1 ELSE 0 END) as expired
+                SUM(CASE WHEN ownership_expires_at < NOW()
+                          AND status NOT IN ('demo_scheduled','demo_completed','pending_conversion','trial')
+                         THEN 1 ELSE 0 END) as expired
             ")
             ->first();
 
