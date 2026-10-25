@@ -66,11 +66,11 @@
               </div>
               <div class="ocf-field">
                 <label>{{ __('Message') }}
-                  <span class="ocf-chip" onclick="ocInsert('{{ '{{first_name}}' }}')">+ {{ __('first name') }}</span>
-                  <span class="ocf-chip" onclick="ocInsert('{{ '{{invite_link}}' }}')">+ {{ __('invite link') }}</span>
+                  <span class="ocf-chip" onclick="ocInsert('@{{first_name}}')">+ {{ __('first name') }}</span>
+                  <span class="ocf-chip" onclick="ocInsert('@{{invite_link}}')">+ {{ __('invite link') }}</span>
                 </label>
                 <textarea name="body" id="ocBody" rows="16" required>{{ old('body', $defaultBody) }}</textarea>
-                <div class="ocf-hint">{{ __('Use') }} <code>{{ '{{first_name}}' }}</code> {{ __('and') }} <code>{{ '{{invite_link}}' }}</code>{{ __('. Recruitment emails also get a "Set up my account" button with the live link automatically — you don\'t have to paste a URL.') }}</div>
+                <div class="ocf-hint">{{ __('Use') }} <code>@{{first_name}}</code> {{ __('and') }} <code>@{{invite_link}}</code>{{ __('. Recruitment emails also get a "Set up my account" button with the live link automatically — you don\'t have to paste a URL.') }}</div>
                 @error('body')<div class="ocf-err">{{ $message }}</div>@enderror
               </div>
             </div>
