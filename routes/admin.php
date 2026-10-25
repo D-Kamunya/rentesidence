@@ -285,6 +285,17 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'middleware' => ['auth', 'a
         });
     });
 
+    // In-system outreach campaigns (recruitment-first): paste a list, send CS-layout mail, track + auto-follow-up.
+    Route::group(['prefix' => 'outreach', 'as' => 'outreach.'], function () {
+        Route::get('/', [\App\Http\Controllers\Admin\OutreachController::class, 'index'])->name('index');
+        Route::get('create', [\App\Http\Controllers\Admin\OutreachController::class, 'create'])->name('create');
+        Route::post('/', [\App\Http\Controllers\Admin\OutreachController::class, 'store'])->name('store');
+        Route::get('{campaign}', [\App\Http\Controllers\Admin\OutreachController::class, 'show'])->name('show');
+        Route::post('{campaign}/recipients', [\App\Http\Controllers\Admin\OutreachController::class, 'addRecipients'])->name('recipients');
+        Route::post('{campaign}/send', [\App\Http\Controllers\Admin\OutreachController::class, 'send'])->name('send');
+        Route::post('{campaign}/delete', [\App\Http\Controllers\Admin\OutreachController::class, 'destroy'])->name('delete');
+    });
+
     Route::group(['prefix' => 'language', 'as' => 'language.'], function () {
         Route::get('/', [LanguageController::class, 'index'])->name('index');
         Route::post('store', [LanguageController::class, 'store'])->name('store')->middleware('isDemo');
