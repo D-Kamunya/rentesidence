@@ -42,7 +42,7 @@ class SendOutreachMail extends BaseMailJob
         } else {
             $subject = $this->resolve($campaign->subject, $name, $link);
             $blocks  = [
-                ['type' => 'text', 'html' => nl2br(e($this->resolve($campaign->body, $name, $link)))],
+                ['type' => 'text', 'html' => $this->renderBody($this->resolve($campaign->body, $name, $link))],
             ];
             if ($campaign->isRecruitment()) {
                 $blocks[] = ['type' => 'button', 'url' => $link, 'label' => __('Set up my partner account')];
@@ -67,5 +67,18 @@ class SendOutreachMail extends BaseMailJob
     private function resolve(string $s, string $name, string $link): string
     {
         return str_replace(['{{first_name}}', '{{invite_link}}'], [$name, $link], $s);
+    }
+
+    /**
+     * Render an admin-authored plain-text body safely: escape everything first (admin is trusted, but
+     * we never want raw HTML breaking the email), then allow lightweight **bold** markers and preserve
+     * line breaks. Keeps the compose box plain-text-simple while letting key phrases stand out.
+     */
+    private function renderBody(string $text): string
+    {
+        $safe = e($text);
+        $safe = preg_replace('/\*\*(.+?)\*\*/s', '<strong>$1</strong>', $safe);
+
+        return nl2br($safe);
     }
 }
