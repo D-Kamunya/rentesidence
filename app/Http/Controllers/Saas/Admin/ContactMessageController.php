@@ -34,6 +34,9 @@ class ContactMessageController extends Controller
         $data = $this->contactMessageService->getInfo($request->id);
         $data->is_view = ACTIVE;
         $data->save();
+        // Surface the referring affiliate (if any) so the admin knows this is an attributed lead.
+        $data->load('referralAffiliate.user');
+        $data->referral_affiliate_name = optional(optional($data->referralAffiliate)->user)->name;
         return $data;
     }
 
@@ -51,7 +54,8 @@ class ContactMessageController extends Controller
      * One-click: onboard a trial-intent contact message into an owner account (after the admin's
      * own due diligence). Reuses the shared owner-onboarding machinery — temp password, credentials
      * by email + SMS, forced reset on first login. Marks the message with the owner it created so
-     * it can't be onboarded twice. Not a referral — no attribution, no reward.
+     * it can't be onboarded twice. If the enquiry came through an affiliate's referral link, the
+     * owner is credited to that affiliate (owners.affiliate_id) so their commission lines start.
      */
     public function createOwner(Request $request, $id)
     {
@@ -77,7 +81,9 @@ class ContactMessageController extends Controller
                 'last_name'    => $message->last_name,
                 'phone'        => $message->phone,
                 'email'        => $message->email,
-                'affiliate_id' => null,
+                // Attribution loop: if this enquiry came through an affiliate's referral link, credit
+                // the resulting owner to them (owners.affiliate_id). Null for an organic enquiry.
+                'affiliate_id' => $message->referral_affiliate_id ?: null,
             ]);
 
             $message->owner_id = $onboard['owner']->id;

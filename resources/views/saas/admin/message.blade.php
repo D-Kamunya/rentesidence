@@ -80,6 +80,10 @@
                                             <th class="w-25">{{ __('Message') }}</th>
                                             <td class="message"></td>
                                         </tr>
+                                        <tr class="referral-sec d-none">
+                                            <th class="w-25">{{ __('Referred by') }}</th>
+                                            <td class="referral" style="color:#0F6E56;font-weight:600;"></td>
+                                        </tr>
                                         <tr class="reply-sec d-none">
                                             <th class="w-25">{{ __('Reply') }}</th>
                                             <td class="reply"></td>

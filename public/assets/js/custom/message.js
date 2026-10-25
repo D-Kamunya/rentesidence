@@ -17,6 +17,14 @@ function getDataViewRes(response) {
         selector.find('.reply-sec').addClass('d-none');
     }
 
+    // Attribution: show the referring affiliate when this enquiry came through a referral link.
+    if (response.referral_affiliate_name) {
+        selector.find('.referral-sec').removeClass('d-none');
+        selector.find('.referral').text(response.referral_affiliate_name);
+    } else {
+        selector.find('.referral-sec').addClass('d-none');
+    }
+
     // Trial-enquiry onboarding: offer a one-click "Create owner" only for a trial-intent
     // message that hasn't been onboarded yet; show a "created" note once it has.
     var createFooter = document.getElementById('createOwnerFooter');
