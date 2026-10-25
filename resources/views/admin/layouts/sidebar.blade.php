@@ -198,6 +198,12 @@
                             </a>
                         </li>
                         <li>
+                            <a class="{{ @$navAffiliatesAddMMShowClass }}" href="{{ route('admin.outreach.index') }}">
+                                <i class="fa fa-paper-plane" aria-hidden="true"></i>
+                                <span>{{ __('Outreach') }}</span>
+                            </a>
+                        </li>
+                        <li>
                             <a class="{{ @$navAffiliatesAddMMShowClass }}" href="{{ route('admin.leads.index') }}">
                                 <i class="fa fa-cog" aria-hidden="true"></i>
                                 <span>{{ __('Leads') }}</span>
