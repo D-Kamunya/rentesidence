@@ -92,6 +92,11 @@
                   <div class="ocf-hint">{{ __('0 = none. Kept low on purpose — the system never spams.') }}</div>
                 </div>
               </div>
+              <div class="ocf-field">
+                <label>{{ __('Send rate (emails per hour)') }}</label>
+                <input type="number" name="send_per_hour" value="{{ old('send_per_hour', 100) }}" min="1" max="2000">
+                <div class="ocf-hint">{{ __('The batch trickles out at this rate so it never bursts past your host\'s hourly limit (cPanel is often ~200/hr). 100 is a safe default that leaves headroom for normal system mail. No manual waves needed.') }}</div>
+              </div>
             </div>
 
             <div class="ocf-actions">
