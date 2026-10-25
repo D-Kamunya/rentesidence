@@ -74,6 +74,9 @@
             <button type="submit" class="ocs-del">{{ __('Delete campaign') }}</button>
           </form>
         </div>
+        <div style="font-size:12px;color:#9aa2ad;margin:-8px 0 16px;">
+          {{ __('Sends are paced at :rate/hour so the batch never bursts past your host\'s limit — recipients trickle out automatically, no manual waves.', ['rate' => $campaign->send_per_hour ?: \App\Models\OutreachCampaign::DEFAULT_SEND_PER_HOUR]) }}
+        </div>
 
         <div class="ocs-card">
           <h3>{{ __('Add more recipients') }}</h3>
