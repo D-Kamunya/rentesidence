@@ -96,12 +96,36 @@ class FrontendController extends Controller
                 $message->intent = $intent;
             }
             $message->message = $request->message;
+
+            // ── Attribution loop: credit the referring affiliate. The ?referral=CODE from their
+            //    shareable link was captured (session + cookie) by CaptureAffiliateReferral; resolve
+            //    it to an ACTIVE affiliate and stamp it on the enquiry so that when an admin onboards
+            //    the owner from this message, the owner is credited to them (owners.affiliate_id). ──
+            $referralCode = $request->input('referral')
+                ?: $request->session()->get(\App\Http\Middleware\CaptureAffiliateReferral::KEY)
+                ?: $request->cookie(\App\Http\Middleware\CaptureAffiliateReferral::KEY);
+            $referralAffiliate = null;
+            if (is_string($referralCode) && $referralCode !== ''
+                && \Illuminate\Support\Facades\Schema::hasColumn('messages', 'referral_affiliate_id')) {
+                $referralAffiliate = \App\Models\Affiliate::where('referral_code', $referralCode)
+                    ->where('status', ACTIVE)->first();
+                if ($referralAffiliate) {
+                    $message->referral_code = $referralCode;
+                    $message->referral_affiliate_id = $referralAffiliate->id;
+                }
+            }
+
             $message->save();
             DB::commit();
 
             // ── Notify the admin so a lead is NEVER missed (esp. a free-trial enquiry). The
             //    in-app bell fires ALWAYS; email additionally when email sending is enabled. ──
             $this->notifyAdminOfContact($request, $intent);
+
+            // Tell the referring affiliate their link just produced an enquiry (never block the form).
+            if ($referralAffiliate) {
+                $this->notifyReferringAffiliate($referralAffiliate, $request);
+            }
 
             // Thank-you mail to the sender
             if (getOption('send_email_status', 0) == ACTIVE) {
@@ -139,8 +163,11 @@ class FrontendController extends Controller
             $body  = $who . ' — ' . \Illuminate\Support\Str::limit($request->subject ?: $request->message, 90);
             $url   = route('admin.message.index');
 
+            // The bell query INNER-JOINs users on sender_id, so a null sender is created-but-hidden.
+            // Use an admin as the system sender so these enquiry alerts actually surface.
+            $systemSender = $admins->first()->id;
             foreach ($admins as $admin) {
-                addNotification($title, $body, $url, null, $admin->id);
+                addNotification($title, $body, $url, null, $admin->id, $systemSender);
             }
 
             if (getOption('send_email_status', 0) == ACTIVE) {
@@ -156,6 +183,33 @@ class FrontendController extends Controller
             }
         } catch (\Throwable $e) {
             \Illuminate\Support\Facades\Log::error('Contact admin-notify failed: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Let the referring affiliate know their shareable link just produced an enquiry — a live sign
+     * their outreach is landing. Fully guarded (must never break the public form). Sent from an admin
+     * (system) so the bell's inner-join on sender_id shows it.
+     */
+    private function notifyReferringAffiliate(\App\Models\Affiliate $affiliate, Request $request): void
+    {
+        try {
+            if (! $affiliate->user_id) {
+                return;
+            }
+            $who     = trim("{$request->first_name} {$request->last_name}") ?: __('A prospect');
+            $sender  = \App\Models\User::where('role', USER_ROLE_ADMIN)->min('id') ?: (int) $affiliate->user_id;
+
+            addNotification(
+                __('A prospect you referred just reached out'),
+                __(':who enquired through your referral link — we\'ll be in touch as they\'re onboarded.', ['who' => $who]),
+                route('affiliate.dashboard'),
+                null,
+                (int) $affiliate->user_id,
+                (int) $sender
+            );
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::error('Referring-affiliate notify failed: ' . $e->getMessage());
         }
     }
 }

@@ -47,6 +47,7 @@ class Kernel extends HttpKernel
             \Illuminate\Routing\Middleware\SubstituteBindings::class,
             \App\Http\Middleware\ForcePasswordChange::class,
             \App\Http\Middleware\DemoReadonly::class,
+            \App\Http\Middleware\CaptureAffiliateReferral::class,
         ],
 
         'api' => [

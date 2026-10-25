@@ -9,4 +9,10 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 class Message extends Model
 {
     use HasFactory, SoftDeletes;
+
+    /** The affiliate who referred this enquiry (via ?referral=CODE), if any. FK = affiliates.id. */
+    public function referralAffiliate()
+    {
+        return $this->belongsTo(Affiliate::class, 'referral_affiliate_id');
+    }
 }
