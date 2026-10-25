@@ -60,16 +60,29 @@ class OutreachService
         return $added;
     }
 
-    /** Queue the campaign to every PENDING recipient and mark them sent. Returns the count queued. */
+    /**
+     * Queue the campaign to every PENDING recipient, PACED so it never bursts past the host's hourly
+     * cap: each job is delayed so no more than send_per_hour go out per hour. The every-minute queue
+     * worker picks up jobs as their delay matures, so hundreds trickle out over hours automatically —
+     * no manual waves. Marks each recipient sent (queued) and returns the count queued.
+     */
     public function send(OutreachCampaign $campaign): int
     {
+        $perHour = max(1, (int) ($campaign->send_per_hour ?: OutreachCampaign::DEFAULT_SEND_PER_HOUR));
+        $spacing = 3600 / $perHour; // seconds between each email
+
+        // Continue the pace from anything already in flight for this campaign (re-send / added batch).
+        $i = (int) $campaign->recipients()->where('status', OutreachRecipient::STATUS_SENT)->count();
+
         $count = 0;
         $campaign->recipients()->where('status', OutreachRecipient::STATUS_PENDING)
-            ->chunkById(200, function ($recipients) use (&$count) {
+            ->chunkById(500, function ($recipients) use (&$count, &$i, $spacing) {
                 foreach ($recipients as $r) {
-                    SendOutreachMail::dispatch($r->id, false);
+                    SendOutreachMail::dispatch($r->id, false)
+                        ->delay(now()->addSeconds((int) round($i * $spacing)));
                     $r->update(['status' => OutreachRecipient::STATUS_SENT, 'sent_at' => now()]);
                     $count++;
+                    $i++;
                 }
             });
 

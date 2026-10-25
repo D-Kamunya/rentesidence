@@ -56,6 +56,7 @@ class OutreachController extends Controller
             'recipients' => 'required|string',
             'follow_up_days' => 'nullable|integer|min:1|max:60',
             'max_follow_ups' => 'nullable|integer|min:0|max:3',
+            'send_per_hour'  => 'nullable|integer|min:1|max:2000',
         ]);
 
         $parsed = $this->outreach->parseRecipients($data['recipients']);
@@ -71,6 +72,7 @@ class OutreachController extends Controller
             'status'         => 'draft',
             'follow_up_days' => $data['follow_up_days'] ?? 4,
             'max_follow_ups' => $data['max_follow_ups'] ?? 1,
+            'send_per_hour'  => $data['send_per_hour'] ?? OutreachCampaign::DEFAULT_SEND_PER_HOUR,
             'created_by'     => auth()->id(),
         ]);
         $added = $this->outreach->addRecipients($campaign, $parsed);
@@ -138,7 +140,10 @@ class OutreachController extends Controller
 
         $sent = $this->outreach->send($campaign);
 
-        return back()->with('success', __('Queued to :n recipients. Follow-ups to non-responders are now automatic.', ['n' => $sent]));
+        $rate  = max(1, (int) ($campaign->send_per_hour ?: OutreachCampaign::DEFAULT_SEND_PER_HOUR));
+        $hours = ceil($sent / $rate);
+
+        return back()->with('success', __('Queued :n recipients, paced at :rate/hour (~:h hour(s) to finish) so it stays under your host\'s limit. Follow-ups to non-responders are automatic.', ['n' => $sent, 'rate' => $rate, 'h' => $hours]));
     }
 
     public function destroy($id)

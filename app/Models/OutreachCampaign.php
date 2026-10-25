@@ -9,8 +9,11 @@ class OutreachCampaign extends Model
 {
     protected $fillable = [
         'name', 'type', 'subject', 'body', 'status',
-        'follow_up_days', 'max_follow_ups', 'created_by', 'sent_at',
+        'follow_up_days', 'max_follow_ups', 'send_per_hour', 'created_by', 'sent_at',
     ];
+
+    /** Default paced-send rate (emails/hour) — conservative vs the typical cPanel 200/hr cap. */
+    public const DEFAULT_SEND_PER_HOUR = 100;
 
     protected $casts = [
         'sent_at' => 'datetime',
