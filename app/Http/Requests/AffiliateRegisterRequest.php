@@ -6,6 +6,7 @@ use App\Rules\ReCaptcha;
 use App\Traits\ResponseTrait;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Contracts\Validation\Validator;
+use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 
 class AffiliateRegisterRequest extends FormRequest
@@ -33,6 +34,10 @@ class AffiliateRegisterRequest extends FormRequest
             'last_name' => ['required', 'string', 'max:255'],
             'contact_number' => ['required', 'string', 'unique:users,contact_number'],
             'email' => ['required', 'string', 'email', 'max:255', 'unique:users,email'],
+            // Location is optional on the admin side; a chosen county must belong to the chosen country.
+            'country' => ['nullable', 'string', Rule::in(csMarketCountries())],
+            'county'  => ['nullable', 'string', Rule::in(csMarketDivisions($this->input('country')))],
+            'town'    => ['nullable', 'string', 'max:120'],
         ];
     }
 
