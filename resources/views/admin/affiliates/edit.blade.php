@@ -94,6 +94,7 @@
                                                             @enderror
                                                         </div>
                                                     </div>
+                                                    @include('admin.affiliates._location-fields', ['locCountry' => old('country', $affiliate->country), 'locCounty' => old('county', $affiliate->county), 'locTown' => old('town', $affiliate->town)])
                                                     <div class="row">
                                                         <div class="col-md-12 mb-25">
                                                             <div class="alert alert-info" style="margin:0;font-size:13.5px;">

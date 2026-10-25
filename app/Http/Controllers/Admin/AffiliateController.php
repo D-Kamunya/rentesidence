@@ -125,6 +125,10 @@ class AffiliateController extends Controller
             'last_name'      => ['required', 'string', 'max:255'],
             'contact_number' => ['required', 'string', 'unique:users,contact_number,' . $user->id],
             'email'          => ['required', 'string', 'email', 'max:255', 'unique:users,email,' . $user->id],
+            // Location (optional) — feeds the coverage report; county must belong to the chosen country.
+            'country'        => ['nullable', 'string', \Illuminate\Validation\Rule::in(csMarketCountries())],
+            'county'         => ['nullable', 'string', \Illuminate\Validation\Rule::in(csMarketDivisions($request->input('country')))],
+            'town'           => ['nullable', 'string', 'max:120'],
         ]);
 
         try {
@@ -133,6 +137,11 @@ class AffiliateController extends Controller
             $user->contact_number = $validated['contact_number'];
             $user->email          = $validated['email'];
             $user->save();
+
+            $affiliate->country = $validated['country'] ?? null;
+            $affiliate->county  = $validated['county'] ?? null;
+            $affiliate->town    = $validated['town'] ?? null;
+            $affiliate->save();
 
             return redirect()->route('admin.affiliates.index')->with('success', __('Affiliate details updated.'));
         } catch (Exception $e) {
