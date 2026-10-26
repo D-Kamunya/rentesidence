@@ -28,6 +28,22 @@
                             </a>
                         @endif
                     </div>
+                    {{-- Activation nudge: certified but no leads yet → the classic "trained and sitting"
+                         gap. Point them to the guaranteed warm first lead — their own landlord. --}}
+                    @if(($isCertified ?? false) && (int)($totalLeads ?? 0) === 0)
+                        <div class="mb-4" style="display:flex;gap:16px;align-items:flex-start;background:linear-gradient(135deg,#EAF4FB,#F4F9FD);border:1px solid #cfe3f6;border-radius:16px;padding:20px 22px;">
+                            <div style="flex:none;width:44px;height:44px;border-radius:12px;background:#185FA5;color:#fff;display:flex;align-items:center;justify-content:center;font-size:22px;">🎓</div>
+                            <div style="flex:1;min-width:0;">
+                                <h3 style="font-size:17px;font-weight:700;color:#12324f;margin:0 0 6px;">{{ __('You\'re certified — now let\'s land your first commission.') }}</h3>
+                                <p style="font-size:14px;color:#3a4a57;line-height:1.55;margin:0 0 14px;">{{ __('The fastest first win is the landlord you already know — ') }}<strong>{{ __('your own') }}</strong>{{ __('. Add them as your first lead: it\'s warm, it\'s real, and it\'s how most partners make their first sale. From there, your dashboard starts guiding every follow-up.') }}</p>
+                                <div style="display:flex;gap:14px;align-items:center;flex-wrap:wrap;">
+                                    <a href="{{ route('affiliate.leads.create') }}" class="act-btn" style="display:inline-flex;align-items:center;gap:7px;background:#185FA5;color:#fff;font-size:14px;font-weight:650;padding:10px 18px;border-radius:10px;text-decoration:none;">+ {{ __('Add my first lead') }}</a>
+                                    <a href="{{ route('affiliate.marketing-tools') }}" style="color:#185FA5;font-size:13.5px;font-weight:600;text-decoration:none;">{{ __('Get your referral link') }} →</a>
+                                    <a href="{{ route('affiliate.academy.index') }}" style="color:#6b7280;font-size:13.5px;text-decoration:none;">{{ __('Where to find more clients') }}</a>
+                                </div>
+                            </div>
+                        </div>
+                    @endif
                     {{-- Suggested actions nudge bar --}}
                     @if(isset($totalSuggestions) && $totalSuggestions > 0)
                         <div class="leads-nudge-bar mb-4">
