@@ -48,6 +48,46 @@ class SupportTicketService
     }
 
     /**
+     * Admin-initiated outreach: the admin STARTS a thread with a user (owner, affiliate, any role) —
+     * support is otherwise requester-initiated only. Creates the ticket with the TARGET as requester
+     * and the admin's message as the first (admin) reply, so the target's unread badge + in-app bell
+     * light exactly like a normal admin reply. The caller also emails them to log in and reply.
+     */
+    public function adminStartConversation(User $target, User $admin, string $subject, string $body): SupportTicket
+    {
+        return DB::transaction(function () use ($target, $admin, $subject, $body) {
+            $ticket = SupportTicket::create([
+                'requester_user_id' => $target->id,
+                'requester_role'    => $target->role,
+                'subject'           => $subject,
+                'priority'          => 'normal',
+                'status'            => SupportTicket::STATUS_ANSWERED, // admin spoke; awaiting the user
+                'admin_unread'      => false,
+                'requester_unread'  => true,
+                'last_reply_at'     => now(),
+            ]);
+
+            SupportTicketReply::create([
+                'support_ticket_id' => $ticket->id,
+                'user_id'           => $admin->id,
+                'is_admin'          => true,
+                'body'              => $body,
+            ]);
+
+            addNotification(
+                __('New message from the team'),
+                __('You have a new message: ') . $subject,
+                route('support.show', $ticket->id),
+                null,
+                $target->id,
+                $admin->id
+            );
+
+            return $ticket;
+        });
+    }
+
+    /**
      * Append a reply. If the author is admin → the ticket is "answered" and the requester gets an
      * unread flag + notification; if the requester replies → it flips back to "open" for admin.
      */

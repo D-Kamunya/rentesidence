@@ -356,7 +356,24 @@ class AcademyAdminController extends Controller
         $progress->needs_review = false;
     
         $progress->save();
-    
+
+        // Tell the affiliate (bell) — otherwise they have no way of knowing the block was lifted.
+        try {
+            if ($affiliate->user_id) {
+                $url = \Illuminate\Support\Facades\Route::has('affiliate.academy.index') ? route('affiliate.academy.index') : url('/');
+                addNotification(
+                    __('Your academy retake has been reset'),
+                    __('You can now retake ":module" — give it another go.', ['module' => optional($progress->module)->title]),
+                    $url,
+                    null,
+                    (int) $affiliate->user_id,
+                    (int) auth()->id()
+                );
+            }
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::error('Retake reset notify failed: ' . $e->getMessage());
+        }
+
         return back()->with('success', "Module '{$progress->module->title}' has been reset. Affiliate can retake it.");
     }
     

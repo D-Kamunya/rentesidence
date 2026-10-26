@@ -44,7 +44,8 @@ Route::group(['middleware' => ['isFrontend']], function () {
     Route::get('get-started', fn () => view('get-started'))->name('get-started');
 
     // contact
-    Route::post('contact-message-store', [FrontendController::class, 'contactMessageStore'])->name('contact.message.store');
+    Route::post('contact-message-store', [FrontendController::class, 'contactMessageStore'])
+        ->middleware('throttle:10,60')->name('contact.message.store'); // bot-spam guard on the public form
 });
 
 Route::group(['prefix' => 'payment'], function () {
