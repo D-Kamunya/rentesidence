@@ -25,19 +25,29 @@ function getDataViewRes(response) {
         selector.find('.referral-sec').addClass('d-none');
     }
 
-    // Trial-enquiry onboarding: offer a one-click "Create owner" only for a trial-intent
-    // message that hasn't been onboarded yet; show a "created" note once it has.
+    // Footer actions by state: onboarded → "created"; in the pool → "in marketplace"; otherwise offer
+    // one-click Create-owner (trial intent) and/or Send-to-marketplace (any un-referred enquiry).
     var createFooter = document.getElementById('createOwnerFooter');
     var createdFooter = document.getElementById('ownerCreatedFooter');
-    if (createFooter) createFooter.style.display = 'none';
-    if (createdFooter) createdFooter.style.display = 'none';
-    if (response.intent === 'trial') {
-        if (response.owner_id) {
-            if (createdFooter) createdFooter.style.display = '';
-        } else if (createFooter) {
+    var mpFooter = document.getElementById('marketplaceFooter');
+    var inMpFooter = document.getElementById('inMarketplaceFooter');
+    [createFooter, createdFooter, mpFooter, inMpFooter].forEach(function (f) { if (f) f.style.display = 'none'; });
+
+    if (response.owner_id) {
+        if (createdFooter) createdFooter.style.display = '';
+    } else if (response.lead_id) {
+        if (inMpFooter) inMpFooter.style.display = '';
+    } else {
+        if (response.intent === 'trial' && createFooter) {
             var base = document.getElementById('createOwnerRoute').value;
             document.getElementById('createOwnerForm').setAttribute('action', base.replace('ID_PLACEHOLDER', response.id));
             createFooter.style.display = '';
+        }
+        // A referred enquiry is already credited to an affiliate — never pool it.
+        if (!response.referral_affiliate_id && mpFooter) {
+            var mbase = document.getElementById('sendMarketplaceRoute').value;
+            document.getElementById('sendMarketplaceForm').setAttribute('action', mbase.replace('ID_PLACEHOLDER', response.id));
+            mpFooter.style.display = '';
         }
     }
 

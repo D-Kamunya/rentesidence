@@ -120,12 +120,26 @@
                 <div class="modal-footer justify-content-start" id="ownerCreatedFooter" style="display:none;">
                     <span style="font-size:13px;color:#0F6E56;font-weight:600;">✓ {{ __('An owner account has been created from this enquiry.') }}</span>
                 </div>
+                {{-- Stream 1: hand an un-attributed, un-onboarded enquiry to the affiliate lead pool.
+                     cs-confirm lives on the FORM (it skips submit buttons). --}}
+                <div class="modal-footer justify-content-start" id="marketplaceFooter" style="display:none;border-top:1px dashed #E6E1D8;">
+                    <form method="POST" id="sendMarketplaceForm" action=""
+                        data-cs-confirm="{{ __('Add this enquiry to the lead marketplace for any affiliate to claim and work?') }}">
+                        @csrf
+                        <button type="submit" class="theme-btn" style="background:#0F6E56;">{{ __('Send to lead marketplace') }}</button>
+                    </form>
+                    <span class="ms-2" style="font-size:12.5px;color:#9aa2ad;align-self:center;">{{ __('Use for leads you want affiliates to work; keep direct, hot asks for yourself.') }}</span>
+                </div>
+                <div class="modal-footer justify-content-start" id="inMarketplaceFooter" style="display:none;">
+                    <span style="font-size:13px;color:#0F6E56;font-weight:600;">✓ {{ __('This enquiry is in the lead marketplace.') }}</span>
+                </div>
             </div>
         </div>
     </div>
     <input type="hidden" id="messageIndexRoute" value="{{ route('admin.message.index') }}">
     <input type="hidden" id="messageInfoRoute" value="{{ route('admin.message.get.info') }}">
     <input type="hidden" id="createOwnerRoute" value="{{ route('admin.message.create-owner', ['id' => 'ID_PLACEHOLDER']) }}">
+    <input type="hidden" id="sendMarketplaceRoute" value="{{ route('admin.message.send-to-marketplace', ['id' => 'ID_PLACEHOLDER']) }}">
 @endsection
 
 @push('style')
