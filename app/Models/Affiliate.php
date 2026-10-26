@@ -18,10 +18,13 @@ class Affiliate extends Model
         'town',
         'origin_tenant_user_id',
         'graduated_at',
+        'activation_nudge_count',
+        'activation_nudged_at',
     ];
 
     protected $casts = [
-        'graduated_at' => 'datetime',
+        'graduated_at'         => 'datetime',
+        'activation_nudged_at' => 'datetime',
     ];
     protected $table = 'affiliates';
 

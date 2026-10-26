@@ -38,6 +38,8 @@ class Kernel extends ConsoleKernel
         $schedule->command('affiliate:commission-digest')->monthlyOn(1, '08:00')->withoutOverlapping();
         // Outreach campaigns: reconcile conversions + send bounded follow-ups to non-responders.
         $schedule->command('outreach:process')->dailyAt('09:00')->withoutOverlapping();
+        // Activation: nudge certified affiliates with no leads to add their first (their own landlord).
+        $schedule->command('affiliate:activation-nudge')->dailyAt('10:00')->withoutOverlapping();
         // Re-engage owners stuck out of SMS credits with a paused backlog. Weekly is the cadence;
         // a per-owner Cache throttle inside the command backs it up. (Skips topped-up owners.)
         $schedule->command('sms:paused-digest')->weeklyOn(1, '08:30')->withoutOverlapping()
