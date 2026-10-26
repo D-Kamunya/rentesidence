@@ -56,6 +56,7 @@
     </div>
 
     <input type="hidden" id="adminAffiliateRoute" value="{{ route('admin.affiliates.index') }}">
+    @include('admin.partials.user-message-modal')
 @endsection
 
 @push('style')

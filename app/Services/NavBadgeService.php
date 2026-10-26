@@ -171,6 +171,9 @@ class NavBadgeService
             // Prospective-affiliate applications awaiting review (from the public apply page).
             'affiliate_applications' => $this->safe(fn () => \App\Models\AffiliateApplication::where('status', \App\Models\AffiliateApplication::STATUS_PENDING)->count()),
 
+            // Affiliates blocked on an academy module (failed 3×) — awaiting a retake reset.
+            'blocked_affiliates' => $this->safe(fn () => \App\Models\AffiliateAcademyProgress::where('needs_review', true)->distinct('affiliate_id')->count('affiliate_id')),
+
             // Genuine platform failures awaiting admin attention (unresolved incidents).
             'incidents' => $this->safe(fn () => app(SystemIncidentService::class)->openCount()),
 
