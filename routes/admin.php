@@ -285,6 +285,9 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'middleware' => ['auth', 'a
         });
     });
 
+    // Admin-initiated contact: start a support thread with any user (owner/affiliate/…).
+    Route::post('user-message', [\App\Http\Controllers\Admin\UserMessageController::class, 'send'])->name('user.message');
+
     // In-system outreach campaigns (recruitment-first): paste a list, send CS-layout mail, track + auto-follow-up.
     Route::group(['prefix' => 'outreach', 'as' => 'outreach.'], function () {
         Route::get('/', [\App\Http\Controllers\Admin\OutreachController::class, 'index'])->name('index');

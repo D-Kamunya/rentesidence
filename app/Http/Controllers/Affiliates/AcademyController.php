@@ -129,9 +129,11 @@ class AcademyController extends Controller
             $progress->completed_at = now();
         }
 
-        // Flag for admin review if failed 3 times
+        // Flag for admin review if failed 3 times — and alert admins so a blocked (paused) affiliate
+        // never sits unnoticed. Fires once, on the submit that reaches the 3rd failed attempt.
         if ($progress->attempts >= 3 && $percentage < 80) {
             $progress->needs_review = true;
+            $this->notifyAdminsOfBlock($module);
         }
 
         $progress->save();
@@ -171,6 +173,33 @@ class AcademyController extends Controller
                 'attempts' => $progress->attempts,
                 'nextModule' => $nextModule,
             ]);
+    }
+
+    /** Alert every admin (bell) that the signed-in affiliate is blocked on a module and needs a reset. */
+    private function notifyAdminsOfBlock(AcademyModule $module): void
+    {
+        try {
+            $affiliateUser = auth()->user();
+            if (! $affiliateUser) {
+                return;
+            }
+            $who = trim(($affiliateUser->first_name ?? '') . ' ' . ($affiliateUser->last_name ?? '')) ?: ($affiliateUser->email ?? __('An affiliate'));
+            $url = \Illuminate\Support\Facades\Route::has('admin.affiliates.performance')
+                ? route('admin.affiliates.performance') : url('/admin');
+
+            \App\Models\User::where('role', USER_ROLE_ADMIN)->pluck('id')->each(function ($adminId) use ($who, $module, $affiliateUser, $url) {
+                addNotification(
+                    __('An affiliate is blocked on the academy'),
+                    __(':who failed ":module" 3 times — reset their retake so they can continue.', ['who' => $who, 'module' => $module->title]),
+                    $url,
+                    null,
+                    $adminId,
+                    (int) $affiliateUser->id
+                );
+            });
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::error('Academy block notify failed: ' . $e->getMessage());
+        }
     }
 
     /**
