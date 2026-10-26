@@ -115,11 +115,6 @@
                                         </div>
                                     </form>
                                 </fieldset>
-                                {{-- Admin-initiated contact (outside the edit form — no nested forms). --}}
-                                <div class="mt-25" style="border-top:1px dashed #E6E1D8;padding-top:20px;">
-                                    <div style="font-size:12.5px;color:#9aa2ad;margin-bottom:10px;">{{ __('Need to reach this affiliate — e.g. you reset their academy retake, or there\'s an issue?') }}</div>
-                                    @include('admin.partials.user-message-modal', ['messageUser' => $user])
-                                </div>
                             </div>
                         </div>
                     </div>

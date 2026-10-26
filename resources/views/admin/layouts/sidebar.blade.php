@@ -212,7 +212,7 @@
                         <li>
                             <a class="{{ @$navAffiliatesAddMMShowClass }}" href="{{ route('admin.affiliates.performance') }}">
                                 <i class="fa fa-trophy" aria-hidden="true"></i>
-                                <span>{{ __('Performance') }}</span>
+                                <span>{{ __('Performance') }}@include('partials.nav-count', ['n' => $navBadges['blocked_affiliates'] ?? 0])</span>
                             </a>
                         </li>
                         <li>

@@ -153,10 +153,22 @@ class AffiliateService
                         Earnings
                     </a>';
 
+                // Message — admin-initiated contact (support thread + bell + badge + email). Opens the
+                // shared user-message modal; $affiliate->id is the affiliate's USER id (select is users.*).
+                $messageBtn = '
+                    <button type="button" class="btn js-message-user"
+                        data-user-id="' . $affiliate->id . '"
+                        data-user-name="' . e(trim(($affiliate->first_name ?? '') . ' ' . ($affiliate->last_name ?? ''))) . '"
+                        title="' . __('Message this affiliate') . '"
+                        style="display:inline-flex; align-items:center; gap:5px; background:#F3EEFB; border:0.5px solid #D6C6F2; color:#6B3FA0; border-radius:99px; font-size:11px; font-weight:500; padding:4px 11px; white-space:nowrap; cursor:pointer; line-height:1.4;">
+                        <svg width="10" height="10" viewBox="0 0 16 16" fill="none"><rect x="2" y="3.5" width="12" height="9" rx="1.5" stroke="currentColor" stroke-width="1.3"/><path d="M3 5l5 3.5L13 5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                        Message
+                    </button>';
+
                 if ($affiliate->affiliate_status == AFFILIATE_STATUS_ACTIVE) {
                     return '
                         <div style="display:inline-flex; align-items:center; gap:8px; flex-wrap:wrap;">
-                            <span class="status-btn status-btn-green font-13 radius-4">Active</span>' . $editBtn . $earningsBtn . '
+                            <span class="status-btn status-btn-green font-13 radius-4">Active</span>' . $editBtn . $earningsBtn . $messageBtn . '
                             <form action="' . route('admin.affiliates.suspend', $affiliate->affiliate_id) . '" method="POST" style="display:inline;"
                                 data-cs-confirm="' . __('Suspend this affiliate? They immediately lose access to their account until you reinstate them. Earned commissions, referrals and history are kept.') . '"
                                 data-cs-confirm-title="' . __('Suspend affiliate?') . '"
@@ -181,7 +193,7 @@ class AffiliateService
 
                 return '
                     <div style="display:inline-flex; align-items:center; gap:8px; flex-wrap:wrap;">
-                        <span class="status-btn status-btn-orange font-13 radius-4">Suspended</span>' . $editBtn . $earningsBtn . '
+                        <span class="status-btn status-btn-orange font-13 radius-4">Suspended</span>' . $editBtn . $earningsBtn . $messageBtn . '
                         <form action="' . route('admin.affiliates.reinstate', $affiliate->affiliate_id) . '" method="POST" style="display:inline;"
                             data-cs-confirm="' . __('Reinstate this affiliate and restore their access to the platform?') . '"
                             data-cs-confirm-title="' . __('Reinstate affiliate?') . '"
