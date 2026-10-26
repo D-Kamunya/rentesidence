@@ -72,6 +72,7 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'middleware' => ['auth', 'a
         Route::get('get-info', [ContactMessageController::class, 'getInfo'])->name('get.info'); 
         Route::post('reply', [ContactMessageController::class, 'reply'])->name('reply');
         Route::post('{id}/create-owner', [ContactMessageController::class, 'createOwner'])->name('create-owner');
+        Route::post('{id}/send-to-marketplace', [ContactMessageController::class, 'sendToMarketplace'])->name('send-to-marketplace');
         Route::delete('/message/{id}', [ContactMessageController::class, 'destroy'])->name('destroy');
 
     });
