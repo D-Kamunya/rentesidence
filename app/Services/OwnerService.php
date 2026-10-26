@@ -18,6 +18,7 @@ class OwnerService
             ->leftJoin('users as affiliate_user', 'affiliates.user_id', '=', 'affiliate_user.id')
             ->select(
                 'owners.id as owner_id',
+                'owner_user.id as owner_user_id',
                 'owner_user.first_name as owner_first_name',
                 'owner_user.last_name as owner_last_name',
                 'owner_user.email as owner_email',
@@ -66,6 +67,10 @@ class OwnerService
                         . $icon . $label . '</button>';
             })
             ->addColumn('status', function ($owner) {
+                // Message — admin-initiated contact (support thread + bell + badge + email). Appended
+                // to the status cell so it rides an already-rendered column (no DataTables config change).
+                $__name = e(trim(($owner->owner_first_name ?? '') . ' ' . ($owner->owner_last_name ?? '')));
+                $__messageBtn = '<button type="button" class="btn js-message-user" data-user-id="' . $owner->owner_user_id . '" data-user-name="' . $__name . '" title="' . __('Message this owner') . '" style="display:inline-flex;align-items:center;gap:5px;background:#F3EEFB;border:0.5px solid #D6C6F2;color:#6B3FA0;border-radius:99px;font-size:11px;font-weight:500;padding:4px 11px;white-space:nowrap;cursor:pointer;line-height:1.4;margin-left:6px;"><svg width="10" height="10" viewBox="0 0 16 16" fill="none"><rect x="2" y="3.5" width="12" height="9" rx="1.5" stroke="currentColor" stroke-width="1.3"/><path d="M3 5l5 3.5L13 5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>Message</button>';
                 if ($owner->status == ACTIVE) {
                     return '
                         <form action="' . route('admin.owner.deactivate', $owner->owner_id) . '" method="POST" style="display:inline;"
@@ -88,7 +93,7 @@ class OwnerService
                                 </svg>
                                 Deactivate
                             </button>
-                        </form>';
+                        </form>' . $__messageBtn;
                 }
 
                 return '
@@ -111,7 +116,7 @@ class OwnerService
                             </svg>
                             Activate
                         </button>
-                    </form>';
+                    </form>' . $__messageBtn;
             })
 
             ->rawColumns(['name', 'status', 'contact_number', 'affiliate', 'trail', 'action'])

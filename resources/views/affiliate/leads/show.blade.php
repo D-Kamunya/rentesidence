@@ -657,6 +657,9 @@
                                                             Request Trial
                                                         @endif
                                                     </button>
+                                                    <p style="font-size:11.5px;color:#9aa2ad;margin:10px 0 0;line-height:1.5;">
+                                                        {{ __('Once an admin approves, the client\'s login details are sent to their email on file — let them know to check it (including spam).') }}
+                                                    </p>
                                                 </form>
                                             </div>
 

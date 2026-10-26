@@ -77,6 +77,7 @@
             </form>
         </div>
     </div>
+    @include('admin.partials.user-message-modal')
 @endsection
 
 @push('style')
