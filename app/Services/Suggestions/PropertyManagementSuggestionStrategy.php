@@ -66,11 +66,17 @@ class PropertyManagementSuggestionStrategy implements LeadSuggestionStrategy
         // stage), so detect the demo_viewed ACTIVITY directly: a prospect who watched the demo and
         // then heard nothing back is the highest-risk, highest-opportunity moment. Nudge after the
         // first ~day of silence so the affiliate never lets a hot, engaged lead cool off.
+        //
+        // DON'T double up with the demo_completed branch above: once the affiliate has marked the
+        // demo done (status demo_completed), that branch already fires a Call suggestion — firing
+        // this one too gives the same lead two near-identical "call now" cards. So this branch is
+        // only for a lead the affiliate HASN'T yet moved to demo_completed. Marking the demo done,
+        // or sending a Free invite, also counts as having acted on the viewed-demo signal.
         $demoViewed = $activities->first(fn ($a) => ($a->type ?? null) === 'demo_viewed');
-        if ($demoViewed && $demoViewed->created_at) {
+        if ($lead->status !== 'demo_completed' && $demoViewed && $demoViewed->created_at) {
             $followedUp = $activities->contains(fn ($a) =>
                 $a->created_at && $a->created_at->gt($demoViewed->created_at)
-                && in_array(($a->type ?? null), ['note_added', 'call_made', 'whatsapp_sent', 'email_sent', 'demo_scheduled', 'trial_requested', 'trial_started', 'lead_converted'], true)
+                && in_array(($a->type ?? null), ['note_added', 'call_made', 'whatsapp_sent', 'email_sent', 'demo_scheduled', 'demo_completed', 'trial_requested', 'trial_started', 'free_invite_sent', 'lead_converted'], true)
             );
             if (! $followedUp && $now->diffInHours($demoViewed->created_at) >= 24) {
                 $out[] = in_array($lead->temperature, ['hot', 'warm'])
