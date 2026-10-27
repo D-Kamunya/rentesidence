@@ -88,12 +88,13 @@
                             $conversionRejectedByAdmin = $lead->status === 'demo_completed'
                                 && $latestTrialActivity?->type === 'conversion_rejected';
                             $rejectedByAffiliate = $lead->status === 'rejected';
-                            $isLocked    = $lead->isClosed() || $lead->status === 'expired';
-                            // Ownership expiry only applies to a lead that CAN expire. A protected lead
-                            // (demo_scheduled / demo_completed / pending_conversion / trial) is being actively
-                            // worked and never expires (shouldExpire() returns false), so showing it an
-                            // "Expired" chip + Renew — while a future demo is booked — is misleading.
-                            $showExpiry  = !in_array($lead->status, ['converted', 'expired', 'rejected', 'lost', 'trial']) && ! $lead->isProtected();
+                            // Lifecycle display now derives from the ONE source of truth — Lead::displayState()
+                            // and its helpers — so this page and the leads list can never disagree (see the
+                            // model). isLockedForSales() = terminal OR cron-expired; the ownership-expiry chip
+                            // shows only while the clock is genuinely running (active) or has run out (lapsed),
+                            // never for a protected / awaiting-activation / trial / won lead.
+                            $isLocked    = $lead->isLockedForSales();
+                            $showExpiry  = in_array($lead->displayState(), ['active', 'lapsed'], true);
                             $reasons     = [
                                 'too_expensive'      => 'Too Expensive',
                                 'using_other_system' => 'Using Another System',
@@ -255,8 +256,9 @@
                                     @endif
                                 @endif
 
-                                {{-- Renew button — own expired leads only (not a protected/worked lead, which never expires) --}}
-                                @if($lead->affiliate_id === auth()->id() && $expiry->isPast() && !$lead->isClosed() && !$lead->isProtected())
+                                {{-- Renew button — own lapsed/expired leads only (canRenew() excludes won/closed
+                                     and protected/awaiting-activation leads, which never expire). --}}
+                                @if($lead->affiliate_id === auth()->id() && $lead->canRenew())
                                     <form action="{{ route('affiliate.leads.renew', $lead->id) }}" method="POST">
                                         @csrf
                                         <button type="submit" class="ls-renew-btn">
