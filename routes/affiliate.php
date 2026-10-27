@@ -69,6 +69,7 @@ Route::group([
             Route::post('{lead}/schedule-demo', [LeadController::class,'scheduleDemo'])->name('leads.scheduleDemo');
             Route::post('{lead}/demo-completed', [LeadController::class,'demoCompleted'])->name('leads.demoCompleted');
             Route::post('{lead}/convert', [LeadController::class,'requestTrial'])->name('leads.requesttrial');
+            Route::post('{lead}/setup-on-free', [LeadController::class,'setupOnFree'])->name('leads.setupfree');
             Route::post('{lead}/reject', [LeadController::class,'reject'])->name('leads.reject');
             Route::post('{lead}/lost', [LeadController::class,'lost'])->name('leads.lost');
             // Affiliate prompt actions

@@ -14,8 +14,8 @@
 
         <div class="row">
             <div class="col-12">
-                <div class="card">
-                    <div class="card-body p-0">
+                <div class="page-content-wrapper bg-white p-3 p-md-4 radius-20">
+                    <div class="p-0">
                         @forelse ($notifications as $n)
                             @php $target = $n->url ?? route('affiliate.notification'); @endphp
                             <a href="{{ route('notification.status', ['id' => $n->id, 'role' => auth()->user()->role]) }}?url={{ urlencode($target) }}" class="d-flex align-items-start gap-3 p-3 border-bottom text-decoration-none" style="color:inherit;">
