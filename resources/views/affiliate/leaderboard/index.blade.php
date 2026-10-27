@@ -41,13 +41,13 @@
                         </a>
                     </div>
 
-                    {{-- Header stats — deliberately the affiliate's OWN figures + the community size,
-                         NOT platform-wide aggregates. Showing "Total Paid to Affiliates" or a platform
-                         "Owners Referred" count would reveal our client-base size and, while the program
-                         is young, read as a red flag (a company-wide KSh 0 / 1 owner). A personal zero is
-                         just a new affiliate's starting line, and "Active Affiliates" is a recruiting
-                         positive (network size), not client-base. Mirrors the "your numbers, not
-                         everyone's" ethos of the board below. --}}
+                    {{-- Header stats — deliberately the affiliate's OWN figures + one program-opportunity
+                         fact, NOT platform-wide counts. Any aggregate ("total paid", "owners referred",
+                         even "active affiliates") would reveal our client/affiliate-base size and, while
+                         the program is young, read as a red flag / demotivator (small numbers wrongly
+                         signal "few are here, so this is hard"). So: the affiliate's own earnings +
+                         owners (a personal zero is just a starting line), and the months-you-earn-per-owner
+                         opportunity. Mirrors the "your numbers, not everyone's" ethos of the board below. --}}
                     <div class="lb-platform-stats">
                         <div class="lb-platform-stat">
                             <span class="lb-platform-stat__icon">💰</span>
@@ -57,10 +57,10 @@
                             </div>
                         </div>
                         <div class="lb-platform-stat">
-                            <span class="lb-platform-stat__icon">👥</span>
+                            <span class="lb-platform-stat__icon">🔁</span>
                             <div>
-                                <span class="lb-platform-stat__value">{{ $totalAffiliates }}</span>
-                                <span class="lb-platform-stat__label">{{ __('Active Affiliates') }}</span>
+                                <span class="lb-platform-stat__value">{{ $recurringMonths }}</span>
+                                <span class="lb-platform-stat__label">{{ __('Months You Earn Per Owner') }}</span>
                             </div>
                         </div>
                         <div class="lb-platform-stat">
