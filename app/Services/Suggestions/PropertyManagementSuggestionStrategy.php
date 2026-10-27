@@ -57,7 +57,7 @@ class PropertyManagementSuggestionStrategy implements LeadSuggestionStrategy
         // ── DEMO COMPLETED ──────────────────────────────────────
         if ($lead->status === 'demo_completed' && $idleHours >= 12) {
             $out[] = in_array($lead->temperature, ['hot', 'warm'])
-                ? new SuggestionCandidate('🔥 Strike while hot! Call(recommended) ' . $name . ' and request trial', 'call', 'demo_complete', 'high', 1)
+                ? new SuggestionCandidate('🔥 Strike while hot! Call(recommended) ' . $name . ' and set them up on Free', 'call', 'demo_complete', 'high', 1)
                 : new SuggestionCandidate('📋 Follow up with ' . $name . ' after demo', 'whatsapp', 'demo_complete', 'medium', 2);
         }
 

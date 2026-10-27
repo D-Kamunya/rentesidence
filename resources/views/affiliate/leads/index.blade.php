@@ -349,6 +349,19 @@
                                                             {{ $suggTotal }} {{ Str::plural('action', $suggTotal) }} @if($suggUrgent > 0) · {{ $suggUrgent }} urgent @endif
                                                         </span>
                                                     @endif
+                                                    {{-- Free-invite sub-line: state derived from the overlay columns (mirrors
+                                                         FreeOnboardingService) so the affiliate can see, at a glance, who they've
+                                                         invited to Free and whether it's still awaiting the owner. --}}
+                                                    @php
+                                                        $fiState = $lead->free_invite_accepted_at ? 'accepted'
+                                                            : (! $lead->free_invite_sent_at ? 'none'
+                                                            : (($lead->free_invite_expires_at && $lead->free_invite_expires_at->isPast()) ? 'expired' : 'pending'));
+                                                    @endphp
+                                                    @if(!$lead->isClosed() && $fiState === 'pending')
+                                                        <span class="leads-free-sub leads-free-sub--pending"><span class="leads-free-dot"></span>Free invite sent · awaiting activation</span>
+                                                    @elseif(!$lead->isClosed() && $fiState === 'expired')
+                                                        <span class="leads-free-sub leads-free-sub--expired"><span class="leads-free-dot"></span>Free invite expired · re-send</span>
+                                                    @endif
                                                 </div>
                                             </td>
                                             {{-- Expires --}}
@@ -840,6 +853,11 @@
             background: #993C1D; flex-shrink: 0; display: inline-block;
         }
         .leads-sugg-dot--medium { background: #854F0B; }
+        /* Free-invite sub-line */
+        .leads-free-sub { display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:500; }
+        .leads-free-sub--pending { color:#0F6E56; }
+        .leads-free-sub--expired { color:#854F0B; }
+        .leads-free-dot { width:6px;height:6px;border-radius:50%;flex-shrink:0;display:inline-block;background:currentColor; }
 
         /* ── Action pill ─────────────────────────────────────── */
         .leads-sugg-pill {

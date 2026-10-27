@@ -38,6 +38,7 @@ class DatabaseSeeder extends Seeder
             OwnerKnowledgeBaseSeeder::class,
             AffiliateKnowledgeBaseSeeder::class,
             AffiliateAcademySeeder::class,
+            AffiliateAnnouncementSeeder::class,
             FaqSeeder::class,
             BlogSeeder::class,
             DemoSandboxSeeder::class, // the read-only guided-demo account (needs packages + catalog + terms above)
