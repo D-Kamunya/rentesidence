@@ -43,12 +43,14 @@ class SendFieldStudyQuoteNotification implements ShouldQueue
         $amount  = currencyPrice($fsr->quoted_amount);
         $url     = route('owner.financing.surveys');
 
-        // In-app
+        // In-app. The bell INNER-JOINs users on sender_id, so a null sender is created-but-hidden;
+        // this is a system-generated quote (queued job, no actor) → use an admin as the system sender.
         try {
+            $systemSender = User::where('role', USER_ROLE_ADMIN)->min('id');
             addNotification(
                 __('Your site-survey quote is ready'),
                 __('We have quoted :amt for your :module install. Review it to arrange financing.', ['amt' => $amount, 'module' => $module]),
-                $url, null, $owner->id,
+                $url, null, $owner->id, $systemSender ? (int) $systemSender : null,
             );
         } catch (\Throwable $e) {
             Log::error('Field-study quote in-app failed', ['request_id' => $fsr->id, 'error' => $e->getMessage()]);

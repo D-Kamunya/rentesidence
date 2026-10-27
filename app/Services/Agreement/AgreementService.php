@@ -301,12 +301,16 @@ class AgreementService
             return;
         }
         try {
+            // The bell INNER-JOINs users on sender_id, so a null sender is created-but-hidden; this is a
+            // system credit-exhaustion notice → use an admin as the system sender so the owner sees it.
+            $systemSender = User::where('role', USER_ROLE_ADMIN)->min('id');
             addNotification(
                 __('A tenant couldn\'t receive their signing code'),
                 __('Your SMS credits are exhausted, so a tenant\'s agreement signing code could not be sent. Top up SMS credits so they can sign.'),
                 route('owner.sms.credits.index'),
                 null,
                 $agreement->owner_user_id,
+                $systemSender ? (int) $systemSender : null,
             );
         } catch (\Throwable $e) {
             \Illuminate\Support\Facades\Log::error('OTP-blocked owner nudge failed', ['agreement_id' => $agreement->id, 'error' => $e->getMessage()]);

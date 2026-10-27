@@ -138,9 +138,11 @@ class OutreachService
      */
     public function processFollowUps(): int
     {
+        // Both recruitment AND general campaigns follow up (the mail copy adapts by type); each is
+        // still bounded per-campaign by max_follow_ups, so a general campaign set to 0 never nudges.
         $sent = 0;
-        OutreachCampaign::where('type', OutreachCampaign::TYPE_RECRUITMENT)
-            ->where('status', 'sent')
+        OutreachCampaign::where('status', 'sent')
+            ->where('max_follow_ups', '>', 0)
             ->each(function (OutreachCampaign $campaign) use (&$sent) {
                 $cutoff = Carbon::now()->subDays(max(1, (int) $campaign->follow_up_days));
 

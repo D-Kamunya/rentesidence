@@ -40,7 +40,8 @@ class SupportTicketService
             $this->notifyAdmins(
                 __('New support ticket'),
                 trim(($user->first_name ?? '') . ' ' . ($user->last_name ?? '')) . ': ' . $ticket->subject,
-                route('admin.support.show', $ticket->id)
+                route('admin.support.show', $ticket->id),
+                $user
             );
 
             return $ticket;
@@ -125,7 +126,8 @@ class SupportTicketService
                 $this->notifyAdmins(
                     __('New support reply'),
                     trim(($author->first_name ?? '') . ' ' . ($author->last_name ?? '')) . ': ' . $ticket->subject,
-                    route('admin.support.show', $ticket->id)
+                    route('admin.support.show', $ticket->id),
+                    $author
                 );
             }
 
@@ -166,11 +168,21 @@ class SupportTicketService
             ->count();
     }
 
-    /** In-app notification to every admin. */
-    private function notifyAdmins(string $title, string $body, string $url): void
+    /**
+     * In-app notification to every admin. The notification bell INNER-JOINs users on sender_id, so a
+     * null sender is created-but-never-shown — pass the triggering user (the requester/author) as the
+     * sender so the admin's bell actually lights. Falls back to the earliest admin as a system sender
+     * if no triggering user is available.
+     */
+    private function notifyAdmins(string $title, string $body, string $url, ?User $sender = null): void
     {
-        User::where('role', USER_ROLE_ADMIN)->pluck('id')->each(function ($adminId) use ($title, $body, $url) {
-            addNotification($title, $body, $url, null, $adminId, null);
+        $senderId = $sender?->id ?: User::where('role', USER_ROLE_ADMIN)->min('id');
+        if (! $senderId) {
+            return; // no admins → no recipients anyway
+        }
+
+        User::where('role', USER_ROLE_ADMIN)->pluck('id')->each(function ($adminId) use ($title, $body, $url, $senderId) {
+            addNotification($title, $body, $url, null, $adminId, (int) $senderId);
         });
     }
 }

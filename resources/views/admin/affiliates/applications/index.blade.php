@@ -27,6 +27,7 @@
           .aap-pill--pending{background:#FEF3E7;color:#B45309;} .aap-pill--approved{background:#E1F5EE;color:#0F6E56;} .aap-pill--rejected{background:#f3f4f6;color:#6b7280;}
           .aap-btn{border:none;border-radius:8px;padding:7px 13px;font-size:12.5px;font-weight:650;cursor:pointer;}
           .aap-btn--go{background:#185FA5;color:#fff;} .aap-btn--no{background:#fff;border:1px solid #f0b8b0;color:#B42318;}
+          .aap-btn--ghost{background:transparent;border:1px solid #e5e7eb;color:#9aa2ad;}
           .aap-actions{display:flex;gap:7px;flex-wrap:wrap;}
           .aap-empty{padding:30px;text-align:center;color:#9aa2ad;font-size:13.5px;}
           .aap-flash{border-radius:10px;padding:11px 14px;font-size:13.5px;margin-bottom:16px;}
@@ -174,7 +175,8 @@
                         data-consent-version="{{ $a->consent_version }}"
                         data-consent-ip="{{ $a->consent_ip }}"
                         data-approve-url="{{ route('admin.affiliates.applications.approve', $a->id) }}"
-                        data-reject-url="{{ route('admin.affiliates.applications.reject', $a->id) }}">{{ __('View') }}</button>
+                        data-reject-url="{{ route('admin.affiliates.applications.reject', $a->id) }}"
+                        data-delete-url="{{ route('admin.affiliates.applications.delete', $a->id) }}">{{ __('View') }}</button>
                     </td>
                   </tr>
                 @endforeach
@@ -227,9 +229,19 @@
           @csrf
           <button type="submit" class="aap-btn aap-btn--go" id="am-approve-btn">{{ __('Create affiliate') }}</button>
         </form>
+        {{-- Remove a duplicate/stale pending row (e.g. applied organically AND later signed up via the invite link). --}}
+        <form method="POST" id="am-delete-form" data-cs-confirm="{{ __('Delete this application? This removes the record — use it only for duplicates or test data.') }}" data-cs-confirm-tone="danger">
+          @csrf
+          <button type="submit" class="aap-btn aap-btn--ghost" id="am-delete-btn">{{ __('Delete') }}</button>
+        </form>
       </div>
       <div class="modal-footer" id="am-done" hidden>
         <span class="aap-meta" id="am-done-note"></span>
+        {{-- Declined rows can be cleared too (test data / cleanup); approved rows can't — they're the account record. --}}
+        <form method="POST" id="am-delete-form-done" data-cs-confirm="{{ __('Delete this application? This removes the record — use it only for duplicates or test data.') }}" data-cs-confirm-tone="danger" hidden>
+          @csrf
+          <button type="submit" class="aap-btn aap-btn--ghost">{{ __('Delete') }}</button>
+        </form>
       </div>
     </div>
   </div>
@@ -279,10 +291,12 @@
       // Actions: only pending applications can be acted on.
       var actions = document.getElementById('am-actions');
       var done = document.getElementById('am-done');
+      var deleteDone = document.getElementById('am-delete-form-done');
       if (d.status === 'pending') {
         actions.hidden = false; done.hidden = true;
         document.getElementById('am-approve-form').action = d.approveUrl || '';
         document.getElementById('am-reject-form').action = d.rejectUrl || '';
+        document.getElementById('am-delete-form').action = d.deleteUrl || '';
         // Personalise the approve confirmation (cs-confirm reads data-cs-confirm from the FORM).
         document.getElementById('am-approve-form').setAttribute(
           'data-cs-confirm',
@@ -292,6 +306,13 @@
         actions.hidden = true; done.hidden = false;
         document.getElementById('am-done-note').textContent =
           d.status === 'approved' ? 'Affiliate account already created.' : 'This application was declined.';
+        // Approved rows are the account record — can't be deleted; declined rows can be cleared.
+        if (d.status === 'approved') {
+          deleteDone.hidden = true;
+        } else {
+          deleteDone.hidden = false;
+          deleteDone.action = d.deleteUrl || '';
+        }
       }
     });
   })();

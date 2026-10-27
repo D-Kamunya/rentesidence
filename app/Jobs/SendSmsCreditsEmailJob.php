@@ -31,13 +31,16 @@ class SendSmsCreditsEmailJob implements ShouldQueue
     {
         try {
             // ── In-app notification ──────────────────────────────────
+            // The bell INNER-JOINs users on sender_id, so a null sender is created-but-hidden; this is a
+            // system billing notice (queued job, no actor) → use an admin as the system sender.
+            $systemSender = User::where('role', USER_ROLE_ADMIN)->min('id');
             addNotification(
                 $this->notificationData->title,
                 $this->notificationData->body,
                 $this->notificationData->url,
                 null,
                 $this->recipient->id,
-                null,
+                $systemSender ? (int) $systemSender : null,
             );
 
             // ── Email notification (CS lifecycle layout) ──────────────

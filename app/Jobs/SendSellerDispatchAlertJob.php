@@ -82,6 +82,7 @@ class SendSellerDispatchAlertJob implements ShouldQueue
                 $ordersUrl,
                 null,
                 $ownerUserId,
+                (int) $order->user_id, // the buyer whose payment triggered this — real sender so the bell shows
             );
         } catch (\Throwable $e) {
             Log::error('Seller dispatch alert: owner in-app failed', ['order_id' => $order->id, 'error' => $e->getMessage()]);
@@ -161,6 +162,7 @@ class SendSellerDispatchAlertJob implements ShouldQueue
                     route('maintainer.dispatch.index'),
                     null,
                     (int) $maintainerUser->id,
+                    $ownerUserId, // the owner the maintainer dispatches for — real sender so the bell shows
                 );
             } catch (\Throwable $e) {
                 Log::error('Seller dispatch alert: maintainer in-app failed', ['order_id' => $order->id, 'error' => $e->getMessage()]);
