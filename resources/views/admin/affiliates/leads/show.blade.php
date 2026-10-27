@@ -726,7 +726,11 @@
                                             <span class="adm-meta-label">Last Updated</span>
                                             <span class="adm-meta-val">{{ $lead->updated_at->diffForHumans() }}</span>
                                         </div>
-                                        @if(!in_array($lead->status, ['converted', 'expired', 'rejected', 'lost', 'trial']))
+                                        {{-- Ownership clock only matters while it's genuinely running (active) or has run
+                                             out (lapsed) — same source of truth as everywhere else. A won / protected /
+                                             awaiting-activation / trial lead has no live clock, so the row is hidden rather
+                                             than wrongly reading "Expired". --}}
+                                        @if(in_array($lead->displayState(), ['active', 'lapsed'], true))
                                             <div class="adm-meta-item">
                                                 <span class="adm-meta-label">Ownership Expires</span>
                                                 <span class="adm-meta-val">

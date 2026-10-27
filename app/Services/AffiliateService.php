@@ -56,8 +56,19 @@ class AffiliateService
         }
 
         // After the commit: welcome/verification mail + credential delivery (email + SMS).
-        $this->handlePostRegistration($user);
-        sendLoginDetails($user, $plainPassword);
+        // FAIL-SAFE: the account is already committed, so a delivery problem (a suppressed/invalid
+        // email, the SMS gateway down, a rejected API key) must NEVER fail account creation — it
+        // would otherwise throw here and leave a committed-but-unlinked orphan that the caller then
+        // can't re-create ("already exists"). Log and carry on; the admin can resend credentials.
+        try {
+            $this->handlePostRegistration($user);
+            sendLoginDetails($user, $plainPassword);
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::warning(
+                'Affiliate credential delivery failed (account still created): ' . $e->getMessage(),
+                ['user_id' => $user->id]
+            );
+        }
 
         return $user;
     }
