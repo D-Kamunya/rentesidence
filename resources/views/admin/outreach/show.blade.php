@@ -89,7 +89,8 @@
 
         <div class="ocs-card">
           <h3>{{ __('Recipients') }}</h3>
-          <table class="ocs-table">
+          <div style="overflow-x:auto;-webkit-overflow-scrolling:touch;">
+          <table class="ocs-table" style="min-width:560px;">
             <thead><tr>
               <th>{{ __('Email') }}</th><th>{{ __('Name') }}</th><th>{{ __('Status') }}</th><th>{{ __('Sent') }}</th><th>{{ __('Follow-ups') }}</th>
             </tr></thead>
@@ -107,6 +108,7 @@
               @endforelse
             </tbody>
           </table>
+          </div>
         </div>
         @if ($recipients->hasPages())<div class="mt-3">{{ $recipients->links() }}</div>@endif
 
