@@ -629,7 +629,7 @@
                                                     @elseif($conversionRejectedByAdmin)
                                                         Ensure you've made the suggested corrections up above and resubmit below
                                                     @else
-                                                        Submitting will notify the admin to create a trial account for this client.
+                                                        This requests a <strong>trial</strong> account — an <strong>optional</strong> step. Most owners are happy to start on <strong>Free</strong> straight away (fully usable, nothing to lose); request a trial only if this client wants to try the paid features first.
                                                     @endif
                                                 </p>
 

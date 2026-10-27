@@ -40,6 +40,12 @@ class AffiliateAcademySeeder extends Seeder
 
     public function run(): void
     {
+        // SURGICAL content patch — runs independently of the version sentinel so it reaches installs
+        // already seeded at v6 (affiliates are mid-course; a full re-baseline would clobber admin edits).
+        // Uses a targeted str_replace that only rewrites the EXACT original phrase: if an admin has since
+        // edited that module, the match fails and this safely no-ops. Guarded by its own one-time option.
+        $this->patchTrialIsOptionalCopy();
+
         if (getOption(self::VERSION_SENTINEL)) {
             return;
         }
@@ -91,6 +97,33 @@ class AffiliateAcademySeeder extends Seeder
         }
 
         setOption(self::VERSION_SENTINEL, '1');
+    }
+
+    /**
+     * One-time, edit-safe tightening of the trial copy on an already-seeded academy: appends the
+     * "a trial is never an automatic step" clarification to the exact original "Trial vs Free" phrase.
+     * str_replace means it ONLY touches content that still matches the shipped text — if an admin has
+     * edited that module the match fails and nothing changes. Idempotent (skips once the phrase is
+     * present) and guarded by its own option so it runs at most once per install.
+     */
+    private function patchTrialIsOptionalCopy(): void
+    {
+        if (getOption('affiliate_academy_trial_copy_v1')) {
+            return;
+        }
+
+        $anchor  = 'Default owners onto <strong>Free</strong> (zero barrier, permanent).';
+        $added   = ' A trial is <strong>never an automatic step</strong> — many leads are happy on Free; request one only when a specific owner wants to try the paid features first.';
+
+        AcademyModule::where('content', 'like', '%' . $anchor . '%')->get()->each(function ($m) use ($anchor, $added) {
+            if (str_contains($m->content, 'never an automatic step')) {
+                return; // already tightened (fresh seed or prior run)
+            }
+            $m->content = str_replace($anchor, $anchor . $added, $m->content);
+            $m->save();
+        });
+
+        setOption('affiliate_academy_trial_copy_v1', '1');
     }
 
     private function modules(): array
@@ -312,7 +345,7 @@ class AffiliateAcademySeeder extends Seeder
             [
                 'title' => 'The lead system in depth — notes, scheduling & trials',
                 'duration' => 9,
-                'content' => '<h3>Work the lead, not just the list</h3><p>Your <strong>Leads</strong> area is your whole pipeline. Used well, it does half your selling for you.</p><h4>Log everything as a note</h4><p>After every call or message, add a <strong>note/activity</strong> to the lead: what was said, objections raised, what you promised, when to follow up. This is your memory — you’ll work dozens of owners and will not recall the detail. It also builds a history that travels with the lead.</p><h4>Schedule the demo</h4><p>When a lead is warm, <strong>schedule the demo</strong> and set a reminder. A booked time converts far better than “I’ll call you sometime”.</p><h4>Request a trial</h4><p>When an owner is ready to try it on their own property, <strong>request a Trial</strong> from the lead. This starts their account (they get credentials on their own phone/email) and moves the lead forward. If a trial needs more time, you can <strong>request an extension</strong> — a stalled trial is a cue to reach out, not to give up.</p><h4>Follow the suggestions</h4><p>The system raises <strong>suggested actions</strong> on your leads (follow up, a lead going cold, a demo to book). Treat these as your daily to-do list — they’re there to stop good leads slipping.</p><h3>Trial vs Free — which to offer</h3><p>Both are free to the owner. Default owners onto <strong>Free</strong> (zero barrier, permanent). Use a <strong>Trial</strong> when an owner is warm and you want them to <em>feel</em> the full system with free usage and a gentle nudge to help them convert. Either way they end up on Free if they don’t upgrade — so you never lose them.</p>',
+                'content' => '<h3>Work the lead, not just the list</h3><p>Your <strong>Leads</strong> area is your whole pipeline. Used well, it does half your selling for you.</p><h4>Log everything as a note</h4><p>After every call or message, add a <strong>note/activity</strong> to the lead: what was said, objections raised, what you promised, when to follow up. This is your memory — you’ll work dozens of owners and will not recall the detail. It also builds a history that travels with the lead.</p><h4>Schedule the demo</h4><p>When a lead is warm, <strong>schedule the demo</strong> and set a reminder. A booked time converts far better than “I’ll call you sometime”.</p><h4>Request a trial</h4><p>When an owner is ready to try it on their own property, <strong>request a Trial</strong> from the lead. This starts their account (they get credentials on their own phone/email) and moves the lead forward. If a trial needs more time, you can <strong>request an extension</strong> — a stalled trial is a cue to reach out, not to give up.</p><h4>Follow the suggestions</h4><p>The system raises <strong>suggested actions</strong> on your leads (follow up, a lead going cold, a demo to book). Treat these as your daily to-do list — they’re there to stop good leads slipping.</p><h3>Trial vs Free — which to offer</h3><p>Both are free to the owner. Default owners onto <strong>Free</strong> (zero barrier, permanent). A trial is <strong>never an automatic step</strong> — many leads are happy on Free; request one only when a specific owner wants to try the paid features first. Use a <strong>Trial</strong> when an owner is warm and you want them to <em>feel</em> the full system with free usage and a gentle nudge to help them convert. Either way they end up on Free if they don’t upgrade — so you never lose them.</p>',
                 'questions' => [
                     ['q' => 'What should you do after every call with a lead?', 'options' => [
                         'Nothing; rely on memory' => false,
