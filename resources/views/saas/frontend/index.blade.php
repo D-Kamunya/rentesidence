@@ -588,6 +588,11 @@
       </div>
       <form class="csh-form ajax" action="{{ route('contact.message.store') }}" method="POST" data-handler="cshContactSuccess">
         @csrf
+        {{-- Honeypot: hidden from humans (off-screen, not focusable, autocomplete off); bots that fill
+             every field trip it and the server silently drops the submission. Do not remove. --}}
+        <div aria-hidden="true" style="position:absolute;left:-9999px;top:-9999px;height:0;width:0;overflow:hidden;" tabindex="-1">
+          <label>{{ __('Website') }}<input type="text" name="website" tabindex="-1" autocomplete="off"></label>
+        </div>
         <h3>{{ __('Talk to us') }}</h3>
         <p>{{ __('We will get back to you shortly.') }}</p>
         <div class="csh-frow">

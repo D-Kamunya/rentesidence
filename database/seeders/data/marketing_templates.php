@@ -44,31 +44,7 @@ Handle objections:
 Close:
 "What would be a good next step from your side?"',
   ),
-  2 => 
-  array (
-    'category' => 'follow_up',
-    'action_type' => 'call',
-    'name' => 'Call Script — Follow-Up',
-    'message_template' => 'CALL SCRIPT — FOLLOW-UP
-
-Opening:
-"Hi, is this {{contact_name}}? Great — this is {{affiliate_name}} calling about the property management system I mentioned / you enquired about."
-
-If they remember you:
-"Perfect. I wanted to call personally because based on what you told me about {{company_name}}, I think there\'s a really strong fit here. Can I take 5 minutes to explain why?"
-
-Key talking points:
-- Handles {{company_name}}\'s scale — designed for properties of all sizes
-- Cuts admin time significantly — most clients see results in the first month
-- Full support and onboarding included
-
-Close:
-"I\'d love to set up a proper demo so you can see everything first-hand. Does [day] or [day] work for a 20-minute call?"
-
-If they hesitate:
-"Completely understand — would it help if I sent over a quick overview first? I can follow up after you\'ve had a chance to look."',
-  ),
-  3 => 
+  3 =>
   array (
     'category' => 'intro',
     'action_type' => 'whatsapp',
