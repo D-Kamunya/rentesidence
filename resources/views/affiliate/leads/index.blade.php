@@ -254,7 +254,7 @@
 
                                             {{-- Temperature --}}
                                             <td class="leads-td">
-                                                @if($lead->status === 'converted')
+                                                @if($lead->isWon())
                                                     {{-- A converted lead is a WIN — show it green, not a grey "Closed" lock. --}}
                                                     <span class="leads-temp-badge" style="background:#E1F5EE;color:#0F6E56;">
                                                         <svg width="10" height="10" viewBox="0 0 16 16" fill="none">
@@ -262,7 +262,7 @@
                                                         </svg>
                                                         Customer
                                                     </span>
-                                                @elseif($lead->isClosed())
+                                                @elseif(in_array($lead->displayState(), ['rejected', 'lost'], true))
                                                     <span class="leads-temp-badge leads-temp-badge--closed">
                                                         <svg width="10" height="10" viewBox="0 0 16 16" fill="none">
                                                             <rect x="3" y="7" width="10" height="7" rx="1.5" stroke="currentColor" stroke-width="1.6"/>
@@ -378,9 +378,10 @@
                                                 $expiresAt = $lead->ownership_expires_at;
                                             @endphp
                                             <td class="leads-td">
-                                                {{-- Closed leads --}}
-                                                @if($lead->isClosed())
-                                                    @if($lead->status === 'converted')
+                                                {{-- Expiry/lifecycle cell — one switch on Lead::displayState() so it can never
+                                                     disagree with the status badge or the action button. --}}
+                                                @switch($lead->displayState())
+                                                    @case('won')
                                                         <span class="leads-expiry leads-expiry--converted">
                                                             <svg width="11" height="11" viewBox="0 0 16 16" fill="none">
                                                                 <circle cx="8" cy="8" r="6.5" stroke="currentColor" stroke-width="1.5"/>
@@ -388,7 +389,8 @@
                                                             </svg>
                                                             Converted
                                                         </span>
-                                                    @elseif($lead->status === 'rejected')
+                                                        @break
+                                                    @case('rejected')
                                                         <span class="leads-expiry leads-expiry--rejected">
                                                             <svg width="11" height="11" viewBox="0 0 16 16" fill="none">
                                                                 <circle cx="8" cy="8" r="6.5" stroke="currentColor" stroke-width="1.5"/>
@@ -396,7 +398,8 @@
                                                             </svg>
                                                             Rejected
                                                         </span>
-                                                    @elseif($lead->status === 'lost')
+                                                        @break
+                                                    @case('lost')
                                                         <span class="leads-expiry leads-expiry--lost">
                                                             <svg width="11" height="11" viewBox="0 0 16 16" fill="none">
                                                                 <circle cx="8" cy="8" r="6.5" stroke="currentColor" stroke-width="1.5"/>
@@ -404,47 +407,44 @@
                                                             </svg>
                                                             Lost
                                                         </span>
-                                                    @endif
-
-                                                {{-- Trial status - show trial badge instead of expiry --}}
-                                                @elseif($lead->status === 'trial')
-                                                    <span class="leads-expiry leads-expiry--trial">
-                                                        <svg width="11" height="11" viewBox="0 0 16 16" fill="none">
-                                                            <path d="M8 2l2 4h4l-3 3 1 4-4-2-4 2 1-4-3-3h4z" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
-                                                        </svg>
-                                                        Active Trial
-                                                    </span>
-
-                                                {{-- Protected / being worked — ownership expiry doesn't apply (it never expires) --}}
-                                                @elseif($lead->isProtected())
-                                                    <span class="leads-expiry leads-expiry--active">
-                                                        <svg width="11" height="11" viewBox="0 0 16 16" fill="none">
-                                                            <path d="M2 10l4-4 3 3 5-6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-                                                        </svg>
-                                                        In progress
-                                                    </span>
-
-                                                {{-- Expired (only for leads that can actually expire) --}}
-                                                @elseif($now->greaterThan($expiresAt))
-                                                    <span class="leads-expiry leads-expiry--expired">
-                                                        <svg width="11" height="11" viewBox="0 0 16 16" fill="none">
-                                                            <circle cx="8" cy="8" r="6.5" stroke="currentColor" stroke-width="1.5"/>
-                                                            <path d="M8 5v4M8 11v.5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/>
-                                                        </svg>
-                                                        Expired
-                                                    </span>
-
-                                                {{-- Active countdown --}}
-                                                @else
-                                                    @php $diff = $now->diff($expiresAt); @endphp
-                                                    <span class="leads-expiry {{ $diff->m === 0 && $diff->d <= 7 ? 'leads-expiry--warning' : 'leads-expiry--active' }}">
-                                                        <svg width="11" height="11" viewBox="0 0 16 16" fill="none">
-                                                            <circle cx="8" cy="8" r="6.5" stroke="currentColor" stroke-width="1.5"/>
-                                                            <path d="M8 5v3.5l2 1.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-                                                        </svg>
-                                                        {{ $diff->m > 0 ? $diff->m . ' month' . ($diff->m > 1 ? 's' : '') . ' ' : '' }}{{ $diff->d }} day{{ $diff->d != 1 ? 's' : '' }} left
-                                                    </span>
-                                                @endif
+                                                        @break
+                                                    @case('trial')
+                                                        <span class="leads-expiry leads-expiry--trial">
+                                                            <svg width="11" height="11" viewBox="0 0 16 16" fill="none">
+                                                                <path d="M8 2l2 4h4l-3 3 1 4-4-2-4 2 1-4-3-3h4z" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
+                                                            </svg>
+                                                            Active Trial
+                                                        </span>
+                                                        @break
+                                                    @case('working')
+                                                    @case('awaiting_activation')
+                                                        <span class="leads-expiry leads-expiry--active">
+                                                            <svg width="11" height="11" viewBox="0 0 16 16" fill="none">
+                                                                <path d="M2 10l4-4 3 3 5-6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                                                            </svg>
+                                                            In progress
+                                                        </span>
+                                                        @break
+                                                    @case('expired')
+                                                    @case('lapsed')
+                                                        <span class="leads-expiry leads-expiry--expired">
+                                                            <svg width="11" height="11" viewBox="0 0 16 16" fill="none">
+                                                                <circle cx="8" cy="8" r="6.5" stroke="currentColor" stroke-width="1.5"/>
+                                                                <path d="M8 5v4M8 11v.5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/>
+                                                            </svg>
+                                                            Expired
+                                                        </span>
+                                                        @break
+                                                    @default
+                                                        @php $diff = $now->diff($expiresAt); @endphp
+                                                        <span class="leads-expiry {{ $diff->m === 0 && $diff->d <= 7 ? 'leads-expiry--warning' : 'leads-expiry--active' }}">
+                                                            <svg width="11" height="11" viewBox="0 0 16 16" fill="none">
+                                                                <circle cx="8" cy="8" r="6.5" stroke="currentColor" stroke-width="1.5"/>
+                                                                <path d="M8 5v3.5l2 1.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                                                            </svg>
+                                                            {{ $diff->m > 0 ? $diff->m . ' month' . ($diff->m > 1 ? 's' : '') . ' ' : '' }}{{ $diff->d }} day{{ $diff->d != 1 ? 's' : '' }} left
+                                                        </span>
+                                                @endswitch
                                             </td>
 
                                             {{-- Action --}}
@@ -469,8 +469,9 @@
                                                     @endif
                                                 </a>
 
-                                                    @if($lead->isClosed() && $lead->status !== 'converted')
-                                                        {{-- Converted leads get View only (it's a win, not a locked dead-end). --}}
+                                                    @if(in_array($lead->displayState(), ['rejected', 'lost'], true))
+                                                        {{-- Only a rejected/lost lead is a locked dead-end. A converted WIN gets View only;
+                                                             an open lead gets Edit/Renew below — all from Lead::displayState(). --}}
                                                         <span class="leads-action-btn leads-action-btn--closed">
                                                             <svg width="12" height="12" viewBox="0 0 16 16" fill="none">
                                                                 <rect x="3" y="7" width="10" height="7" rx="1.5" stroke="currentColor" stroke-width="1.6"/>
@@ -479,11 +480,9 @@
                                                             Closed
                                                         </span>
 
-                                                    {{-- A protected (worked) lead never expires, so it gets Edit even if its ownership
-                                                         date is past — never a Renew (nothing to renew). A CLOSED lead (converted /
-                                                         rejected / lost) is terminal: never Edit, never Renew — converted shows View
-                                                         only, the others already showed "Closed" above. --}}
-                                                    @elseif(!$lead->isClosed() && $lead->affiliate_id === auth()->id() && ($lead->ownership_expires_at > now() || $lead->isProtected()))
+                                                    {{-- canEdit() = open/being-worked (active, working, trial, awaiting-activation);
+                                                         canRenew() = lapsed or cron-expired. A won/rejected/lost lead is neither. --}}
+                                                    @elseif($lead->affiliate_id === auth()->id() && $lead->canEdit())
                                                         <a href="{{ route('affiliate.leads.edit', $lead->id) }}" class="leads-action-btn leads-action-btn--edit">
                                                             <svg width="12" height="12" viewBox="0 0 16 16" fill="none">
                                                                 <path d="M11.5 2.5a1.5 1.5 0 0 1 2 2L5 13H3v-2L11.5 2.5z" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
@@ -491,7 +490,7 @@
                                                             Edit
                                                         </a>
 
-                                                    @elseif(!$lead->isClosed() && $lead->affiliate_id === auth()->id() && $lead->ownership_expires_at < now() && !$lead->isProtected())
+                                                    @elseif($lead->affiliate_id === auth()->id() && $lead->canRenew())
                                                         <form action="{{ route('affiliate.leads.renew', $lead->id) }}" method="POST" style="display:inline;">
                                                             @csrf
                                                             <button type="submit" class="leads-action-btn leads-action-btn--renew">

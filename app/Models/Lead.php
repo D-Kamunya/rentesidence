@@ -116,6 +116,69 @@ class Lead extends Model
             && $this->free_invite_expires_at->isFuture();
     }
 
+    // -------------------------------------------------------------------------
+    // Display lifecycle — the SINGLE SOURCE OF TRUTH for how a lead presents
+    // -------------------------------------------------------------------------
+
+    /**
+     * The one canonical lifecycle state a lead presents as, so every surface (the leads-list
+     * badges + action button, and the detail page's hero badges + expiry + actions) derives from
+     * the SAME definition and can never contradict each other. Precedence runs most-definitive
+     * first: a terminal status, then the live Free-invite overlay, then protected pipeline work,
+     * then the ownership clock.
+     *
+     *   won                  → converted (a win — never "closed"/"renew")
+     *   rejected / lost      → closed by the affiliate (terminal)
+     *   expired              → the cron flipped status to 'expired' (sales locked, renewable)
+     *   trial                → on an active trial
+     *   awaiting_activation  → a live "Set up on Free" invite is out, owner hasn't activated yet
+     *   working              → in a protected pipeline stage (demo scheduled/completed, pending conversion)
+     *   lapsed               → still open but the 60-day ownership window has passed (renewable, still workable)
+     *   active               → open, being worked, clock running
+     */
+    public function displayState(): string
+    {
+        return match (true) {
+            $this->status === 'converted' => 'won',
+            $this->status === 'rejected'  => 'rejected',
+            $this->status === 'lost'      => 'lost',
+            $this->status === 'expired'   => 'expired',
+            $this->status === 'trial'     => 'trial',
+            $this->hasPendingFreeInvite() => 'awaiting_activation',
+            in_array($this->status, ['demo_scheduled', 'demo_completed', 'pending_conversion'], true) => 'working',
+            ($this->ownership_expires_at && $this->ownership_expires_at->isPast()) => 'lapsed',
+            default => 'active',
+        };
+    }
+
+    /** A converted win. */
+    public function isWon(): bool
+    {
+        return $this->displayState() === 'won';
+    }
+
+    /**
+     * Sales actions are locked (terminal OR cron-expired). Note this is DISTINCT from isClosed():
+     * a cron-flipped 'expired' lead locks sales but is not "closed" (it can still be renewed), and
+     * a 'lapsed' lead (date passed, status still open) is NOT locked — it's still workable.
+     */
+    public function isLockedForSales(): bool
+    {
+        return in_array($this->displayState(), ['won', 'rejected', 'lost', 'expired'], true);
+    }
+
+    /** The ownership window has run out and the lead can be renewed (cron-expired or date-lapsed). */
+    public function canRenew(): bool
+    {
+        return in_array($this->displayState(), ['expired', 'lapsed'], true);
+    }
+
+    /** The lead is open/being worked, so Edit (not Renew, not a closed badge) is the right action. */
+    public function canEdit(): bool
+    {
+        return in_array($this->displayState(), ['active', 'working', 'trial', 'awaiting_activation'], true);
+    }
+
     /**
      * The single source of truth for whether a lead is eligible to expire.
      *
