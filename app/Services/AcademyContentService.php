@@ -76,6 +76,13 @@ class AcademyContentService
             'trial_cap'         => $trial ? (int) $trial->max_unit : 50,
             'trial_sms_grant'   => $trial ? (int) $trial->monthly_sms_credits : 50,
             'free_mkt_markup'   => $freeMarkup,
+            // Usage-line prices + free-tier monthly allowances (what a FREE owner pays per use,
+            // and gets free each month, before a paid plan makes them unlimited/included). Read
+            // live from settings so the taught upgrade pitch always matches real pricing.
+            'screening_price'      => (float) getOption('screening_price', 30),
+            'agreement_price'      => (float) getOption('agreement_price', 50),
+            'screening_free_quota' => (int) getOption('screening_free_quota', 3),
+            'agreement_free_quota' => (int) getOption('agreement_free_quota', 3),
         ];
     }
 
@@ -103,6 +110,10 @@ class AcademyContentService
             'trial_cap'         => (string) $n['trial_cap'],
             'trial_sms_grant'   => (string) $n['trial_sms_grant'],
             'free_mkt_markup'   => $pct($n['free_mkt_markup']),
+            'screening_price'      => trim(currencyPrice($n['screening_price'])),
+            'agreement_price'      => trim(currencyPrice($n['agreement_price'])),
+            'screening_free_quota' => (string) $n['screening_free_quota'],
+            'agreement_free_quota' => (string) $n['agreement_free_quota'],
             'currency'          => trim(getCurrencySymbol()) ?: 'KSh',
         ];
     }
