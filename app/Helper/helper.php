@@ -736,6 +736,38 @@ if (!function_exists('defaultFreePackage')) {
     }
 }
 
+if (!function_exists('grantFreeWelcomeSms')) {
+    /**
+     * One-time welcome SMS grant for a new FREE-plan owner — a small taste so they can send their
+     * first reminders/receipts and feel the system working, since Free has no recurring SMS grant.
+     * Lands in the non-expiring PURCHASED pool (never reset monthly) and is kept small on purpose so
+     * the per-SMS cost (the upgrade nudge) is still felt. Amount is config-driven
+     * (free_welcome_sms_grant, default 15; 0 disables). Idempotent: a per-owner reference means it
+     * can never double-grant, so calling it from every Free-landing path is safe.
+     */
+    function grantFreeWelcomeSms($ownerUserId)
+    {
+        try {
+            $qty = (int) getOption('free_welcome_sms_grant', 15);
+            if ($qty <= 0) {
+                return;
+            }
+            $ref = 'welcome-sms-' . $ownerUserId;
+            if (\App\Models\OwnerCreditTransaction::where('reference', $ref)->exists()) {
+                return; // already granted once
+            }
+            \App\Services\Credit\CreditService::addCredits('sms', (int) $ownerUserId, $qty, [
+                'type'        => 'welcome_grant',
+                'reference'   => $ref,
+                'description' => 'Welcome SMS (one-time)',
+            ]);
+        } catch (\Throwable $e) {
+            // best-effort — never block onboarding on a credit grant
+            \Illuminate\Support\Facades\Log::warning('Free welcome SMS grant failed: ' . $e->getMessage(), ['owner_user_id' => $ownerUserId]);
+        }
+    }
+}
+
 if (!function_exists('setUserPackage')) {
     function setUserPackage($userId, $package, $duration, $quantity = 1, $orderId = NULL, $grantSms = true)
     {
