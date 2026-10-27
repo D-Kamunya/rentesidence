@@ -480,8 +480,10 @@
                                                         </span>
 
                                                     {{-- A protected (worked) lead never expires, so it gets Edit even if its ownership
-                                                         date is past — never a Renew (nothing to renew). --}}
-                                                    @elseif($lead->affiliate_id === auth()->id() && ($lead->ownership_expires_at > now() || $lead->isProtected()))
+                                                         date is past — never a Renew (nothing to renew). A CLOSED lead (converted /
+                                                         rejected / lost) is terminal: never Edit, never Renew — converted shows View
+                                                         only, the others already showed "Closed" above. --}}
+                                                    @elseif(!$lead->isClosed() && $lead->affiliate_id === auth()->id() && ($lead->ownership_expires_at > now() || $lead->isProtected()))
                                                         <a href="{{ route('affiliate.leads.edit', $lead->id) }}" class="leads-action-btn leads-action-btn--edit">
                                                             <svg width="12" height="12" viewBox="0 0 16 16" fill="none">
                                                                 <path d="M11.5 2.5a1.5 1.5 0 0 1 2 2L5 13H3v-2L11.5 2.5z" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
@@ -489,7 +491,7 @@
                                                             Edit
                                                         </a>
 
-                                                    @elseif($lead->affiliate_id === auth()->id() && $lead->ownership_expires_at < now() && !$lead->isProtected())
+                                                    @elseif(!$lead->isClosed() && $lead->affiliate_id === auth()->id() && $lead->ownership_expires_at < now() && !$lead->isProtected())
                                                         <form action="{{ route('affiliate.leads.renew', $lead->id) }}" method="POST" style="display:inline;">
                                                             @csrf
                                                             <button type="submit" class="leads-action-btn leads-action-btn--renew">
