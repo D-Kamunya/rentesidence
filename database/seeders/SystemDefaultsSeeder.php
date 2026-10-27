@@ -75,6 +75,7 @@ class SystemDefaultsSeeder extends Seeder
             'sms_credit_price'          => 2.00, // price per SMS credit (Free tier / global default) — set above the paid-plan rate so the upgrade saving is demonstrable; SMS is the free tier's monetization rail
             'sms_cost_floor'            => 0.80, // our gateway cost (Advanta) — per-plan SMS prices are floored above this so we never sell below cost
             'sms_low_credit_threshold'  => 30,   // low-credit nudge — below the 50-credit trial grant so a fresh account isn't warned on day one
+            'free_welcome_sms_grant'    => 15,   // one-time SMS gift to a new FREE owner (non-expiring) so they can taste the system; kept small so the per-SMS cost still nudges upgrades. 0 disables.
             'sms_reminder_cooldown_hours' => 24, // min gap between the same SMS reminder
             'sms_paused_digest_days'      => 7,  // look-back window for the paused-backlog re-engagement digest
             'sms_paused_digest_throttle_days' => 7, // min gap between paused-digest nudges per owner
