@@ -127,20 +127,20 @@ class LeaderboardController extends Controller
             ->distinct('owner_id')
             ->count('owner_id');
 
-        // ── Recent big wins (last 7 days) ──
-        $recentBigWins = AffiliateCommission::with(['affiliate.user', 'owner.user'])
-            ->where('created_at', '>=', now()->subDays(7))
+        // ── Recent big wins (last 7 days) — anonymous social proof ──
+        // Amount + source + when ONLY. The view shows "An affiliate" and no owner, so we never even
+        // load an owner's or another affiliate's identity into this payload (privacy hygiene — the
+        // commission row already proves the win; the names would only expose unrelated people).
+        $recentBigWins = AffiliateCommission::where('created_at', '>=', now()->subDays(7))
             ->where('commission_amount', '>=', 100)
             ->orderByDesc('commission_amount')
             ->take(10)
             ->get()
             ->map(function ($c) {
                 return [
-                    'affiliate_name' => trim(($c->affiliate->user->first_name ?? '') . ' ' . ($c->affiliate->user->last_name ?? '')),
-                    'owner_name' => trim(($c->owner->user->first_name ?? '') . ' ' . ($c->owner->user->last_name ?? '')),
                     'amount' => $c->commission_amount,
-                    'source' => ucfirst($c->source),
-                    'when' => $c->created_at->diffForHumans(),
+                    'source' => ucfirst((string) $c->source),
+                    'when'   => $c->created_at->diffForHumans(),
                 ];
             });
 
