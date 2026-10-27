@@ -53,13 +53,13 @@ Reports:
 → "Spreadsheets work until they don\'t — the challenge is usually when the portfolio grows or staff changes. This gives you the same control but with automation and a proper audit trail."
 
 "It looks complicated."
-→ "Most clients are up and running within a day. The trial period is specifically so you can explore it at your own pace — and I\'m available to walk you through anything."
+→ "Most clients are up and running within a day. You can start free and explore it at your own pace — and I\'m available to walk you through anything."
 
 "We\'re not ready to switch right now."
-→ "That\'s completely fine. The trial doesn\'t require any commitment — it\'s just a chance to see whether it fits. What would need to change for the timing to be right?"
+→ "That\'s completely fine. You can start on the free plan with no commitment — just a chance to see whether it fits. What would need to change for the timing to be right?"
 
 "How much does it cost?"
-→ "Pricing is based on your portfolio size, so it scales with you. After the trial we can look at the right plan together — but let\'s make sure it\'s the right fit first."',
+→ "You can start completely free and only pay for extras as you grow, so it scales with your portfolio. Let\'s make sure it\'s the right fit first — we can look at a paid plan together once you\'re ready."',
     'sort_order' => 4,
   ),
   4 => 
@@ -69,7 +69,7 @@ Reports:
 
 "Based on what you\'ve seen today, does this look like it could work for your business?"
 
-If yes → "The next step is getting you a trial account so you can explore it with your own data. I\'ll submit the request today and you\'ll have access within 24 hours."
+If yes → "The easiest next step is getting you set up on Free so you can start with your own data — it\'s free, nothing to pay. I\'ll send you the activation link right now and you set your own password to go live. (If you\'d rather try the paid features first, I can arrange a short trial of those too — just say the word.)"
 
 If hesitant → "What would you need to see to feel confident? I\'m happy to go deeper on any part of the system."
 

@@ -196,7 +196,13 @@
 
                                             {{-- Temperature --}}
                                             <td class="admin-td">
-                                                @if($lead->isClosed())
+                                                @if($lead->isWon())
+                                                    {{-- A converted lead is a win — show it green, matching the affiliate view. --}}
+                                                    <span class="admin-temp-badge" style="background:#E1F5EE;color:#0F6E56;">
+                                                        <svg width="10" height="10" viewBox="0 0 16 16" fill="none"><path d="M3 8.5l3 3 6.5-7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                                                        Customer
+                                                    </span>
+                                                @elseif(in_array($lead->displayState(), ['rejected', 'lost'], true))
                                                     <span class="admin-temp-badge admin-temp-badge--closed">
                                                         <svg width="10" height="10" viewBox="0 0 16 16" fill="none"><rect x="3" y="7" width="10" height="7" rx="1.5" stroke="currentColor" stroke-width="1.6"/><path d="M5 7V5a3 3 0 0 1 6 0v2" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
                                                         Closed
@@ -219,51 +225,60 @@
                                             {{-- Last Activity --}}
                                             <td class="admin-td"><span style="font-size:12px;color:#6b7280;">{{ $lead->updated_at->diffForHumans() }}</span></td>
 
-                                            {{-- Expiry --}}
+                                            {{-- Expiry/lifecycle — one switch on Lead::displayState(), same source of truth as
+                                                 the affiliate views, so admin oversight never disagrees with what the affiliate sees
+                                                 (incl. protected / awaiting-activation leads, which read "In progress", not "Expired"). --}}
                                             <td class="admin-td">
-                                                @if($lead->isClosed())
-                                                    @if($lead->status === 'converted')
+                                                @switch($lead->displayState())
+                                                    @case('won')
                                                         <span class="admin-expiry-badge admin-expiry-badge--converted">
                                                             <svg width="10" height="10" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="6.5" stroke="currentColor" stroke-width="1.5"/><path d="M4.5 8.5l2.5 2.5 4.5-5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>
                                                             Converted
                                                         </span>
-                                                    @elseif($lead->status === 'rejected')
+                                                        @break
+                                                    @case('rejected')
                                                         <span class="admin-expiry-badge admin-expiry-badge--rejected">
                                                             <svg width="10" height="10" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="6.5" stroke="currentColor" stroke-width="1.5"/><path d="M5 5l6 6M11 5l-6 6" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
                                                             Rejected
                                                         </span>
-                                                    @elseif($lead->status === 'lost')
+                                                        @break
+                                                    @case('lost')
                                                         <span class="admin-expiry-badge admin-expiry-badge--lost">
                                                             <svg width="10" height="10" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="6.5" stroke="currentColor" stroke-width="1.5"/><path d="M8 5v4M8 11v.5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
                                                             Lost
                                                         </span>
-                                                    @elseif($lead->status === 'expired')
+                                                        @break
+                                                    @case('trial')
+                                                        <span class="admin-expiry-badge admin-expiry-badge--trial">
+                                                            <svg width="10" height="10" viewBox="0 0 16 16" fill="none"><path d="M8 2l2 4h4l-3 3 1 4-4-2-4 2 1-4-3-3h4z" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                                                            Active Trial
+                                                        </span>
+                                                        @break
+                                                    @case('working')
+                                                    @case('awaiting_activation')
+                                                        <span class="admin-expiry-badge admin-expiry-badge--active">
+                                                            <svg width="10" height="10" viewBox="0 0 16 16" fill="none"><path d="M2 10l4-4 3 3 5-6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                                                            In progress
+                                                        </span>
+                                                        @break
+                                                    @case('expired')
+                                                    @case('lapsed')
                                                         <span class="admin-expiry-badge admin-expiry-badge--expired">
                                                             <svg width="10" height="10" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="6.5" stroke="currentColor" stroke-width="1.5"/><path d="M8 5v4M8 11v.5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
                                                             Expired
                                                         </span>
-                                                    @endif
-                                                @elseif($lead->status === 'trial')
-                                                    <span class="admin-expiry-badge admin-expiry-badge--trial">
-                                                        <svg width="10" height="10" viewBox="0 0 16 16" fill="none"><path d="M8 2l2 4h4l-3 3 1 4-4-2-4 2 1-4-3-3h4z" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                                                        Active Trial
-                                                    </span>
-                                                @else
-                                                    @php $now = now(); $expiresAt = $lead->ownership_expires_at; $diff = $expiresAt ? $now->diff($expiresAt) : null; @endphp
-                                                    @if($expiresAt && $now->greaterThan($expiresAt))
-                                                        <span class="admin-expiry-badge admin-expiry-badge--expired">
-                                                            <svg width="10" height="10" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="6.5" stroke="currentColor" stroke-width="1.5"/><path d="M8 5v4M8 11v.5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
-                                                            Expired
-                                                        </span>
-                                                    @elseif($expiresAt)
-                                                        <span class="admin-expiry-badge {{ $diff->m === 0 && $diff->d <= 7 ? 'admin-expiry-badge--warning' : 'admin-expiry-badge--active' }}">
-                                                            <svg width="10" height="10" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="6.5" stroke="currentColor" stroke-width="1.5"/><path d="M8 5v3.5l2 1.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                                                            {{ $diff->m > 0 ? $diff->m . 'm ' : '' }}{{ $diff->d }}d
-                                                        </span>
-                                                    @else
-                                                        <span style="font-size:12px;color:#c3c6cb;">—</span>
-                                                    @endif
-                                                @endif
+                                                        @break
+                                                    @default
+                                                        @php $now = now(); $expiresAt = $lead->ownership_expires_at; $diff = $expiresAt ? $now->diff($expiresAt) : null; @endphp
+                                                        @if($diff)
+                                                            <span class="admin-expiry-badge {{ $diff->m === 0 && $diff->d <= 7 ? 'admin-expiry-badge--warning' : 'admin-expiry-badge--active' }}">
+                                                                <svg width="10" height="10" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="6.5" stroke="currentColor" stroke-width="1.5"/><path d="M8 5v3.5l2 1.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                                                                {{ $diff->m > 0 ? $diff->m . 'm ' : '' }}{{ $diff->d }}d
+                                                            </span>
+                                                        @else
+                                                            <span style="font-size:12px;color:#c3c6cb;">—</span>
+                                                        @endif
+                                                @endswitch
                                             </td>
 
                                             {{-- Action --}}
