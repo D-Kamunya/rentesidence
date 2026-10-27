@@ -46,9 +46,12 @@ class OwnerOnboardingService
         $owner->affiliate_id = $attrs['affiliate_id'] ?? null;
         $owner->save();
 
-        $defaultPackage = Package::where(['is_trail' => ACTIVE])->first();
-        if ($defaultPackage) {
-            setUserPackage($user->id, $defaultPackage, (int) getOption('trail_duration', 1), 1);
+        // Free-first: a newly onboarded owner lands on the permanent FREE plan (50-year duration
+        // = open-ended), NOT a trial. The trial is a deliberate closing tool granted via the
+        // affiliate/admin trial flow, never the silent default here.
+        $freePackage = defaultFreePackage();
+        if ($freePackage) {
+            setUserPackage($user->id, $freePackage, 365 * 50, 1);
         }
 
         setOwnerGateway($user->id);

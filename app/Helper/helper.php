@@ -719,6 +719,23 @@ if (!function_exists('setOwnerGateway')) {
     }
 }
 
+if (!function_exists('defaultFreePackage')) {
+    /**
+     * The owner-facing FREE plan (the is_default, permanent free tier) — NOT the trial.
+     * New owners land here under the free-first model; the trial is a deliberate, granted
+     * closing tool, never the silent signup default. Mirrors the resolver ExpireTrials uses
+     * to demote a lapsed trial to Free, so the two paths pick the same package.
+     */
+    function defaultFreePackage()
+    {
+        return \App\Models\Package::where('status', ACTIVE)
+            ->where('pricing_model', 'free')
+            ->where('is_trail', '!=', ACTIVE) // exclude the trial plan itself
+            ->orderByDesc('is_default')
+            ->first();
+    }
+}
+
 if (!function_exists('setUserPackage')) {
     function setUserPackage($userId, $package, $duration, $quantity = 1, $orderId = NULL, $grantSms = true)
     {
