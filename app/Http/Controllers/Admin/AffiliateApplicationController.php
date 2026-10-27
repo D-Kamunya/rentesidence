@@ -3,8 +3,10 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\Affiliate;
 use App\Models\AffiliateApplication;
 use App\Models\User;
+use Illuminate\Support\Facades\DB;
 use App\Services\AffiliateService;
 use App\Support\AffiliateInvite;
 use Illuminate\Http\Request;
@@ -82,22 +84,62 @@ class AffiliateApplicationController extends Controller
         // application was linked — leaving a committed affiliate the admin then couldn't re-create
         // ("already exists"). If the existing user is an UNLINKED affiliate, finish the job (re-issue
         // credentials + link) instead of hard-blocking. Anything else is a genuine clash.
-        $existing = User::where('email', $application->email)->first();
+        // withTrashed() is essential: the users_email_unique index counts SOFT-DELETED rows, so a
+        // deleted account still RESERVES the email — a plain where()->first() misses it (global
+        // soft-delete scope) and the subsequent insert then collides (1062 duplicate). So resolve
+        // the email against trashed rows too, and restore/reuse rather than hard-block or re-insert.
+        $existing = User::withTrashed()->where('email', $application->email)->first();
         if ($existing) {
+            $isAffiliate   = (int) $existing->role === USER_ROLE_AFFILIATE;
             $alreadyLinked = AffiliateApplication::where('converted_user_id', $existing->id)->exists();
-            if ((int) $existing->role !== USER_ROLE_AFFILIATE || $alreadyLinked) {
-                return back()->with('error', __('An account already exists with this email address.'));
+
+            // A non-affiliate account (live or deleted) owns this email — a genuine cross-role
+            // collision the admin must resolve, never something to silently repurpose.
+            if (! $isAffiliate) {
+                return back()->with('error', $existing->trashed()
+                    ? __('This email belonged to a previously-deleted account and still reserves the address. Use a different email, or permanently remove that account first.')
+                    : __('An account already exists with this email address.'));
+            }
+            // A live affiliate already linked to an application = a duplicate application, nothing to do.
+            if ($alreadyLinked && ! $existing->trashed()) {
+                return back()->with('error', __('An affiliate account already exists for this email address.'));
             }
 
-            // Re-issue credentials (the original temp password was random and not stored) + link.
+            // Otherwise: a soft-deleted affiliate, or a live unlinked affiliate from a half-finished
+            // prior approval → restore (if needed), re-issue credentials, ensure an affiliate record,
+            // and link to this application. Atomic.
             $plainPassword = Str::random(10);
-            $existing->password = Hash::make($plainPassword);
-            $existing->must_change_password = 1;
-            $existing->save();
-            $application->update([
-                'status'            => AffiliateApplication::STATUS_APPROVED,
-                'converted_user_id' => $existing->id,
-            ]);
+            DB::beginTransaction();
+            try {
+                if ($existing->trashed()) {
+                    $existing->restore();
+                }
+                $existing->password = Hash::make($plainPassword);
+                $existing->must_change_password = 1;
+                $existing->status = USER_STATUS_UNVERIFIED;
+                $existing->save();
+
+                if (! Affiliate::where('user_id', $existing->id)->exists()) {
+                    $affiliate = new Affiliate();
+                    $affiliate->user_id = $existing->id;
+                    $affiliate->referral_code = strtoupper(Str::random(12));
+                    $affiliate->country = $application->country;
+                    $affiliate->county  = $application->county;
+                    $affiliate->town    = $application->town;
+                    $affiliate->save();
+                }
+
+                $application->update([
+                    'status'            => AffiliateApplication::STATUS_APPROVED,
+                    'converted_user_id' => $existing->id,
+                ]);
+                DB::commit();
+            } catch (\Throwable $e) {
+                DB::rollBack();
+                Log::error('Affiliate recovery failed: ' . $e->getMessage(), ['application_id' => $application->id]);
+                return back()->with('error', __('Could not restore the existing affiliate account: ') . $e->getMessage());
+            }
+
             try {
                 sendLoginDetails($existing, $plainPassword);
             } catch (\Throwable $e) {
@@ -108,11 +150,11 @@ class AffiliateApplicationController extends Controller
                 session()->flash('dev_credentials', [
                     'name'  => $application->name,
                     'email' => $application->email,
-                    'note'  => __('Existing affiliate account linked — fresh credentials re-sent.'),
+                    'note'  => __('Existing affiliate account restored + linked — fresh credentials re-sent.'),
                 ]);
             }
 
-            return back()->with('success', __('This email already had an affiliate account from a previous attempt — linked it to this application and re-sent login details.'));
+            return back()->with('success', __('This email already had an affiliate account (from a previous attempt) — restored and linked it to this application, and re-sent login details.'));
         }
 
         try {
