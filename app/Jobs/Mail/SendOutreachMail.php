@@ -29,8 +29,8 @@ class SendOutreachMail extends BaseMailJob
             ? (AffiliateInvite::link() ?: route('affiliate.apply'))
             : route('frontend');
 
-        if ($this->isFollowUp) {
-            // Short, bounded nudge — the system chases so the admin doesn't have to.
+        if ($this->isFollowUp && $campaign->isRecruitment()) {
+            // Recruitment nudge: push them to the invite link. Short + bounded.
             $subject = __('Reminder: your :app partner invitation', ['app' => $appName]);
             $intro   = __('Hi :name, just following up — your :app partner invitation is still open, but the window is closing soon. You can set up your account in about a minute:', ['name' => e($name), 'app' => $appName]);
             $blocks  = [
@@ -39,6 +39,14 @@ class SendOutreachMail extends BaseMailJob
             ];
             $eyebrow = __('Reminder');
             $title   = __('Your invitation is still open');
+        } elseif ($this->isFollowUp) {
+            // General nudge: a soft "did this reach you?" — no CTA, no pressure.
+            $subject = __('Just following up');
+            $blocks  = [
+                ['type' => 'text', 'html' => __('Hi :name, just following up on my previous message — I wanted to make sure it reached you. No pressure at all; I\'m here if you have any questions.', ['name' => e($name)])],
+            ];
+            $eyebrow = __('Following up');
+            $title   = $campaign->subject ? e($campaign->subject) : __('Following up');
         } else {
             $subject = $this->resolve($campaign->subject, $name, $link);
             $blocks  = [

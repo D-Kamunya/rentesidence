@@ -96,6 +96,12 @@ class AffiliateApplicationController extends Controller
                     'source'            => 'invite',
                 ]);
 
+                // Dedupe: if they ALSO applied organically earlier, that stale pending row is now a
+                // duplicate (they're already an affiliate) — clear it so it doesn't clutter the inbox.
+                AffiliateApplication::where('email', $data['email'])
+                    ->where('status', AffiliateApplication::STATUS_PENDING)
+                    ->delete();
+
                 return redirect()->route('affiliate.apply')->with('provisioned', true);
             } catch (\Throwable $e) {
                 // Never lose the applicant — fall through to a normal pending application.

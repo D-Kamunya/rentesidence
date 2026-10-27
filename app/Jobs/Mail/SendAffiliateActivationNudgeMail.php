@@ -11,7 +11,8 @@ use App\Models\Affiliate;
  */
 class SendAffiliateActivationNudgeMail extends BaseMailJob
 {
-    public function __construct(public int $affiliateId) {}
+    /** $stage: 'academy' = signed up but not certified → finish training; 'lead' = certified, no leads. */
+    public function __construct(public int $affiliateId, public string $stage = 'lead') {}
 
     public function handle(): void
     {
@@ -23,6 +24,26 @@ class SendAffiliateActivationNudgeMail extends BaseMailJob
         $appName = getOption('app_name') ?: 'Centresidence';
         $first   = e($affiliate->user->first_name ?: __('there'));
 
+        if ($this->stage === 'academy') {
+            // Signed up but hasn't finished the academy — the "logged in once and drifted" cohort.
+            $this->sendCs(
+                [$affiliate->user->email],
+                __('Finish your academy and unlock your tools') . ' | ' . $appName,
+                [
+                    'eyebrow' => __('A quick nudge'), 'eyebrowColor' => '#185FA5',
+                    'title'   => __('You\'re one step from getting started'),
+                    'blocks'  => [
+                        ['type' => 'text', 'html' => __('Hi :name, you joined :app as a partner — welcome! You just haven\'t finished the academy yet.', ['name' => "<strong>{$first}</strong>", 'app' => $appName])],
+                        ['type' => 'text', 'html' => __('It\'s short and self-paced. Completing it gets you certified and <strong>unlocks your lead tools</strong> so you can start bringing owners on and earning — no training, no tools.')],
+                        ['type' => 'button', 'url' => route('affiliate.academy.index'), 'label' => __('Continue my academy')],
+                        ['type' => 'text', 'html' => "<span style='color:#6b7280;font-size:13px;'>" . __('It only takes a short sitting to finish — your partner journey starts the moment you do.') . '</span>'],
+                    ],
+                ]
+            );
+            return;
+        }
+
+        // 'lead' — certified but no leads yet: point at the guaranteed warm first lead.
         $this->sendCs(
             [$affiliate->user->email],
             __('Your first lead is one you already know') . ' | ' . $appName,

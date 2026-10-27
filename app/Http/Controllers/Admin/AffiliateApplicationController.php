@@ -129,4 +129,20 @@ class AffiliateApplicationController extends Controller
 
         return back()->with('success', __('Application declined — the applicant has been emailed a polite notice.'));
     }
+
+    /**
+     * Remove a stale/duplicate application (e.g. someone who applied organically AND later signed up
+     * through the invite link appears under both Pending and Approved). Only non-approved rows can be
+     * deleted — an approved one is the audit record of a created account. Soft-delete keeps the trail.
+     */
+    public function destroy(AffiliateApplication $application)
+    {
+        if ($application->status === AffiliateApplication::STATUS_APPROVED) {
+            return back()->with('error', __('An approved application can\'t be deleted — it\'s the record of a created account. Manage the account under Affiliates instead.'));
+        }
+
+        $application->delete();
+
+        return back()->with('success', __('Application removed.'));
+    }
 }

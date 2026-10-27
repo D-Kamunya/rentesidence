@@ -26,28 +26,44 @@ class AffiliateActivationNudge extends Command
     public function handle(): int
     {
         $sent = 0;
+        $grace   = now()->subDays(self::GRACE_DAYS);
+        $spacing = now()->subDays(self::SPACING_DAYS);
 
+        // One bounded engine, two stages: 'academy' (signed up, not certified → finish training) and
+        // 'lead' (certified, no leads → add your landlord). One counter caps total nudges either way.
         Affiliate::with('user')
             ->where('status', 1)                                  // active affiliates only
-            ->where('academy_status', 'completed')
-            ->whereNotNull('academy_certified_at')
-            ->where('academy_certified_at', '<=', now()->subDays(self::GRACE_DAYS))
             ->where('activation_nudge_count', '<', self::MAX_NUDGES)
-            ->where(function ($q) {
-                $q->whereNull('activation_nudged_at')
-                  ->orWhere('activation_nudged_at', '<=', now()->subDays(self::SPACING_DAYS));
+            ->where(function ($q) use ($spacing) {
+                $q->whereNull('activation_nudged_at')->orWhere('activation_nudged_at', '<=', $spacing);
             })
-            ->chunkById(200, function ($affiliates) use (&$sent) {
+            ->chunkById(200, function ($affiliates) use (&$sent, $grace) {
                 foreach ($affiliates as $affiliate) {
                     if (! $affiliate->user) {
                         continue;
                     }
-                    // Stop the moment they've taken action — a single lead means they're off the mark.
-                    if (Lead::where('affiliate_id', $affiliate->user_id)->exists()) {
+
+                    $stage = null;
+                    if ($affiliate->academy_status !== 'completed') {
+                        // Not certified yet → nudge to finish the academy (after a grace since signup).
+                        if ($affiliate->created_at && $affiliate->created_at <= $grace) {
+                            $stage = 'academy';
+                        }
+                    } else {
+                        // Certified → nudge to add a first lead, but stop the moment they've added one.
+                        if (Lead::where('affiliate_id', $affiliate->user_id)->exists()) {
+                            continue;
+                        }
+                        if ($affiliate->academy_certified_at && $affiliate->academy_certified_at <= $grace) {
+                            $stage = 'lead';
+                        }
+                    }
+
+                    if (! $stage) {
                         continue;
                     }
 
-                    SendAffiliateActivationNudgeMail::dispatch($affiliate->id);
+                    SendAffiliateActivationNudgeMail::dispatch($affiliate->id, $stage);
                     $affiliate->increment('activation_nudge_count');
                     $affiliate->update(['activation_nudged_at' => now()]);
                     $sent++;
