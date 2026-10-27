@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\Lead;
+use App\Models\LeadActivity;
 use App\Models\LeadSuggestion;
 use Illuminate\Support\Collection;
 
@@ -78,6 +79,16 @@ class SuggestionService
             'executed_at'    => now(),
             'execution_type' => 'manual',
             'executed_by'    => auth()->id(),
+        ]);
+
+        // Record it on the lead timeline. Channel actions (WhatsApp/Email/Call) already log their
+        // own activity via ActionExecutionController; the manual "Done" didn't, so a handled-off-
+        // platform action left no trace. Log it here so every completed suggestion is visible.
+        LeadActivity::create([
+            'lead_id'     => $suggestion->lead_id,
+            'user_id'     => auth()->id(),
+            'type'        => 'suggestion_completed',
+            'description' => 'Marked a suggested action as done: ' . $suggestion->message,
         ]);
     }
 

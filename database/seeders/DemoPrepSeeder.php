@@ -22,6 +22,11 @@ class DemoPrepSeeder extends Seeder
 {
     public function run(): void
     {
+        // Free-first copy refresh runs INDEPENDENTLY of the authoritative-once sentinel so an
+        // already-seeded install picks it up. Edit-safe: only rewrites a section still carrying the
+        // pre-free-first trial copy (an admin-edited section no longer matches and is left alone).
+        $this->patchDemoPrepFreeFirst();
+
         if (getOption('demo_prep_seed_v1')) {
             return;
         }
@@ -52,5 +57,36 @@ class DemoPrepSeeder extends Seeder
         });
 
         setOption('demo_prep_seed_v1', '1');
+    }
+
+    /**
+     * Free-first: the demo close is now "set them up on Free" (trial optional), and the objection
+     * responses no longer lean on "the trial period". Refreshes the two affected sections to the
+     * canonical copy — but only where the live content still contains the pre-free-first signature
+     * phrase, so an admin who has rewritten a section keeps their version. Idempotent + self-guarded.
+     */
+    private function patchDemoPrepFreeFirst(): void
+    {
+        if (getOption('demo_prep_free_first_v1')) {
+            return;
+        }
+
+        $sections = collect(require database_path('seeders/data/demo_prep_sections.php'))->keyBy('title');
+
+        // title => an old phrase that only the pre-free-first copy contains
+        $signatures = [
+            'How to Close the Demo'          => 'getting you a trial account',
+            'Common Objections & Responses'  => 'The trial period is specifically',
+        ];
+
+        foreach ($signatures as $title => $oldPhrase) {
+            $section = DemoPrepSection::where('title', $title)->first();
+            if ($section && str_contains((string) $section->content, $oldPhrase) && isset($sections[$title])) {
+                $section->content = $sections[$title]['content'];
+                $section->save();
+            }
+        }
+
+        setOption('demo_prep_free_first_v1', '1');
     }
 }

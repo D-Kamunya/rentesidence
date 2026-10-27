@@ -190,8 +190,10 @@
                                             </span>
                                         @endif
 
-                                        {{-- Expiry chip --}}
-                                        @if(!in_array($lead->status, ['converted', 'expired', 'rejected', 'lost', 'trial']))
+                                        {{-- Expiry chip — same source of truth as the affiliate detail: only an open lead
+                                             whose ownership clock is running (active) or has run out (lapsed) shows it; a
+                                             protected / awaiting-activation / trial / won lead never does. --}}
+                                        @if(in_array($lead->displayState(), ['active', 'lapsed'], true))
                                             <span class="adm-expiry-chip adm-expiry-chip--{{ $expiryClass }}">
                                                 <svg width="10" height="10" viewBox="0 0 16 16" fill="none">
                                                     <circle cx="8" cy="8" r="6.5" stroke="currentColor" stroke-width="1.5"/>
