@@ -272,12 +272,16 @@ class CentresidenceController extends Controller
     private function notifyDisbursed(FinanceFacility $facility): void
     {
         if (function_exists('addNotification') && $facility->owner_id) {
+            // The bell INNER-JOINs users on sender_id, so a null sender is created-but-hidden.
+            // Disbursement is an admin action → the acting admin is the sender (falls back to system admin).
+            $senderId = auth()->id() ?: \App\Models\User::where('role', USER_ROLE_ADMIN)->min('id');
             addNotification(
                 __('Your financed infrastructure is live'),
                 __('Facility :ref has been disbursed — repayment begins from your next rent.', ['ref' => $facility->facility_number ?? ('#' . $facility->id)]),
                 route('owner.financing.mine'),
                 null,
-                $facility->owner_id
+                $facility->owner_id,
+                $senderId ? (int) $senderId : null
             );
         }
     }

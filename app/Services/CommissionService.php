@@ -386,12 +386,16 @@ class CommissionService
             try {
                 $ownerRecord = \App\Models\Owner::find($order->orderItems->first()?->product?->owner_user_id);
                 if ($ownerRecord && $ownerRecord->user_id) {
+                    // The bell INNER-JOINs users on sender_id, so a null sender is created-but-hidden;
+                    // this is a system wallet-reversal notice → use an admin as the system sender.
+                    $systemSender = \App\Models\User::where('role', USER_ROLE_ADMIN)->min('id');
                     addNotification(
                         __('Marketplace refund reversed'),
                         __('A refund on order #:id was issued to the buyer, so its proceeds were reversed from your wallet.', ['id' => $order->order_id]),
                         route('owner.order.index'),
                         null,
                         $ownerRecord->user_id,
+                        $systemSender ? (int) $systemSender : null,
                     );
                 }
             } catch (\Throwable $e) {
