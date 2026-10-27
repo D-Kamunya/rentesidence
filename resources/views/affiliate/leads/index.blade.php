@@ -254,7 +254,15 @@
 
                                             {{-- Temperature --}}
                                             <td class="leads-td">
-                                                @if($lead->isClosed())
+                                                @if($lead->status === 'converted')
+                                                    {{-- A converted lead is a WIN — show it green, not a grey "Closed" lock. --}}
+                                                    <span class="leads-temp-badge" style="background:#E1F5EE;color:#0F6E56;">
+                                                        <svg width="10" height="10" viewBox="0 0 16 16" fill="none">
+                                                            <path d="M3 8.5l3 3 6.5-7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+                                                        </svg>
+                                                        Customer
+                                                    </span>
+                                                @elseif($lead->isClosed())
                                                     <span class="leads-temp-badge leads-temp-badge--closed">
                                                         <svg width="10" height="10" viewBox="0 0 16 16" fill="none">
                                                             <rect x="3" y="7" width="10" height="7" rx="1.5" stroke="currentColor" stroke-width="1.6"/>
@@ -461,7 +469,8 @@
                                                     @endif
                                                 </a>
 
-                                                    @if($lead->isClosed())
+                                                    @if($lead->isClosed() && $lead->status !== 'converted')
+                                                        {{-- Converted leads get View only (it's a win, not a locked dead-end). --}}
                                                         <span class="leads-action-btn leads-action-btn--closed">
                                                             <svg width="12" height="12" viewBox="0 0 16 16" fill="none">
                                                                 <rect x="3" y="7" width="10" height="7" rx="1.5" stroke="currentColor" stroke-width="1.6"/>
