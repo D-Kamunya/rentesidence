@@ -28,6 +28,7 @@
           .ocf-submit{border:none;border-radius:10px;background:#185FA5;color:#fff;font-size:14.5px;font-weight:700;padding:12px 22px;cursor:pointer;}
           .ocf-submit:hover{background:#0F4A84;}
           .ocf-cancel{color:#6b7280;text-decoration:none;font-size:14px;}
+          .ocf-cancel:hover{color:#4a4f57;} /* darken on hover rather than jump to primary-blue */
         </style>
 
         <div class="ocf-wrap">
