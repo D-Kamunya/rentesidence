@@ -39,7 +39,7 @@
                                 <div style="display:flex;gap:14px;align-items:center;flex-wrap:wrap;">
                                     <a href="{{ route('affiliate.leads.create') }}" class="act-btn" style="display:inline-flex;align-items:center;gap:7px;background:#185FA5;color:#fff;font-size:14px;font-weight:650;padding:10px 18px;border-radius:10px;text-decoration:none;">+ {{ __('Add my first lead') }}</a>
                                     <a href="{{ route('affiliate.marketing-tools') }}" style="color:#185FA5;font-size:13.5px;font-weight:600;text-decoration:none;">{{ __('Get your referral link') }} →</a>
-                                    <a href="{{ route('affiliate.academy.index') }}" class="dash-hint" style="color:#6b7280;font-size:13.5px;text-decoration:none;">{{ __('Where to find more clients') }}</a>
+                                    <a href="{{ route('affiliate.kb.article', 'af-finding-leads') }}" class="dash-hint" style="color:#6b7280;font-size:13.5px;text-decoration:none;">{{ __('Where to find more clients') }}</a>
                                 </div>
                             </div>
                         </div>
