@@ -132,7 +132,8 @@
           @if ($applications->isEmpty())
             <div class="aap-empty">{{ __('No applications here.') }}</div>
           @else
-            <table class="aap-table">
+            <div style="overflow-x:auto;-webkit-overflow-scrolling:touch;">
+            <table class="aap-table" style="min-width:680px;">
               <thead><tr>
                 <th>{{ __('Applicant') }}</th><th>{{ __('Contact') }}</th><th>{{ __('Applied') }}</th><th>{{ __('Status') }}</th><th>{{ __('Action') }}</th>
               </tr></thead>
@@ -184,6 +185,7 @@
                 @endforeach
               </tbody>
             </table>
+            </div>
           @endif
         </div>
 

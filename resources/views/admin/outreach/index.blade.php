@@ -42,7 +42,8 @@
           @if ($campaigns->isEmpty())
             <div class="oc-empty">{{ __('No campaigns yet. Create one to start recruiting.') }}</div>
           @else
-            <table class="oc-table">
+            <div style="overflow-x:auto;-webkit-overflow-scrolling:touch;">
+            <table class="oc-table" style="min-width:600px;">
               <thead><tr>
                 <th>{{ __('Campaign') }}</th><th>{{ __('Status') }}</th><th>{{ __('Recipients') }}</th><th>{{ __('Sent') }}</th><th>{{ __('Signed up') }}</th><th>{{ __('Created') }}</th>
               </tr></thead>
@@ -62,6 +63,7 @@
                 @endforeach
               </tbody>
             </table>
+            </div>
           @endif
         </div>
 

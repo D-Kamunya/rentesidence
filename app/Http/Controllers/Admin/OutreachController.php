@@ -23,6 +23,12 @@ class OutreachController extends Controller
 
     public function index()
     {
+        // Reconcile before counting so the "Signed up" column is live on the LIST too — not just on a
+        // campaign's detail page. Without this the list only reflected the last daily 09:00 job (or the
+        // last time someone opened a campaign), so recent signups lagged. Bounded: only scans recipients
+        // still 'sent' and not yet converted.
+        $this->outreach->reconcileConversions();
+
         $campaigns = OutreachCampaign::withCount([
             'recipients',
             'recipients as sent_count'      => fn ($q) => $q->whereIn('status', ['sent', 'converted']),
