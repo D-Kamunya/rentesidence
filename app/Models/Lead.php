@@ -98,7 +98,22 @@ class Lead extends Model
 
     public function isProtected(): bool
     {
-        return in_array($this->status, self::PROTECTED_STATUSES);
+        return in_array($this->status, self::PROTECTED_STATUSES) || $this->hasPendingFreeInvite();
+    }
+
+    /**
+     * A lead with a LIVE "Set up on Free" invite out (sent, not yet accepted, not yet lapsed) is
+     * active work — the affiliate is waiting on the owner to activate. Treat it like a protected
+     * status: the ownership clock pauses, so it never shows "Expired" / offers Renew while the
+     * owner still has a valid invite to accept. Once the invite is accepted (lead converts) or
+     * lapses, this returns false and the normal clock resumes.
+     */
+    public function hasPendingFreeInvite(): bool
+    {
+        return $this->free_invite_sent_at !== null
+            && $this->free_invite_accepted_at === null
+            && $this->free_invite_expires_at !== null
+            && $this->free_invite_expires_at->isFuture();
     }
 
     /**

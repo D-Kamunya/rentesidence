@@ -92,4 +92,41 @@ class SuggestionRuleEngineTest extends TestCase
         $this->assertSame('trial_expired', $c[0]->category);
         $this->assertSame('high', $c[0]->priority);
     }
+
+    public function test_demo_completed_lead_that_also_watched_the_demo_gets_one_suggestion_not_two(): void
+    {
+        // Both branches used to fire for this lead (status demo_completed AND a demo_viewed
+        // activity), producing two near-identical Call cards. The demo_completed branch owns the
+        // stage, so only ITS suggestion should appear.
+        $viewed = new LeadActivity();
+        $viewed->type = 'demo_viewed';
+        $viewed->created_at = now()->subHours(30);
+
+        $c = $this->candidates($this->lead([
+            'status' => 'demo_completed', 'temperature' => 'hot',
+            'last_activity_at' => now()->subHours(20), // >12h, so the demo_completed branch fires
+        ], collect([$viewed])));
+
+        $demoComplete = array_filter($c, fn ($x) => $x->category === 'demo_complete');
+        $this->assertCount(1, $demoComplete);
+        $this->assertStringContainsString('set them up on Free', array_values($demoComplete)[0]->message);
+        $this->assertStringNotContainsString('watched your demo', array_values($demoComplete)[0]->message);
+    }
+
+    public function test_viewed_demo_before_demo_is_marked_complete_still_nudges(): void
+    {
+        // A prospect who self-watched the guided demo while the affiliate hasn't yet moved the
+        // lead to demo_completed SHOULD still get the "watched your demo" nudge.
+        $viewed = new LeadActivity();
+        $viewed->type = 'demo_viewed';
+        $viewed->created_at = now()->subHours(30);
+
+        $c = $this->candidates($this->lead([
+            'status' => 'active', 'temperature' => 'hot',
+            'last_activity_at' => now(), // keeps the ACTIVE intro rule from firing
+        ], collect([$viewed])));
+
+        $this->assertCount(1, $c);
+        $this->assertStringContainsString('watched your demo', $c[0]->message);
+    }
 }
