@@ -632,7 +632,10 @@
                                                             <br><span style="color:#6b7280;">Give them a nudge if they haven't opened it — you're their guide to going live.</span>
                                                         </div>
                                                     </div>
-                                                    <form method="POST" action="{{ route('affiliate.leads.setupfree', $lead) }}">
+                                                    <form method="POST" action="{{ route('affiliate.leads.setupfree', $lead) }}"
+                                                          data-cs-confirm="{{ __('Re-send the free-account invite to :email?', ['email' => $freeInvite['email']]) }}"
+                                                          data-cs-confirm-title="{{ __('Re-send invite?') }}"
+                                                          data-cs-confirm-ok="{{ __('Re-send') }}">
                                                         @csrf
                                                         <button type="submit" class="ls-btn ls-btn--ghost">Re-send invite</button>
                                                     </form>
@@ -645,7 +648,10 @@
                                                         Free invite expired
                                                     </p>
                                                     <p class="ls-free-sub">The last invite to <strong>{{ $freeInvite['email'] }}</strong> wasn't accepted in time, so it lapsed — no account was created. Re-send when they're ready.</p>
-                                                    <form method="POST" action="{{ route('affiliate.leads.setupfree', $lead) }}">
+                                                    <form method="POST" action="{{ route('affiliate.leads.setupfree', $lead) }}"
+                                                          data-cs-confirm="{{ __('Send a fresh free-account invite to :email?', ['email' => $freeInvite['email']]) }}"
+                                                          data-cs-confirm-title="{{ __('Re-send free invite?') }}"
+                                                          data-cs-confirm-ok="{{ __('Re-send') }}">
                                                         @csrf
                                                         <button type="submit" class="ls-btn ls-btn--free">Re-send free invite</button>
                                                     </form>
@@ -663,7 +669,10 @@
                                                             <br><span style="color:#6b7280;">A demo first is recommended, but if they're ready, set them up now.</span>
                                                         @endif
                                                     </p>
-                                                    <form method="POST" action="{{ route('affiliate.leads.setupfree', $lead) }}">
+                                                    <form method="POST" action="{{ route('affiliate.leads.setupfree', $lead) }}"
+                                                          data-cs-confirm="{{ __('We\'ll email :email an invite to activate a free account — they choose their own password to go live. Send it now?', ['email' => $freeInvite['email']]) }}"
+                                                          data-cs-confirm-title="{{ __('Set up on Free?') }}"
+                                                          data-cs-confirm-ok="{{ __('Send invite') }}">
                                                         @csrf
                                                         <button type="submit" class="ls-btn ls-btn--free">
                                                             <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M8 3v10M3 8h10" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
