@@ -78,7 +78,11 @@ class AffiliateKnowledgeBaseController extends Controller
         
         // Track view
         $this->trackView($article, 'affiliate');
-        
+
+        // Config-aware content: substitute {{tokens}} (e.g. {{free_cap}}, SMS prices) from live
+        // settings at render time, exactly like the academy — so the KB never teaches a stale figure.
+        $article->body = \App\Services\AcademyContentService::render($article->body);
+
         $relatedArticles = KnowledgeBaseArticle::published()
             ->forAudience('affiliates')
             ->where('id', '!=', $article->id)

@@ -11,7 +11,9 @@
           .aap-head p{color:#6b7280;font-size:13.5px;margin:0 0 20px;}
           .aap-tabs{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:18px;}
           .aap-tab{font-size:12.5px;font-weight:600;border-radius:8px;padding:7px 14px;text-decoration:none;border:1px solid #e6e1d8;background:#fff;color:#4a4f57;}
+          .aap-tab:hover{color:#185FA5;border-color:#185FA5;}
           .aap-tab.is-on{background:#185FA5;color:#fff;border-color:#185FA5;}
+          .aap-tab.is-on:hover{color:#fff;} /* keep the active tab's label visible (was vanishing blue-on-blue) */
           .aap-card{background:#fff;border:1px solid #ececec;border-radius:14px;overflow:hidden;box-shadow:0 1px 3px rgba(16,24,40,.04);}
           .aap-table{width:100%;border-collapse:collapse;}
           .aap-table th{text-align:left;font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:#9aa2ad;font-weight:600;padding:12px 16px;border-bottom:1px solid #eee;background:#fafafa;}

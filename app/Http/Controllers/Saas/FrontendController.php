@@ -61,6 +61,13 @@ class FrontendController extends Controller
 
     public function contactMessageStore(Request $request)
     {
+        // Honeypot: a decoy field hidden from humans via CSS. Real users never fill it; bots that
+        // blindly complete every input do. If it's filled, silently drop the submission (return the
+        // same success response so the bot sees no signal) — defence-in-depth on top of the throttle.
+        if (filled($request->input('website'))) {
+            return $this->success([], __(SENT_SUCCESSFULLY));
+        }
+
         $request->validate([
             'first_name' => 'required|string|max:100',
             'last_name' => 'required|string|max:100',
