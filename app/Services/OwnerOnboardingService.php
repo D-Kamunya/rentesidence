@@ -52,6 +52,7 @@ class OwnerOnboardingService
         $freePackage = defaultFreePackage();
         if ($freePackage) {
             setUserPackage($user->id, $freePackage, 365 * 50, 1);
+            grantFreeWelcomeSms($user->id); // one-time SMS taste (Free has no recurring grant)
         }
 
         setOwnerGateway($user->id);
