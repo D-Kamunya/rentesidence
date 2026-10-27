@@ -142,7 +142,7 @@ class AffiliateIdorTest extends AffiliateDatabaseTestCase
 
         $this->actingAs(User::find(2)); // act as the non-owner
 
-        $this->assertForbidden(fn () => app(LeadController::class)->show($lead->id, app(SuggestionService::class)));
+        $this->assertForbidden(fn () => app(LeadController::class)->show($lead->id, app(SuggestionService::class), app(\App\Services\FreeOnboardingService::class)));
     }
 
     public function test_foreign_affiliate_cannot_add_a_note(): void

@@ -32,9 +32,13 @@ class OwnerOnboardingService
         $user->last_name = $attrs['last_name'] ?? '';
         $user->contact_number = $attrs['phone'] ?? null;
         $user->email = $attrs['email'];
-        $plainPassword = Str::random(10);
+        // When the owner has already chosen their own password (e.g. accepting a "Set up on Free"
+        // invite, where the click + password = their consent), use it and skip the forced reset.
+        // Otherwise mint a temp password and force a reset on first login (the admin-create path).
+        $ownerChosen = ($attrs['password'] ?? '') !== '';
+        $plainPassword = $ownerChosen ? $attrs['password'] : Str::random(10);
         $user->password = Hash::make($plainPassword);
-        $user->must_change_password = 1;
+        $user->must_change_password = $ownerChosen ? 0 : 1;
         $user->status = USER_STATUS_ACTIVE;
         $user->email_verified_at = Carbon::now()->format('Y-m-d H:i:s');
         $user->role = USER_ROLE_OWNER;

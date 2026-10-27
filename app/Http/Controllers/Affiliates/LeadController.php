@@ -185,7 +185,7 @@ class LeadController extends Controller
             ->with('success','Lead updated successfully.');
     }
 
-    public function show($id, SuggestionService $suggestionService)
+    public function show($id, SuggestionService $suggestionService, \App\Services\FreeOnboardingService $free)
     {
 
         $lead = Lead::with([
@@ -216,7 +216,20 @@ class LeadController extends Controller
         // attributes back to them (and to this lead) for the demo_viewed engagement signal.
         $referralCode    = optional(Affiliate::where('user_id', auth()->id())->first())->referral_code;
 
-        return view('affiliate.leads.show', compact('lead', 'suggestions', 'suggestionData', 'canActOnLead', 'completeness', 'referralCode'));
+        // Free-first onboarding ("Set up on Free"): the invite overlay state + whether this lead
+        // can be (re)invited right now, so the Sales Actions card can lead with it.
+        $gate = $free->canInvite($lead);
+        $freeInvite = [
+            'state'        => $free->inviteState($lead),       // none | pending | accepted | expired
+            'can'          => $gate['ok'],
+            'reason'       => $gate['reason'],
+            'email'        => $lead->free_invite_email ?: ($lead->company->email ?? null),
+            'sent_at'      => $lead->free_invite_sent_at,
+            'expires_at'   => $lead->free_invite_expires_at,
+            'count'        => (int) $lead->free_invite_count,
+        ];
+
+        return view('affiliate.leads.show', compact('lead', 'suggestions', 'suggestionData', 'canActOnLead', 'completeness', 'referralCode', 'freeInvite'));
     }
 
     public function renew(Lead $lead)
@@ -293,6 +306,22 @@ class LeadController extends Controller
         }
 
         $result = $leads->submitTrialRequest($lead, $isExtension, $request->extension_reason, auth()->user());
+
+        return $result['success']
+            ? back()->with('success', $result['message'])
+            : back()->with('error', $result['message']);
+    }
+
+    /**
+     * Invite a lead to activate a FREE owner account (the free-first default action).
+     * No account is minted here — FreeOnboardingService sends a time-boxed, consent-gated invite;
+     * the owner account is created only when the owner accepts and sets their own password.
+     */
+    public function setupOnFree(Lead $lead, \App\Services\FreeOnboardingService $free)
+    {
+        $this->authorizeOwnership($lead);
+
+        $result = $free->createInvite($lead, auth()->user());
 
         return $result['success']
             ? back()->with('success', $result['message'])

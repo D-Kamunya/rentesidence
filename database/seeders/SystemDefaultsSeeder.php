@@ -76,6 +76,9 @@ class SystemDefaultsSeeder extends Seeder
             'sms_cost_floor'            => 0.80, // our gateway cost (Advanta) — per-plan SMS prices are floored above this so we never sell below cost
             'sms_low_credit_threshold'  => 30,   // low-credit nudge — below the 50-credit trial grant so a fresh account isn't warned on day one
             'free_welcome_sms_grant'    => 15,   // one-time SMS gift to a new FREE owner (non-expiring) so they can taste the system; kept small so the per-SMS cost still nudges upgrades. 0 disables.
+            // ── Affiliate "Set up on Free" invite (consent-gated owner onboarding) ──
+            'affiliate_free_invite_expiry_days' => 7,  // days a Free-activation invite stays valid before it lapses (no account exists until accepted, so lapsed = nothing to clean up)
+            'affiliate_free_invite_max_pending' => 15, // how many un-accepted invites one affiliate may have outstanding at once — anti-phantom cap; they follow up or let them lapse before sending more
             'sms_reminder_cooldown_hours' => 24, // min gap between the same SMS reminder
             'sms_paused_digest_days'      => 7,  // look-back window for the paused-backlog re-engagement digest
             'sms_paused_digest_throttle_days' => 7, // min gap between paused-digest nudges per owner

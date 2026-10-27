@@ -143,7 +143,15 @@ class FrontendController extends Controller
                 $mailService = new MailService;
                 $mailService->sendContactThankYouMail($emails, $subject, $mailBody, $title);
             }
-            return $this->success([], __(SENT_SUCCESSFULLY));
+
+            // Intent-aware confirmation: a trial/getting-started enquiry is told to watch their
+            // email (incl. spam), since the account setup + login details arrive there — mirroring
+            // what affiliates tell their owners. General/partner enquiries get the plain thank-you.
+            $flash = $intent === 'trial'
+                ? __('Thank you! We\'ve emailed you a confirmation — please check your inbox (including your spam/junk folder). Our team will set up your account and send your login details to that email shortly.')
+                : __(SENT_SUCCESSFULLY);
+
+            return $this->success([], $flash);
         } catch (Exception $e) {
             DB::rollBack();
             return $this->error([], __(SOMETHING_WENT_WRONG));

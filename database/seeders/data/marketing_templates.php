@@ -9,14 +9,14 @@ return array (
   array (
     'category' => 'demo_complete',
     'action_type' => 'whatsapp',
-    'name' => 'WhatsApp Follow-Up — Trial Invitation',
+    'name' => 'WhatsApp Follow-Up — Get Started on Free',
     'message_template' => 'Hi {{contact_name}} 👋
 
 Thank you for taking the time for the demo! I hope it gave you a clear picture of how the platform can work for {{company_name}}.
 
 I wanted to check in. Did you have any questions after going through everything? I\'m happy to clarify anything or dig deeper into any specific area.
 
-If you\'re ready to take the next step, I can arrange a sponsored trial account so your team can explore the system hands-on. Just say the word!
+Whenever you\'re ready, the easiest next step is to get you set up on a free account — it\'s fully usable, with nothing to pay, so you can start adding your properties right away. I\'ll send you a link to activate it. Just say the word!
 
 {{affiliate_name}}',
   ),
@@ -34,12 +34,12 @@ Gauge interest:
 "How did you find it overall? Was there anything that stood out as particularly useful for {{company_name}}?"
 
 If positive:
-"That\'s great to hear. The next step would be setting up a sponsored trial account so your team can actually get hands-on with the system. I can have that ready for you within 24 hours — shall we go ahead?"
+"That\'s great to hear. The easiest next step is to get you set up on a free account so your team can start using it with your own properties — nothing to pay, and I\'ll send you a link to activate it right now. Shall we go ahead?"
 
 Handle objections:
-- "Need to think about it" → "Of course. What\'s the main thing you\'re weighing up? I want to make sure you have everything you need to make a comfortable decision."
+- "Need to think about it" → "Of course. Since it\'s free to start, there\'s nothing to weigh up on cost — you can activate it and explore at your own pace. What\'s the main thing on your mind?"
 - "Need to involve the team" → "That makes sense. Would it help if I joined a quick call with your team? I can answer any technical or commercial questions directly."
-- "Not sure yet" → "Would a trial take some of the uncertainty away? There\'s no commitment — just a chance to see how it fits your workflow."
+- "Want to try the paid features first" → "Happy to arrange a short trial of the paid extras in that case — just let me know which ones matter most and I\'ll set it up."
 
 Close:
 "What would be a good next step from your side?"',
@@ -616,7 +616,7 @@ Thank you for taking the time to go through the demo — I hope it gave you a cl
 
 I wanted to follow up in case any questions came up afterwards. Whether it\'s a specific feature, the cashflow tools, or how onboarding would work for your team, I\'m happy to clarify anything.
 
-If you\'d like to explore it hands-on, I can arrange a sponsored trial account so your team can use the system with your own workflow — no commitment, just a chance to see how it fits.
+Whenever you\'re ready, the easiest next step is to get you set up on a free account — it\'s fully usable with nothing to pay, so your team can start with your own properties right away. I\'ll send a link to activate it. (If you\'d specifically like to try the paid extras first, I can arrange a short trial of those too — just let me know.)
 
 What would be a good next step from your side?
 

@@ -609,60 +609,119 @@
                                                 </div>
                                             @endif
 
-                                        
-                                            {{-- Request Conversion/Extension --}}
-                                            
-                                            @if($lead->status === 'demo_completed' || $isExpiredTrial)
-                                            <div class="ls-action-block mb-3">
-                                                <p class="ls-action-label">
-                                                    @if($isExpiredTrial)
-                                                        Request Trial Extension
-                                                    @elseif($conversionRejectedByAdmin)
-                                                        Made the corrections?
-                                                    @else
-                                                        Ready to convert this lead?
-                                                    @endif
-                                                </p>
-                                                <p style="font-size:12px;color:#6b7280;margin-bottom:8px;">
-                                                    @if($isExpiredTrial)
-                                                        The previous trial has ended. If the client needs more time, request a trial extension.
-                                                    @elseif($conversionRejectedByAdmin)
-                                                        Ensure you've made the suggested corrections up above and resubmit below
-                                                    @else
-                                                        This requests a <strong>trial</strong> account — an <strong>optional</strong> step. Most owners are happy to start on <strong>Free</strong> straight away (fully usable, nothing to lose); request a trial only if this client wants to try the paid features first.
-                                                    @endif
-                                                </p>
 
-                                                <form method="POST" action="{{ route('affiliate.leads.requesttrial', $lead) }}">
-                                                    @csrf
-
-                                                    {{-- Only show extension reason when trial is expired --}}
-                                                    @if($isExpiredTrial)
-                                                        <textarea name="extension_reason"
-                                                                class="lc-input lc-textarea mb-3"
-                                                                rows="3"
-                                                                placeholder="Why does the client need additional trial time? (e.g., needs to test more features, waiting for team approval, etc.)"
-                                                                required></textarea>
-                                                    @endif
-
-                                                    <button type="submit" class="ls-btn ls-btn--green">
-                                                        <svg width="13" height="13" viewBox="0 0 16 16" fill="none">
-                                                            <path d="M8 2l2 4h4l-3 3 1 4-4-2-4 2 1-4-3-3h4z" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
-                                                        </svg>
-                                                        @if($isExpiredTrial)
-                                                            Request Trial Extension
-                                                        @elseif($conversionRejectedByAdmin)
-                                                            Resubmit Trial Request
-                                                        @else
-                                                            Request Trial
-                                                        @endif
-                                                    </button>
-                                                    <p style="font-size:11.5px;color:#9aa2ad;margin:10px 0 0;line-height:1.5;">
-                                                        {{ __('Once an admin approves, the client\'s login details are sent to their email on file — let them know to check it (including spam).') }}
+                                            {{-- ═══════════════════════════════════════════════════════════════════ --}}
+                                            {{-- ★ FREE-FIRST — "Set up on Free" is the primary, default conversion    --}}
+                                            {{-- action. Trial sits beneath it as an optional step. Available across    --}}
+                                            {{-- the working stages (a demo is recommended, not required).              --}}
+                                            {{-- ═══════════════════════════════════════════════════════════════════ --}}
+                                            @if($freeInvite['state'] === 'pending')
+                                                {{-- Invite is out, awaiting the owner's activation --}}
+                                                <div class="ls-free-block">
+                                                    <p class="ls-free-title">
+                                                        <svg width="15" height="15" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="6.5" stroke="currentColor" stroke-width="1.5"/><path d="M8 5v3.5l2 1.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                                                        Free invite sent — awaiting activation
                                                     </p>
-                                                </form>
-                                            </div>
+                                                    <div class="ls-free-status">
+                                                        <span class="dot" style="background:#E7A339;"></span>
+                                                        <div>
+                                                            Sent to <strong>{{ $freeInvite['email'] }}</strong>. They activate by choosing a password — nothing exists until they do.
+                                                            @if($freeInvite['expires_at'])
+                                                                <br>Expires <strong>{{ $freeInvite['expires_at']->format('M d, Y') }}</strong> ({{ $freeInvite['expires_at']->diffForHumans() }}).
+                                                            @endif
+                                                            <br><span style="color:#6b7280;">Give them a nudge if they haven't opened it — you're their guide to going live.</span>
+                                                        </div>
+                                                    </div>
+                                                    <form method="POST" action="{{ route('affiliate.leads.setupfree', $lead) }}">
+                                                        @csrf
+                                                        <button type="submit" class="ls-btn ls-btn--ghost">Re-send invite</button>
+                                                    </form>
+                                                </div>
+                                            @elseif($freeInvite['state'] === 'expired')
+                                                {{-- Previous invite lapsed unaccepted — no account was created --}}
+                                                <div class="ls-free-block" style="background:#FDF6EC;border-color:#F3DBB3;">
+                                                    <p class="ls-free-title" style="color:#854F0B;">
+                                                        <svg width="15" height="15" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="6.5" stroke="currentColor" stroke-width="1.5"/><path d="M8 5v4M8 11v.5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
+                                                        Free invite expired
+                                                    </p>
+                                                    <p class="ls-free-sub">The last invite to <strong>{{ $freeInvite['email'] }}</strong> wasn't accepted in time, so it lapsed — no account was created. Re-send when they're ready.</p>
+                                                    <form method="POST" action="{{ route('affiliate.leads.setupfree', $lead) }}">
+                                                        @csrf
+                                                        <button type="submit" class="ls-btn ls-btn--free">Re-send free invite</button>
+                                                    </form>
+                                                </div>
+                                            @elseif($freeInvite['can'])
+                                                {{-- The primary default action: invite this lead to activate on Free --}}
+                                                <div class="ls-free-block">
+                                                    <p class="ls-free-title">
+                                                        <svg width="15" height="15" viewBox="0 0 16 16" fill="none"><path d="M3 8.5l3 3 7-7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                                                        Set them up on Free
+                                                    </p>
+                                                    <p class="ls-free-sub">
+                                                        The default next step. Sends <strong>{{ $freeInvite['email'] }}</strong> an invite to activate a <strong>free</strong> account — fully usable, nothing to pay. They choose their own password to go live (so it's on their consent), and it attributes to you automatically.
+                                                        @if($lead->status === 'active')
+                                                            <br><span style="color:#6b7280;">A demo first is recommended, but if they're ready, set them up now.</span>
+                                                        @endif
+                                                    </p>
+                                                    <form method="POST" action="{{ route('affiliate.leads.setupfree', $lead) }}">
+                                                        @csrf
+                                                        <button type="submit" class="ls-btn ls-btn--free">
+                                                            <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M8 3v10M3 8h10" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+                                                            Set up on Free
+                                                        </button>
+                                                    </form>
+                                                </div>
+                                            @elseif(!$freeInvite['can'] && in_array($lead->status, ['active','demo_scheduled','demo_completed']) && $freeInvite['reason'])
+                                                {{-- Can't invite yet (usually a missing/invalid email) — tell them why --}}
+                                                <div class="ls-free-status" style="border-color:#F3DBB3;background:#FDF6EC;color:#854F0B;">
+                                                    <span class="dot" style="background:#E7A339;"></span>
+                                                    <div>{{ $freeInvite['reason'] }}</div>
+                                                </div>
+                                            @endif
 
+                                            {{-- Trial — the OPTIONAL step, tucked under Free. Only offered post-demo or on an expired trial. --}}
+                                            @if($lead->status === 'demo_completed' || $isExpiredTrial)
+                                            <div class="ls-action-block mb-3 ls-trial-optional">
+                                                @if($isExpiredTrial)
+                                                    <p class="ls-action-label">Request Trial Extension</p>
+                                                    <p style="font-size:12px;color:#6b7280;margin-bottom:8px;">The previous trial has ended. If the client needs more time, request a trial extension.</p>
+                                                    <form method="POST" action="{{ route('affiliate.leads.requesttrial', $lead) }}">
+                                                        @csrf
+                                                        <textarea name="extension_reason" class="lc-input lc-textarea mb-3" rows="3" placeholder="Why does the client need additional trial time? (e.g., needs to test more features, waiting for team approval, etc.)" required></textarea>
+                                                        <button type="submit" class="ls-btn ls-btn--amber">
+                                                            <svg width="13" height="13" viewBox="0 0 16 16" fill="none"><path d="M8 2l2 4h4l-3 3 1 4-4-2-4 2 1-4-3-3h4z" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                                                            Request Trial Extension
+                                                        </button>
+                                                    </form>
+                                                @elseif($conversionRejectedByAdmin)
+                                                    <p class="ls-action-label">Made the corrections?</p>
+                                                    <p style="font-size:12px;color:#6b7280;margin-bottom:8px;">Ensure you've made the suggested corrections up above and resubmit the trial request below.</p>
+                                                    <form method="POST" action="{{ route('affiliate.leads.requesttrial', $lead) }}">
+                                                        @csrf
+                                                        <button type="submit" class="ls-btn ls-btn--amber">Resubmit Trial Request</button>
+                                                        <p style="font-size:11.5px;color:#9aa2ad;margin:10px 0 0;line-height:1.5;">{{ __('Once an admin approves, the client\'s login details are sent to their email on file — let them know to check it (including spam).') }}</p>
+                                                    </form>
+                                                @else
+                                                    {{-- Collapsed by default — Free is the headline; trial is the "only if they want to try paid features" fallback. --}}
+                                                    <details class="ls-trial-optional">
+                                                        <summary>
+                                                            <svg width="11" height="11" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                                                            Prefer a trial instead? <span style="color:#9aa2ad;">(optional)</span>
+                                                        </summary>
+                                                        <div style="padding-top:10px;">
+                                                            <p style="font-size:12px;color:#6b7280;margin-bottom:8px;">A trial is only worth it when a client specifically wants to <strong>try the paid features</strong> before deciding. Otherwise Free above is the better, zero-friction start. A trial needs admin approval.</p>
+                                                            <form method="POST" action="{{ route('affiliate.leads.requesttrial', $lead) }}">
+                                                                @csrf
+                                                                <button type="submit" class="ls-btn ls-btn--ghost">
+                                                                    <svg width="13" height="13" viewBox="0 0 16 16" fill="none"><path d="M8 2l2 4h4l-3 3 1 4-4-2-4 2 1-4-3-3h4z" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                                                                    Request Trial
+                                                                </button>
+                                                                <p style="font-size:11.5px;color:#9aa2ad;margin:10px 0 0;line-height:1.5;">{{ __('Once an admin approves, the client\'s login details are sent to their email on file — let them know to check it (including spam).') }}</p>
+                                                            </form>
+                                                        </div>
+                                                    </details>
+                                                @endif
+                                            </div>
                                             @endif
 
                                             {{-- Pending Conversion --}}
@@ -1537,6 +1596,18 @@
         .ls-btn--purple { background:#534AB7;color:#fff; }
         .ls-btn--red    { background:#FCEBEB;color:#A32D2D;border:0.5px solid #F7C1C1; }
         .ls-btn--amber  { background:#FAEEDA;color:#854F0B;border:0.5px solid #FAC775; }
+        .ls-btn--ghost  { background:#fff;color:#6b7280;border:1px solid #e5e7eb;font-size:12.5px;padding:7px 14px;font-weight:500; }
+        /* ★ Free-first: the "Set up on Free" block is the dominant conversion CTA; trial sits under it as an optional step. */
+        .ls-free-block { background:#F1F8F4;border:1px solid #BFE3D0;border-radius:12px;padding:15px 16px;margin-bottom:14px; }
+        .ls-free-title { font-size:14px;font-weight:700;color:#0F6E56;margin:0 0 5px;display:flex;align-items:center;gap:7px; }
+        .ls-free-sub   { font-size:12.5px;color:#3A4A44;margin:0 0 13px;line-height:1.55; }
+        .ls-btn--free  { background:#1D9E75;color:#fff;font-size:14px;font-weight:650;padding:11px 20px;box-shadow:0 8px 20px -10px rgba(29,158,117,.85); }
+        .ls-free-status{ display:flex;align-items:flex-start;gap:9px;font-size:12.5px;color:#3A4A44;background:#fff;border:1px solid #DCEAE2;border-radius:9px;padding:11px 12px;margin-bottom:12px;line-height:1.5; }
+        .ls-free-status .dot{ flex:none;width:8px;height:8px;border-radius:50%;margin-top:4px; }
+        .ls-trial-optional { margin-top:2px; }
+        .ls-trial-optional summary { cursor:pointer;font-size:12px;color:#6b7280;list-style:none;display:inline-flex;align-items:center;gap:5px;padding:4px 0; }
+        .ls-trial-optional summary::-webkit-details-marker{ display:none; }
+        .ls-trial-optional summary:hover { color:#374151; }
 
         /* ── Reject panel ────────────────────────────────────── */
         .ls-reject-panel { max-height:0;overflow:hidden;opacity:0;transition:max-height .3s ease,opacity .3s ease; }

@@ -167,4 +167,12 @@ Route::get('/invite/{code}', [\App\Http\Controllers\PublicReferralController::cl
 Route::post('/invite/{code}', [\App\Http\Controllers\PublicReferralController::class, 'submit'])
     ->middleware('throttle:8,10')
     ->name('referral.invite.submit');
+
+// Affiliate "Set up on Free" — the public activation link an invited owner opens. The account is
+// created only here (opening the link + setting a password = the owner's consent). The accept is
+// throttled so a leaked token can't be hammered.
+Route::get('/free/activate/{token}', [\App\Http\Controllers\PublicFreeInviteController::class, 'landing'])->name('free.invite');
+Route::post('/free/activate/{token}', [\App\Http\Controllers\PublicFreeInviteController::class, 'accept'])
+    ->middleware('throttle:8,10')
+    ->name('free.invite.accept');
 // Route::get('/owner/tenants/applications', function () {return view('owner.tenants.applications');})->name('owner.tenants.applications');

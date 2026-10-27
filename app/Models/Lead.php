@@ -56,15 +56,24 @@ class Lead extends Model
         'demo_scheduled_at',
         'demo_meeting_link',
         'converted_at',
+        'free_invite_token',
+        'free_invite_email',
+        'free_invite_sent_at',
+        'free_invite_expires_at',
+        'free_invite_accepted_at',
+        'free_invite_count',
     ];
 
     protected $casts = [
-        'claimed_at'           => 'datetime',
-        'marketplace_at'       => 'datetime',
-        'ownership_expires_at' => 'datetime',
-        'last_activity_at'     => 'datetime',
-        'demo_scheduled_at'    => 'datetime',
-        'converted_at'         => 'datetime',
+        'claimed_at'              => 'datetime',
+        'marketplace_at'          => 'datetime',
+        'ownership_expires_at'    => 'datetime',
+        'last_activity_at'        => 'datetime',
+        'demo_scheduled_at'       => 'datetime',
+        'converted_at'            => 'datetime',
+        'free_invite_sent_at'     => 'datetime',
+        'free_invite_expires_at'  => 'datetime',
+        'free_invite_accepted_at' => 'datetime',
     ];
 
     protected static function booted(): void

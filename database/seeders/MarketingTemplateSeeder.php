@@ -24,6 +24,12 @@ class MarketingTemplateSeeder extends Seeder
 {
     public function run(): void
     {
+        // Free-first copy refresh runs INDEPENDENTLY of the authoritative-once sentinel, so an
+        // already-seeded deploy still picks it up. It only rewrites a demo_complete DEFAULT that
+        // still carries the pre-free-first "sponsored trial account" copy — an admin-rewritten
+        // template (no longer containing that phrase) is left untouched.
+        $this->patchDemoCompleteFreeFirst();
+
         if (getOption('marketing_templates_seed_v2')) {
             return;
         }
@@ -51,5 +57,37 @@ class MarketingTemplateSeeder extends Seeder
         });
 
         setOption('marketing_templates_seed_v2', '1');
+    }
+
+    /**
+     * Free-first: the post-demo next step is "set them up on Free", not "arrange a sponsored
+     * trial". Refreshes the three demo_complete DEFAULT templates (whatsapp / call / email) to the
+     * canonical free-first copy — but only where the live copy still contains the old phrase, so an
+     * admin who has since rewritten the template keeps their version. Idempotent + self-guarded.
+     */
+    private function patchDemoCompleteFreeFirst(): void
+    {
+        if (getOption('marketing_templates_free_first_v1')) {
+            return;
+        }
+
+        $rows = collect(require database_path('seeders/data/marketing_templates.php'))
+            ->where('category', 'demo_complete');
+
+        foreach ($rows as $r) {
+            $tpl = ActionTemplate::where('category', 'demo_complete')
+                ->where('action_type', $r['action_type'])
+                ->where('is_default', true)
+                ->first();
+
+            // Only refresh a default still carrying the pre-free-first copy (admin edits untouched).
+            if ($tpl && str_contains((string) $tpl->message_template, 'sponsored trial account')) {
+                $tpl->name = $r['name'];
+                $tpl->message_template = $r['message_template'];
+                $tpl->save();
+            }
+        }
+
+        setOption('marketing_templates_free_first_v1', '1');
     }
 }
