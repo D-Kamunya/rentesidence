@@ -41,13 +41,19 @@
                         </a>
                     </div>
 
-                    {{-- Platform Stats --}}
+                    {{-- Header stats — deliberately the affiliate's OWN figures + the community size,
+                         NOT platform-wide aggregates. Showing "Total Paid to Affiliates" or a platform
+                         "Owners Referred" count would reveal our client-base size and, while the program
+                         is young, read as a red flag (a company-wide KSh 0 / 1 owner). A personal zero is
+                         just a new affiliate's starting line, and "Active Affiliates" is a recruiting
+                         positive (network size), not client-base. Mirrors the "your numbers, not
+                         everyone's" ethos of the board below. --}}
                     <div class="lb-platform-stats">
                         <div class="lb-platform-stat">
                             <span class="lb-platform-stat__icon">💰</span>
                             <div>
-                                <span class="lb-platform-stat__value">KSh {{ number_format($totalPlatformEarnings, 0) }}</span>
-                                <span class="lb-platform-stat__label">{{ __('Total Paid to Affiliates') }}</span>
+                                <span class="lb-platform-stat__value">KSh {{ number_format($myEarnings, 0) }}</span>
+                                <span class="lb-platform-stat__label">{{ __('Your Earnings (all time)') }}</span>
                             </div>
                         </div>
                         <div class="lb-platform-stat">
@@ -60,8 +66,8 @@
                         <div class="lb-platform-stat">
                             <span class="lb-platform-stat__icon">🏠</span>
                             <div>
-                                <span class="lb-platform-stat__value">{{ $totalReferrals }}</span>
-                                <span class="lb-platform-stat__label">{{ __('Owners Referred') }}</span>
+                                <span class="lb-platform-stat__value">{{ $myReferrals }}</span>
+                                <span class="lb-platform-stat__label">{{ __('Your Owners Referred') }}</span>
                             </div>
                         </div>
                     </div>

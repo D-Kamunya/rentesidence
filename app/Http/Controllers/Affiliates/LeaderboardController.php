@@ -7,7 +7,6 @@ use App\Models\Affiliate;
 use App\Models\AffiliateCommission;
 use App\Models\AffiliateCommissionPayment;
 use App\Models\AffiliateWithdrawal;
-use App\Models\Owner;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
@@ -145,10 +144,11 @@ class LeaderboardController extends Controller
                 ];
             });
 
-        // ── Total platform stats ──
-        $totalPlatformEarnings = AffiliateCommission::sum('commission_amount');
+        // Community size only — the affiliate network, a recruiting positive. We deliberately do
+        // NOT compute/surface platform-wide "total paid" or "owners referred" aggregates on this
+        // affiliate-facing page: they reveal our client-base size and, while the program is young,
+        // read as a red flag. The header shows the affiliate's OWN figures instead (see the view).
         $totalAffiliates = Affiliate::count();
-        $totalReferrals = Owner::whereNotNull('affiliate_id')->count();
 
         return view('affiliate.leaderboard.index', compact(
             'topEarners',
@@ -159,9 +159,7 @@ class LeaderboardController extends Controller
             'period',
             'periodLabel',
             'recentBigWins',
-            'totalPlatformEarnings',
-            'totalAffiliates',
-            'totalReferrals'
+            'totalAffiliates'
         ));
     }
 }
