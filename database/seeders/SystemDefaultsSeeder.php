@@ -63,9 +63,9 @@ class SystemDefaultsSeeder extends Seeder
             // first-time rate is the activation bounty (owner's first activity in each line);
             // the recurring rate then applies for RECURRING_COMMISSION_MONTHS, measured per
             // line from that line's first commission.
-            'FIRST_TIME_COMMISSION_RATE' => 30, // % of our take on the owner's first event/line
+            'FIRST_TIME_COMMISSION_RATE' => 40, // % of our take on the owner's first event/line (uplifted from 30 — 2026-10-28 distribution sitting)
             'RECURRING_COMMISSION_RATE'  => 10, // % of our take thereafter, within the window
-            'RECURRING_COMMISSION_MONTHS' => 12, // how long the recurring share runs, per line
+            'RECURRING_COMMISSION_MONTHS' => 24, // how long the recurring share runs, per line (uplifted from 12 — 2026-10-28 distribution sitting; bounded so we reclaim the mature owner's full margin)
 
             // ── Credit rail — tenant screening ──
             'screening_free_quota' => 3,    // free screenings/month on the free plan

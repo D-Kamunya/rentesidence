@@ -38,5 +38,31 @@ class AffiliateAnnouncementSeeder extends Seeder
                 'published_at'  => now(),
             ]
         );
+
+        // Earnings uplift (2026-10-28 sitting) — a POSITIVE announcement so the first cohort hears
+        // their terms just got better. Quotes the LIVE config so it's always accurate even if the
+        // numbers are tuned again later.
+        $firstRate   = (int) (getOption('FIRST_TIME_COMMISSION_RATE') ?: 40);
+        $recurRate   = (int) (getOption('RECURRING_COMMISSION_RATE') ?: 10);
+        $recurMonths = (int) (getOption('RECURRING_COMMISSION_MONTHS') ?: 24);
+
+        FeatureAnnouncement::updateOrCreate(
+            ['title' => 'Good news — we’ve increased your earnings'],
+            [
+                'body'          => 'We’ve made your commission more rewarding. Your first-time commission is now '
+                    . $firstRate . '% of our take on an owner’s first payment (up from 30%), and every commission line '
+                    . 'now runs for ' . $recurMonths . ' months per owner (up from 12) — so each owner you bring on keeps '
+                    . 'paying you for twice as long. The recurring rate stays at ' . $recurRate . '%. Nothing you need to do: '
+                    . 'the new terms apply to your owners automatically, and your dashboard, academy and earnings calculator '
+                    . 'already show the updated numbers.',
+                'icon'          => '💰',
+                'kb_article_id' => null,
+                'link_url'      => null,
+                'link_label'    => null,
+                'audience'      => (string) USER_ROLE_AFFILIATE,
+                'is_active'     => true,
+                'published_at'  => now(),
+            ]
+        );
     }
 }
