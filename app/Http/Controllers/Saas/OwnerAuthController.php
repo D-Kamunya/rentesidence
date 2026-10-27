@@ -57,11 +57,11 @@ class OwnerAuthController extends Controller
             $owner->user_id = $user->id;
             $owner->save();
 
-            $duration = (int) getOption('trail_duration', 1);
-
-            $defaultPackage = Package::where(['is_trail' => ACTIVE])->first();
-            if ($defaultPackage) {
-                setUserPackage($user->id, $defaultPackage, $duration, 1);
+            // Free-first: an owner who self-registers lands on the permanent FREE plan (50-year
+            // duration = open-ended), NOT a trial. Trials are granted deliberately, not on signup.
+            $freePackage = defaultFreePackage();
+            if ($freePackage) {
+                setUserPackage($user->id, $freePackage, 365 * 50, 1);
             }
 
             setOwnerGateway($user->id);
