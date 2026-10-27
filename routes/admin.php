@@ -282,6 +282,7 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'middleware' => ['auth', 'a
             Route::post('invite', [\App\Http\Controllers\Admin\AffiliateApplicationController::class, 'updateInvite'])->name('invite');
             Route::post('{application}/approve', [\App\Http\Controllers\Admin\AffiliateApplicationController::class, 'approve'])->name('approve');
             Route::post('{application}/reject', [\App\Http\Controllers\Admin\AffiliateApplicationController::class, 'reject'])->name('reject');
+            Route::post('{application}/delete', [\App\Http\Controllers\Admin\AffiliateApplicationController::class, 'destroy'])->name('delete');
         });
     });
 
