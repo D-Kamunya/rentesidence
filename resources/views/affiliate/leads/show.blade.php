@@ -307,21 +307,21 @@
                                         <div style="flex:1;">
                                             <p style="font-weight:600;font-size:15px;margin:0;margin-bottom:6px;">🎉 Congratulations! Lead Successfully Converted</p>
                                             <p style="font-size:13px;margin:0;line-height:1.6;">
-                                                {{ $lead->company->company_name }} is now a paying customer generating monthly recurring commissions for you!
+                                                {{ $lead->company->company_name }} is now live on Centresidence! You earn as they <strong>use</strong> the system — rent collection, tenant screening, agreements and more — so the more active they become, the more you earn, month after month.
                                             </p>
-                                            
+
                                             <div style="background:rgba(255,255,255,0.5);border-radius:8px;padding:12px;margin-top:12px;">
-                                                <p style="font-weight:600;font-size:12px;margin:0 0 6px;text-transform:uppercase;letter-spacing:0.5px;opacity:0.8;">💰 Maximize Your Passive Income:</p>
+                                                <p style="font-weight:600;font-size:12px;margin:0 0 6px;text-transform:uppercase;letter-spacing:0.5px;opacity:0.8;">💰 Grow Your Recurring Income:</p>
                                                 <ul style="margin:0;padding-left:20px;font-size:12px;line-height:1.7;">
-                                                    <li><strong>Check in monthly</strong> — A quick call ensures they're getting value</li>
-                                                    <li><strong>Share tips & best practices</strong> — Help them succeed with the platform</li>
-                                                    <li><strong>Demonstrate new features</strong> — New features deliver more value and increase loyalty</li>
-                                                    <li><strong>Be their advocate</strong> — Happy customers renew, and you earn every month they stay!</li>
+                                                    <li><strong>Get them to first rent</strong> — help them add a property and collect their first rent; that's where your earnings start</li>
+                                                    <li><strong>Check in monthly</strong> — a quick call makes sure they're getting value and staying active</li>
+                                                    <li><strong>Help them grow</strong> — more units, more tenants and paid features (screening, agreements) all earn you more</li>
+                                                    <li><strong>Be their advocate</strong> — the longer they stay active, the longer you earn</li>
                                                 </ul>
                                             </div>
-                                            
+
                                             <p style="font-size:11px;margin:10px 0 0;opacity:.75;font-style:italic;">
-                                                Remember: Your success is tied to theirs. Keep them engaged and watch your monthly commissions grow! 🚀
+                                                Remember: your success is tied to theirs. Keep them active and watch your monthly commissions grow! 🚀
                                             </p>
                                         </div>
                                     </div>
@@ -1040,6 +1040,10 @@
                                                     Add Note
                                                 </button>
                                             </form>
+                                        @elseif($lead->status === 'converted')
+                                            <p style="font-size:12px;color:#0F6E56;margin:0;">
+                                                🎉 This lead has converted — they're now a Centresidence owner. Keep in touch to help them stay active.
+                                            </p>
                                         @else
                                             <p style="font-size:12px;color:#9ca3af;margin:0;">
                                                 This lead is closed — no further notes can be added.
@@ -1051,7 +1055,12 @@
                                 {{-- ═══════════════════════════════════════════════ --}}
                                 {{-- SUGGESTED ACTIONS CARD                          --}}
                                 {{-- ═══════════════════════════════════════════════ --}}
-                                @if($lead->isClosed())
+                                {{-- A CONVERTED lead is a success, not a dead end — the green "Lead Successfully
+                                     Converted" banner above already carries its next actions, so we show no
+                                     red "Lead Closed" card here. The red card is only for a rejected/lost lead. --}}
+                                @if($lead->status === 'converted')
+                                    {{-- intentionally no card — the conversion banner above owns the next actions --}}
+                                @elseif($lead->isClosed())
                                     <div class="ls-card mb-4">
                                         <div class="ls-card__head">
                                             <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
@@ -1067,7 +1076,7 @@
                                                 </svg>
                                                 <p style="color:#9ca3af;font-size:14px;margin:0;font-weight:500;">Lead Closed</p>
                                                 <p style="color:#9ca3af;font-size:13px;margin:4px 0 0;">
-                                                    No suggested actions for expired, rejected or lost leads.
+                                                    No suggested actions for a rejected or lost lead.
                                                 </p>
                                             </div>
                                         </div>

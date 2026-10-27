@@ -144,11 +144,13 @@ class LeaderboardController extends Controller
                 ];
             });
 
-        // Community size only — the affiliate network, a recruiting positive. We deliberately do
-        // NOT compute/surface platform-wide "total paid" or "owners referred" aggregates on this
-        // affiliate-facing page: they reveal our client-base size and, while the program is young,
-        // read as a red flag. The header shows the affiliate's OWN figures instead (see the view).
-        $totalAffiliates = Affiliate::count();
+        // Header opportunity stat (see the view): how many months an affiliate earns RECURRING
+        // commission on every owner — a positive program fact that reveals nothing about our scale.
+        // We deliberately do NOT surface any platform-wide count here ("total paid", "owners
+        // referred", or even "active affiliates"): while the program is young, small aggregates
+        // both reveal our client/affiliate-base size AND demotivate (they wrongly read as "few are
+        // here, so this must be hard"). The other two header tiles are the affiliate's OWN figures.
+        $recurringMonths = (int) (getOption('RECURRING_COMMISSION_MONTHS') ?: 12);
 
         return view('affiliate.leaderboard.index', compact(
             'topEarners',
@@ -159,7 +161,7 @@ class LeaderboardController extends Controller
             'period',
             'periodLabel',
             'recentBigWins',
-            'totalAffiliates'
+            'recurringMonths'
         ));
     }
 }
