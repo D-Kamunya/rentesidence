@@ -50,6 +50,7 @@ class AdvantaSmsService
         $sentCount        = 0;
         $failedCount      = 0;
         $blockedByCredits = 0;
+        $failureReasons   = []; // per-number failure messages, to tell "bad numbers" from "gateway down"
     
         foreach ($numbers as $number) {
     
@@ -110,6 +111,7 @@ class AdvantaSmsService
                 }
                 SmsHelper::historyStore($ownerUserId, $shortcode, $apikey, $partnerID, $number, $message, SMS_STATUS_FAILED, $e->getMessage());
                 Log::channel('sms-mail')->error('Error sending SMS: ' . $e->getMessage());
+                $failureReasons[] = $e->getMessage();
                 $failedCount++;
             }
         }
@@ -127,12 +129,32 @@ class AdvantaSmsService
         // aggregate onto one growing incident. Fail-safe — never breaks the send path.
         if ($sentCount === 0 && $failedCount > 0 && $blockedByCredits === 0) {
             try {
+                // Name the REAL cause. A transport-level error ("Unexpected API response") means the
+                // gateway/key is the problem; a per-recipient rejection ("SMS failed: …") means the
+                // GATEWAY REJECTED THE NUMBERS — most often invalid / unreachable / test numbers. The
+                // old message always blamed the gateway, which misled when the numbers were the issue.
+                $transportErrors  = count(array_filter($failureReasons, fn ($r) => str_starts_with((string) $r, 'Unexpected API response')));
+                $numberRejections = $failedCount - $transportErrors;
+                $sample           = (string) ($failureReasons[0] ?? '');
+
+                if ($transportErrors === 0 && $numberRejections > 0) {
+                    $title = 'SMS delivery is failing — recipient numbers rejected';
+                    $desc  = 'An SMS batch failed because the gateway REJECTED every recipient number — '
+                        . 'most often that means the numbers are invalid, unreachable, or test/fake numbers. '
+                        . 'If the numbers are genuine, check the country-code format or the gateway/API key. '
+                        . 'Gateway said: "' . \Illuminate\Support\Str::limit(preg_replace('/^SMS failed:\s*/', '', $sample), 140) . '".';
+                } else {
+                    $title = 'SMS delivery is failing';
+                    $desc  = 'An SMS batch failed to send with nothing delivered — the SMS gateway may be down or the '
+                        . 'API key rejected. Credential, OTP and reminder texts are affected.';
+                }
+
                 app(\App\Services\SystemIncidentService::class)->report(
                     \App\Models\SystemIncident::TYPE_COMMS_FAILURE,
                     \App\Models\SystemIncident::SEVERITY_CRITICAL,
-                    'SMS delivery is failing',
-                    'An SMS batch failed to send with nothing delivered — the SMS gateway may be down or the API key rejected. Credential, OTP and reminder texts are affected.',
-                    ['failed' => $failedCount],
+                    $title,
+                    $desc,
+                    ['failed' => $failedCount, 'number_rejections' => $numberRejections, 'transport_errors' => $transportErrors, 'sample' => $sample],
                     \App\Models\SystemIncident::TYPE_COMMS_FAILURE . ':sms',
                     2 // page only after it recurs — a single transient batch failure won't
                 );
