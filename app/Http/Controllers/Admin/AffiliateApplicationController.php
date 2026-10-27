@@ -84,36 +84,62 @@ class AffiliateApplicationController extends Controller
         // application was linked — leaving a committed affiliate the admin then couldn't re-create
         // ("already exists"). If the existing user is an UNLINKED affiliate, finish the job (re-issue
         // credentials + link) instead of hard-blocking. Anything else is a genuine clash.
-        // withTrashed() is essential: the users_email_unique index counts SOFT-DELETED rows, so a
-        // deleted account still RESERVES the email — a plain where()->first() misses it (global
-        // soft-delete scope) and the subsequent insert then collides (1062 duplicate). So resolve
-        // the email against trashed rows too, and restore/reuse rather than hard-block or re-insert.
-        $existing = User::withTrashed()->where('email', $application->email)->first();
+        // Resolve the applicant against existing accounts by EMAIL *or* PHONE, INCLUDING soft-deleted
+        // rows: both users_email_unique and users_contact_number_unique count trashed rows, so a
+        // soft-deleted V1 affiliate reserves BOTH — and a returning affiliate may re-apply with a new
+        // email but the same phone (or vice-versa). A plain where()->first() misses trashed rows
+        // (global soft-delete scope) and the insert then collides (1062). Restore/reuse, don't re-insert.
+        $existing = User::withTrashed()
+            ->where(function ($q) use ($application) {
+                $q->where('email', $application->email);
+                if (filled($application->phone)) {
+                    $q->orWhere('contact_number', $application->phone);
+                }
+            })
+            ->first();
         if ($existing) {
             $isAffiliate   = (int) $existing->role === USER_ROLE_AFFILIATE;
             $alreadyLinked = AffiliateApplication::where('converted_user_id', $existing->id)->exists();
 
-            // A non-affiliate account (live or deleted) owns this email — a genuine cross-role
+            // A non-affiliate account (live or deleted) owns this email/phone — a genuine cross-role
             // collision the admin must resolve, never something to silently repurpose.
             if (! $isAffiliate) {
                 return back()->with('error', $existing->trashed()
-                    ? __('This email belonged to a previously-deleted account and still reserves the address. Use a different email, or permanently remove that account first.')
-                    : __('An account already exists with this email address.'));
+                    ? __('This email or phone belonged to a previously-deleted account and still reserves it. Use different details, or permanently remove that account first.')
+                    : __('An account already exists with this email or phone number.'));
             }
             // A live affiliate already linked to an application = a duplicate application, nothing to do.
             if ($alreadyLinked && ! $existing->trashed()) {
-                return back()->with('error', __('An affiliate account already exists for this email address.'));
+                return back()->with('error', __('An affiliate account already exists for this email/phone.'));
             }
 
-            // Otherwise: a soft-deleted affiliate, or a live unlinked affiliate from a half-finished
-            // prior approval → restore (if needed), re-issue credentials, ensure an affiliate record,
-            // and link to this application. Atomic.
+            // Otherwise: a soft-deleted affiliate (e.g. a returning V1 affiliate), or a live unlinked
+            // affiliate from a half-finished prior approval → restore (if needed), refresh to the
+            // applicant's CURRENT details, re-issue credentials, ensure an affiliate record, and link.
             $plainPassword = Str::random(10);
             DB::beginTransaction();
             try {
                 if ($existing->trashed()) {
                     $existing->restore();
                 }
+
+                // Bring the account up to the applicant's current details — a returning affiliate may
+                // re-apply with a new email/phone. Only adopt a field if no OTHER account holds it.
+                if (filled($application->email)
+                    && ! User::withTrashed()->where('email', $application->email)->where('id', '!=', $existing->id)->exists()) {
+                    $existing->email = $application->email;
+                }
+                if (filled($application->phone)
+                    && ! User::withTrashed()->where('contact_number', $application->phone)->where('id', '!=', $existing->id)->exists()) {
+                    $existing->contact_number = $application->phone;
+                }
+                if (filled($application->first_name)) {
+                    $existing->first_name = $application->first_name;
+                }
+                if (filled($application->last_name)) {
+                    $existing->last_name = $application->last_name;
+                }
+
                 $existing->password = Hash::make($plainPassword);
                 $existing->must_change_password = 1;
                 $existing->status = USER_STATUS_UNVERIFIED;
