@@ -9,6 +9,8 @@ use App\Services\AffiliateService;
 use App\Support\AffiliateInvite;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Str;
 
 /** Admin inbox for prospective-affiliate applications + one-click conversion into a full account. */
 class AffiliateApplicationController extends Controller
@@ -75,8 +77,42 @@ class AffiliateApplicationController extends Controller
         if ($application->status !== AffiliateApplication::STATUS_PENDING) {
             return back()->with('error', __('This application has already been handled.'));
         }
-        if (User::where('email', $application->email)->exists()) {
-            return back()->with('error', __('An account already exists with this email address.'));
+        // Recovery for a half-finished prior approval: before the delivery fix, a suppressed/invalid
+        // email or an SMS-gateway failure could throw AFTER the account was committed but BEFORE the
+        // application was linked — leaving a committed affiliate the admin then couldn't re-create
+        // ("already exists"). If the existing user is an UNLINKED affiliate, finish the job (re-issue
+        // credentials + link) instead of hard-blocking. Anything else is a genuine clash.
+        $existing = User::where('email', $application->email)->first();
+        if ($existing) {
+            $alreadyLinked = AffiliateApplication::where('converted_user_id', $existing->id)->exists();
+            if ((int) $existing->role !== USER_ROLE_AFFILIATE || $alreadyLinked) {
+                return back()->with('error', __('An account already exists with this email address.'));
+            }
+
+            // Re-issue credentials (the original temp password was random and not stored) + link.
+            $plainPassword = Str::random(10);
+            $existing->password = Hash::make($plainPassword);
+            $existing->must_change_password = 1;
+            $existing->save();
+            $application->update([
+                'status'            => AffiliateApplication::STATUS_APPROVED,
+                'converted_user_id' => $existing->id,
+            ]);
+            try {
+                sendLoginDetails($existing, $plainPassword);
+            } catch (\Throwable $e) {
+                Log::warning('Affiliate recovery credential delivery failed: ' . $e->getMessage(), ['user_id' => $existing->id]);
+            }
+
+            if (config('app.debug')) {
+                session()->flash('dev_credentials', [
+                    'name'  => $application->name,
+                    'email' => $application->email,
+                    'note'  => __('Existing affiliate account linked — fresh credentials re-sent.'),
+                ]);
+            }
+
+            return back()->with('success', __('This email already had an affiliate account from a previous attempt — linked it to this application and re-sent login details.'));
         }
 
         try {
@@ -96,7 +132,11 @@ class AffiliateApplicationController extends Controller
             ]);
         } catch (\Throwable $e) {
             Log::error('Affiliate application approval failed: ' . $e->getMessage(), ['application_id' => $application->id]);
-            return back()->with('error', __('Could not create the affiliate account. Please try again.'));
+            // Surface the actual reason to the admin (a trusted, internal screen) so a real failure
+            // is diagnosable instead of a dead-end "try again". Credential-delivery problems no
+            // longer land here (they're caught in registerAffiliate) — so anything reaching this is
+            // a genuine account-creation error worth seeing.
+            return back()->with('error', __('Could not create the affiliate account: ') . $e->getMessage());
         }
 
         // DEV ONLY: surface the temp password locally (no live email/SMS in dev).
