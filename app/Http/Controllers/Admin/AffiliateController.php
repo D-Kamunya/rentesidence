@@ -42,7 +42,13 @@ class AffiliateController extends Controller
      */
     private function buildCoverage(): array
     {
-        $base = Affiliate::query()->whereNull('deleted_at');
+        // Count only affiliates whose USER is live, so this total always agrees with the dashboard's
+        // "Total Affiliates" (User::where('role', affiliate)->count()). The Affiliate model has no
+        // soft-deletes, so a soft-deleted V1 affiliate can still leave a live affiliates row — scoping
+        // to live affiliate users keeps the two admin surfaces from drifting apart.
+        $base = Affiliate::query()
+            ->whereNull('deleted_at')
+            ->whereIn('user_id', User::where('role', USER_ROLE_AFFILIATE)->select('id'));
 
         $total      = (clone $base)->count();
         $unassigned = (clone $base)->where(fn ($q) => $q->whereNull('county')->orWhere('county', ''))->count();
