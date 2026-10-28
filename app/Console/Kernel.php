@@ -42,6 +42,8 @@ class Kernel extends ConsoleKernel
         $schedule->command('affiliate:activation-nudge')->dailyAt('10:00')->withoutOverlapping();
         // Activation: nudge owners who signed up but haven't added a property/tenant yet (bounded).
         $schedule->command('owner:activation-nudge')->dailyAt('10:30')->withoutOverlapping();
+        // Monthly SMS cushion for Transaction owners (granted resets — no rollover; purchased kept).
+        $schedule->command('sms:transaction-cushion')->monthlyOn(1, '06:00')->withoutOverlapping();
         // Re-engage owners stuck out of SMS credits with a paused backlog. Weekly is the cadence;
         // a per-owner Cache throttle inside the command backs it up. (Skips topped-up owners.)
         $schedule->command('sms:paused-digest')->weeklyOn(1, '08:30')->withoutOverlapping()
