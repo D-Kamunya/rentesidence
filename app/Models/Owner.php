@@ -9,7 +9,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 class Owner extends Model
 {
     use HasFactory, SoftDeletes;
-    protected $fillable = ['user_id'];
+    protected $fillable = ['user_id', 'activation_nudge_count', 'activation_nudged_at'];
 
     public function user()
     {
