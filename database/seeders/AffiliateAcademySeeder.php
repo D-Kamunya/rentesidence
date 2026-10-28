@@ -46,6 +46,7 @@ class AffiliateAcademySeeder extends Seeder
         // edited that module, the match fails and this safely no-ops. Guarded by its own one-time option.
         $this->patchTrialIsOptionalCopy();
         $this->patchSetupOnFreeAction();
+        $this->patchFinancingHeadline();
 
         if (getOption(self::VERSION_SENTINEL)) {
             return;
@@ -153,6 +154,34 @@ class AffiliateAcademySeeder extends Seeder
         });
 
         setOption('affiliate_academy_setup_free_v1', '1');
+    }
+
+    /**
+     * One-time, edit-safe split of the earnings module's "Screening, agreements & financing" lump
+     * into a small screening/agreements line + a FINANCING headline line, now that financing is the
+     * highest-value affiliate channel (2026-10-28 distribution sitting). The earnings uplift already
+     * shipped a dashboard announcement, which is what pulls affiliates who've passed this module back
+     * to re-read it. str_replace only touches content still carrying the shipped lump; config tokens
+     * render live so the rates stay current.
+     */
+    private function patchFinancingHeadline(): void
+    {
+        if (getOption('affiliate_academy_financing_headline_v1')) {
+            return;
+        }
+
+        $anchor = '<li><strong>Screening, agreements &amp; financing</strong> — the same first-time-then-recurring share of our take, on <em>any</em> plan, each time an owner uses them.</li>';
+        $added  = '<li><strong>Screening &amp; agreements</strong> — the same first-time-then-recurring share of our take, on <em>any</em> plan, each time an owner uses them (small amounts per use).</li><li><strong>★ Financing — the big one.</strong> When an owner takes <strong>infrastructure financing</strong>, you earn <strong>{{first_rate}}</strong> of <em>our origination fee</em> on the facility, then <strong>{{recurring_rate}}</strong> on any further facilities within {{recurring_months}} months. Because a facility is a large sum, this one-off cut can <strong>out-earn months of subscription commission</strong> — it is one of your highest-value opportunities, so treat a financing conversation as a priority. (Full detail in “Finance products in depth”.)</li>';
+
+        AcademyModule::where('content', 'like', '%Screening, agreements &amp; financing%')->get()->each(function ($m) use ($anchor, $added) {
+            if (str_contains($m->content, 'Financing — the big one')) {
+                return; // already split (fresh seed or prior run)
+            }
+            $m->content = str_replace($anchor, $added, $m->content);
+            $m->save();
+        });
+
+        setOption('affiliate_academy_financing_headline_v1', '1');
     }
 
     private function modules(): array
@@ -292,7 +321,7 @@ class AffiliateAcademySeeder extends Seeder
             [
                 'title' => 'Your earnings, in detail',
                 'duration' => 9,
-                'content' => '<h3>Exactly how your commission is worked out</h3><p>You earn a share of <strong>our</strong> take on your owners’ activity — so it’s always sustainable and rewards you well for the work put you in. The live rates are on your dashboard, and the <strong>earnings calculator on the Academy home page</strong> works them out for you. Here is what each line pays:</p><ul><li><strong>Rent collected — Transaction mode</strong> — when an owner is on <strong>Transaction mode</strong>, you earn a flat <strong>{{rent_commission}}</strong> of all the rent they collect, <em>every month for the first {{recurring_months}} months</em>. This is your bread and butter — getting active owners/landlords/agencies onto Transaction is the single best thing you can do for your income. (Free and subscription owners don’t carry this line — only Transaction.)</li><li><strong>Subscriptions</strong> — when an owner is on a paid plan you earn <strong>{{first_rate}}</strong> of the first payment, then <strong>{{recurring_rate}}</strong> for {{recurring_months}} months.</li><li><strong>Marketplace sales</strong> — you earn up to <strong>{{marketplace_cut}}</strong> of our commission on what owners sell to their tenants — on <em>any</em> plan, and our cut is highest on Free, so your share there is also the biggest.</li><li><strong>Screening, agreements &amp; financing</strong> — the same first-time-then-recurring share of our take, on <em>any</em> plan, each time an owner uses them.</li></ul><p><strong>How long each line pays:</strong> commission on an owner runs for <strong>{{recurring_months}} months</strong> from their first payment on that line — it is not indefinite. That is exactly why bringing on a steady flow of new owners is what grows your income.</p><h3>The big idea</h3><p>Your income is built from <em>activity</em> across many owners. A handful of busy <strong>Transaction-mode</strong> owners — each paying you {{rent_commission}} of their rent every month for their first {{recurring_months}} months — can out-earn a single subscription. And no owner is ever dead weight: even a <strong>Free</strong> owner earns you through the screening, agreements and marketplace sales they pay for. So you never neglect an owner. You instead guide them onto <strong>Transaction</strong> (to earn on their rent) and help every owner use the paid features. For owners on free, help them make use of the marketplace features so you can also earn as you show them incremental cash flow opportunities.</p><p><strong>Try it now:</strong> open the Academy home page and move the numbers in the earnings calculator to see your projected income. All the figures are pre-configured to our exact commission metrics, so what you see is what you’ll earn.</p>',
+                'content' => '<h3>Exactly how your commission is worked out</h3><p>You earn a share of <strong>our</strong> take on your owners’ activity — so it’s always sustainable and rewards you well for the work put you in. The live rates are on your dashboard, and the <strong>earnings calculator on the Academy home page</strong> works them out for you. Here is what each line pays:</p><ul><li><strong>Rent collected — Transaction mode</strong> — when an owner is on <strong>Transaction mode</strong>, you earn a flat <strong>{{rent_commission}}</strong> of all the rent they collect, <em>every month for the first {{recurring_months}} months</em>. This is your bread and butter — getting active owners/landlords/agencies onto Transaction is the single best thing you can do for your income. (Free and subscription owners don’t carry this line — only Transaction.)</li><li><strong>Subscriptions</strong> — when an owner is on a paid plan you earn <strong>{{first_rate}}</strong> of the first payment, then <strong>{{recurring_rate}}</strong> for {{recurring_months}} months.</li><li><strong>Marketplace sales</strong> — you earn up to <strong>{{marketplace_cut}}</strong> of our commission on what owners sell to their tenants — on <em>any</em> plan, and our cut is highest on Free, so your share there is also the biggest.</li><li><strong>Screening &amp; agreements</strong> — the same first-time-then-recurring share of our take, on <em>any</em> plan, each time an owner uses them (small amounts per use).</li><li><strong>★ Financing — the big one.</strong> When an owner takes <strong>infrastructure financing</strong>, you earn <strong>{{first_rate}}</strong> of <em>our origination fee</em> on the facility, then <strong>{{recurring_rate}}</strong> on any further facilities within {{recurring_months}} months. Because a facility is a large sum, this one-off cut can <strong>out-earn months of subscription commission</strong> — it is one of your highest-value opportunities, so treat a financing conversation as a priority. (Full detail in “Finance products in depth”.)</li></ul><p><strong>How long each line pays:</strong> commission on an owner runs for <strong>{{recurring_months}} months</strong> from their first payment on that line — it is not indefinite. That is exactly why bringing on a steady flow of new owners is what grows your income.</p><h3>The big idea</h3><p>Your income is built from <em>activity</em> across many owners. A handful of busy <strong>Transaction-mode</strong> owners — each paying you {{rent_commission}} of their rent every month for their first {{recurring_months}} months — can out-earn a single subscription. And no owner is ever dead weight: even a <strong>Free</strong> owner earns you through the screening, agreements and marketplace sales they pay for. So you never neglect an owner. You instead guide them onto <strong>Transaction</strong> (to earn on their rent) and help every owner use the paid features. For owners on free, help them make use of the marketplace features so you can also earn as you show them incremental cash flow opportunities.</p><p><strong>Try it now:</strong> open the Academy home page and move the numbers in the earnings calculator to see your projected income. All the figures are pre-configured to our exact commission metrics, so what you see is what you’ll earn.</p>',
                 'questions' => [
                     ['q' => 'You earn rent commission (a flat share of rent collected) on which owners?', 'options' => [
                         'Only owners on a subscription plan' => false,
