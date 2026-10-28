@@ -153,5 +153,6 @@
 
 @push('script')
     @include('common.layouts.datatable-script')
-    <script src="{{ asset('assets/js/custom/message.js') }}"></script>
+    @php($messageJs = public_path('assets/js/custom/message.js'))
+    <script src="{{ asset('assets/js/custom/message.js') }}?v={{ file_exists($messageJs) ? filemtime($messageJs) : '1' }}"></script>
 @endpush
