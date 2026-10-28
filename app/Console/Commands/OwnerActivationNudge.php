@@ -54,7 +54,7 @@ class OwnerActivationNudge extends Command
                         continue;
                     }
 
-                    $stage = Property::where('owner_id', $uid)->exists() ? 'tenant' : 'property';
+                    $stage = Property::where('owner_user_id', $uid)->exists() ? 'tenant' : 'property';
 
                     SendOwnerActivationNudgeMail::dispatch($uid, $stage);
                     $owner->increment('activation_nudge_count');
