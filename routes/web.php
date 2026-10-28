@@ -168,6 +168,11 @@ Route::post('/invite/{code}', [\App\Http\Controllers\PublicReferralController::c
     ->middleware('throttle:8,10')
     ->name('referral.invite.submit');
 
+// Scan-to-pay — a tenant scans the stable QR on their unit; this resolves their current unpaid rent
+// invoice and hands off to the existing public instant-pay flow. Throttled (public, token-based).
+Route::get('/rent/pay/{token}', [\App\Http\Controllers\ScanToPayController::class, 'resolve'])
+    ->middleware('throttle:20,1')->name('scan.pay');
+
 // Affiliate "Set up on Free" — the public activation link an invited owner opens. The account is
 // created only here (opening the link + setting a password = the owner's consent). The accept is
 // throttled so a leaked token can't be hammered.
