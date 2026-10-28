@@ -20,6 +20,9 @@
                         </ol>
                     </div>
                     @if ($tenant->status == TENANT_STATUS_ACTIVE)
+                        <a href="{{ route('owner.tenant.pay-card', $tenant->id) }}" target="_blank" rel="noopener" class="pf-btn pf-btn--ghost" title="{{ __('A printable QR the tenant scans to pay their current rent by M-Pesa — stick it on the unit door') }}">
+                            <i class="ri-qr-code-line"></i> {{ __('Scan-to-pay QR') }}
+                        </a>
                         <button type="button" id="addInvoice" class="pf-btn pf-btn--primary" title="{{ __('Add New Invoice') }}">
                             <i class="ri-add-line"></i> {{ __('Add New Invoice') }}
                         </button>
