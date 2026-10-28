@@ -33,6 +33,7 @@
                                     <th data-priority="1">{{ __('Name') }}</th>
                                     <th>{{ __('Email') }}</th>
                                     <th>{{ __('Phone') }}</th>
+                                    <th>{{ __('Received') }}</th>
                                     <th>{{ __('Status') }}</th>
                                     <th>{{ __('Action') }}</th>
                                 </thead>
@@ -71,6 +72,10 @@
                                         <tr>
                                             <th class="w-25">{{ __('Phone') }}</th>
                                             <td class="phone"></td>
+                                        </tr>
+                                        <tr>
+                                            <th class="w-25">{{ __('Received') }}</th>
+                                            <td class="received"></td>
                                         </tr>
                                         <tr>
                                             <th class="w-25">{{ __('Subject') }}</th>

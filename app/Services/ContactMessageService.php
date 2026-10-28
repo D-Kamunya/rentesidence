@@ -14,7 +14,8 @@ class ContactMessageService
     use ResponseTrait;
     public function getAllData()
     {
-        $messages = Message::query();
+        // Newest enquiries first so the freshest requests sit at the top of the inbox.
+        $messages = Message::query()->latest();
 
         return datatables($messages)
             ->addIndexColumn()
@@ -26,6 +27,14 @@ class ContactMessageService
             })
             ->addColumn('phone', function ($message) {
                 return $message->phone;
+            })
+            ->addColumn('received', function ($message) {
+                // When the enquiry came in — lets an admin judge how old/new a request is.
+                return $message->created_at
+                    ? '<span title="' . $message->created_at->toDayDateTimeString() . '">'
+                        . $message->created_at->format('M d, Y · H:i')
+                        . ' <span class="color-light font-12">(' . $message->created_at->diffForHumans() . ')</span></span>'
+                    : '<span class="color-light">&mdash;</span>';
             })
             ->addColumn('status', function ($message) {
                 if ($message->reply != null) {
@@ -51,13 +60,19 @@ class ContactMessageService
                     </form>
                 </div>';
             })
-            ->rawColumns(['name', 'status', 'action'])
+            ->rawColumns(['name', 'received', 'status', 'action'])
             ->make(true);
     }
 
     public function getInfo($id)
     {
-        return Message::findOrFail($id);
+        $message = Message::findOrFail($id);
+        // A pre-formatted "received" string for the detail modal, so the view doesn't have to
+        // parse/timezone the raw timestamp in JS. Older enquiries already carry created_at.
+        $message->received_h = $message->created_at
+            ? $message->created_at->format('M d, Y · H:i') . ' (' . $message->created_at->diffForHumans() . ')'
+            : null;
+        return $message;
     }
 
     public function reply($request)
