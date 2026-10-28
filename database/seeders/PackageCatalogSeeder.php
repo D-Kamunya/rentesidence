@@ -37,6 +37,10 @@ class PackageCatalogSeeder extends Seeder
 {
     public function run(): void
     {
+        // NOTE: the SMS grants below are a consistent 2× units on every paid band (2026-10-29). For
+        // FRESH installs this seeder plants them; for EXISTING installs a targeted migration updates
+        // the three previously-under-2× bands (Enterprise/Corporate/Institutional) WITHOUT re-
+        // baselining the whole catalogue over admin price edits — so the sentinel stays v7.
         // v7 sets FREE SMS to an explicit 3.00/credit (premium usage rail — free pays full freight;
         // paid bands stay 0.90 = the upgrade saving). (v6 added per-domain SMS pricing; v5 set
         // maintainer/invoice/auto-invoice to -1 unlimited; v4 soft-deleted stale bands; v3 zeroed
@@ -50,10 +54,12 @@ class PackageCatalogSeeder extends Seeder
         // rate on Free, lowest on the top tier; 3% floor in CommissionService protects it),
         // monthly SMS grant (reset each cycle — no carry-over).
         $bands = [
-            // SMS grant = ~2 SMS/unit as a perk on PAID bands (email-first covers receipts/
-            // notices; the SMS-worthy load is the bounded payment-reminder cadence), TAPERING at
-            // the top so we don't give away our SMS revenue line to the largest, least price-
-            // sensitive owners (they buy beyond the perk). No rollover — reset each cycle.
+            // SMS grant = a CONSISTENT ~2 SMS/unit on every PAID subscription band (the top
+            // bands were under 2× and are now aligned, so the "your plan silently covers your SMS"
+            // promise holds at every size). ~2/unit mirrors the owner SMS-buy advisory's per-tenant
+            // assumption. No rollover — reset each cycle. TRANSACTION can't be unit-sized (no unit
+            // ceiling) so it carries a small FLAT cushion (100) — a starter perk, not a usage cover;
+            // beyond it a Transaction owner buys SMS as they grow, at the cheap paid rate (0.90).
             // FREE gets ZERO grant: a free owner's whole value is usage revenue and SMS is the
             // earliest/most reliable usage rail — a recurring free grant would permanently blunt
             // it. Email reminders stay free, so the tier isn't crippled; SMS is paid from msg 1
@@ -68,9 +74,9 @@ class PackageCatalogSeeder extends Seeder
             ['Growth',         100,     40,  'subscription',  0,   0,    1.0,  0.0,   200,  0.90],
             ['Professional',   150,     39,  'subscription',  0,   0,    0.5,  0.0,   300,  0.90],
             ['Business',       200,     38,  'subscription',  0,   0,    0.0,  0.0,   400,  0.90],
-            ['Enterprise',     400,     30,  'subscription',  0,   0,    0.0,  0.5,   600,  0.90],
-            ['Corporate',      600,     29,  'subscription',  0,   0,    0.0,  1.0,   800,  0.90],
-            ['Institutional', 1000,     24,  'subscription',  0,   0,    0.0,  1.5,  1000,  0.90],
+            ['Enterprise',     400,     30,  'subscription',  0,   0,    0.0,  0.5,   800,  0.90],
+            ['Corporate',      600,     29,  'subscription',  0,   0,    0.0,  1.0,  1200,  0.90],
+            ['Institutional', 1000,     24,  'subscription',  0,   0,    0.0,  1.5,  2000,  0.90],
             // Transaction: 1% of rent, zero upfront, unlocks financing. No unit ceiling.
             ['Transaction', 1000000,     0,  'transaction',   0,   0,    0.0,  1.0,   100,  0.90],
             // Trial: admin one-tap taste of the full experience; time-boxed via end_date +
