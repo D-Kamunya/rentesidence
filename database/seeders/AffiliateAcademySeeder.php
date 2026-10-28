@@ -48,6 +48,7 @@ class AffiliateAcademySeeder extends Seeder
         $this->patchSetupOnFreeAction();
         $this->patchFinancingHeadline();
         $this->patchTransactionSmsCopy();
+        $this->patchTransactionSmsMonthly();
 
         if (getOption(self::VERSION_SENTINEL)) {
             return;
@@ -198,7 +199,7 @@ class AffiliateAcademySeeder extends Seeder
         }
 
         $anchor = 'Perfect for the fee-averse owner: “you only pay when you collect.” Transaction mode also unlocks <strong>financing</strong>.</p>';
-        $added  = 'Perfect for the fee-averse owner: “you only pay when you collect.” Transaction mode also unlocks <strong>financing</strong>. <strong>SMS on Transaction is pay-as-you-go too:</strong> a small starter cushion, then the owner buys credits as they need them at the paid rate (<strong>{{sms_paid_price}}</strong> — the same cheap rate as subscriptions, far below Free’s {{sms_free_price}}). There’s no unit-sized monthly allowance here because Transaction has <em>no unit cap</em> — so it can’t be sized the way subscription grants are.</p>';
+        $added  = 'Perfect for the fee-averse owner: “you only pay when you collect.” Transaction mode also unlocks <strong>financing</strong>. <strong>SMS on Transaction is pay-as-you-go:</strong> a small <strong>monthly cushion</strong> that resets each month (unused credits don’t carry over), and beyond it the owner buys credits as they need them at the paid rate (<strong>{{sms_paid_price}}</strong> — the same cheap rate as subscriptions, far below Free’s {{sms_free_price}}). Credits they <strong>buy never expire</strong>; only the monthly cushion resets. There’s no unit-sized allowance here because Transaction has <em>no unit cap</em>.</p>';
 
         AcademyModule::where('content', 'like', '%Transaction mode also unlocks%')->get()->each(function ($m) use ($anchor, $added) {
             if (str_contains($m->content, 'SMS on Transaction is pay-as-you-go')) {
@@ -209,6 +210,29 @@ class AffiliateAcademySeeder extends Seeder
         });
 
         setOption('affiliate_academy_transaction_sms_v1', '1');
+    }
+
+    /**
+     * Upgrade the Transaction-SMS copy from the first wording ("small starter cushion", a one-time
+     * grant) to the final "monthly cushion that resets (unused don't carry over); bought credits
+     * never expire" — now that a scheduled command re-grants the Transaction cushion monthly. Only
+     * touches an install still carrying the old phrase; idempotent, self-guarded.
+     */
+    private function patchTransactionSmsMonthly(): void
+    {
+        if (getOption('affiliate_academy_transaction_sms_v2')) {
+            return;
+        }
+
+        $old = 'a small starter cushion, then the owner buys credits as they need them at the paid rate (<strong>{{sms_paid_price}}</strong> — the same cheap rate as subscriptions, far below Free’s {{sms_free_price}}). There’s no unit-sized monthly allowance here because Transaction has <em>no unit cap</em> — so it can’t be sized the way subscription grants are.</p>';
+        $new = 'a small <strong>monthly cushion</strong> that resets each month (unused credits don’t carry over), and beyond it the owner buys credits as they need them at the paid rate (<strong>{{sms_paid_price}}</strong> — the same cheap rate as subscriptions, far below Free’s {{sms_free_price}}). Credits they <strong>buy never expire</strong>; only the monthly cushion resets. There’s no unit-sized allowance here because Transaction has <em>no unit cap</em>.</p>';
+
+        AcademyModule::where('content', 'like', '%a small starter cushion%')->get()->each(function ($m) use ($old, $new) {
+            $m->content = str_replace($old, $new, $m->content);
+            $m->save();
+        });
+
+        setOption('affiliate_academy_transaction_sms_v2', '1');
     }
 
     private function modules(): array
@@ -319,7 +343,7 @@ class AffiliateAcademySeeder extends Seeder
             [
                 'title' => 'Plans & pricing — Free, Trial, Transaction & Subscription',
                 'duration' => 11,
-                'content' => '<h3>Four ways an owner can be on Centresidence</h3><p>You must know these well since pricing is where deals are won or lost. The whole model is simple: <strong>get the owner in on Free, let them use it, and the savings pull them up to a paid plan.</strong></p><h4>1. Free — the way in</h4><p>Permanent, no subscription fee, manages up to {{free_cap}} units, and <strong>every feature works</strong>. The catch is not features — it is <strong>usage price</strong>. On Free the owner pays <strong>full freight on usage</strong>: SMS costs <strong>{{sms_free_price}}</strong> per message, and the platform’s marketplace commission is at its highest. That is deliberate: Free is how we earn from owners who don’t subscribe, and it is the reason to upgrade. <em>Email reminders are free</em>, so the owner is never stuck.</p><h4>2. Trial — the taste</h4><p>A time-boxed trial you request for a warm owner. It grants usage <strong>free</strong> ({{trial_sms_grant}} free SMS, up to {{trial_cap}} units) so they feel the full system at <strong>no cost</strong>. When it ends, the account <strong>lands softly on Free</strong> — it never locks them out. Use the trial as a <strong>closing tool</strong>: the clock gives you a reason to follow up and convert.</p><h4>3. Transaction (pay-as-you-go)</h4><p><strong>No monthly fee</strong> — the platform simply takes a small percentage ({{platform_rent_fee}}) of rent collected. Perfect for the fee-averse owner: “you only pay when you collect.” Transaction mode also unlocks <strong>financing</strong>. <strong>SMS on Transaction is pay-as-you-go too:</strong> a small starter cushion, then the owner buys credits as they need them at the paid rate (<strong>{{sms_paid_price}}</strong> — the same cheap rate as subscriptions, far below Free’s {{sms_free_price}}). There’s no unit-sized monthly allowance here because Transaction has <em>no unit cap</em> — so it can’t be sized the way subscription grants are.</p><h4>4. Subscription</h4><p>A flat monthly price per unit band (grow your portfolio without growing the bill). Paid plans <strong>reduce usage costs</strong>: SMS drops to about <strong>{{sms_paid_price}}</strong> (vs {{sms_free_price}} on Free) and the marketplace commission is lower. For an owner with volume, upgrading <em>saves money</em>.</p><h3>Why owners upgrade — your upgrade story</h3><p>You don’t “sell a subscription”. You get them collecting rent on Free, and then show the maths: “You’re sending X SMS a month at {{sms_free_price}} each — on a plan they’re {{sms_paid_price}}. The plan pays for itself.” The system’s Upgrade Advisor nudges this too. Cheaper usage is the pull; you just point at it.</p>',
+                'content' => '<h3>Four ways an owner can be on Centresidence</h3><p>You must know these well since pricing is where deals are won or lost. The whole model is simple: <strong>get the owner in on Free, let them use it, and the savings pull them up to a paid plan.</strong></p><h4>1. Free — the way in</h4><p>Permanent, no subscription fee, manages up to {{free_cap}} units, and <strong>every feature works</strong>. The catch is not features — it is <strong>usage price</strong>. On Free the owner pays <strong>full freight on usage</strong>: SMS costs <strong>{{sms_free_price}}</strong> per message, and the platform’s marketplace commission is at its highest. That is deliberate: Free is how we earn from owners who don’t subscribe, and it is the reason to upgrade. <em>Email reminders are free</em>, so the owner is never stuck.</p><h4>2. Trial — the taste</h4><p>A time-boxed trial you request for a warm owner. It grants usage <strong>free</strong> ({{trial_sms_grant}} free SMS, up to {{trial_cap}} units) so they feel the full system at <strong>no cost</strong>. When it ends, the account <strong>lands softly on Free</strong> — it never locks them out. Use the trial as a <strong>closing tool</strong>: the clock gives you a reason to follow up and convert.</p><h4>3. Transaction (pay-as-you-go)</h4><p><strong>No monthly fee</strong> — the platform simply takes a small percentage ({{platform_rent_fee}}) of rent collected. Perfect for the fee-averse owner: “you only pay when you collect.” Transaction mode also unlocks <strong>financing</strong>. <strong>SMS on Transaction is pay-as-you-go:</strong> a small <strong>monthly cushion</strong> that resets each month (unused credits don’t carry over), and beyond it the owner buys credits as they need them at the paid rate (<strong>{{sms_paid_price}}</strong> — the same cheap rate as subscriptions, far below Free’s {{sms_free_price}}). Credits they <strong>buy never expire</strong>; only the monthly cushion resets. There’s no unit-sized allowance here because Transaction has <em>no unit cap</em>.</p><h4>4. Subscription</h4><p>A flat monthly price per unit band (grow your portfolio without growing the bill). Paid plans <strong>reduce usage costs</strong>: SMS drops to about <strong>{{sms_paid_price}}</strong> (vs {{sms_free_price}} on Free) and the marketplace commission is lower. For an owner with volume, upgrading <em>saves money</em>.</p><h3>Why owners upgrade — your upgrade story</h3><p>You don’t “sell a subscription”. You get them collecting rent on Free, and then show the maths: “You’re sending X SMS a month at {{sms_free_price}} each — on a plan they’re {{sms_paid_price}}. The plan pays for itself.” The system’s Upgrade Advisor nudges this too. Cheaper usage is the pull; you just point at it.</p>',
                 'questions' => [
                     ['q' => 'What is the real difference between Free and a paid plan?', 'options' => [
                         'Free can only manage one unit' => false,
