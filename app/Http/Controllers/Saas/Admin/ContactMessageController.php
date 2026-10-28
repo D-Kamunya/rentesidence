@@ -36,6 +36,12 @@ class ContactMessageController extends Controller
         $data = $this->contactMessageService->getInfo($request->id);
         $data->is_view = ACTIVE;
         $data->save();
+        // NB: set display-only attributes AFTER save() — a non-column attribute set before save
+        // would be treated as a dirty column and blow up the UPDATE.
+        // When the enquiry was received, pre-formatted for the modal (older enquiries carry created_at).
+        $data->received_h = $data->created_at
+            ? $data->created_at->format('M d, Y · H:i') . ' (' . $data->created_at->diffForHumans() . ')'
+            : null;
         // Surface the referring affiliate (if any) so the admin knows this is an attributed lead.
         $data->load('referralAffiliate.user');
         $data->referral_affiliate_name = optional(optional($data->referralAffiliate)->user)->name;

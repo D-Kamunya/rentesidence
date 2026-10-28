@@ -66,13 +66,7 @@ class ContactMessageService
 
     public function getInfo($id)
     {
-        $message = Message::findOrFail($id);
-        // A pre-formatted "received" string for the detail modal, so the view doesn't have to
-        // parse/timezone the raw timestamp in JS. Older enquiries already carry created_at.
-        $message->received_h = $message->created_at
-            ? $message->created_at->format('M d, Y · H:i') . ' (' . $message->created_at->diffForHumans() . ')'
-            : null;
-        return $message;
+        return Message::findOrFail($id);
     }
 
     public function reply($request)
