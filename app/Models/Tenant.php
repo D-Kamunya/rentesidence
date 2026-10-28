@@ -29,8 +29,29 @@ class Tenant extends Model
         'late_fee_type',
         'late_fee',
         'incident_receipt',
+        'pay_token',
         // add any other tenant fields you want mass-assignable
     ];
+
+    protected static function booted(): void
+    {
+        // Every tenant gets a stable scan-to-pay token at creation (backfilled for existing rows).
+        static::creating(function (Tenant $tenant) {
+            if (empty($tenant->pay_token)) {
+                $tenant->pay_token = \Illuminate\Support\Str::random(40);
+            }
+        });
+    }
+
+    /** Lazily guarantee a scan-to-pay token (for any row that predates the column / a null slip). */
+    public function ensurePayToken(): string
+    {
+        if (empty($this->pay_token)) {
+            $this->pay_token = \Illuminate\Support\Str::random(40);
+            $this->save();
+        }
+        return $this->pay_token;
+    }
     /**
      * Get the user associated with the Tenant
      *

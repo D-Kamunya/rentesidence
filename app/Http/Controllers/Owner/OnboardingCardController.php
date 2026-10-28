@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Owner;
 
 use App\Http\Controllers\Controller;
 use App\Models\Property;
+use App\Models\Tenant;
 use SimpleSoftwareIO\QrCode\Facades\QrCode;
 
 /**
@@ -26,6 +27,28 @@ class OnboardingCardController extends Controller
             'qrSvg'    => $qr,
             'url'      => $url,
             'appName'  => getOption('app_name') ?: 'Centresidence',
+        ]);
+    }
+
+    /**
+     * A printable scan-to-pay card for one tenant: their unit + a QR encoding the STABLE scan-to-pay
+     * link. The tenant scans it to pay their current rent by M-Pesa, no login — the owner can stick
+     * it on the unit door. The QR never changes; it resolves the current invoice each time.
+     */
+    public function payCard($tenant)
+    {
+        $tenant = Tenant::with(['user', 'unit', 'property'])
+            ->where('owner_user_id', auth()->id())
+            ->findOrFail($tenant);
+
+        $url = route('scan.pay', $tenant->ensurePayToken());
+        $qr  = QrCode::format('svg')->size(240)->margin(0)->errorCorrection('M')->generate($url);
+
+        return view('owner.tenant.scan-pay-card', [
+            'tenant'  => $tenant,
+            'qrSvg'   => $qr,
+            'url'     => $url,
+            'appName' => getOption('app_name') ?: 'Centresidence',
         ]);
     }
 }

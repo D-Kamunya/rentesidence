@@ -143,6 +143,8 @@ Route::group(['prefix' => 'owner', 'as' => 'owner.', 'middleware' => ['auth', 'o
     Route::group(['prefix' => 'tenant', 'as' => 'tenant.'], function () {
         Route::get('/', [TenantController::class, 'index'])->name('index');
         Route::get('create', [TenantController::class, 'create'])->name('create');
+        // Printable scan-to-pay QR card for one tenant (stick it on the unit door).
+        Route::get('{tenant}/pay-card', [\App\Http\Controllers\Owner\OnboardingCardController::class, 'payCard'])->name('pay-card');
         Route::get('edit/{id}', [TenantController::class, 'edit'])->name('edit');
         // In-place unit transfer (move within the same property, no close).
         Route::get('transfer/{id}', [TenantController::class, 'transferForm'])->name('transfer');
