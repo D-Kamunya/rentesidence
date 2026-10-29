@@ -1076,7 +1076,7 @@ if (!function_exists('effectiveOwnerPrintDetails')) {
 }
 
 if (!function_exists('handleSubscriptionPaymentConfirmation')) {
-    function handleSubscriptionPaymentConfirmation($order, $payerId = null, $gateway_slug, $paymentCheck = null)
+    function handleSubscriptionPaymentConfirmation($order, $payerId, $gateway_slug, $paymentCheck = null)
     {
         try {
             $gateway = Gateway::find($order->gateway_id);
@@ -1182,7 +1182,7 @@ if (!function_exists('handleSubscriptionPaymentConfirmation')) {
 
 
 if (!function_exists('handleProductPaymentConfirmation')) {
-    function handleProductPaymentConfirmation($order, $payerId = null, $gateway_slug, $paymentCheck = null)
+    function handleProductPaymentConfirmation($order, $payerId, $gateway_slug, $paymentCheck = null)
     {
         try {
             $gateway = Gateway::find($order->gateway_id);
