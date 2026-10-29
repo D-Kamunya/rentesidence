@@ -295,7 +295,11 @@ class AcademyAdminController extends Controller
 
             $isCertified = $totalModules > 0 && $completedModules === $totalModules;
 
-            $needsReview = !$isCertified && $attempts >= 3;
+            // Key the badge off the ACTUAL per-module block flag ($progressNeedsReview), not just
+            // "used 3 attempts" — an affiliate who took all 3 tries but PASSED the module isn't blocked
+            // and must not show "Needs Review" (there's no module to reset + no admin was alerted). This
+            // keeps the badge, the "Allow Retake" button, and the admin block-notification in agreement.
+            $needsReview = !$isCertified && $progressNeedsReview !== null;
 
             return [
                 'id' => $affiliate->id,
@@ -357,13 +361,16 @@ class AcademyAdminController extends Controller
     
         $progress->save();
 
-        // Tell the affiliate (bell) — otherwise they have no way of knowing the block was lifted.
+        // Tell the affiliate — otherwise they have no way of knowing the block was lifted.
+        // Two channels, for the two ways they might find out: an in-app BELL (if they come back),
+        // and an EMAIL (the one that reaches a discouraged affiliate who already walked away).
+        $moduleTitle = optional($progress->module)->title ?? __('your module');
         try {
             if ($affiliate->user_id) {
                 $url = \Illuminate\Support\Facades\Route::has('affiliate.academy.index') ? route('affiliate.academy.index') : url('/');
                 addNotification(
                     __('Your academy retake has been reset'),
-                    __('You can now retake ":module" — give it another go.', ['module' => optional($progress->module)->title]),
+                    __('You can now retake ":module" — give it another go.', ['module' => $moduleTitle]),
                     $url,
                     null,
                     (int) $affiliate->user_id,
@@ -372,6 +379,12 @@ class AcademyAdminController extends Controller
             }
         } catch (\Throwable $e) {
             \Illuminate\Support\Facades\Log::error('Retake reset notify failed: ' . $e->getMessage());
+        }
+        // Encouraging "you can continue now" email — fail-safe, never blocks the reset.
+        try {
+            \App\Jobs\Mail\SendAcademyRetakeResetMail::dispatch((int) $affiliate->id, $moduleTitle);
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::error('Retake reset email dispatch failed: ' . $e->getMessage());
         }
 
         return back()->with('success', "Module '{$progress->module->title}' has been reset. Affiliate can retake it.");
