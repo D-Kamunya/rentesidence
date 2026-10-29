@@ -107,7 +107,16 @@
                                 </div>
                                 <div>
                                     <span style="font-weight:500;">Maximum attempts reached.</span>
-                                    This module is pending admin review.
+                                    This module is pending admin review — you'll be notified by email the moment it's reopened for you.
+                                    <div class="mt-2">
+                                        <a href="{{ route('support.index') }}"
+                                            class="btn-contact-support"
+                                            style="display:inline-flex;align-items:center;gap:6px;background:#185FA5;color:#fff;font-size:12.5px;font-weight:600;padding:7px 14px;border-radius:8px;text-decoration:none;">
+                                            <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M8 1.5a6.5 6.5 0 00-5.5 9.95L1.5 14.5l3.2-1a6.5 6.5 0 103.3-12z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/></svg>
+                                            Contact support
+                                        </a>
+                                        <span style="color:#6b7280;font-size:12px;margin-left:6px;">Stuck on this module? We're happy to help.</span>
+                                    </div>
                                 </div>
                             </div>
                         @endif

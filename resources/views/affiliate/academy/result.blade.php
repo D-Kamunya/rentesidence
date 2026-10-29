@@ -78,6 +78,32 @@
                                         </a>
 
                                     </div>
+                                @elseif ($attempts >= 3)
+                                    {{-- Blocked: all 3 attempts used. Don't offer a dead "Try Again"
+                                         (it only hits the guard) — route them to help + reassure them. --}}
+                                    <p class="lead text-danger mb-1">
+                                        You've used all 3 attempts on this module.
+                                    </p>
+
+                                    <p class="text-muted mb-4">
+                                        No problem — this happens. Your module is now with our team for review, and
+                                        <strong>we'll email you the moment it's reopened</strong> so you can continue.
+                                        If anything was unclear, reach out and we'll help you through it.
+                                    </p>
+
+                                    <div class="academy-actions">
+
+                                        <a href="{{ route('support.index') }}"
+                                            class="academy-btn academy-btn-support">
+                                            Contact Support
+                                        </a>
+
+                                        <a href="{{ route('affiliate.academy.index') }}"
+                                            class="academy-btn academy-btn-outline">
+                                            Return to Academy
+                                        </a>
+
+                                    </div>
                                 @else
                                     <p class="lead text-danger mb-1">
                                         You did not reach the 80% passing score.
@@ -235,6 +261,19 @@
             .academy-btn-outline:hover{
             background:#f9fafb;
             transform:translateY(-2px);
+            }
+
+            .academy-btn-support{
+            background:linear-gradient(135deg,#1f6fb8,#185FA5);
+            color:#fff !important;
+            text-decoration:none !important;
+            }
+
+            .academy-btn-support:hover{
+            color:#fff !important;
+            text-decoration:none !important;
+            transform:translateY(-2px);
+            box-shadow:0 8px 20px rgba(24,95,165,0.25);
             }
 
             .academy-btn-cert{
