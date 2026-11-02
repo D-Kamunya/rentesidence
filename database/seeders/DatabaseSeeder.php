@@ -41,6 +41,7 @@ class DatabaseSeeder extends Seeder
             AffiliateAnnouncementSeeder::class,
             FaqSeeder::class,
             BlogSeeder::class,
+            BlogContentSeeder::class,
             DemoSandboxSeeder::class, // the read-only guided-demo account (needs packages + catalog + terms above)
         ]);
     }
