@@ -5,16 +5,39 @@
     $pageDescription = $post->meta_description ?? Str::limit(strip_tags($post->body), 160);
 @endphp
 
+@php
+    $ogImage = $post->featured_image ? asset('storage/' . $post->featured_image) : getSettingImage('app_logo');
+    $ogDesc  = $post->excerpt ?? Str::limit(strip_tags($post->body), 200);
+@endphp
+
 @section('title', $pageTitle)
 @section('meta_description', $pageDescription)
 @section('meta_keywords', $post->meta_keywords ?? '')
+@section('canonical', route('blog.show', $post->slug))
+@section('og_type', 'article')
+@section('og_title', $post->title)
+@section('og_description', $ogDesc)
+@section('og_image', $ogImage)
 
-@push('meta')
-<meta property="og:title" content="{{ $post->title }}">
-<meta property="og:description" content="{{ $post->excerpt ?? Str::limit(strip_tags($post->body), 200) }}">
-<meta property="og:image" content="{{ $post->featured_image ? asset('storage/' . $post->featured_image) : '' }}">
-<meta property="og:url" content="{{ route('blog.show', $post->slug) }}">
-<meta name="twitter:card" content="summary_large_image">
+@push('jsonld')
+<script type="application/ld+json">
+{!! json_encode([
+    '@context' => 'https://schema.org',
+    '@type'    => 'Article',
+    'mainEntityOfPage' => ['@type' => 'WebPage', '@id' => route('blog.show', $post->slug)],
+    'headline'      => Str::limit($post->title, 110),
+    'description'   => $ogDesc,
+    'image'         => $ogImage,
+    'datePublished' => optional($post->published_at)->toAtomString(),
+    'dateModified'  => optional($post->updated_at ?? $post->published_at)->toAtomString(),
+    'author'    => ['@type' => 'Person', 'name' => $post->author->name ?? (getOption('app_name') ?: 'Centresidence')],
+    'publisher' => [
+        '@type' => 'Organization',
+        'name'  => getOption('app_name') ?: 'Centresidence',
+        'logo'  => ['@type' => 'ImageObject', 'url' => getSettingImage('app_logo')],
+    ],
+], JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT) !!}
+</script>
 @endpush
 
 @section('content')
