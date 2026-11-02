@@ -156,9 +156,30 @@
             </div>
             @endif
 
+            {{-- Readable prose styling for the admin-authored post HTML (scoped so it never
+                 leaks to the rest of the page). Constrains heading sizes, spaces paragraphs,
+                 and makes in-body links look like links. --}}
+            <style>
+                .cs-article > *:first-child { margin-top: 0; }
+                .cs-article h2 { font-size: 1.5rem; font-weight: 600; color: #111827; line-height: 1.3; margin: 2rem 0 .75rem; }
+                .cs-article h3 { font-size: 1.22rem; font-weight: 600; color: #111827; line-height: 1.35; margin: 1.9rem 0 .6rem; }
+                .cs-article h4 { font-size: 1.05rem; font-weight: 600; color: #111827; margin: 1.6rem 0 .5rem; }
+                .cs-article p { margin: 0 0 1.1rem; }
+                .cs-article ul, .cs-article ol { margin: 0 0 1.1rem; padding-left: 1.3rem; }
+                .cs-article li { margin-bottom: .4rem; }
+                .cs-article a { color: #185FA5; text-decoration: underline; text-underline-offset: 2px; font-weight: 500; }
+                .cs-article strong { color: #111827; font-weight: 600; }
+                .cs-article blockquote { margin: 1.2rem 0; padding: .4rem 1rem; border-left: 3px solid #185FA5; color: #4b5563; background: #f8fafc; }
+                .cs-article img { max-width: 100%; height: auto; border-radius: 8px; }
+                @media (max-width: 576px) {
+                    .cs-article h2 { font-size: 1.3rem; }
+                    .cs-article h3 { font-size: 1.12rem; }
+                }
+            </style>
+
             {{-- Article Body --}}
             <div class="ow-card mb-5" style="background: #fff; border: 0.5px solid #e5e7eb; border-radius: 12px; padding: 32px; box-shadow: 0 4px 12px rgba(0,0,0,0.04);">
-                <div style="font-size: 16px; line-height: 1.8; color: #374151;">
+                <div class="cs-article" style="font-size: 16px; line-height: 1.8; color: #374151;">
                     {!! $post->body !!}
                 </div>
                 
