@@ -9,31 +9,36 @@ use Illuminate\Database\Seeder;
 use Illuminate\Support\Str;
 
 /**
- * Weekly-content backlog, batch 1. Installs evergreen, SEO-oriented articles as DRAFTS
+ * Weekly-content backlog. Installs evergreen, SEO-oriented articles as DRAFTS
  * (status=draft, published_at=null) so an admin reviews each and PUBLISHES on their own
- * cadence (one a week) — the "batch-then-drip" model. Non-destructive: it never touches
- * existing posts, creates pillar categories only if absent, and seeds each post only if
- * its slug doesn't already exist. Sentinel-gated so a re-deploy won't resurrect a draft
- * the admin deleted. Bump the sentinel (…_v2) to add the next batch.
+ * cadence (one a week) — the "batch-then-drip" model.
+ *
+ * Multi-batch: each batch has its OWN sentinel and runs independently, so adding a later
+ * batch never re-runs an earlier one. Non-destructive throughout: pillar categories via
+ * firstOrCreate, each post seeded only if its slug doesn't already exist (never clobbers a
+ * published/edited post, or a draft the admin deleted). To add the NEXT batch, append a
+ * batchN() method + one more seedBatch() call with a fresh sentinel.
  *
  *   php artisan db:seed --class=Database\\Seeders\\BlogContentSeeder
  */
 class BlogContentSeeder extends Seeder
 {
-    private const SENTINEL = 'blog_content_batch_v1';
-
     public function run(): void
     {
-        if (getOption(self::SENTINEL)) {
-            return;
-        }
-
         $authorId = User::where('role', USER_ROLE_ADMIN)->value('id') ?? User::value('id');
         if (! $authorId) {
             return; // bare install, nothing to attribute to
         }
 
-        // Pillars — topical clusters so weekly posts build authority instead of scattering.
+        $catId = $this->pillars();
+
+        $this->seedBatch('blog_content_batch_v1', $this->batch1($catId), $authorId);
+        $this->seedBatch('blog_content_batch_v2', $this->batch2($catId), $authorId);
+    }
+
+    /** Pillar categories (topical clusters). Idempotent — safe to call every run. */
+    private function pillars(): array
+    {
         $pillars = [
             'going-digital'     => ['Going Digital', 'Why modern property management beats paper and spreadsheets.', '#185FA5', 2],
             'rent-and-payments' => ['Rent & Payments', 'Collecting rent the modern way — M-Pesa, receipts, reconciliation.', '#1D9E75', 3],
@@ -47,18 +52,26 @@ class BlogContentSeeder extends Seeder
             );
             $catId[$slug] = $cat->id;
         }
+        return $catId;
+    }
 
-        foreach ($this->posts($catId) as $p) {
+    /** Seed one batch once (guarded by its own sentinel); skip any post whose slug exists. */
+    private function seedBatch(string $sentinel, array $posts, int $authorId): void
+    {
+        if (getOption($sentinel)) {
+            return;
+        }
+        foreach ($posts as $p) {
             $slug = Str::slug($p['title']);
             if (BlogPost::where('slug', $slug)->withTrashed()->exists()) {
-                continue; // never clobber an existing/edited/published post
+                continue;
             }
             BlogPost::create([
                 'blog_category_id' => $p['category_id'],
                 'author_id'        => $authorId,
                 'title'            => $p['title'],
                 'slug'             => $slug,
-                'status'           => 'draft',          // admin reviews, then publishes
+                'status'           => 'draft',
                 'published_at'     => null,
                 'body'             => $p['body'],
                 'excerpt'          => $p['excerpt'],
@@ -69,11 +82,10 @@ class BlogContentSeeder extends Seeder
                 'is_featured'      => 0,
             ]);
         }
-
-        setOption(self::SENTINEL, 1);
+        setOption($sentinel, 1);
     }
 
-    private function posts(array $catId): array
+    private function batch1(array $catId): array
     {
         return [
             [
@@ -131,6 +143,68 @@ class BlogContentSeeder extends Seeder
                     . "<h3>Settle transparently at move-out</h3><p>At the end of the tenancy, walk the unit against the move-in record, itemise any genuine deductions (with reasons the tenant can see), settle outstanding dues, and refund the balance promptly. Transparency is what defuses the tension: a tenant who can see exactly what was deducted and why rarely disputes a fair figure. Silence and delay are what turn deposits into fights.</p>"
                     . "<h3>Why doing it well pays you back</h3><p>Deposits are returned at the emotional end of a tenancy — the moment a tenant decides whether they would recommend you or warn others. A clean, documented, prompt refund is some of the cheapest reputation you will ever buy. In a market where good tenants talk to each other, that matters more than the deposit itself.</p>"
                     . "<p>Hold it separately, document condition early, settle transparently. Three habits, and the most common dispute in renting mostly goes away. <a href=\"/\">See how the records come together</a>.</p>",
+            ],
+        ];
+    }
+
+    private function batch2(array $catId): array
+    {
+        return [
+            [
+                'category_id'      => $catId['rent-and-payments'],
+                'title'            => 'Late rent is a process problem, not a people problem',
+                'excerpt'          => 'Most late rent is not a bad tenant — it is friction and forgetting. Fix the process and the arrears mostly fix themselves. Here is how.',
+                'meta_description' => 'Late rent in Kenya is usually a process problem, not a people problem. Here is how automated invoicing, reminders and easy payment cut arrears without chasing tenants.',
+                'meta_keywords'    => 'reduce rent arrears, late rent reminders, rent collection Kenya, overdue rent',
+                'body'             =>
+                    "<p>When rent comes in late, the instinct is to blame the tenant. Sometimes that is fair. Far more often, the real culprit is the process around the payment: no clear reminder, an awkward way to pay, a due date nobody wrote down. Treat late rent as a process problem and most of it quietly disappears — without a single difficult conversation.</p>"
+                    . "<h3>Remove the \"I forgot\"</h3><p>People do not plan to pay late; they get busy and the date slips. An invoice that arrives on time, with a gentle reminder before the due date and a clear nudge just after, removes the most common cause of arrears without you having to send a single message yourself. Automation does the chasing you would rather not do.</p>"
+                    . "<h3>Remove the friction</h3><p>Every extra step between \"I should pay\" and \"paid\" is a chance to stall. When paying is a tap on the phone — M-Pesa built in, the right amount already attached to the right invoice — there is nothing to put off. Make the easy path the paying path.</p>"
+                    . "<h3>See it before it grows</h3><p>Arrears are cheapest to fix early. A live view of who is paid, pending and overdue — across every unit — lets you catch a slipping tenant in week one, not month three. Early, friendly, specific beats late, tense and vague every time.</p>"
+                    . "<h3>Keep the relationship intact</h3><p>The quiet benefit of an automated process is that the system does the nagging, not you. The reminders are neutral and consistent; you stay the reasonable landlord. Good tenants appreciate the clarity, and you avoid turning a cash-flow issue into a personal one.</p>"
+                    . "<p>Invoice on time, remind automatically, make paying effortless, and watch the numbers. Arrears are usually a design problem — so redesign them away. <a href=\"/\">See how it fits together</a>.</p>",
+            ],
+            [
+                'category_id'      => $catId['going-digital'],
+                'title'            => 'Run all your properties from your phone',
+                'excerpt'          => 'Managing property should not tie you to a desk or a notebook. Here is what it looks like to run every unit, tenant and payment from the phone already in your pocket.',
+                'meta_description' => 'You should be able to run every unit, tenant and rent payment from your phone. Here is what mobile-first property management looks like — one dashboard, anywhere.',
+                'meta_keywords'    => 'property management app, manage rentals from phone, landlord app Kenya, mobile rent management',
+                'body'             =>
+                    "<p>Property does not keep office hours. A tenant moves in on a Saturday, a payment lands at midnight, a question comes while you are upcountry. If managing your units means getting back to a desk and a notebook, you are always a step behind. The fix is simple: carry the whole thing in your pocket.</p>"
+                    . "<h3>One dashboard, everywhere</h3><p>Every property, every unit, every tenant and every payment on one screen — the same whether you open it on a laptop or a phone. What is paid, pending and overdue is accurate in real time, so you always know where you stand without digging.</p>"
+                    . "<h3>Install it like an app</h3><p>No app store, no download hassle. Add it to your home screen and it behaves like any other app — fast, full-screen, a tap away. Your tenants get the same: their invoices, receipts and payments, installable on their phone too.</p>"
+                    . "<h3>Act in the moment</h3><p>Onboard a new tenant where you are standing. Check a payment the second it lands. Answer a query with the record in front of you. The work stops piling up for \"when I get home\", because home is wherever your phone is.</p>"
+                    . "<h3>Nothing left in a notebook</h3><p>The quiet win of a phone-first system is that nothing lives only in your head or on paper any more. It is all captured, backed up and searchable — so a lost notebook or a forgotten detail stops being a risk to your income.</p>"
+                    . "<p>If you can message on your phone, you can run your properties on it. That is the whole idea. <a href=\"/\">Try it from your phone</a>.</p>",
+            ],
+            [
+                'category_id'      => $catId['tenants-leasing'],
+                'title'            => 'Moving a tenant out: a clean, fair exit',
+                'excerpt'          => 'Move-out is where goodwill is won or lost. Handle notice, the final invoice, the deposit and the handover well, and both sides leave on good terms — and talking well of you.',
+                'meta_description' => 'How to move a tenant out cleanly in Kenya — handling notice, the final invoice, deposit settlement and handover so the tenancy ends fairly and both sides leave on good terms.',
+                'meta_keywords'    => 'tenant move out Kenya, final rent invoice, deposit settlement, end of tenancy',
+                'body'             =>
+                    "<p>Most landlords put all their care into move-in and treat move-out as an afterthought. That is backwards. The end of a tenancy is the moment a tenant decides what to say about you — and a messy exit can undo two good years in a week. A clean, fair move-out is some of the cheapest reputation you will ever earn.</p>"
+                    . "<h3>Start with clear notice</h3><p>Both sides should know the notice period and the leaving date without ambiguity. A tenancy that ends on a recorded, agreed date — not a vague \"end of the month\" — removes the first and most common source of friction. Everything else hangs off that date.</p>"
+                    . "<h3>Get the final invoice right</h3><p>Pro-rate the last month if it is partial, roll in any outstanding dues, and show the tenant exactly how the final figure is built. A final invoice the tenant can see and understand is rarely disputed; a surprise number almost always is.</p>"
+                    . "<h3>Settle the deposit transparently</h3><p>Walk the unit against the move-in record, itemise any genuine deductions with reasons the tenant can see, and refund the balance promptly. Speed matters here as much as fairness — a deposit returned quickly says more about you than almost anything else you do.</p>"
+                    . "<h3>Close it cleanly on the record</h3><p>When the unit is handed back, mark the tenancy closed, free the unit for the next tenant, and keep the full history. A clean digital close means the next lease starts from a tidy place, and the departing tenant leaves with their record intact to carry onward.</p>"
+                    . "<p>Notice, final invoice, deposit, handover — four steps, done transparently, turn a stressful moment into a good last impression. <a href=\"/blog\">More guides for landlords</a>.</p>",
+            ],
+            [
+                'category_id'      => $catId['going-digital'],
+                'title'            => 'What today’s tenants expect from a landlord',
+                'excerpt'          => 'Tenants’ expectations have quietly moved — digital payments, instant receipts, quick answers. Meeting them is not luxury; it is how you keep the good ones.',
+                'meta_description' => 'Tenant expectations have moved — digital rent payment, instant receipts, transparency and quick responses are now the baseline. Here is what modern tenants look for.',
+                'meta_keywords'    => 'tenant expectations, modern landlord, tenant experience Kenya, retain good tenants',
+                'body'             =>
+                    "<p>The tenant who pays on time, looks after the place and stays for years is the most valuable thing a landlord has — and the easiest to lose to a small, avoidable frustration. What tenants expect has shifted, quietly but firmly. Meeting that new baseline is not about being fancy; it is about not giving your best tenants a reason to leave.</p>"
+                    . "<h3>Pay the way they pay everything else</h3><p>Tenants already pay for airtime, shopping and transport from their phone. Rent that still means cash, a bank queue or a reminder text feels like a step backwards. Paying from the phone, M-Pesa included, is now simply expected.</p>"
+                    . "<h3>Proof, without asking</h3><p>An instant receipt the moment rent clears removes a small anxiety every single month. Tenants should never have to ask \"did you get it?\" — and should never have to hunt for proof they paid when they need it.</p>"
+                    . "<h3>Transparency they can see</h3><p>A clear record of what is due, what is paid and what a deposit is being held against builds trust quietly. Tenants relax when the numbers are visible and consistent; they tense up when everything depends on the landlord's memory.</p>"
+                    . "<h3>A quick, human response</h3><p>Technology handles the routine so you have the time and the record to handle the real things — a repair, a question, a change — quickly and well. Meeting expectations on the small stuff buys you goodwill on the big stuff.</p>"
+                    . "<p>Meet tenants where they already are, and the good ones stay. Retention is cheaper than re-letting, and it starts with a modern, respectful experience. <a href=\"/\">See what tenants get</a>.</p>",
             ],
         ];
     }
