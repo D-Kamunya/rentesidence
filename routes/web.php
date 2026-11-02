@@ -110,6 +110,9 @@ Route::group(['prefix' => 'payment'], function () {
 });
 
 // Public Blog Routes
+// XML sitemap for search engines (submitted in Google Search Console).
+Route::get('/sitemap.xml', [\App\Http\Controllers\SitemapController::class, 'index'])->name('sitemap');
+
 Route::prefix('blog')->name('blog.')->group(function () {
     Route::get('/', [BlogController::class, 'index'])->name('index');
     // Static routes MUST come before the /{slug} catch-all, or they get matched as a

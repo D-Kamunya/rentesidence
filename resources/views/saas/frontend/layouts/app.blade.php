@@ -8,19 +8,24 @@
         <meta http-equiv="Content-Security-Policy" content="upgrade-insecure-requests" />
     @endif
     <meta name="title" content="{{ getOption('app_name') }}">
-    <meta name="description" content="{{ getOption('meta_description') }}">
-    <meta name="keywords" content="{{ getOption('meta_keyword') }}">
+    {{-- Per-page overridable: a blog post (or any view) sets @section('meta_description') etc.;
+         everything else falls back to the global site defaults. --}}
+    <meta name="description" content="@yield('meta_description', getOption('meta_description'))">
+    <meta name="keywords" content="@yield('meta_keywords', getOption('meta_keyword'))">
     <meta name="author" content="{{ getOption('meta_author') }}">
+    <link rel="canonical" href="@yield('canonical', url()->current())">
 
-    <meta property="og:type" content="Property">
-    <meta property="og:title" content="{{ getOption('app_name') }}">
-    <meta property="og:description" content="{{ getOption('meta_description') }}">
-    <meta property="og:image" content="{{ getSettingImage('app_logo') }}">
+    <meta property="og:type" content="@yield('og_type', 'website')">
+    <meta property="og:site_name" content="{{ getOption('app_name') }}">
+    <meta property="og:title" content="@yield('og_title', getOption('app_name'))">
+    <meta property="og:description" content="@yield('og_description', getOption('meta_description'))">
+    <meta property="og:image" content="@yield('og_image', getSettingImage('app_logo'))">
+    <meta property="og:url" content="@yield('canonical', url()->current())">
 
-    <meta name="twitter:card" content="{{ getOption('app_name') }}">
-    <meta name="twitter:title" content="{{ getOption('app_name') }}">
-    <meta name="twitter:description" content="{{ getOption('meta_description') }}">
-    <meta name="twitter:image" content="{{ getSettingImage('app_logo') }}">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="@yield('og_title', getOption('app_name'))">
+    <meta name="twitter:description" content="@yield('og_description', getOption('meta_description'))">
+    <meta name="twitter:image" content="@yield('og_image', getSettingImage('app_logo'))">
 
     <meta name="msapplication-TileImage" content="{{ getSettingImage('app_logo') }}">
 
@@ -37,6 +42,22 @@
     <link rel="shortcut icon" href="{{ getSettingImage('app_fav_icon') }}">
 
     @include('common.layouts.pwa-meta')
+
+    {{-- Organization identity for search engines (brand entity + logo in rich results). --}}
+    <script type="application/ld+json">
+    {!! json_encode([
+        '@context' => 'https://schema.org',
+        '@type'    => 'Organization',
+        'name'     => getOption('app_name') ?: 'Centresidence',
+        'url'      => url('/'),
+        'logo'     => getSettingImage('app_logo'),
+        'description' => getOption('meta_description') ?: null,
+    ], JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT) !!}
+    </script>
+
+    {{-- Per-page extra head tags + structured data. --}}
+    @stack('meta')
+    @stack('jsonld')
 </head>
 
 <body class="{{ selectedLanguage()->rtl == 1 ? 'direction-rtl' : 'direction-ltr' }}">
