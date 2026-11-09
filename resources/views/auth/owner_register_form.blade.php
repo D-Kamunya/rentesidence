@@ -11,6 +11,9 @@
                         <div class="sign-up-right-content bg-white">
                             <form action="{{ route('owner.register.store') }}" method="post">
                                 @csrf
+                                {{-- Honeypot: hidden from humans, irresistible to bots. Must stay empty. --}}
+                                <input type="text" name="website" tabindex="-1" autocomplete="off" aria-hidden="true"
+                                    style="position:absolute;left:-9999px;top:-9999px;height:0;width:0;opacity:0;" value="">
                                 <div class="mb-25 sign-up-top-logo">
                                     <a href="{{ route('frontend') }}">
                                         <span class="logo-lg">

@@ -21,7 +21,8 @@ use Illuminate\Support\Facades\Route;
 Route::group(['middleware' => ['isFrontend']], function () {
     // register owner
     Route::get('owner-register', [OwnerAuthController::class, 'owner_register_form'])->name('owner.register.form');
-    Route::post('owner-register', [OwnerAuthController::class, 'owner_register_store'])->name('owner.register.store');
+    Route::post('owner-register', [OwnerAuthController::class, 'owner_register_store'])
+        ->middleware('throttle:8,60')->name('owner.register.store');
 
     // Tenant Helper self-signup — a FREE tenant with no (on-platform) landlord. Owners still can't
     // self-register; tenants can (see controller). Throttled to blunt scripted account creation.
