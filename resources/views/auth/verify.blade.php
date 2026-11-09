@@ -18,7 +18,12 @@
                                         </span>
                                     </a>
                                 </div>
-                                <h3 class="mb-25 font-bold">{{ __('Verify Your Account') }}</h3>
+                                <h3 class="mb-2 font-bold">{{ __('Check your email to activate your account') }}</h3>
+                                <p class="font-16 mb-25" style="color:#4A5768;">
+                                    {{ __('You\'re almost in. We\'ve sent a verification link to') }}
+                                    <strong style="color:#111827;">{{ $maskedEmail ?? __('your email') }}</strong>.
+                                    {{ __('Open it to activate your account — then sign in and start setting up. It usually arrives within a minute.') }}
+                                </p>
                                 <div class="row mb-25">
                                     <div class="col-md-12 mb-3">
                                         @if (session('resent'))
@@ -26,13 +31,17 @@
                                                 {{ __('A fresh verification link has been sent to your email address.') }}
                                             </div>
                                         @endif
+                                        <p class="font-14 mb-2" style="color:#7A8796;">
+                                            {{ __('Can\'t find it? Check your spam folder, or resend the link below.') }}
+                                        </p>
                                     </div>
-                                    <div class="row">
-                                        <div class="col-md-12">
-                                            <button type="submit"
-                                                class="theme-btn theme-button1 theme-button3 font-15 fw-bold w-100"
-                                                title="{{ __('Click here to request another') }}">{{ __('Click here to request another') }}</button>
-                                        </div>
+                                    <div class="col-md-12">
+                                        <button type="submit"
+                                            class="theme-btn theme-button1 theme-button3 font-15 fw-bold w-100"
+                                            title="{{ __('Resend the verification link') }}">{{ __('Resend the verification link') }}</button>
+                                    </div>
+                                    <div class="col-md-12 mt-3 text-center">
+                                        <a href="{{ route('login') }}" class="secondary-color font-medium font-14">{{ __('Back to sign in') }}</a>
                                     </div>
                                 </div>
                             </form>

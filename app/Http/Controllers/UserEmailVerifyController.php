@@ -37,7 +37,16 @@ class UserEmailVerifyController extends Controller
         } else {
             return redirect()->route('login')->with('error', __(SOMETHING_WENT_WRONG));
         }
-        return view('auth.verify', compact('token'));
+        // Mask the email a little so the token URL alone doesn't fully reveal it, while still
+        // telling the signer-up where to look.
+        $email = $user->email;
+        $maskedEmail = $email;
+        if (str_contains($email, '@')) {
+            [$name, $domain] = explode('@', $email, 2);
+            $maskedEmail = (mb_strlen($name) <= 2 ? mb_substr($name, 0, 1) : mb_substr($name, 0, 2)) . '***@' . $domain;
+        }
+
+        return view('auth.verify', compact('token', 'maskedEmail'));
     }
 
     public function emailVerifyResend($token)
