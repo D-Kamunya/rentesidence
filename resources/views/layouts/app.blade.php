@@ -85,6 +85,7 @@
         ]) !!};
     </script>
     @include('common.layouts.pwa-meta')
+    @include('common.partials.meta-pixel')
 </head>
 
 <body class="{{ selectedLanguage()->rtl == 1 ? 'direction-rtl' : 'direction-ltr' }}">
