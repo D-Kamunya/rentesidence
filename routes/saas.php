@@ -41,6 +41,9 @@ Route::group(['middleware' => ['isFrontend']], function () {
     Route::get('cookie-policy', [FrontendController::class, 'cookiePolicy'])->name('cookie-policy');
 
     // Tenant onboarding on-ramp (the QR-poster target): install the app, or sign in.
+    Route::get('rent-app', fn () => view('rent-app'))->name('rent-app');
+
+    // Landlord acquisition landing (the ad target): warm-up value page → start free.
     Route::get('get-started', fn () => view('get-started'))->name('get-started');
 
     // contact

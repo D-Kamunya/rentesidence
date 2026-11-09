@@ -18,7 +18,9 @@ class OnboardingCardController extends Controller
     {
         $property = Property::where('owner_user_id', auth()->id())->findOrFail($property);
 
-        $url = route('get-started');
+        // The QR lands tenants on the tenant on-ramp (install the app / sign in). /get-started
+        // is now the landlord acquisition landing, so point the poster at /rent-app instead.
+        $url = \Illuminate\Support\Facades\Route::has('rent-app') ? route('rent-app') : route('get-started');
         // SVG needs no imagick/gd — safe on any host.
         $qr  = QrCode::format('svg')->size(240)->margin(0)->errorCorrection('M')->generate($url);
 
