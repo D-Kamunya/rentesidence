@@ -42,6 +42,7 @@
     <link rel="shortcut icon" href="{{ getSettingImage('app_fav_icon') }}">
 
     @include('common.layouts.pwa-meta')
+    @include('common.partials.meta-pixel')
 
     {{-- Organization identity for search engines (brand entity + logo in rich results). --}}
     <script type="application/ld+json">
