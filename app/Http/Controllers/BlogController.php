@@ -187,9 +187,11 @@ class BlogController extends Controller
         // Don't fail on `unique` — a previously-unsubscribed reader must be able to come
         // back. Reactivate an existing row (the model has resubscribe()); otherwise create.
         $subscriber = BlogSubscriber::where('email', $validated['email'])->first();
+        $notifyAdmins = false;
         if ($subscriber) {
             if (! $subscriber->is_active) {
                 $subscriber->resubscribe();
+                $notifyAdmins = true; // a reader came back
             }
             if (! empty($validated['name']) && empty($subscriber->name)) {
                 $subscriber->update(['name' => $validated['name']]);
@@ -199,6 +201,28 @@ class BlogController extends Controller
                 'subscribed_at' => now(),
                 'is_active'     => true,
             ]);
+            $notifyAdmins = true; // brand-new subscriber
+        }
+
+        // In-app heads-up for admins (no email) so a new subscriber never goes unseen.
+        if ($notifyAdmins) {
+            try {
+                $adminIds = \App\Models\User::where('role', USER_ROLE_ADMIN)->pluck('id');
+                $systemSender = $adminIds->first(); // a real sender — the bell inner-joins on sender_id
+                if ($systemSender) {
+                    $url = \Illuminate\Support\Facades\Route::has('admin.blog.subscribers')
+                        ? route('admin.blog.subscribers') : url('/admin');
+                    foreach ($adminIds as $adminId) {
+                        addNotification(
+                            __('New blog subscriber'),
+                            __(':email subscribed for updates.', ['email' => $subscriber->email]),
+                            $url, null, (int) $adminId, (int) $systemSender
+                        );
+                    }
+                }
+            } catch (\Throwable $e) {
+                \Illuminate\Support\Facades\Log::warning('Blog subscriber admin notify failed: ' . $e->getMessage());
+            }
         }
         
         if ($request->ajax() || $request->wantsJson()) {

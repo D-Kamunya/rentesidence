@@ -285,9 +285,33 @@ class BlogController extends Controller
     public function destroySubscriber(BlogSubscriber $subscriber)
     {
         $subscriber->delete();
-        
+
         return redirect()->route('admin.blog.subscribers')
             ->with('success', 'Subscriber removed successfully.');
+    }
+
+    /**
+     * Bridge the blog subscriber list into the outreach arm: pre-load a NEW general campaign
+     * with every active subscriber, then hand off to the normal outreach create form so the
+     * admin writes the message and sends (reusing paced sending + unsubscribe + tracking).
+     */
+    public function subscribersToOutreach()
+    {
+        $subs = BlogSubscriber::active()->get(['email', 'name']);
+        if ($subs->isEmpty()) {
+            return redirect()->route('admin.blog.subscribers')
+                ->with('error', 'There are no active subscribers to message yet.');
+        }
+
+        // Build the recipient blob the outreach form understands ("email, Name" per line).
+        $blob = $subs->map(fn ($s) => $s->name ? "{$s->email}, {$s->name}" : $s->email)->implode("\n");
+
+        // Flash as old input so the create form pre-fills; general type = no invite link.
+        return redirect()->route('admin.outreach.create')->withInput([
+            'recipients' => $blob,
+            'type'       => 'general',
+            'name'       => 'Blog subscribers — ' . now()->format('M Y'),
+        ]);
     }
 
     protected function notifySubscribers(BlogPost $post)
