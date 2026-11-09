@@ -24,8 +24,16 @@
                                     </ol>
                                 </nav>
                             </div>
-                            <div>
-                                <a href="{{ route('admin.blog.dashboard') }}" class="btn btn-ghost" 
+                            <div class="d-flex align-items-center gap-2">
+                                <a href="{{ route('admin.blog.subscribers.outreach') }}" class="btn btn-cs-outreach"
+                                style="background: #185FA5; color: #fff; display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 500; padding: 7px 15px; border-radius: 7px; border: none; cursor: pointer; text-decoration: none;"
+                                data-cs-confirm="Start an outreach campaign pre-loaded with your active subscribers? You'll write the message on the next screen before anything sends."
+                                data-cs-confirm-ok="Yes, continue"
+                                data-cs-confirm-tone="primary">
+                                    <i class="fa fa-paper-plane"></i>
+                                    Message via Outreach
+                                </a>
+                                <a href="{{ route('admin.blog.dashboard') }}" class="btn btn-ghost"
                                 style="background: #f3f4f6; color: #374151; display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 500; padding: 7px 15px; border-radius: 7px; border: 0.5px solid #e5e7eb; cursor: pointer; text-decoration: none;">
                                     <i class="fa fa-arrow-left"></i>
                                     Back to Dashboard

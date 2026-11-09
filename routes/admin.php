@@ -212,6 +212,8 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'middleware' => ['auth', 'a
 
         // Subscribers
         Route::get('/subscribers', [AdminBlogController::class, 'subscribers'])->name('subscribers');
+        // Bridge: start an outreach campaign pre-loaded with the active blog subscribers.
+        Route::get('/subscribers/outreach', [AdminBlogController::class, 'subscribersToOutreach'])->name('subscribers.outreach');
         Route::delete('/subscribers/{subscriber}', [AdminBlogController::class, 'destroySubscriber'])->name('subscribers.destroy');
     });
     

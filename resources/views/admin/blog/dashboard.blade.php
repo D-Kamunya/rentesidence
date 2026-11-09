@@ -94,6 +94,18 @@
                     </div>
                 </div>
 
+                {{-- Manage hub — one place to reach every part of the blog system. --}}
+                <div class="ow-card mb-4" style="background: #fff; border: 0.5px solid #e5e7eb; border-radius: 12px; padding: 14px 16px; box-shadow: 0 4px 12px rgba(0,0,0,0.04);">
+                    <div class="d-flex flex-wrap align-items-center gap-2">
+                        <span style="font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: .07em; color: #9ca3af; margin-right: 6px;">Manage</span>
+                        <a href="{{ route('admin.blog.posts') }}" class="btn-hub" style="font-size: 12.5px; font-weight: 500; color: #185FA5; background: #E6F1FB; padding: 6px 13px; border-radius: 8px; text-decoration: none;"><i class="fa fa-file-text" style="margin-right:5px;"></i>Posts</a>
+                        <a href="{{ route('admin.blog.subscribers') }}" class="btn-hub" style="font-size: 12.5px; font-weight: 500; color: #185FA5; background: #E6F1FB; padding: 6px 13px; border-radius: 8px; text-decoration: none;"><i class="fa fa-users" style="margin-right:5px;"></i>Subscribers ({{ \App\Models\BlogSubscriber::active()->count() }})</a>
+                        <a href="{{ route('admin.blog.comments') }}" class="btn-hub" style="font-size: 12.5px; font-weight: 500; color: #185FA5; background: #E6F1FB; padding: 6px 13px; border-radius: 8px; text-decoration: none;"><i class="fa fa-comments" style="margin-right:5px;"></i>Comments</a>
+                        <a href="{{ route('admin.blog.categories') }}" class="btn-hub" style="font-size: 12.5px; font-weight: 500; color: #185FA5; background: #E6F1FB; padding: 6px 13px; border-radius: 8px; text-decoration: none;"><i class="fa fa-tags" style="margin-right:5px;"></i>Categories</a>
+                        <a href="{{ route('admin.blog.subscribers.outreach') }}" class="btn-hub" style="font-size: 12.5px; font-weight: 500; color: #fff; background: #185FA5; padding: 6px 13px; border-radius: 8px; text-decoration: none; margin-left: auto;"><i class="fa fa-paper-plane" style="margin-right:5px;"></i>Email subscribers</a>
+                    </div>
+                </div>
+
                 <div class="row">
                     {{-- Recent Posts --}}
                     <div class="col-lg-8">
