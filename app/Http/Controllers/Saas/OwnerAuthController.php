@@ -76,6 +76,12 @@ class OwnerAuthController extends Controller
             setOwnerDefaultDocumentConfig($user->id);
 
             DB::commit();
+
+            // Meta Pixel: flag this request's next page (email-verify, or the dashboard on
+            // instant activation) to fire a CompleteRegistration conversion event — so Facebook
+            // can optimise ads toward real landlord signups, not just page views. Fail-safe.
+            session()->flash('fb_complete_registration', true);
+
             if (getOption('send_email_status', 0) == ACTIVE) {
                 $emails = [$user->email];
                 $subject = getOption('app_name') . ' ' . __('welcome you');
