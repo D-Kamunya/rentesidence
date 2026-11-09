@@ -3,7 +3,7 @@
 namespace App\Http\Controllers\Saas;
 
 use App\Http\Controllers\Controller;
-use App\Http\Requests\OwnerRegisterRequest;
+use App\Http\Requests\OwnerSelfRegisterRequest;
 use App\Models\EmailTemplate;
 use App\Models\Owner;
 use App\Models\Package;
@@ -25,12 +25,16 @@ class OwnerAuthController extends Controller
      */
     public function __construct()
     {
-         $this->middleware(function ($request, $next) {
+        // Public landlord self-signup (owner_register_form / owner_register_store) is open to
+        // guests — it's the ad-landing "Start free" path, guarded by the dedicated
+        // OwnerSelfRegisterRequest (unique + password + honeypot + optional reCAPTCHA) and a
+        // route throttle. Any other action on this controller stays admin-only.
+        $this->middleware(function ($request, $next) {
             if (auth()->guest() || auth()->user()->role !== USER_ROLE_ADMIN) {
                 return redirect()->route('login');
             }
             return $next($request);
-        })->except('logout');
+        })->except(['logout', 'owner_register_form', 'owner_register_store']);
     }
 
     public function owner_register_form()
@@ -38,7 +42,7 @@ class OwnerAuthController extends Controller
         return view('auth.owner_register_form');
     }
 
-    public function owner_register_store(OwnerRegisterRequest $request)
+    public function owner_register_store(OwnerSelfRegisterRequest $request)
     {
         DB::beginTransaction();
         try {
@@ -81,6 +85,26 @@ class OwnerAuthController extends Controller
             // instant activation) to fire a CompleteRegistration conversion event — so Facebook
             // can optimise ads toward real landlord signups, not just page views. Fail-safe.
             session()->flash('fb_complete_registration', true);
+
+            // In-app heads-up for admins (no email) — so you see every landlord who comes through
+            // the door and can reach out to help them activate. Fail-safe, real system sender.
+            try {
+                $adminIds = User::where('role', USER_ROLE_ADMIN)->pluck('id');
+                $systemSender = $adminIds->first();
+                if ($systemSender) {
+                    $who = trim(($user->first_name ?? '') . ' ' . ($user->last_name ?? '')) ?: $user->email;
+                    $url = \Illuminate\Support\Facades\Route::has('admin.owner.index') ? route('admin.owner.index') : url('/admin');
+                    foreach ($adminIds as $adminId) {
+                        addNotification(
+                            __('New landlord signup'),
+                            __(':who just created a free account from the website.', ['who' => $who]),
+                            $url, null, (int) $adminId, (int) $systemSender
+                        );
+                    }
+                }
+            } catch (\Throwable $e) {
+                \Illuminate\Support\Facades\Log::warning('New owner signup admin notify failed: ' . $e->getMessage());
+            }
 
             if (getOption('send_email_status', 0) == ACTIVE) {
                 $emails = [$user->email];
