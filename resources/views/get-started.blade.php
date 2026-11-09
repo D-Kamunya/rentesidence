@@ -6,6 +6,7 @@
     <title>{{ __('Get paid on time — free for your first 30 units') }} · {{ getOption('app_name') ?: 'Centresidence' }}</title>
     <meta name="description" content="{{ __('Collect rent over M-Pesa automatically. Automatic reminders, instant receipts, one dashboard. Free for your first 30 units — no card, start with one building.') }}">
     @include('common.layouts.pwa-meta')
+    @include('common.partials.meta-pixel')
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Sora:wght@700;800&family=Inter:wght@400;500;600;700&display=swap">

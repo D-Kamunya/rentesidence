@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
     <title>{{ __('Get started') }} · {{ getOption('app_name') ?: 'Centresidence' }}</title>
     @include('common.layouts.pwa-meta')
+    @include('common.partials.meta-pixel')
     <style>
         :root{ --blue:#185FA5; --blue-deep:#0F4A84; --ink:#1B1E22; --ink-2:#4A4F57; --ink-3:#7C828C; --paper:#0E1116; }
         *{box-sizing:border-box}
