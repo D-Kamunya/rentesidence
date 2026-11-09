@@ -90,16 +90,16 @@
                     <div class="col-12">
                         <div class="card" style="background: #fff; border: 0.5px solid #e5e7eb; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 12px rgba(0,0,0,0.04);">
                             <div class="table-responsive">
-                                <table class="table mb-0">
+                                <table class="table mb-0" style="table-layout: fixed; width: 100%;">
                                     <thead style="background: #fafafa; border-bottom: 0.5px solid #e5e7eb;">
                                         <tr>
-                                            <th style="padding: .65rem 1rem; font-size: 10px; font-weight: 500; text-transform: uppercase; letter-spacing: .07em; color: #6b7280;">Post</th>
-                                            <th style="padding: .65rem 1rem; font-size: 10px; font-weight: 500; text-transform: uppercase; letter-spacing: .07em; color: #6b7280;">Category</th>
-                                            <th style="padding: .65rem 1rem; font-size: 10px; font-weight: 500; text-transform: uppercase; letter-spacing: .07em; color: #6b7280;">Status</th>
-                                            <th style="padding: .65rem 1rem; font-size: 10px; font-weight: 500; text-transform: uppercase; letter-spacing: .07em; color: #6b7280;">Views</th>
-                                            <th style="padding: .65rem 1rem; font-size: 10px; font-weight: 500; text-transform: uppercase; letter-spacing: .07em; color: #6b7280;">Comments</th>
-                                            <th style="padding: .65rem 1rem; font-size: 10px; font-weight: 500; text-transform: uppercase; letter-spacing: .07em; color: #6b7280;">Date</th>
-                                            <th style="padding: .65rem 1rem; font-size: 10px; font-weight: 500; text-transform: uppercase; letter-spacing: .07em; color: #6b7280; text-align: center;">Actions</th>
+                                            <th style="width: 30%; padding: .65rem 1rem; font-size: 10px; font-weight: 500; text-transform: uppercase; letter-spacing: .07em; color: #6b7280;">Post</th>
+                                            <th style="width: 13%; padding: .65rem 1rem; font-size: 10px; font-weight: 500; text-transform: uppercase; letter-spacing: .07em; color: #6b7280;">Category</th>
+                                            <th style="width: 11%; padding: .65rem 1rem; font-size: 10px; font-weight: 500; text-transform: uppercase; letter-spacing: .07em; color: #6b7280;">Status</th>
+                                            <th style="width: 7%; padding: .65rem 1rem; font-size: 10px; font-weight: 500; text-transform: uppercase; letter-spacing: .07em; color: #6b7280;">Views</th>
+                                            <th style="width: 10%; padding: .65rem 1rem; font-size: 10px; font-weight: 500; text-transform: uppercase; letter-spacing: .07em; color: #6b7280;">Comments</th>
+                                            <th style="width: 12%; padding: .65rem 1rem; font-size: 10px; font-weight: 500; text-transform: uppercase; letter-spacing: .07em; color: #6b7280;">Date</th>
+                                            <th style="width: 17%; padding: .65rem 1rem; font-size: 10px; font-weight: 500; text-transform: uppercase; letter-spacing: .07em; color: #6b7280; text-align: center;">Actions</th>
                                         </tr>
                                     </thead>
                                     <tbody>
@@ -110,13 +110,13 @@
                                             <td style="padding: .8rem 1rem;">
                                                 <div class="d-flex align-items-center gap-3">
                                                     @if($post->featured_image)
-                                                    <img src="{{ asset('storage/' . $post->featured_image) }}" alt="" style="width: 40px; height: 40px; border-radius: 6px; object-fit: cover;">
+                                                    <img src="{{ asset('storage/' . $post->featured_image) }}" alt="" style="width: 40px; height: 40px; border-radius: 6px; object-fit: cover; flex-shrink: 0;">
                                                     @endif
-                                                    <div>
-                                                        <div style="font-size: 13px; font-weight: 500; color: #185FA5; max-width: 250px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                                                    <div style="min-width: 0; flex: 1;">
+                                                        <div style="font-size: 13px; font-weight: 500; color: #185FA5; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="{{ $post->title }}">
                                                             {{ $post->title }}
                                                         </div>
-                                                        <div style="font-size: 11px; color: #9ca3af;">{{ $post->author->name ?? 'Unknown' }}</div>
+                                                        <div style="font-size: 11px; color: #9ca3af; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{{ $post->author->name ?? 'Unknown' }}</div>
                                                     </div>
                                                 </div>
                                             </td>
