@@ -16,9 +16,17 @@ s.parentNode.insertBefore(t,s)}(window, document,'script',
 'https://connect.facebook.net/en_US/fbevents.js');
 fbq('init', '1676644640779483');
 fbq('track', 'PageView');
+@if(session('fb_complete_registration'))
+fbq('track', 'CompleteRegistration');
+@endif
 </script>
 <noscript><img height="1" width="1" style="display:none"
 src="https://www.facebook.com/tr?id=1676644640779483&ev=PageView&noscript=1"
 /></noscript>
+@if(session('fb_complete_registration'))
+<noscript><img height="1" width="1" style="display:none"
+src="https://www.facebook.com/tr?id=1676644640779483&ev=CompleteRegistration&noscript=1"
+/></noscript>
+@endif
 <!-- End Meta Pixel Code -->
 @endif
