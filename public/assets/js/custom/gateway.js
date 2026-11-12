@@ -265,6 +265,31 @@ function getDataEditRes(response) {
 
         }
     }
+    var isMpesa = response.data.gateway.slug == "mpesa";
+
+    // M-Pesa only ever settles in Kenyan Shillings, so its conversion is LOCKED at 1 KES = 1.00
+    // (enforced server-side too). Show it read-only — no editing, no add/remove — so an owner can
+    // never introduce a rate mistake. Every other gateway keeps the normal editable list.
+    $(".add-currency").toggle(!isMpesa);
+
+    if (isMpesa) {
+        var mpesaRow = response.data.currencies[0] || {
+            id: "",
+            currency: "KES",
+            conversion_rate: "1.00",
+        };
+        $("#currencyConversionRateSection").html(
+            '<div class="input-group mb-3 currency-conversation-rate">' +
+                '<span class="input-group-text">Kenyan Shilling (KES)</span>' +
+                '<span class="input-group-text">1 KES = </span>' +
+                '<input type="number" class="form-control" value="1.00" readonly disabled>' +
+                '<span class="input-group-text append_currency">KES</span>' +
+                "</div>" +
+                '<small class="d-block text-muted">M-Pesa settles in Kenyan Shillings only, so this rate is fixed.</small>'
+        );
+        return;
+    }
+
     var html = "";
     response.data.currencies.map(function (data) {
         html +=
@@ -433,3 +458,53 @@ function addMpesaAccount() {
                 </div>
             </div>`;
 }
+
+// Confirm-where-you-get-paid gate: before saving the M-Pesa gateway, show the owner exactly which
+// Till/Paybill each active account will send money to, so they verify the numbers before committing
+// (money goes straight to whatever they type — a typo would pay a stranger). Bound DIRECTLY on the
+// form so it runs BEFORE the document-delegated ajax submit handler; on confirm we re-submit with a
+// flag so the normal ajax save proceeds.
+var mpesaSaveConfirmed = false;
+$("#editModal form.ajax").on("submit", function (e) {
+    var isMpesa = $("#editModal .mpesa-div").is(":visible");
+    if (!isMpesa || mpesaSaveConfirmed) {
+        mpesaSaveConfirmed = false; // reset for the next save
+        return; // let the normal ajax submit run
+    }
+
+    var lines = [];
+    $("#editModal .multi-mpesa-accounts").each(function () {
+        var row = $(this);
+        if (row.find(".mpesa-account-status").val() != "1") return; // only active destinations
+        var type = row.find(".mpesa-account-type").val();
+        if (type === "PAYBILL") {
+            var pb = $.trim(row.find(".paybill-number").val() || "");
+            var ac = $.trim(row.find(".account-name").val() || "");
+            if (pb) lines.push("Paybill " + pb + (ac ? "  ·  Acc: " + ac : ""));
+        } else if (type === "TILLNUMBER") {
+            var till = $.trim(row.find(".till-number").val() || "");
+            if (till) lines.push("Till " + till);
+        }
+    });
+
+    e.preventDefault();
+    e.stopImmediatePropagation();
+
+    var hasDest = lines.length > 0;
+    var message = hasDest
+        ? "Payments will be sent to:\n\n" +
+          lines.join("\n") +
+          "\n\nCheck every number is exactly right — money goes straight here."
+        : "No active M-Pesa account is set, so rent can't be collected yet. Add and activate your Till or Paybill first. Save anyway?";
+
+    csConfirm({
+        title: "Confirm where you get paid",
+        message: message,
+        tone: hasDest ? "warning" : "danger",
+        confirmText: hasDest ? "Yes, that's correct" : "Save anyway",
+    }).then(function (ok) {
+        if (!ok) return;
+        mpesaSaveConfirmed = true;
+        $("#editModal form.ajax").trigger("submit");
+    });
+});
