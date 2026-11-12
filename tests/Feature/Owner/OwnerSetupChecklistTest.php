@@ -23,8 +23,11 @@ class OwnerSetupChecklistTest extends TestCase
 
         Schema::create('properties', function ($t) { $t->id(); $t->unsignedBigInteger('owner_user_id'); $t->softDeletes(); $t->timestamps(); });
         Schema::create('property_units', function ($t) { $t->id(); $t->unsignedBigInteger('property_id'); $t->softDeletes(); $t->timestamps(); });
-        Schema::create('tenants', function ($t) { $t->id(); $t->unsignedBigInteger('owner_user_id'); $t->unsignedTinyInteger('status')->nullable(); $t->softDeletes(); $t->timestamps(); });
+        Schema::create('tenants', function ($t) { $t->id(); $t->unsignedBigInteger('owner_user_id'); $t->unsignedTinyInteger('status')->nullable(); $t->string('pay_token')->nullable(); $t->softDeletes(); $t->timestamps(); });
         Schema::create('invoice_recurring_settings', function ($t) { $t->id(); $t->unsignedBigInteger('owner_user_id'); $t->softDeletes(); $t->timestamps(); });
+        // "How you get paid" step reads active M-Pesa accounts (no owner_packages table here, so the
+        // service treats the owner as a Free-plan owner, who must set a Till/Paybill to collect rent).
+        Schema::create('mpesa_accounts', function ($t) { $t->id(); $t->unsignedBigInteger('owner_user_id'); $t->unsignedTinyInteger('status')->nullable(); $t->softDeletes(); $t->timestamps(); });
     }
 
     private function svc(): OwnerSetupService
@@ -35,7 +38,7 @@ class OwnerSetupChecklistTest extends TestCase
     public function test_a_fresh_owner_has_everything_to_do(): void
     {
         $c = $this->svc()->checklist(1);
-        $this->assertSame(5, $c['total']); // property, units, tenant, recurring + Load SMS credits
+        $this->assertSame(6, $c['total']); // property, units, tenant, get-paid, recurring + Load SMS credits
         $this->assertSame(0, $c['done']);
         $this->assertFalse($c['complete']);
     }
@@ -51,8 +54,15 @@ class OwnerSetupChecklistTest extends TestCase
         \App\Models\Tenant::create(['owner_user_id' => 1, 'status' => 1]);
         \App\Models\InvoiceRecurringSetting::create(['owner_user_id' => 1]);
 
+        // Core setup is NOT complete until the owner has set how they get paid — on Free plan rent
+        // can't be collected without an active M-Pesa Till/Paybill, so the checklist stays open.
+        $beforePayout = $this->svc()->checklist(1);
+        $this->assertSame(4, $beforePayout['done']); // property, units, tenant, recurring
+        $this->assertFalse($beforePayout['complete']);
+
+        \App\Models\MpesaAccount::create(['owner_user_id' => 1, 'status' => 1]); // ACTIVE
         $done = $this->svc()->checklist(1);
-        $this->assertSame(4, $done['done']);
+        $this->assertSame(5, $done['done']); // + get-paid
         $this->assertTrue($done['complete']);
     }
 

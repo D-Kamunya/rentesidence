@@ -702,19 +702,21 @@ if (!function_exists('setOwnerGateway')) {
         ];
         Gateway::insert($data);
         
-        // Get the Cash gateway (must use same slug as inserted)
-        $cashGateway = Gateway::where('owner_user_id', $userId)
-            ->where('slug', 'cash')
-            ->first();
+        // Seed the fixed KES = 1.00 conversion for the shilling-only gateways (Cash + M-Pesa).
+        // Both only ever move Kenyan Shillings, so their rate is locked at 1:1 — never an owner
+        // setting (a mistyped rate silently distorts every amount). Pre-seeding also means the
+        // gateway works the moment an owner activates it, with no currency step to get wrong.
+        foreach (['cash', 'mpesa'] as $shillingSlug) {
+            $shillingGateway = Gateway::where('owner_user_id', $userId)
+                ->where('slug', $shillingSlug)
+                ->first();
 
-        // Create default currency record for Cash gateway
-        if ($cashGateway) {
-            GatewayCurrency::create([
-                'gateway_id' => $cashGateway->id,
-                'owner_user_id' => $userId,
-                'currency' => 'KES',
-                'conversion_rate' => 1,
-            ]);
+            if ($shillingGateway) {
+                GatewayCurrency::firstOrCreate(
+                    ['gateway_id' => $shillingGateway->id, 'owner_user_id' => $userId, 'currency' => 'KES'],
+                    ['conversion_rate' => 1],
+                );
+            }
         }
     }
 }

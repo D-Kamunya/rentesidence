@@ -60,6 +60,12 @@ class GatewayService
             $data['banks'] = $this->banks();
         }elseif ($data['gateway']->slug == 'mpesa') {
             $data['mpesaAccounts'] = $this->mpesaAccounts();
+            // Self-heal: guarantee the locked KES = 1.00 row exists so the shilling-only gateway
+            // always carries its fixed rate (covers owners who activated M-Pesa before the lock).
+            GatewayCurrency::firstOrCreate(
+                ['gateway_id' => $id, 'owner_user_id' => auth()->id(), 'currency' => 'KES'],
+                ['conversion_rate' => 1],
+            );
         }
         $data['image'] = $data['gateway']->icon;
         $currencies = GatewayCurrency::where('owner_user_id', auth()->id())->where('gateway_id', $id)->get();
@@ -161,6 +167,25 @@ class GatewayService
             $gateway->status = $request->status;
             $gateway->owner_user_id = $ownerUserId;
             $gateway->save();
+
+            // M-Pesa settles in Kenyan Shillings only, so its conversion is LOCKED at KES = 1.00 and
+            // enforced server-side — never taken from the request. This can't be an owner setting: a
+            // mistyped rate would silently scale every rent/credit amount. We overwrite whatever was
+            // posted with the single fixed currency, and the owner-facing form shows it read-only.
+            if ($gateway->slug == 'mpesa') {
+                $locked = GatewayCurrency::updateOrCreate(
+                    ['gateway_id' => $gateway->id, 'owner_user_id' => $ownerUserId, 'currency' => 'KES'],
+                    ['conversion_rate' => 1],
+                );
+                GatewayCurrency::where('owner_user_id', $ownerUserId)
+                    ->where('gateway_id', $gateway->id)
+                    ->where('id', '!=', $locked->id)
+                    ->delete();
+
+                DB::commit();
+                $message = $request->id ? __(UPDATED_SUCCESSFULLY) : __(CREATED_SUCCESSFULLY);
+                return $this->success([], $message);
+            }
 
             if (is_null($request->currency)) {
                 throw new Exception('Please Add one currency at least');

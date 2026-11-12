@@ -254,5 +254,5 @@
 @push('script')
     @include('common.layouts.datatable-script')
     <script src="{{ asset('/') }}assets/js/pages/alldatatables.init.js"></script>
-    <script src="{{ asset('assets/js/custom/gateway.js') }}"></script>
+    <script src="{{ asset('assets/js/custom/gateway.js') }}?v={{ filemtime(public_path('assets/js/custom/gateway.js')) }}"></script>
 @endpush

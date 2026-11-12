@@ -35,7 +35,7 @@
     .cs-cf__icon--danger  { background:#FAECE7; color:#C2410C; }
     .cs-cf__icon--warning { background:#FEF3E7; color:#B45309; }
     .cs-cf__title { font-size:17px; font-weight:600; color:#111827; margin:0 0 6px; }
-    .cs-cf__msg { font-size:13.5px; color:#6b7280; line-height:1.6; margin:0 0 22px; }
+    .cs-cf__msg { font-size:13.5px; color:#6b7280; line-height:1.6; margin:0 0 22px; white-space:pre-line; }
     .cs-cf__actions { display:flex; gap:10px; }
     .cs-cf__btn { flex:1; border:none; border-radius:9px; font-size:13.5px; font-weight:600; padding:11px 16px; cursor:pointer; transition:background .13s, transform .1s; }
     .cs-cf__btn:active { transform:translateY(1px); }
