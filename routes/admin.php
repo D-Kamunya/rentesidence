@@ -258,6 +258,8 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'middleware' => ['auth', 'a
          // register owner
         Route::get('register', [OwnerController::class, 'owner_register_form'])->name('register.form');
         Route::post('register', [OwnerController::class, 'owner_register_store'])->name('register.store');
+        // Owner detail — uptake + setup progress (numeric id = owner's user id; keeps 'register' etc. clear).
+        Route::get('{owner}', [OwnerController::class, 'show'])->whereNumber('owner')->name('show');
         // Assign / change / clear the affiliate attributed to an existing owner (prospective-only).
         Route::post('{owner}/assign-affiliate', [OwnerController::class, 'assignAffiliate'])->name('assign-affiliate');
 

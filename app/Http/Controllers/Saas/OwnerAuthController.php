@@ -106,6 +106,9 @@ class OwnerAuthController extends Controller
                 \Illuminate\Support\Facades\Log::warning('New owner signup admin notify failed: ' . $e->getMessage());
             }
 
+            // In-app welcome for the owner (points to their first step + Support). Idempotent + fail-safe.
+            \App\Services\OwnerWelcomeService::send($user);
+
             if (getOption('send_email_status', 0) == ACTIVE) {
                 $emails = [$user->email];
                 $subject = getOption('app_name') . ' ' . __('welcome you');

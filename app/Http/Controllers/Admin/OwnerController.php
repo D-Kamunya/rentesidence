@@ -52,6 +52,55 @@ class OwnerController extends Controller
     }
 
     /**
+     * Owner detail: identity + uptake signals (properties / units / tenants / rent collected) +
+     * a setup-progress checklist, so an admin can gauge adoption and spot owners who are stuck.
+     * {owner} is the owner's USER id (what the list carries).
+     */
+    public function show($owner)
+    {
+        $user = User::where('id', $owner)->where('role', USER_ROLE_OWNER)->firstOrFail();
+        $ownerRow = Owner::where('user_id', $user->id)->first();
+
+        $propertyIds = \App\Models\Property::where('owner_user_id', $user->id)->pluck('id');
+        $properties  = $propertyIds->count();
+        $units       = \App\Models\PropertyUnit::whereIn('property_id', $propertyIds)->count();
+        $tenants     = \App\Models\Tenant::where('owner_user_id', $user->id)->count();
+        $hasRent     = \App\Models\Invoice::where('owner_user_id', $user->id)
+            ->where('status', INVOICE_STATUS_PAID)->exists();
+
+        // Who earns commission on this owner (if referred by an affiliate).
+        $affiliateName = null;
+        if ($ownerRow && $ownerRow->affiliate_id) {
+            $aff = \App\Models\Affiliate::with('user')->find($ownerRow->affiliate_id);
+            $affiliateName = $aff && $aff->user ? trim(($aff->user->first_name ?? '') . ' ' . ($aff->user->last_name ?? '')) : null;
+        }
+
+        // Last activity — the freshest signal of engagement.
+        $lastActivity = collect([
+            \App\Models\Property::where('owner_user_id', $user->id)->max('created_at'),
+            \App\Models\Tenant::where('owner_user_id', $user->id)->max('created_at'),
+            $user->updated_at,
+        ])->filter()->map(fn ($d) => Carbon::parse($d))->max();
+
+        $setup = ['property' => $properties > 0, 'tenant' => $tenants > 0, 'rent' => (bool) $hasRent];
+        $stepsDone = collect($setup)->filter()->count();
+
+        return view('admin.owner.show', [
+            'pageTitle'     => __('Owner'),
+            'user'          => $user,
+            'ownerRow'      => $ownerRow,
+            'properties'    => $properties,
+            'units'         => $units,
+            'tenants'       => $tenants,
+            'hasRent'       => $hasRent,
+            'affiliateName' => $affiliateName,
+            'lastActivity'  => $lastActivity,
+            'setup'         => $setup,
+            'stepsDone'     => $stepsDone,
+        ]);
+    }
+
+    /**
      * Assign / change / clear the affiliate attributed to an EXISTING owner. Admin-only money
      * surface: it decides who earns commission on this owner going forward. PROSPECTIVE ONLY —
      * the commission engine reads owners.affiliate_id live at each earning event, so changing it
