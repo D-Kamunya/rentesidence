@@ -34,7 +34,10 @@ class OwnerService
         return datatables($owners)
             ->addIndexColumn()
             ->addColumn('name', function ($owner) {
-                return $owner->owner_first_name . ' ' . $owner->owner_last_name;
+                // Links to the owner detail (uptake + setup progress). Class carries "btn" to dodge
+                // the global a:hover blue-override, keeping the link its intended blue.
+                $n = e(trim($owner->owner_first_name . ' ' . $owner->owner_last_name)) ?: e($owner->owner_email);
+                return '<a href="' . route('admin.owner.show', $owner->owner_user_id) . '" class="btn-owner-link" style="color:#185FA5;font-weight:500;text-decoration:none;">' . $n . '</a>';
             })
             ->addColumn('email', function ($owner) {
                 return $owner->owner_email;
