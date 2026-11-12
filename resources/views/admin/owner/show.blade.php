@@ -8,6 +8,7 @@
 <div class="main-content">
     <div class="page-content">
         <div class="container-fluid">
+            <div class="page-content-wrapper bg-white p-3 p-md-4 radius-20">
 
             {{-- Header --}}
             <div class="row mb-3">
@@ -130,6 +131,7 @@
                 </div>
             </div>
 
+            </div>
         </div>
     </div>
 </div>
