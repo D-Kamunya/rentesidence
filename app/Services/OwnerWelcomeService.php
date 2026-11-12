@@ -16,11 +16,16 @@ use Illuminate\Support\Facades\Log;
  */
 class OwnerWelcomeService
 {
-    /** Returns true if a welcome was sent this call, false if skipped (already welcomed / not an owner). */
-    public static function send(User $user): bool
+    /**
+     * Returns true if a welcome was sent this call, false if skipped (already welcomed / not an owner).
+     * $force bypasses the once-only guard — used for a DELIBERATE one-time re-welcome (e.g. migrating
+     * the already-onboarded cohort from the old bell to the new support thread). Run it once: each
+     * forced send opens a fresh thread.
+     */
+    public static function send(User $user, bool $force = false): bool
     {
         $owner = Owner::where('user_id', $user->id)->first();
-        if (! $owner || $owner->welcomed_at) {
+        if (! $owner || (! $force && $owner->welcomed_at)) {
             return false;
         }
 
