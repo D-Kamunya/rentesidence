@@ -33,10 +33,28 @@ class OwnerSetupService
             $hasSms = Schema::hasTable('owner_credit_transactions')
                 && \App\Models\OwnerCreditTransaction::where('owner_user_id', $userId)->where('bucket', 'sms')->exists();
 
+            // "How you get paid" — plan-aware. On Transaction mode rent lands in the in-app wallet
+            // (owner withdraws to their phone), so there's nothing to set — the step is satisfied.
+            // On Free/Subscription rent is paid straight to the owner's OWN M-Pesa Till/Paybill, so
+            // until they add and activate one, rent cannot be collected — this is the step that was
+            // missing from onboarding, and it's gated as core so it can't be skipped.
+            $plan = (Schema::hasTable('owner_packages') && function_exists('ownerCurrentPackage'))
+                ? (optional(ownerCurrentPackage($userId))->pricing_model ?: 'free')
+                : 'free';
+            if ($plan === 'transaction') {
+                $hasPayout  = true;
+                $payoutStep = $this->step('getpaid', __('Confirm how you get paid'), true, __('View wallet'), $this->url('owner.wallet.index'));
+            } else {
+                $hasPayout  = Schema::hasTable('mpesa_accounts')
+                    && \App\Models\MpesaAccount::where('owner_user_id', $userId)->where('status', ACTIVE)->exists();
+                $payoutStep = $this->step('getpaid', __('Set up how you get paid (M-Pesa Till/Paybill)'), (bool) $hasPayout, __('Set up payments'), $this->url('owner.setting.gateway'));
+            }
+
             $steps = [
                 $this->step('property', __('Add your first property'), $hasProperty, __('Add property'), $this->url('owner.property.allProperty')),
                 $this->step('units', __('Add units to your property'), $hasUnit, __('Add units'), $this->url('owner.property.allUnit')),
                 $this->step('tenant', __('Add your first tenant'), $hasTenant, __('Add tenant'), $this->url('owner.tenant.index')),
+                $payoutStep,
                 // Recurring turns on automatically with the first tenant, so this ticks itself — kept
                 // as a visible milestone. Completion (auto-hide) is gated on the core steps below.
                 $this->step('recurring', __('Turn on automatic rent invoices'), (bool) $hasRecurring, __('Set up rent'), $this->url('owner.invoice.recurring-setting.index')),
@@ -49,7 +67,7 @@ class OwnerSetupService
         // The checklist auto-hides once the CORE setup is done (property → units → tenant →
         // recurring). SMS is a promoted bonus step shown during setup, but it never blocks
         // completion — ongoing SMS adoption is the Upgrade Advisor's job, not a permanent nag.
-        $coreKeys  = ['property', 'units', 'tenant', 'recurring'];
+        $coreKeys  = ['property', 'units', 'tenant', 'getpaid', 'recurring'];
         $coreSteps = array_filter($steps, fn ($s) => in_array($s['key'], $coreKeys, true));
         $coreDone  = count(array_filter($coreSteps, fn ($s) => $s['done']));
 
