@@ -95,12 +95,13 @@
                     <div class="ow-card mt-3" style="background:#fff;border:0.5px solid #e5e7eb;border-radius:12px;padding:22px 24px;box-shadow:0 4px 12px rgba(0,0,0,0.04);">
                         <div class="d-flex align-items-center justify-content-between mb-3">
                             <h5 style="font-size:15px;font-weight:600;color:#111827;margin:0;">{{ __('Setup progress') }}</h5>
-                            <span style="font-size:12px;font-weight:600;color:{{ $stepsDone === 3 ? '#0F6E56' : '#854F0B' }};background:{{ $stepsDone === 3 ? '#E1F5EE' : '#FAEEDA' }};padding:3px 11px;border-radius:99px;">{{ $stepsDone }}/3 {{ __('done') }}</span>
+                            <span style="font-size:12px;font-weight:600;color:{{ $stepsDone === 4 ? '#0F6E56' : '#854F0B' }};background:{{ $stepsDone === 4 ? '#E1F5EE' : '#FAEEDA' }};padding:3px 11px;border-radius:99px;">{{ $stepsDone }}/4 {{ __('done') }}</span>
                         </div>
                         @php
                             $steps = [
                                 ['property', __('Added a property'), __('They haven\'t added a property yet.')],
                                 ['tenant',   __('Added a tenant'),   __('No tenants added yet.')],
+                                ['payment',  __('Set up how they get paid'), __('No rent-receiving account yet — rent can\'t be collected until they add their M-Pesa Till/Paybill.')],
                                 ['rent',     __('Collected first rent'), __('No rent collected through the system yet.')],
                             ];
                         @endphp
@@ -121,7 +122,7 @@
                             </div>
                         @endforeach
 
-                        @if($stepsDone < 3)
+                        @if($stepsDone < 4)
                             <div style="margin-top:16px;background:#FFF8EC;border:0.5px solid #F3E2C0;border-radius:10px;padding:12px 14px;font-size:13px;color:#854F0B;display:flex;align-items:flex-start;gap:9px;">
                                 <svg width="16" height="16" viewBox="0 0 16 16" fill="none" style="flex-shrink:0;margin-top:1px;"><circle cx="8" cy="8" r="6.5" stroke="currentColor" stroke-width="1.3"/><path d="M8 5v3.5M8 11h.01" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
                                 <span>{{ __('This owner may be stuck in setup. Reach out with the') }} <strong>{{ __('Message owner') }}</strong> {{ __('button to help them get going.') }}</span>

@@ -82,7 +82,16 @@ class OwnerController extends Controller
             $user->updated_at,
         ])->filter()->map(fn ($d) => Carbon::parse($d))->max();
 
-        $setup = ['property' => $properties > 0, 'tenant' => $tenants > 0, 'rent' => (bool) $hasRent];
+        // "How they get paid" — mirrors the owner's own setup checklist (OwnerSetupService). On
+        // Transaction mode rent lands in the wallet (nothing to set); on Free/Subscription rent is
+        // paid to the owner's OWN M-Pesa Till/Paybill, so until an active one exists rent can't be
+        // collected. Surfacing it here lets an admin spot owners who are stuck before billing starts.
+        $plan      = optional(ownerCurrentPackage($user->id))->pricing_model ?: 'free';
+        $hasPayout = $plan === 'transaction'
+            ? true
+            : \App\Models\MpesaAccount::where('owner_user_id', $user->id)->where('status', ACTIVE)->exists();
+
+        $setup = ['property' => $properties > 0, 'tenant' => $tenants > 0, 'payment' => $hasPayout, 'rent' => (bool) $hasRent];
         $stepsDone = collect($setup)->filter()->count();
 
         return view('admin.owner.show', [
