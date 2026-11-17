@@ -46,6 +46,8 @@ class TwilioSmsService
         $from_number = getOption('TWILIO_PHONE_NUMBER');
 
         if (getOption('TWILIO_STATUS', 0) == 1) {
+            // Drop suppressed (test / seed / invalid) numbers before they reach the gateway.
+            $numbers = SmsGuard::filter($numbers);
             if (count($numbers)) {
                 foreach ($numbers as $key => $number) {
                     try {

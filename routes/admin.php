@@ -248,6 +248,11 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'middleware' => ['auth', 'a
     Route::post('email-suppressions', [\App\Http\Controllers\Admin\EmailSuppressionController::class, 'store'])->name('email-suppressions.store');
     Route::post('email-suppressions/{id}/remove', [\App\Http\Controllers\Admin\EmailSuppressionController::class, 'destroy'])->name('email-suppressions.remove');
 
+    // SMS suppression list — the SMS sibling of the above (view/add/un-suppress).
+    Route::get('sms-suppressions', [\App\Http\Controllers\Admin\SmsSuppressionController::class, 'index'])->name('sms-suppressions.index');
+    Route::post('sms-suppressions', [\App\Http\Controllers\Admin\SmsSuppressionController::class, 'store'])->name('sms-suppressions.store');
+    Route::post('sms-suppressions/{id}/remove', [\App\Http\Controllers\Admin\SmsSuppressionController::class, 'destroy'])->name('sms-suppressions.remove');
+
     // Marketplace refunds — admin green-lights the B2C payout to the buyer.
     Route::get('marketplace-refunds', [\App\Http\Controllers\Admin\MarketplaceRefundController::class, 'index'])->name('marketplace.refunds');
     Route::post('marketplace-refunds/{id}/approve', [\App\Http\Controllers\Admin\MarketplaceRefundController::class, 'approve'])->name('marketplace.refunds.approve');

@@ -52,11 +52,13 @@ class SupportTicketService
      * Admin-initiated outreach: the admin STARTS a thread with a user (owner, affiliate, any role) —
      * support is otherwise requester-initiated only. Creates the ticket with the TARGET as requester
      * and the admin's message as the first (admin) reply, so the target's unread badge + in-app bell
-     * light exactly like a normal admin reply. The caller also emails them to log in and reply.
+     * light exactly like a normal admin reply. The target is ALSO emailed (a support message is an
+     * event — the client is likely outside the app, so in-app alone wouldn't reach them), unless
+     * $notifyByEmail is false (e.g. the welcome, which already has its own welcome email).
      */
-    public function adminStartConversation(User $target, User $admin, string $subject, string $body): SupportTicket
+    public function adminStartConversation(User $target, User $admin, string $subject, string $body, bool $notifyByEmail = true): SupportTicket
     {
-        return DB::transaction(function () use ($target, $admin, $subject, $body) {
+        $ticket = DB::transaction(function () use ($target, $admin, $subject, $body) {
             $ticket = SupportTicket::create([
                 'requester_user_id' => $target->id,
                 'requester_role'    => $target->role,
@@ -86,6 +88,12 @@ class SupportTicketService
 
             return $ticket;
         });
+
+        if ($notifyByEmail) {
+            $this->emailRequester($ticket, $target, $subject, $body);
+        }
+
+        return $ticket;
     }
 
     /**
@@ -94,7 +102,7 @@ class SupportTicketService
      */
     public function reply(SupportTicket $ticket, User $author, string $body, bool $isAdmin): SupportTicketReply
     {
-        return DB::transaction(function () use ($ticket, $author, $body, $isAdmin) {
+        $reply = DB::transaction(function () use ($ticket, $author, $body, $isAdmin) {
             $reply = SupportTicketReply::create([
                 'support_ticket_id' => $ticket->id,
                 'user_id'           => $author->id,
@@ -133,6 +141,44 @@ class SupportTicketService
 
             return $reply;
         });
+
+        // A support message is an event — email the client too, since they're likely outside the app
+        // and an in-app bell alone wouldn't reach them. Only admin→client replies (not the client's own).
+        if ($isAdmin) {
+            $this->emailRequester($ticket, $ticket->requester, __('New reply: ') . $ticket->subject, $body);
+        }
+
+        return $reply;
+    }
+
+    /**
+     * Email the thread's requester a CS-branded copy of an admin message (reusing LifecycleMail, so it's
+     * on-brand by construction) with a link to view & reply. Fail-safe: a mail hiccup never breaks the
+     * support flow (the in-app notification already landed).
+     */
+    private function emailRequester(?SupportTicket $ticket, ?User $requester, string $subject, string $body): void
+    {
+        try {
+            if (! $ticket || ! $requester || ! $requester->email) {
+                return;
+            }
+
+            $appName = getOption('app_name') ?: 'Centresidence';
+            $url     = \Illuminate\Support\Facades\Route::has('support.show') ? route('support.show', $ticket->id) : url('/');
+
+            \Illuminate\Support\Facades\Mail::to($requester->email)->queue(new \App\Mail\LifecycleMail($subject, [
+                'preheader' => \Illuminate\Support\Str::limit(trim(preg_replace('/\s+/', ' ', $body)), 120),
+                'eyebrow'   => __('Message from the :app team', ['app' => $appName]),
+                'title'     => $ticket->subject,
+                'blocks'    => [
+                    ['type' => 'text', 'html' => nl2br(e($body))],
+                    ['type' => 'button', 'url' => $url, 'label' => __('View & reply')],
+                    ['type' => 'note', 'text' => __('Tap the button to reply from Support inside your :app account — we read and answer every message.', ['app' => $appName])],
+                ],
+            ]));
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::warning('Support email to requester failed: ' . $e->getMessage());
+        }
     }
 
     /** Clear the unread flag for one side when they open the thread. */

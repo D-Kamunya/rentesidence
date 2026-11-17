@@ -30,6 +30,13 @@ class AdvantaSmsService
             return __('No number found');
         }
 
+        // Drop suppressed (test / seed / invalid) numbers before they reach the gateway — sending to
+        // them gets the batch rejected and erodes our sender reputation / delivery rate.
+        $numbers = SmsGuard::filter($numbers);
+        if (!count($numbers)) {
+            return __('No number found');
+        }
+
         // GSM-7 safety net: downgrade smart punctuation (em/en dash, curly quotes, ellipsis, nbsp)
         // to plain ASCII BEFORE sending. A single non-GSM-7 char forces the whole message into
         // UCS-2 encoding, which halves the per-segment limit (70 vs 160) and silently doubles the
