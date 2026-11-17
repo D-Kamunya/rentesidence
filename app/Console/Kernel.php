@@ -40,10 +40,11 @@ class Kernel extends ConsoleKernel
         $schedule->command('outreach:process')->dailyAt('09:00')->withoutOverlapping();
         // Activation: nudge certified affiliates with no leads to add their first (their own landlord).
         $schedule->command('affiliate:activation-nudge')->dailyAt('10:00')->withoutOverlapping();
-        // Activation: nudge owners who signed up but haven't added a property/tenant yet (bounded).
-        $schedule->command('owner:activation-nudge')->dailyAt('10:30')->withoutOverlapping();
-        // Second touch: an in-app "stuck in setup" follow-up into the welcome thread for welcomed
-        // owners who still haven't finished setting up to collect rent (incl. the get-paid step).
+        // Owner onboarding follow-up: a bounded, stage-aware cadence that nudges welcomed owners who
+        // are stuck in setup through their current next step (incl. the get-paid/rent-account step).
+        // Delivered into the welcome support thread AND emailed (stuck owners are usually outside the
+        // app). This supersedes the old email-only owner:activation-nudge, which stopped at the tenant
+        // step and never chased the rent-account step.
         $schedule->command('owner:setup-followup')->weeklyOn(3, '10:45')->withoutOverlapping();
         // Monthly SMS cushion for Transaction owners (granted resets — no rollover; purchased kept).
         $schedule->command('sms:transaction-cushion')->monthlyOn(1, '06:00')->withoutOverlapping();

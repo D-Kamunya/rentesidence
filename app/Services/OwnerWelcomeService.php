@@ -52,7 +52,8 @@ class OwnerWelcomeService
                 $user,
                 $admin,
                 __('Welcome to :app 🎉', ['app' => $appName]),
-                $body
+                $body,
+                false // the separate welcome EMAIL already covers email — don't double up at signup
             );
 
             $owner->forceFill(['welcomed_at' => now()])->save();

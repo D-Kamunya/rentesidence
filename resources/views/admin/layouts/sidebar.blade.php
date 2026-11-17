@@ -78,6 +78,12 @@
                         </a>
                     </li>
                     <li>
+                        <a href="{{ route('admin.sms-suppressions.index') }}">
+                            <i class="ri-message-2-line"></i>
+                            <span>{{ __('SMS Suppression') }}</span>
+                        </a>
+                    </li>
+                    <li>
                         <a href="{{ route('admin.feature-announcements.index') }}">
                             <i class="ri-volume-up-line"></i>
                             <span>{{ __('Announcements') }}</span>
