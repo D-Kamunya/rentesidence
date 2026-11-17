@@ -20,14 +20,14 @@ use Illuminate\Console\Command;
  */
 class AffiliateEngagementFollowup extends Command
 {
-    protected $signature = 'affiliate:engagement-followup {--force : Send to every welcomed, still-stuck affiliate now, ignoring grace/spacing/cap}';
+    protected $signature = 'affiliate:engagement-followup {--force : Send to every welcomed, still-stuck affiliate now, ignoring grace/spacing/cap} {--yes : Skip the confirmation prompt (for non-interactive shells)}';
     protected $description = 'Follow up welcomed affiliates stuck before their first win, pointing each at their current next step.';
 
     public function handle(): int
     {
         $force = (bool) $this->option('force');
 
-        if ($force && ! $this->confirm('This sends a follow-up to EVERY welcomed affiliate who is still stuck right now, ignoring the usual grace/spacing/cap, posting into their support thread. Continue?')) {
+        if ($force && ! $this->option('yes') && ! $this->confirm('This sends a follow-up to EVERY welcomed affiliate who is still stuck right now, ignoring the usual grace/spacing/cap, posting into their support thread. Continue?')) {
             $this->warn('Aborted.');
             return self::SUCCESS;
         }
