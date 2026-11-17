@@ -70,6 +70,10 @@ class AffiliateService
             );
         }
 
+        // In-app welcome support thread (points them to the academy → first lead). Idempotent +
+        // fail-safe (the service swallows its own errors), so it never affects account creation.
+        \App\Services\AffiliateWelcomeService::send($user);
+
         return $user;
     }
 
