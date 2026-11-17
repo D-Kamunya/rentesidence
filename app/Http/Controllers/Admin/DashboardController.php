@@ -41,6 +41,20 @@ class DashboardController extends Controller
         $data['totalMaintainer']     = User::where('role', USER_ROLE_MAINTAINER)->count();
         $data['totalFinancePartner'] = User::where('role', USER_ROLE_FINANCE_PARTNER)->count();
 
+        // ── Pipeline-at-a-glance cards: affiliates → owners → leads ────────────────────────────────
+        // 1) Total leads in the system.
+        $data['pipelineLeads'] = \App\Models\Lead::count();
+        // 2) Affiliate academy progress — certified vs still in training (not completed).
+        $data['academyCertified']  = \App\Models\Affiliate::where('academy_status', 'completed')->count();
+        $data['academyInTraining'] = \App\Models\Affiliate::where('academy_status', '!=', 'completed')->count();
+        // 3) Owners who have FULLY set up to collect rent — a property, a tenant, AND a way to get paid
+        //    (an active M-Pesa Till/Paybill). Single aggregate query (EXISTS), so it stays cheap.
+        $data['ownersFullySetup'] = User::where('role', USER_ROLE_OWNER)
+            ->whereExists(fn ($q) => $q->from('properties')->whereColumn('properties.owner_user_id', 'users.id')->whereNull('properties.deleted_at'))
+            ->whereExists(fn ($q) => $q->from('tenants')->whereColumn('tenants.owner_user_id', 'users.id')->whereNull('tenants.deleted_at'))
+            ->whereExists(fn ($q) => $q->from('mpesa_accounts')->whereColumn('mpesa_accounts.owner_user_id', 'users.id')->where('mpesa_accounts.status', ACTIVE)->whereNull('mpesa_accounts.deleted_at'))
+            ->count();
+
         // Owners by their CURRENT active plan (latest active owner_package per owner) — plan-mix uptake.
         // Restrict to REAL owners (a non-deleted owners row) so stale/old owner_packages for accounts
         // that no longer exist as owners don't inflate the chart (it was showing 42 "Trial pack" vs

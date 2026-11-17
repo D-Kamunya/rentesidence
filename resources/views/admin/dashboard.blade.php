@@ -484,6 +484,56 @@
         </div>
     </div>
 
+    {{-- ── Pipeline at a glance: affiliates → owners → leads ── --}}
+    <div style="display:flex;align-items:baseline;gap:10px;margin:6px 2px 14px;flex-wrap:wrap;">
+        <h5 style="font-size:15px;font-weight:700;color:#111827;margin:0;">{{ __('Pipeline at a glance') }}</h5>
+        <span style="font-size:12px;color:#9ca3af;">{{ __('Affiliates → Owners → Leads') }}</span>
+    </div>
+    <div class="dash-stats" style="margin-bottom:26px;">
+
+        {{-- Affiliate academy: certified vs still in training --}}
+        <div class="dash-stat">
+            <div class="dash-stat__top">
+                <div class="dash-stat__icon dash-stat__icon--purple">
+                    <svg viewBox="0 0 24 24"><path d="M22 10L12 5 2 10l10 5 10-5z"/><path d="M6 12v5c0 1 2.7 2.5 6 2.5s6-1.5 6-2.5v-5"/></svg>
+                </div>
+                <span class="dash-stat__badge">{{ __('Academy') }}</span>
+            </div>
+            <div>
+                <p class="dash-stat__value">{{ $academyCertified }}</p>
+                <p class="dash-stat__label">{{ __('Affiliates certified') }} <span style="color:#9ca3af;">· {{ $academyInTraining }} {{ __('in training') }}</span></p>
+            </div>
+        </div>
+
+        {{-- Owners who have fully set up to collect rent (property + tenant + payment account) --}}
+        <div class="dash-stat">
+            <div class="dash-stat__top">
+                <div class="dash-stat__icon dash-stat__icon--green">
+                    <svg viewBox="0 0 24 24"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+                </div>
+                <span class="dash-stat__badge">{{ __('Owners') }}</span>
+            </div>
+            <div>
+                <p class="dash-stat__value">{{ $ownersFullySetup }}</p>
+                <p class="dash-stat__label">{{ __('Owners fully set up') }} <span style="color:#9ca3af;">· {{ __('of') }} {{ $totalOwner }}</span></p>
+            </div>
+        </div>
+
+        {{-- Total leads in the pipeline --}}
+        <div class="dash-stat">
+            <div class="dash-stat__top">
+                <div class="dash-stat__icon dash-stat__icon--blue">
+                    <svg viewBox="0 0 24 24"><path d="M3 11l19-9-9 19-2-8-8-2z"/></svg>
+                </div>
+                <span class="dash-stat__badge">{{ __('Leads') }}</span>
+            </div>
+            <div>
+                <p class="dash-stat__value">{{ $pipelineLeads }}</p>
+                <p class="dash-stat__label">{{ __('Total leads') }}</p>
+            </div>
+        </div>
+    </div>
+
     {{-- ── Stat Cards ── --}}
     <div class="dash-stats">
 
