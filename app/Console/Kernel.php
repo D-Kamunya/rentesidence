@@ -38,8 +38,11 @@ class Kernel extends ConsoleKernel
         $schedule->command('affiliate:commission-digest')->monthlyOn(1, '08:00')->withoutOverlapping();
         // Outreach campaigns: reconcile conversions + send bounded follow-ups to non-responders.
         $schedule->command('outreach:process')->dailyAt('09:00')->withoutOverlapping();
-        // Activation: nudge certified affiliates with no leads to add their first (their own landlord).
-        $schedule->command('affiliate:activation-nudge')->dailyAt('10:00')->withoutOverlapping();
+        // Affiliate engagement follow-up: a bounded, stage-aware cadence that re-engages idle affiliates
+        // through their current sticking point (academy → first lead → convert) until a real win.
+        // Delivered into the welcome support thread AND emailed. Supersedes the old email-only
+        // affiliate:activation-nudge, which stopped at the first lead and never chased a conversion.
+        $schedule->command('affiliate:engagement-followup')->weeklyOn(3, '10:30')->withoutOverlapping();
         // Owner onboarding follow-up: a bounded, stage-aware cadence that nudges welcomed owners who
         // are stuck in setup through their current next step (incl. the get-paid/rent-account step).
         // Delivered into the welcome support thread AND emailed (stuck owners are usually outside the
