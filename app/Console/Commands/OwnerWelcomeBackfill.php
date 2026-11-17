@@ -22,14 +22,14 @@ use Illuminate\Console\Command;
  */
 class OwnerWelcomeBackfill extends Command
 {
-    protected $signature = 'owner:welcome-backfill {--force : Re-send to EVERY owner, even those already welcomed (one-time use)}';
+    protected $signature = 'owner:welcome-backfill {--force : Re-send to EVERY owner, even those already welcomed (one-time use)} {--yes : Skip the confirmation prompt (for non-interactive shells)}';
     protected $description = 'Send the in-app welcome message to owners who have not received it yet.';
 
     public function handle(): int
     {
         $force = (bool) $this->option('force');
 
-        if ($force && ! $this->confirm('This re-sends the welcome to EVERY owner (even already-welcomed ones) and opens a fresh support thread each time. Run it only once. Continue?')) {
+        if ($force && ! $this->option('yes') && ! $this->confirm('This re-sends the welcome to EVERY owner (even already-welcomed ones) and opens a fresh support thread each time. Run it only once. Continue?')) {
             $this->warn('Aborted.');
             return self::SUCCESS;
         }

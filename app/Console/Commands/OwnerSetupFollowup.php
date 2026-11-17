@@ -20,14 +20,14 @@ use Illuminate\Console\Command;
  */
 class OwnerSetupFollowup extends Command
 {
-    protected $signature = 'owner:setup-followup {--force : Send to every welcomed, still-stuck owner now, ignoring grace/spacing/cap}';
+    protected $signature = 'owner:setup-followup {--force : Send to every welcomed, still-stuck owner now, ignoring grace/spacing/cap} {--yes : Skip the confirmation prompt (for non-interactive shells)}';
     protected $description = 'Follow up welcomed owners stuck in setup, pointing each at their current next step. Bounded cadence.';
 
     public function handle(): int
     {
         $force = (bool) $this->option('force');
 
-        if ($force && ! $this->confirm('This sends a follow-up to EVERY welcomed owner who is still stuck right now, ignoring the usual grace/spacing/cap, posting into their support thread. Continue?')) {
+        if ($force && ! $this->option('yes') && ! $this->confirm('This sends a follow-up to EVERY welcomed owner who is still stuck right now, ignoring the usual grace/spacing/cap, posting into their support thread. Continue?')) {
             $this->warn('Aborted.');
             return self::SUCCESS;
         }
