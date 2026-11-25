@@ -20,7 +20,9 @@ use Illuminate\Support\Facades\Log;
  *     without pestering.
  *   - When the owner ADVANCES to a new step, the cadence RESETS (count back to 1 on the new step), so
  *     each sticking point gets its own fresh sequence — i.e. it anticipates the next place they stall.
- *   - It stops the moment setup is complete, and only ever touches owners we've already welcomed.
+ *   - After setup is complete it does NOT stop at a half-measure: an owner with tenants but ZERO
+ *     invoices is set up on paper yet not collecting, so it nudges a 'transact' check-in until the
+ *     first invoice exists. Only then (genuinely active) does the cadence stop. Welcomed owners only.
  *
  * Delivered as a reply INTO the owner's welcome support thread (so it reads as us checking in, and
  * they can reply), falling back to a fresh thread. State on owners: setup_followup_count (per current
@@ -45,15 +47,26 @@ class OwnerSetupFollowupService
 
         try {
             $checklist = app(OwnerSetupService::class)->checklist((int) $user->id);
-            // No steps (bare install) or fully set up → nothing to nudge.
-            if (($checklist['total'] ?? 0) === 0 || ! empty($checklist['complete'])) {
-                return false;
+            if (($checklist['total'] ?? 0) === 0) {
+                return false; // bare install → nothing to nudge
             }
 
-            // The first unfinished step is where they're stuck now — drives the message AND the cadence.
-            $next = collect($checklist['steps'])->firstWhere('done', false);
-            if (! $next) {
-                return false;
+            if (empty($checklist['complete'])) {
+                // Still setting up → nudge the first unfinished step (property → … → recurring).
+                $next = collect($checklist['steps'])->firstWhere('done', false);
+                if (! $next) {
+                    return false;
+                }
+            } else {
+                // Setup is DONE, but is the owner actually transacting? An owner with tenants and ZERO
+                // invoices is set up on paper but not collecting — a red flag worth a human check-in.
+                // Once any invoice exists they're genuinely active → stop the cadence.
+                $hasInvoices = \Illuminate\Support\Facades\Schema::hasTable('invoices')
+                    && \App\Models\Invoice::where('owner_user_id', $user->id)->exists();
+                if ($hasInvoices) {
+                    return false;
+                }
+                $next = ['key' => 'transact', 'label' => __('Start collecting rent')];
             }
             $currentStep = $next['key'];
             $sameStep    = $owner->setup_followup_step === $currentStep;
@@ -81,12 +94,10 @@ class OwnerSetupFollowupService
             if ($ticket) {
                 $support->reply($ticket, $admin, $body, true);
             } else {
-                $support->adminStartConversation(
-                    $user,
-                    $admin,
-                    __('Need a hand finishing your setup?'),
-                    $body
-                );
+                $subject = $currentStep === 'transact'
+                    ? __('Let\'s get your first rent collected')
+                    : __('Need a hand finishing your setup?');
+                $support->adminStartConversation($user, $admin, $subject, $body);
             }
 
             $owner->forceFill([
@@ -144,13 +155,24 @@ class OwnerSetupFollowupService
             'tenant'    => __("You've got your property set up — next add your first tenant, and their login is sent to them automatically by SMS and email."),
             'getpaid'   => __("You're almost there — the one thing left before rent can actually reach you is setting up how you get paid: add your M-Pesa Till or Paybill under Settings → Gateway. Without it, invoices go out but the money has nowhere to land."),
             'recurring' => __("You're set up — just switch on automatic rent invoices so billing runs itself each month."),
+            'transact'  => __("You've got your property and tenants in — the last mile is actually billing them. I noticed no rent invoices have gone out yet. Want a hand raising your first invoice (or turning on automatic monthly rent) so the money starts coming in?"),
         ];
         $line = $guidance[$next['key']] ?? __("You're partway through setup — let's get the next step done so you can start collecting rent.");
 
-        // First nudge for a step is a gentle check-in; later ones lean in with a direct offer of help.
-        $opener = $stepCount <= 1
-            ? __(":name, just checking in. 👋\n\nI noticed you haven't quite finished setting up your :app account yet, and I didn't want you to get stuck.\n\n", ['name' => $firstName, 'app' => $appName])
-            : __(":name, still here to help. 🙌\n\nYou're nearly set up on :app — I'd hate for you to miss out on collecting rent over one quick step.\n\n", ['name' => $firstName, 'app' => $appName]);
+        // The 'transact' stage is for owners who've FINISHED setup but aren't billing — a different
+        // framing from the "haven't finished setting up" nudges.
+        $isTransact = ($next['key'] ?? '') === 'transact';
+
+        if ($isTransact) {
+            $opener = $stepCount <= 1
+                ? __(":name, checking in. 👋\n\nYou're all set up on :app — nice work. But I noticed you haven't billed any rent yet, and I didn't want you to leave money on the table.\n\n", ['name' => $firstName, 'app' => $appName])
+                : __(":name, still here for you. 🙌\n\nYou're fully set up on :app but still not collecting — let's fix that; it's usually one quick step.\n\n", ['name' => $firstName, 'app' => $appName]);
+        } else {
+            // First nudge for a step is a gentle check-in; later ones lean in with a direct offer of help.
+            $opener = $stepCount <= 1
+                ? __(":name, just checking in. 👋\n\nI noticed you haven't quite finished setting up your :app account yet, and I didn't want you to get stuck.\n\n", ['name' => $firstName, 'app' => $appName])
+                : __(":name, still here to help. 🙌\n\nYou're nearly set up on :app — I'd hate for you to miss out on collecting rent over one quick step.\n\n", ['name' => $firstName, 'app' => $appName]);
+        }
 
         $closer = $stepCount <= 1
             ? __("\n\nReply right here if anything's unclear or you'd like us to walk you through it — we're happy to help you get your first rent collected.")
