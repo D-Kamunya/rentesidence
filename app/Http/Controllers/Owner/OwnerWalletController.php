@@ -360,6 +360,11 @@ class OwnerWalletController extends Controller
 
         $pageTitle = __('Commissions & Wallets');
 
+        // Payout mode: 'manual' = admin pays by M-Pesa and marks the request paid (automated B2C is
+        // slow/unreliable right now); 'auto_b2c' = admin approve fires the M-Pesa B2C payout. Flip the
+        // option to switch over with zero code change once B2C is dependable.
+        $payoutMode = getOption('withdrawal_payout_mode', 'manual');
+
         return view('admin.wallet.commissions', compact(
             'pageTitle',
             'totalGmv',
@@ -368,7 +373,8 @@ class OwnerWalletController extends Controller
             'totalWithdrawn',
             'wallets',
             'pendingWithdrawals',
-            'allTransactions'
+            'allTransactions',
+            'payoutMode'
         ));
     }
 
@@ -524,5 +530,75 @@ class OwnerWalletController extends Controller
                 'error'   => __('Rejection failed. Please try again.'),
             ]);
         }
+    }
+
+    /**
+     * Admin (MANUAL payout leg): the admin has already sent the money via M-Pesa themselves, so this
+     * just FINALIZES the request as paid — no B2C is fired. The balance was reserved (debited) at
+     * request time, so there is NO balance change here; this only flips the status and records an
+     * optional M-Pesa reference. The terminal state is 'approved', identical to a confirmed B2C payout,
+     * so reporting treats a manual and an automated payout the same. When B2C becomes dependable, flip
+     * withdrawal_payout_mode to 'auto_b2c' and admins use approveWithdrawal instead — no rework.
+     */
+    public function markPaidWithdrawal(Request $request, WithdrawalRequest $withdrawal)
+    {
+        if ($withdrawal->status !== 'pending') {
+            return response()->json(['success' => false, 'error' => __('Already processed.')]);
+        }
+
+        $data = $request->validate([
+            'mpesa_reference' => ['nullable', 'string', 'max:50'],
+        ]);
+        $ref = $data['mpesa_reference'] ?? null;
+
+        DB::transaction(function () use ($withdrawal, $ref) {
+            $withdrawal->update([
+                'status'          => 'approved',   // same terminal success state as a confirmed B2C payout
+                'processed_at'    => now(),
+                'mpesa_reference' => $ref ?: $withdrawal->mpesa_reference,
+            ]);
+
+            WalletTransaction::where('owner_wallet_id', $withdrawal->owner_wallet_id)
+                ->where('description', "Withdrawal request #{$withdrawal->id} — pending")
+                ->update(['description' => "Withdrawal #{$withdrawal->id} — paid (manual)"]);
+        });
+
+        // ── Notify owner: paid ───────────────────────────────────
+        $recipient = $withdrawal->wallet->user;
+        if ($recipient) {
+            $emailData = (object) [
+                'subject' => __('Withdrawal Paid — KSh ') . number_format($withdrawal->amount, 2),
+                'message' => __('Your withdrawal of KSh ') . number_format($withdrawal->amount, 2) .
+                             __(' to ') . $withdrawal->phone . __(' has been paid via M-Pesa.') .
+                             ($ref ? __(' Reference: ') . $ref . '.' : ''),
+            ];
+            $notificationData = (object) [
+                'title' => __('Withdrawal Paid'),
+                'body'  => __('KSh ') . number_format($withdrawal->amount, 2) . __(' has been sent to ') . $withdrawal->phone . '.',
+                'url'   => route('owner.wallet.index'),
+            ];
+            SendWalletNotificationJob::dispatch($recipient, $emailData, $notificationData, $withdrawal);
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => __('Marked as paid — the owner has been notified.'),
+        ]);
+    }
+
+    /**
+     * Admin: flip the payout mode (manual ⇄ auto_b2c) — the one switch that routes withdrawals to the
+     * manual "mark paid" leg or the automated M-Pesa B2C leg, with no code change.
+     */
+    public function setWithdrawalMode(Request $request)
+    {
+        $data = $request->validate([
+            'mode' => ['required', 'in:manual,auto_b2c'],
+        ]);
+        setOption('withdrawal_payout_mode', $data['mode']);
+
+        return back()->with('success', $data['mode'] === 'auto_b2c'
+            ? __('Payouts now run through automated M-Pesa B2C on approval.')
+            : __('Payouts are now manual — pay by M-Pesa, then mark each request paid.'));
     }
 }
