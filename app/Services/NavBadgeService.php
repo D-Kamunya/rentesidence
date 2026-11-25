@@ -146,6 +146,7 @@ class NavBadgeService
     {
         return [
             'affiliate_withdrawals' => $this->safe(fn () => AffiliateWithdrawal::where('status', AFFILIATE_WITHDRAWAL_PENDING)->count()),
+            'owner_withdrawals'     => $this->safe(fn () => \App\Models\WithdrawalRequest::where('status', 'pending')->count()),
             'enquiries'             => $this->safe(fn () => Message::where('is_view', 0)->count()),
             'referral_payouts'      => $this->safe(function () {
                 $svc = app(LandlordReferralService::class);

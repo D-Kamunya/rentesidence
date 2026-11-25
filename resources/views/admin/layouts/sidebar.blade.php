@@ -176,7 +176,7 @@
                 <li>
                     <a class="{{ @$navCommissionsAddMMShowClass }}" href="{{ route('admin.wallet.commissions') }}">
                         <i class="ri-wallet-3-line"></i>
-                        <span>{{ __('Wallet') }}</span>
+                        <span>{{ __('Wallet') }}@include('partials.nav-count', ['n' => $navBadges['owner_withdrawals'] ?? 0])</span>
                     </a>
                 </li>
                 <li>
