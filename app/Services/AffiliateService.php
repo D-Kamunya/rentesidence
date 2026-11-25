@@ -89,7 +89,7 @@ class AffiliateService
             // Email verification
             if (getOption('email_verification_status', 0) == ACTIVE) {
                 $subject = __('Account Verification') . ' ' . getOption('app_name');
-                $message = __('Thank you for create new account. Please verify your account');
+                $message = __('Thank you for creating a new account. Please verify your account');
 
                 // BUGFIX: Replaced undefined variable $affiliateUserId with $user->id.
                 // The previous variable caused a Fatal Error (Undefined Variable) in environments 

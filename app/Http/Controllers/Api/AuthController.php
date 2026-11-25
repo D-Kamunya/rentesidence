@@ -73,7 +73,7 @@ class AuthController extends Controller
 
                 if (getOption('email_verification_status', 0) == ACTIVE) {
                     $subject = __('Account Verification') . ' ' . getOption('app_name');
-                    $message = __('Thank you for create new account. Please verify your account');
+                    $message = __('Thank you for creating a new account. Please verify your account');
                     $template = EmailTemplate::where('owner_user_id', $ownerUserId)->where('category', EMAIL_TEMPLATE_EMAIL_VERIFY)->where('status', ACTIVE)->first();
                     if ($template) {
                         $customizedFieldsArray = [
