@@ -151,22 +151,42 @@
                 if (!body.account_name) { csMpesaErr('{{ __('Enter the account / business name.') }}'); return; }
             }
             csMpesaErr('');
-            var btn = document.getElementById('csMpesaSave');
-            if (btn) { btn.disabled = true; btn.textContent = '{{ __('Saving…') }}'; }
-            var params = new URLSearchParams(body);
-            fetch('{{ route('owner.setting.gateway.quick-mpesa') }}', {
-                method: 'POST',
-                headers: { 'X-CSRF-TOKEN': '{{ csrf_token() }}', 'X-Requested-With': 'XMLHttpRequest', 'Content-Type': 'application/x-www-form-urlencoded', 'Accept': 'application/json' },
-                credentials: 'same-origin', body: params.toString()
-            }).then(function (r) { return r.json().then(function (j) { return { ok: r.ok, j: j }; }); })
-              .then(function (res) {
-                  if (res.ok && res.j && res.j.status) { window.location.reload(); return; }
-                  csMpesaErr((res.j && res.j.message) || '{{ __('Could not save. Please try again.') }}');
-                  if (btn) { btn.disabled = false; btn.textContent = '{{ __('Save & activate') }}'; }
-              }).catch(function () {
-                  csMpesaErr('{{ __('Network error. Please try again.') }}');
-                  if (btn) { btn.disabled = false; btn.textContent = '{{ __('Save & activate') }}'; }
-              });
+
+            // The actual save, run only after the owner confirms the destination.
+            function doSave() {
+                var btn = document.getElementById('csMpesaSave');
+                if (btn) { btn.disabled = true; btn.textContent = '{{ __('Saving…') }}'; }
+                var params = new URLSearchParams(body);
+                fetch('{{ route('owner.setting.gateway.quick-mpesa') }}', {
+                    method: 'POST',
+                    headers: { 'X-CSRF-TOKEN': '{{ csrf_token() }}', 'X-Requested-With': 'XMLHttpRequest', 'Content-Type': 'application/x-www-form-urlencoded', 'Accept': 'application/json' },
+                    credentials: 'same-origin', body: params.toString()
+                }).then(function (r) { return r.json().then(function (j) { return { ok: r.ok, j: j }; }); })
+                  .then(function (res) {
+                      if (res.ok && res.j && res.j.status) { window.location.reload(); return; }
+                      csMpesaErr((res.j && res.j.message) || '{{ __('Could not save. Please try again.') }}');
+                      if (btn) { btn.disabled = false; btn.textContent = '{{ __('Save & activate') }}'; }
+                  }).catch(function () {
+                      csMpesaErr('{{ __('Network error. Please try again.') }}');
+                      if (btn) { btn.disabled = false; btn.textContent = '{{ __('Save & activate') }}'; }
+                  });
+            }
+
+            // Confirm-where-you-get-paid guard — mirrors Settings → gateway. Rent goes straight to
+            // whatever number is typed, so show it back and make the owner verify before committing.
+            var dest = type === 'TILLNUMBER'
+                ? '{{ __('Till') }} ' + body.till_number
+                : '{{ __('Paybill') }} ' + body.paybill_number + (body.account_name ? '  ·  {{ __('Acc') }}: ' + body.account_name : '');
+            if (typeof csConfirm === 'function') {
+                csConfirm({
+                    title: '{{ __('Confirm where you get paid') }}',
+                    message: '{{ __('Rent will be paid to:') }}\n\n' + dest + '\n\n{{ __('Check every number is exactly right — money goes straight here.') }}',
+                    tone: 'warning',
+                    confirmText: @js(__("Yes, that's correct"))
+                }).then(function (ok) { if (ok) doSave(); });
+            } else {
+                doSave();
+            }
         };
     })();
 </script>
