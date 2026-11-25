@@ -95,6 +95,11 @@
 
                 {{-- Top-up (metered owners only) --}}
                 @unless ($unlimited)
+                    @include('owner.partials.upgrade-upsell', [
+                        'uTitle'  => __('Screen every applicant, no limit'),
+                        'uBody'   => __('Tenant screening is unlimited on any paid plan — no monthly cap, no per-lookup cost.'),
+                        'uUrgent' => ($freeLeft ?? 0) <= 0,
+                    ])
                     <div class="sc-topup" id="sc-topup">
                         <div class="sc-topup__head">
                             <h3>{{ __('Need more? Top up screening credits') }}</h3>
