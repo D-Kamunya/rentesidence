@@ -44,11 +44,15 @@ class AffiliateWithdrawalController extends Controller
             ->get()
             ->sortByDesc('pending_count');
 
+        // Global payout mode (shared with owner withdrawals): 'manual' = pay by M-Pesa + mark paid;
+        // 'auto_b2c' = approve fires B2C. One switch governs both channels.
+        $payoutMode = getOption('withdrawal_payout_mode', 'manual');
+
         return view('admin.affiliates.withdrawals', compact(
             'withdrawals', 'pendingCount', 'pendingAmount',
             'approvedCount', 'approvedAmount',
             'rejectedCount', 'rejectedAmount',
-            'totalAffiliates', 'affiliateSummaries'
+            'totalAffiliates', 'affiliateSummaries', 'payoutMode'
         ));
     }
 
@@ -321,7 +325,9 @@ class AffiliateWithdrawalController extends Controller
                     'body'  => __(':amount approved via :method.', ['amount' => currencyPrice($withdrawal->amount), 'method' => __('manual transfer')]),
                     'url'   => route('affiliate.commissions.index', ['tab' => 'withdrawals']),
                 ];
-                SendWalletNotificationJob::dispatch($recipient, $emailData, $notificationData, $withdrawal, false);
+                // SMS the affiliate too on the PAID event (parity with owners) — "your money is sent"
+                // is exactly what an SMS is for; interim statuses stay email-only for cost discipline.
+                SendWalletNotificationJob::dispatch($recipient, $emailData, $notificationData, $withdrawal, true);
             }
 
             return response()->json([

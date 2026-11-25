@@ -692,7 +692,8 @@ class MpesaController extends Controller
                     'body'  => __(':amount has been paid to your M-Pesa.', ['amount' => currencyPrice($withdrawal->amount)]),
                     'url'   => route('affiliate.commissions.index', ['tab' => 'withdrawals']),
                 ];
-                SendWalletNotificationJob::dispatch($recipient, $emailData, $notificationData, $withdrawal, false);
+                // SMS on the PAID event (parity with owners) — the affiliate's money has landed.
+                SendWalletNotificationJob::dispatch($recipient, $emailData, $notificationData, $withdrawal, true);
             }
             return;
         }
