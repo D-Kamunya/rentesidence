@@ -215,36 +215,9 @@
                         </div>
                     @endif
 
-                    {{-- Use Marketplace Nudge --}}
-                    @if($showMarketplacePrompt)
-                        <div class="notice-bar notice-bar--marketplace mb-4 alert alert-dismissible fade show">
-                            <div class="notice-bar__left">
-                                <div class="notice-bar__icon">
-                                    <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
-                                        <path d="M8 1.5a6.5 6.5 0 100 13 6.5 6.5 0 000-13z" stroke="currentColor" stroke-width="1.4"/>
-                                        <path d="M5.5 8h5M8 5.5v5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
-                                    </svg>
-                                </div>
-                                <div>
-                                    <div class="notice-bar__text">
-                                        <strong>Friendly tip:</strong> Listing your products in the marketplace can help you reach more tenants and boost your income flow.
-                                    </div>
-                                    <div class="notice-bar__sub">It’s quick to get started and completely optional.</div>
-                                </div>
-                            </div>
-                            <div class="notice-bar__actions">
-                                <a href="{{ route('owner.products.create') }}" class="notice-bar__action">
-                                    <svg width="10" height="10" viewBox="0 0 16 16" fill="none">
-                                        <path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-                                    </svg>
-                                    List a Product
-                                </a>
-                                <button type="button" class="notice-bar__action notice-bar__dismiss" data-bs-dismiss="alert">
-                                    Maybe later
-                                </button>
-                            </div>
-                        </div>
-                    @endif
+                    {{-- Marketplace nudge is owned by the Owner Advisor (try_marketplace card above) —
+                         a config-aware, persistently-dismissible rule that rotates with the other value
+                         nudges. The old always-on "Friendly tip" band was removed to stop the duplicate. --}}
 
                     {{-- Pending Product Orders --}}
                     @if($pendingProductOrdersCount > 0)
@@ -1317,30 +1290,7 @@
     .notice-bar__action:hover { background: #9FE1CB; }
     .notice-bar--warning .notice-bar__action:hover { background: #F5C4B3; }
 
-    /* ── Marketplace Notice Bar ───────────────────────── */
-        .notice-bar--marketplace { 
-            background: #F0F9FF; 
-            border-color: #B3D9F5; 
-        }
-        .notice-bar--marketplace .notice-bar__icon { 
-            background: #E6F2FB; 
-            color: #0F4C81; 
-        }
-        .notice-bar--marketplace .notice-bar__text { 
-            color: #0F4C81; 
-        }
-        .notice-bar--marketplace .notice-bar__sub { 
-            color: #0F4C81; 
-        }
-        .notice-bar--marketplace .notice-bar__action { 
-            background: #E6F2FB; 
-            border: 0.5px solid #B3D9F5; 
-            color: #0F4C81; 
-        }
-        .notice-bar--marketplace .notice-bar__action:hover { 
-            background: #B3D9F5; 
-        }
-        .notice-bar__dismiss { 
+        .notice-bar__dismiss {
             background: transparent; 
             border: none; 
             color: #0F4C81; 

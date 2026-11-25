@@ -215,6 +215,67 @@ class GatewayService
         }
     }
 
+    /**
+     * One-shot inline M-Pesa activation from the dashboard checklist: ensure the owner's M-Pesa
+     * gateway exists and is ACTIVE, store the single Till/Paybill as an ACTIVE account, and lock the
+     * KES = 1.00 currency. Additive and idempotent — it never deletes the owner's other accounts
+     * (unlike the full settings form), so an owner who later adds more in Settings keeps them.
+     *
+     * @param  array{account_type:string,till_number?:?string,paybill_number?:?string,account_name?:?string}  $data
+     */
+    public function quickMpesaSetup(array $data)
+    {
+        DB::beginTransaction();
+        try {
+            $ownerUserId = auth()->id();
+
+            // Ensure the M-Pesa gateway row exists (owners are seeded one at signup; firstOrCreate
+            // self-heals a bare/legacy account) and flip it ACTIVE so rent can actually be collected.
+            $gateway = Gateway::firstOrCreate(
+                ['owner_user_id' => $ownerUserId, 'slug' => 'mpesa'],
+                ['title' => 'Mpesa', 'mode' => GATEWAY_MODE_LIVE, 'image' => 'assets/images/gateway-icon/mpesa.jpg']
+            );
+            $gateway->status = ACTIVE;
+            if (empty($gateway->mode)) {
+                $gateway->mode = GATEWAY_MODE_LIVE;
+            }
+            $gateway->save();
+
+            $accountType = $data['account_type'];
+            $paybill     = $accountType === 'PAYBILL' ? ($data['paybill_number'] ?? null) : null;
+            $accountName = $accountType === 'PAYBILL' ? ($data['account_name'] ?? null) : null;
+            $tillNumber  = $accountType === 'TILLNUMBER' ? ($data['till_number'] ?? null) : null;
+
+            // Keyed on (owner, account_type) so re-running updates the same row instead of piling up
+            // duplicates; set ACTIVE so the checklist's "get paid" step ticks immediately.
+            MpesaAccount::updateOrCreate(
+                ['owner_user_id' => $ownerUserId, 'account_type' => $accountType],
+                [
+                    'gateway_id'   => $gateway->id,
+                    'status'       => ACTIVE,
+                    'paybill'      => $paybill,
+                    'account_name' => $accountName,
+                    'till_number'  => $tillNumber,
+                ]
+            );
+
+            // M-Pesa moves Kenyan Shillings only — lock the conversion at 1:1, never owner-set.
+            GatewayCurrency::updateOrCreate(
+                ['gateway_id' => $gateway->id, 'owner_user_id' => $ownerUserId, 'currency' => 'KES'],
+                ['conversion_rate' => 1],
+            );
+
+            DB::commit();
+
+            return $this->success([], __('You\'re set up to get paid on M-Pesa.'));
+        } catch (Exception $e) {
+            DB::rollBack();
+            Log::error('quickMpesaSetup failed: ' . $e->getMessage());
+
+            return $this->error([], __('Could not save your M-Pesa details. Please try again.'));
+        }
+    }
+
     public function getCurrencyByGatewayId($id)
     {
         $currencies = GatewayCurrency::where('gateway_id', $id)->get();

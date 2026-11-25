@@ -47,7 +47,10 @@ class OwnerSetupService
             } else {
                 $hasPayout  = Schema::hasTable('mpesa_accounts')
                     && \App\Models\MpesaAccount::where('owner_user_id', $userId)->where('status', ACTIVE)->exists();
-                $payoutStep = $this->step('getpaid', __('Set up how you get paid (M-Pesa Till/Paybill)'), (bool) $hasPayout, __('Set up payments'), $this->url('owner.setting.gateway'));
+                $payoutStep = $this->step('getpaid', __('Set up how you get paid (M-Pesa Till/Paybill)'), (bool) $hasPayout, __('Set up here'), $this->url('owner.setting.gateway'));
+                // Rendered as an inline Till/Paybill form right on the checklist (not a jump to the
+                // full settings screen) — this is the onboarding wall most owners stall at.
+                $payoutStep['inline'] = 'mpesa';
             }
 
             $steps = [
