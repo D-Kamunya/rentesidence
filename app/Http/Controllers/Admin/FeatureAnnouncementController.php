@@ -19,14 +19,59 @@ class FeatureAnnouncementController extends Controller
         USER_ROLE_MAINTAINER      => 'Maintainers',
     ];
 
+    /** Roles that actually see in-account announcements (admins don't) — the denominator for reach. */
+    public const VISIBLE_ROLES = [
+        USER_ROLE_OWNER, USER_ROLE_TENANT, USER_ROLE_AFFILIATE, USER_ROLE_FINANCE_PARTNER, USER_ROLE_MAINTAINER,
+    ];
+
     public function index()
     {
+        $announcements = FeatureAnnouncement::with('kbArticle')
+            // "Seen" = a pivot row with a seen_at stamp (written when the user dismisses the modal).
+            ->withCount(['seenBy as reach_seen' => fn ($q) => $q->whereNotNull('feature_announcement_user.seen_at')])
+            ->latest()
+            ->paginate(20);
+
+        // Audience size per role, counted once, then summed per announcement — so an admin can see
+        // what share of the targeted people have actually seen each note and know when to pause it.
+        $roleCounts = \App\Models\User::whereIn('role', self::VISIBLE_ROLES)
+            ->selectRaw('role, COUNT(*) as c')->groupBy('role')->pluck('c', 'role');
+
+        foreach ($announcements as $a) {
+            $reach = self::computeReach((string) $a->audience, (int) $a->reach_seen, $roleCounts);
+            $a->reach_target = $reach['target'];
+            $a->reach_pct    = $reach['pct'];
+        }
+
         return view('admin.feature-announcements.index', [
-            'announcements' => FeatureAnnouncement::with('kbArticle')->latest()->paginate(20),
+            'announcements' => $announcements,
             'audiences'     => self::AUDIENCES,
             'kbArticles'    => \App\Models\KnowledgeBaseArticle::orderBy('title')->get(['id', 'title', 'audience']),
             'pageTitle'     => __('Feature Announcements'),
         ]);
+    }
+
+    /**
+     * Reach for one announcement: how many targeted people have seen it, out of the audience size.
+     * Pure so it's unit-testable. `$seen` is the seen-count; `$roleCounts` maps role id → user count.
+     *
+     * @return array{target:int,seen:int,pct:?int}  pct is null when the audience is empty.
+     */
+    public static function computeReach(string $audience, int $seen, \Illuminate\Support\Collection $roleCounts): array
+    {
+        $roles = $audience === 'all'
+            ? self::VISIBLE_ROLES
+            : array_map('intval', array_filter(explode(',', $audience), fn ($r) => $r !== ''));
+
+        $target = 0;
+        foreach ($roles as $r) {
+            $target += (int) ($roleCounts[$r] ?? 0);
+        }
+
+        // Cap seen at target — a stale pivot row (e.g. a user whose role changed) must never read >100%.
+        $pct = $target > 0 ? (int) round(min($seen, $target) / $target * 100) : null;
+
+        return ['target' => $target, 'seen' => $seen, 'pct' => $pct];
     }
 
     public function store(Request $request)

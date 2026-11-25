@@ -169,10 +169,14 @@ class OwnerAdvisorService
     // Each fires only when the feature is UNUSED and the owner has the context to benefit; as soon
     // as they try it the nudge stops and the next value nudge surfaces.
 
-    /** Free owner with a property but no shop → open a marketplace (an income stream). */
+    /**
+     * Any owner with a property but no shop → open a marketplace (an income stream). Deliberately
+     * NOT gated by tier: selling water/gas/essentials to tenants is a good, revenue-positive feature
+     * on every plan, so a paid owner who hasn't tried the marketplace gets the same nudge.
+     */
     private function ruleAddProducts(array $s): ?OwnerSuggestion
     {
-        if ($s['pricingModel'] !== 'free' || ! $s['hasProperty'] || $s['hasProducts']) {
+        if (! $s['hasProperty'] || $s['hasProducts']) {
             return null;
         }
 
