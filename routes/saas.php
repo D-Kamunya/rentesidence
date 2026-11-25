@@ -46,7 +46,7 @@ Route::group(['middleware' => ['isFrontend']], function () {
 
     // Landlord acquisition landing (the ad target): warm-up value page → start free.
     Route::get('get-started', fn () => view('get-started'))->name('get-started');
-    Route::get('about', fn () => view('about'))->name('about'); // brand page (own title/meta; captures name variants)
+    Route::get('about', fn () => view('about', ['pageTitle' => __('About — Property Management & Rent Collection in Kenya')]))->name('about'); // brand page
 
     // contact
     Route::post('contact-message-store', [FrontendController::class, 'contactMessageStore'])
