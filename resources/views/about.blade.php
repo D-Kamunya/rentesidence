@@ -90,7 +90,7 @@
     {{-- M-Pesa split --}}
     <section class="csab__band csab__band--paper2">
         <div class="csab__wrap csab__split">
-            <div class="csab__split-media"><img src="{{ asset('assets/images/about/mpesa.jpg') }}" alt="{{ __('A tenant paying rent on M-Pesa from their phone') }}" width="1280" height="760" loading="lazy"></div>
+            <div class="csab__split-media" style="aspect-ratio:16/9"><img src="{{ asset('assets/images/about/rent-modern.jpg') }}" alt="{{ __('Centresidence — rent received instantly on M-Pesa: rent collection, the modern way') }}" width="1672" height="941" loading="lazy"></div>
             <div>
                 <p class="csab__eyebrow">{{ __('Built for M-Pesa') }}</p>
                 <h2>{{ __('Rent, on the rails your tenants already use') }}</h2>
