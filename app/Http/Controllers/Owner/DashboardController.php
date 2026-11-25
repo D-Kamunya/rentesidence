@@ -77,14 +77,11 @@ class DashboardController extends Controller
         }
         $data['invoiceMonthlyAmount'] = $invoiceMonthlyAmount;
     
-        // Marketplace prompt
-        $hasProducts                   = Product::where('owner_user_id', $owner->id)->exists();
-        $data['showMarketplacePrompt'] = !$hasProducts && !session()->has('marketplace_prompt_shown');
+        // Marketplace listed-products stat. The marketplace *nudge* is owned by the Owner Advisor
+        // (try_marketplace rule) — a single, dismissible, config-aware card — so the old always-on
+        // "Friendly tip" dashboard band was removed to avoid showing the same prompt twice.
         $data['listedProductsCount']   = Product::where('owner_user_id', $owner->id)->count();
-        if ($data['showMarketplacePrompt']) {
-            session()->put('marketplace_prompt_shown', true);
-        }
-    
+
         // ── Wallet balance (surfaced on the dashboard so the owner sees it at a glance) ──
         $data['walletBalance'] = (float) \App\Models\OwnerWallet::forUser(auth()->id())->balance;
 
