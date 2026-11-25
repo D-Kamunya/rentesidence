@@ -52,6 +52,11 @@
                             </button>
                         @endif
                     </div>
+                    @include('owner.partials.upgrade-upsell', [
+                        'uTitle'  => __('Send unlimited agreements'),
+                        'uBody'   => __('E-signing is unlimited on any paid plan — no monthly cap, no per-agreement cost.'),
+                        'uUrgent' => ($eligibility['requiresPayment'] ?? false),
+                    ])
                 @endif
 
                 {{-- List --}}

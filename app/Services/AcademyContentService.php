@@ -81,8 +81,8 @@ class AcademyContentService
             // live from settings so the taught upgrade pitch always matches real pricing.
             'screening_price'      => (float) getOption('screening_price', 30),
             'agreement_price'      => (float) getOption('agreement_price', 50),
-            'screening_free_quota' => (int) getOption('screening_free_quota', 3),
-            'agreement_free_quota' => (int) getOption('agreement_free_quota', 3),
+            'screening_free_quota' => (int) getOption('screening_free_quota', 5),
+            'agreement_free_quota' => (int) getOption('agreement_free_quota', 10),
         ];
     }
 
