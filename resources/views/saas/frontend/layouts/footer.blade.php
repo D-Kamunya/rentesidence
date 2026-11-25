@@ -66,6 +66,7 @@
             <div class="csft__col">
                 <h5>{{ __('Product') }}</h5>
                 <ul>
+                    <li><a href="{{ route('about') }}">{{ __('About') }}</a></li>
                     <li><a href="{{ route('login') }}">{{ __('Dashboard') }}</a></li>
                     <li><a href="{{ route('frontend') }}#features">{{ __('Features') }}</a></li>
                     <li><a href="{{ route('house.hunt') }}">{{ __('House Hunt') }}</a></li>
