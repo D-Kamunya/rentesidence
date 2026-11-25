@@ -130,10 +130,11 @@
                                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M12 5v14M5 12l7 7 7-7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
                                 {{ __('Withdrawal Requests') }}
                             </h3>
-                            <div class="aw-section__actions">
+                            <div class="aw-section__actions" style="flex-wrap:wrap;gap:8px;">
                                 @if($pendingCount)
                                 <span class="aw-count-badge">{{ $pendingCount }} {{ __('pending') }}</span>
                                 @endif
+                                @include('admin.partials.payout-mode-toggle')
                                 <div class="aw-filter__wrap">
                                     <svg width="12" height="12" viewBox="0 0 24 24" fill="none"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
                                     <select id="statusFilter" class="aw-filter__select">
@@ -229,7 +230,7 @@
                                                         data-amount="{{ number_format($wd->amount, 2) }}"
                                                         data-phone="{{ $wd->phone ?? '' }}">
                                                     <svg width="12" height="12" viewBox="0 0 24 24" fill="none"><polyline points="20 6 9 17 4 12" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                                                    {{ __('Approve') }}
+                                                    {{ $payoutMode === 'auto_b2c' ? __('Approve') : __('Mark paid') }}
                                                 </button>
                                                 <button class="aw-btn aw-btn--reject"
                                                         data-id="{{ $wd->id }}"
@@ -400,7 +401,9 @@
                 </div>
             </div>
 
-            {{-- Method toggle --}}
+            {{-- Method toggle — only in automated mode; manual mode forces the manual leg (B2C hidden
+                 so the slow/unreliable B2C can't be triggered). The global toggle governs the mode. --}}
+            @if($payoutMode === 'auto_b2c')
             <div class="apv-method-row">
                 <span class="apv-method-label">{{ __('Settlement Method') }}</span>
                 <div class="apv-method-toggle">
@@ -414,8 +417,11 @@
                     </button>
                 </div>
             </div>
+            @else
+            <p style="font-size:12px;color:#6b7280;margin:0 0 12px;">{{ __('Confirm you have already sent this amount by M-Pesa. This records it as paid — it does not send any money.') }}</p>
+            @endif
 
-            {{-- B2C warning --}}
+            {{-- B2C warning (shown only when the B2C method is active) --}}
             <div id="b2cWarning" class="apv-warning">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" style="flex-shrink:0;margin-top:1px"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><line x1="12" y1="9" x2="12" y2="13" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><line x1="12" y1="17" x2="12.01" y2="17" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
                 <span>{{ __('This will trigger an M-Pesa B2C transfer. This action cannot be reversed once sent.') }}</span>
@@ -903,8 +909,10 @@
     const rjNotesEl = document.getElementById('rjNotes');
     
     // State
+    const PAYOUT_MODE = @json($payoutMode);
+    const DEFAULT_METHOD = PAYOUT_MODE === 'manual' ? 'manual' : 'b2c';
     let pendingUrl = null;
-    let currentMethod = 'b2c';
+    let currentMethod = DEFAULT_METHOD;
     let currentId = null;
     
     // Status filter
@@ -942,7 +950,7 @@
         if (notesEl) notesEl.value = '';
         pendingUrl = null;
         currentId = null;
-        setMethod('b2c');
+        setMethod(DEFAULT_METHOD);
     }
     
     function closeReject() {
@@ -976,6 +984,7 @@
         document.getElementById('apvName').textContent = name;
         document.getElementById('apvPhone').textContent = phone || '—';
         document.getElementById('apvAmount').textContent = 'KSh ' + amount;
+        setMethod(DEFAULT_METHOD); // manual mode forces the manual leg; B2C hidden
         pendingUrl = '{{ route("admin.affiliate.withdrawal.approve", ":id") }}'.replace(':id', id);
         currentId = id;
         openModal(approveModal);
