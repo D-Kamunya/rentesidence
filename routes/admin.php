@@ -132,7 +132,9 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'middleware' => ['auth', 'a
     Route::get('/wallet/commissions',          [OwnerWalletController::class, 'adminDashboard'])->name('wallet.commissions');
     Route::get('/wallet/owner/{wallet}',       [OwnerWalletController::class, 'adminOwnerWallet'])->name('wallet.owner');
     Route::post('/wallet/withdrawal/{withdrawal}/approve', [OwnerWalletController::class, 'approveWithdrawal'])->name('wallet.withdrawal.approve');
+    Route::post('/wallet/withdrawal/{withdrawal}/mark-paid',[OwnerWalletController::class, 'markPaidWithdrawal'])->name('wallet.withdrawal.mark-paid');
     Route::post('/wallet/withdrawal/{withdrawal}/reject',  [OwnerWalletController::class, 'rejectWithdrawal'])->name('wallet.withdrawal.reject');
+    Route::post('/wallet/withdrawal-mode',                 [OwnerWalletController::class, 'setWithdrawalMode'])->name('wallet.withdrawal.mode');
     // Affiliate Withdrawals
     Route::get('/affiliate/withdrawals',                          [AffiliateWithdrawalController::class, 'adminIndex'])->name('affiliate.withdrawals');
     Route::post('/affiliate/withdrawal/{withdrawal}/approve',     [AffiliateWithdrawalController::class, 'approve'])->name('affiliate.withdrawal.approve');

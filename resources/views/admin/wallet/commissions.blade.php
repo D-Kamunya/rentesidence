@@ -147,6 +147,18 @@
                                 @if($pendingWithdrawals->count())
                                 <span class="cm-count-badge">{{ $pendingWithdrawals->count() }}</span>
                                 @endif
+                                <form method="POST" action="{{ route('admin.wallet.withdrawal.mode') }}" style="margin-left:auto;display:flex;align-items:center;gap:8px;"
+                                      data-cs-confirm="{{ $payoutMode === 'auto_b2c' ? __('Switch to MANUAL payouts? You will pay each request by M-Pesa, then mark it paid.') : __('Switch to AUTOMATED M-Pesa B2C payouts? Approving a request will send the money automatically.') }}"
+                                      data-cs-confirm-title="{{ __('Change payout mode?') }}" data-cs-confirm-ok="{{ __('Yes, switch') }}">
+                                    @csrf
+                                    <span style="font-size:11px;font-weight:600;padding:3px 9px;border-radius:99px;{{ $payoutMode === 'auto_b2c' ? 'background:#E1F5EE;color:#0F6E56;' : 'background:#FAEEDA;color:#854F0B;' }}">
+                                        {{ $payoutMode === 'auto_b2c' ? __('Payouts: Automated B2C') : __('Payouts: Manual') }}
+                                    </span>
+                                    <input type="hidden" name="mode" value="{{ $payoutMode === 'auto_b2c' ? 'manual' : 'auto_b2c' }}">
+                                    <button type="submit" class="cm-btn" style="background:#f3f4f6;color:#374151;border:0.5px solid #e5e7eb;font-size:11px;">
+                                        {{ $payoutMode === 'auto_b2c' ? __('Switch to Manual') : __('Switch to Automated') }}
+                                    </button>
+                                </form>
                             </div>
                             <div class="table-responsive">
                                 <table class="cm-table">
@@ -173,11 +185,19 @@
                                             <td class="cm-date">{{ $wd->created_at->diffForHumans() }}</td>
                                             <td>
                                                 <div class="cm-action-group">
+                                                    @if($payoutMode === 'auto_b2c')
                                                     <button class="cm-btn cm-btn--approve"
                                                             onclick="triggerApprove({{ $wd->id }}, '{{ $wd->wallet->user->name ?? 'Owner' }}', '{{ number_format($wd->amount, 2) }}', '{{ $wd->phone }}')">
                                                         <svg width="12" height="12" viewBox="0 0 24 24" fill="none"><polyline points="20 6 9 17 4 12" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
                                                         {{ __('Approve') }}
                                                     </button>
+                                                    @else
+                                                    <button class="cm-btn cm-btn--approve"
+                                                            onclick="triggerMarkPaid({{ $wd->id }}, '{{ $wd->wallet->user->name ?? 'Owner' }}', '{{ number_format($wd->amount, 2) }}', '{{ $wd->phone }}')">
+                                                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none"><polyline points="20 6 9 17 4 12" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                                                        {{ __('Mark paid') }}
+                                                    </button>
+                                                    @endif
                                                     <button class="cm-btn cm-btn--reject" onclick="rejectWithdrawal({{ $wd->id }})">
                                                         <svg width="12" height="12" viewBox="0 0 24 24" fill="none"><line x1="18" y1="6" x2="6" y2="18" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/><line x1="6" y1="6" x2="18" y2="18" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg>
                                                         {{ __('Reject') }}
@@ -320,8 +340,8 @@
                 <svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M12 5v14M5 12l7 7 7-7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
             </div>
             <div>
-                <p class="apv-box__eyebrow">{{ __('M-Pesa B2C Payout') }}</p>
-                <h5 class="apv-box__title">{{ __('Approve Withdrawal') }}</h5>
+                <p class="apv-box__eyebrow" id="apvEyebrow">{{ __('M-Pesa B2C Payout') }}</p>
+                <h5 class="apv-box__title" id="apvTitle">{{ __('Approve Withdrawal') }}</h5>
             </div>
             <button type="button" class="apv-box__close" id="closeApproveModal">&times;</button>
         </div>
@@ -340,15 +360,20 @@
                     <strong class="apv-summary__amount" id="apvAmount">—</strong>
                 </div>
             </div>
+            <div class="apv-field" id="apvRefField" style="display:none;margin-bottom:12px;">
+                <label style="display:block;font-size:12px;color:#6b7280;margin-bottom:4px;">{{ __('M-Pesa reference (optional)') }}</label>
+                <input type="text" id="apvRef" maxlength="50" placeholder="{{ __('e.g. SJK3X9P2Q1') }}"
+                       style="width:100%;padding:8px 10px;border:1px solid #e5e7eb;border-radius:8px;font-size:13px;">
+            </div>
             <div class="apv-warning">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" style="flex-shrink:0;margin-top:1px"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><line x1="12" y1="9" x2="12" y2="13" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><line x1="12" y1="17" x2="12.01" y2="17" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
-                <span>{{ __('This will trigger an M-Pesa B2C transfer. This action cannot be reversed once sent.') }}</span>
+                <span id="apvWarning">{{ __('This will trigger an M-Pesa B2C transfer. This action cannot be reversed once sent.') }}</span>
             </div>
             <div class="apv-box__footer">
                 <button type="button" class="apv-btn apv-btn--cancel" id="cancelApproveModal">{{ __('Cancel') }}</button>
                 <button type="button" class="apv-btn apv-btn--confirm" id="confirmApproveBtn">
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><polyline points="20 6 9 17 4 12" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                    {{ __('Confirm & Send') }}
+                    <span id="apvConfirmLabel">{{ __('Confirm & Send') }}</span>
                 </button>
             </div>
         </div>
@@ -513,18 +538,53 @@
     }
     closeApprove();
 
-    window.triggerApprove = function (id, name, amount, phone) {
+    var refField     = document.getElementById('apvRefField');
+    var confirmLabel = document.getElementById('apvConfirmLabel');
+    var modeLabel    = '{{ __("Confirm & Send") }}';
+
+    function setApproveMode() {
+        document.getElementById('apvEyebrow').textContent = '{{ __("M-Pesa B2C Payout") }}';
+        document.getElementById('apvTitle').textContent   = '{{ __("Approve Withdrawal") }}';
+        document.getElementById('apvWarning').textContent = '{{ __("This will trigger an M-Pesa B2C transfer. This action cannot be reversed once sent.") }}';
+        modeLabel = '{{ __("Confirm & Send") }}';
+        confirmLabel.textContent = modeLabel;
+        refField.style.display = 'none';
+    }
+    function setMarkPaidMode() {
+        document.getElementById('apvEyebrow').textContent = '{{ __("Manual payout") }}';
+        document.getElementById('apvTitle').textContent   = '{{ __("Mark Withdrawal Paid") }}';
+        document.getElementById('apvWarning').textContent = '{{ __("Confirm you have ALREADY sent this amount by M-Pesa. This records the request as paid — it does NOT send any money.") }}';
+        modeLabel = '{{ __("Confirm paid") }}';
+        confirmLabel.textContent = modeLabel;
+        refField.style.display = '';
+    }
+
+    function fillModal(name, amount, phone) {
         document.getElementById('apvOwnerName').textContent = name;
         document.getElementById('apvPhone').textContent     = phone;
         document.getElementById('apvAmount').textContent    = 'KSh ' + amount;
+        document.getElementById('apvRef').value = '';
+        confirmBtn.disabled = false;
+    }
+
+    window.triggerApprove = function (id, name, amount, phone) {
+        setApproveMode();
+        fillModal(name, amount, phone);
         pendingUrl = '{{ route("admin.wallet.withdrawal.approve", ":id") }}'.replace(':id', id);
+        openApprove();
+    };
+
+    window.triggerMarkPaid = function (id, name, amount, phone) {
+        setMarkPaidMode();
+        fillModal(name, amount, phone);
+        pendingUrl = '{{ route("admin.wallet.withdrawal.mark-paid", ":id") }}'.replace(':id', id);
         openApprove();
     };
 
     confirmBtn.addEventListener('click', function () {
         if (!pendingUrl) return;
-        confirmBtn.disabled    = true;
-        confirmBtn.textContent = '{{ __("Processing…") }}';
+        confirmBtn.disabled      = true;
+        confirmLabel.textContent = '{{ __("Processing…") }}';
         doAction(pendingUrl);
     });
 
@@ -541,13 +601,18 @@
     function doAction(url) {
         var fd = new FormData();
         fd.append('_token', '{{ csrf_token() }}');
+        // Attach the optional M-Pesa reference only on the manual mark-paid action.
+        if (url.indexOf('mark-paid') !== -1) {
+            var ref = document.getElementById('apvRef');
+            if (ref && ref.value.trim()) fd.append('mpesa_reference', ref.value.trim());
+        }
         fetch(url, { method: 'POST', body: fd })
             .then(function (r) { return r.json(); })
             .then(function (d) {
                 if (d.success) { closeApprove(); toastr.success(d.message || '{{ __("Done.") }}'); setTimeout(function () { location.reload(); }, 1500); }
-                else { toastr.error(d.error || '{{ __("Failed.") }}'); confirmBtn.disabled = false; }
+                else { toastr.error(d.error || '{{ __("Failed.") }}'); confirmBtn.disabled = false; confirmLabel.textContent = modeLabel; }
             })
-            .catch(function () { toastr.error('{{ __("Something went wrong.") }}'); confirmBtn.disabled = false; });
+            .catch(function () { toastr.error('{{ __("Something went wrong.") }}'); confirmBtn.disabled = false; confirmLabel.textContent = modeLabel; });
     }
 })();
 </script>
