@@ -2,9 +2,16 @@
 @section('content')
 @php
   $pageTitle = 'Become a Centresidence Affiliate';
-  // Pull the recurring-commission window from settings so this page never needs editing if the
-  // length changes (same source the commission engine + academy read).
+  // Pull the commission knobs from settings so this page never needs editing if the rate or
+  // length changes (same source the commission engine + academy read). We surface only the
+  // headline BAND here — the per-channel ladder stays partner-only (academy/KB).
   $recurMonths = (int) (getOption('RECURRING_COMMISSION_MONTHS') ?: 12);
+  $firstRate   = (int) round((float) (getOption('FIRST_TIME_COMMISSION_RATE') ?: 40));
+  // Render the window as a natural phrase: whole years when it divides cleanly, else months.
+  $recurYears = $recurMonths % 12 === 0 ? intdiv($recurMonths, 12) : null;
+  $windowPhrase = $recurYears
+      ? 'about ' . ($recurYears === 1 ? 'a year' : ($recurYears === 2 ? 'two years' : $recurYears . ' years'))
+      : 'about ' . $recurMonths . ' months';
 @endphp
 
 <style>
@@ -17,6 +24,20 @@
   .aa-points { list-style:none; padding:0; margin:0 0 24px; display:flex; flex-direction:column; gap:14px; }
   .aa-points li { display:flex; gap:12px; align-items:flex-start; font-size:14.5px; color:#3a3f47; line-height:1.5; }
   .aa-points .ic { width:30px; height:30px; border-radius:9px; background:#E6F1FB; color:#185FA5; display:grid; place-items:center; flex:none; }
+
+  /* What you'll earn — the headline rate BAND (not the per-line ladder, which stays partner-only).
+     The concrete anchor that stops phantom sign-ups, with the honest "no salary / your effort" line. */
+  .aa-earn { border:1px solid #cfe2f3; border-radius:14px; padding:18px 20px; background:#F3F8FD; margin:0 0 18px; }
+  .aa-earn-head { display:flex; align-items:center; gap:10px; margin:0 0 10px; }
+  .aa-earn-ic { width:30px; height:30px; border-radius:9px; background:#185FA5; color:#fff; display:grid; place-items:center; flex:none; }
+  .aa-earn-head h3 { font-size:13px; font-weight:750; letter-spacing:.02em; color:#1b1e22; margin:0; }
+  .aa-earn-lead { font-size:14.5px; color:#2c313a; line-height:1.6; margin:0 0 9px; }
+  .aa-earn-lead b { color:#124E86; font-weight:750; }
+  .aa-earn-lead .pct { font-size:16px; }
+  .aa-earn-span { font-size:13px; color:#51575f; line-height:1.55; margin:0 0 11px; }
+  .aa-earn-honest { display:flex; gap:9px; align-items:flex-start; font-size:12.5px; color:#44474d; line-height:1.55; padding-top:11px; border-top:1px dashed #cfe2f3; margin:0; }
+  .aa-earn-honest svg { flex:none; margin-top:1px; color:#C7891F; }
+  .aa-earn-honest b { color:#1b1e22; font-weight:700; }
 
   /* The honest terms — deliberately plain and up-front. Reaching the form means you saw this. */
   .aa-terms { border:1px solid #e6e1d8; border-radius:14px; padding:18px 20px; background:#FBFAF7; }
@@ -67,6 +88,21 @@
       <p class="aa-eyebrow">Centresidence Affiliate Program</p>
       <h1 class="aa-title">Earn by bringing landlords onto Centresidence.</h1>
       <p class="aa-lede">Introduce property owners to Centresidence and earn <b>recurring commission</b> on what they do on the platform — working remotely, on your own schedule, with the tools, training and support to actually make it happen.</p>
+
+      {{-- What you'll earn — a concrete rate BAND so people know what they're signing up for, without
+           exposing the per-channel ladder (that's partner-only). Reads the live rate/window settings. --}}
+      <div class="aa-earn">
+        <div class="aa-earn-head">
+          <span class="aa-earn-ic"><svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M12 1v22M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+          <h3>What you'll earn</h3>
+        </div>
+        <p class="aa-earn-lead">You earn a <b>share of what Centresidence makes</b> on every owner you bring on — <b>up to around <span class="pct">{{ $firstRate }}%</span></b> in the first year, then an ongoing share for <b>{{ $windowPhrase }}</b> per owner.</p>
+        <p class="aa-earn-span">It spans everything they do on the platform — subscriptions, rent, financing, the marketplace, screening and agreements. The more owners you bring and the more active they get, the more you earn.</p>
+        <p class="aa-earn-honest">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.8"/><path d="M12 8v5M12 16v.4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+          <span>What you take home depends on the book you build — there's <b>no salary and no fixed amount</b>. The full channel-by-channel breakdown is in your partner academy once you join.</span>
+        </p>
+      </div>
 
       {{-- Up-front, plain-language terms — the honest part AND the good part, so the role is clear
            without reading as a list of warnings. Structural fix for V1's "I didn't read the JD". --}}
