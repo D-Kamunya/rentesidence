@@ -39,6 +39,7 @@ class DatabaseSeeder extends Seeder
             AffiliateKnowledgeBaseSeeder::class,
             AffiliateAcademySeeder::class,
             AffiliateAnnouncementSeeder::class,
+            OwnerAnnouncementSeeder::class,
             FaqSeeder::class,
             BlogSeeder::class,
             BlogContentSeeder::class,
