@@ -12,7 +12,14 @@ class SmsCreditsAdminController extends Controller
 {
     public function index()
     {
-        $pricePerSms  = getOption('sms_credit_price', 2.00); // standard/free-tier rate; matches SystemDefaultsSeeder
+        // The card edits the FREE-TIER SMS rate. What actually charges free owners is the Free
+        // package's per-credit price (CreditService reads packages.sms_price_per_credit); the global
+        // sms_credit_price option is only the fallback for plans that don't set their own. Show the
+        // Free package's rate when set (that's why the free tier reads 3.00, not the stale global 2.00).
+        $freePackage  = function_exists('defaultFreePackage') ? defaultFreePackage() : null;
+        $pricePerSms  = $freePackage && $freePackage->sms_price_per_credit !== null
+            ? (float) $freePackage->sms_price_per_credit
+            : (float) getOption('sms_credit_price', 3.00);
         $lowThreshold = getOption('sms_low_credit_threshold', 30);
 
         $recentPurchases = OwnerCreditTransaction::where('bucket', 'sms')
@@ -38,8 +45,19 @@ class SmsCreditsAdminController extends Controller
             'sms_credit_price'         => 'required|numeric|min:0.01',
             'sms_low_credit_threshold' => 'required|integer|min:1',
         ]);
-        updateOption('sms_credit_price',         $request->sms_credit_price);
-        updateOption('sms_low_credit_threshold', $request->sms_low_credit_threshold);
+
+        // Write the free-tier rate to its source of truth — the Free package (what actually charges
+        // free owners) — and keep the global fallback option in sync so nothing reads a stale value.
+        $freePackage = function_exists('defaultFreePackage') ? defaultFreePackage() : null;
+        if ($freePackage) {
+            $freePackage->sms_price_per_credit = $request->sms_credit_price;
+            $freePackage->save();
+        }
+
+        // setOption — NOT updateOption (which doesn't exist; calling it 500'd every save).
+        setOption('sms_credit_price',         $request->sms_credit_price);
+        setOption('sms_low_credit_threshold', $request->sms_low_credit_threshold);
+
         return back()->with('success', __('SMS credit settings updated.'));
     }
 
