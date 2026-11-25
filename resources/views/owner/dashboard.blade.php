@@ -861,9 +861,10 @@
 
 @push('style')
 <style>
-/* The old static financing nudge banner was subsumed by the Owner Advisor (ruleFinancing) — a
-   targeted, server-side-dismissible card — so its markup and styles were removed to keep the
-   dashboard free of duplicate nudges. The advisor is the single home for all value/upgrade nudges. */
+/* The .cs-fin-nudge* styles that used to live here now ship INSIDE the advisor partial
+   (owner/partials/upgrade-advisor.blade.php), which is the only thing that uses them — the card
+   reuses those class names. Keeping the CSS next to its markup prevents the "advisor renders as
+   raw text" regression that a stray strip here would cause. */
 
 /* ── SMS pack buttons (in modal) ─────────────────────────── */
 .sms-pack-btn {
