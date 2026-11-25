@@ -47,7 +47,7 @@
                         </div>
                         <div class="cs-mpesa__fields" data-cs-mpesa-fields="PAYBILL" hidden>
                             <input type="text" inputmode="numeric" autocomplete="off" id="csMpesaPaybill" class="cs-mpesa__input" placeholder="{{ __('Paybill number') }}">
-                            <input type="text" autocomplete="off" id="csMpesaAccName" class="cs-mpesa__input" placeholder="{{ __('Account / business name') }}">
+                            <input type="text" autocomplete="off" id="csMpesaAccName" class="cs-mpesa__input" placeholder="{{ __('Account number') }}">
                         </div>
                         <div class="cs-mpesa__err" id="csMpesaErr" hidden></div>
                         <div class="cs-mpesa__actions">
@@ -148,7 +148,7 @@
                 body.paybill_number = (document.getElementById('csMpesaPaybill').value || '').trim();
                 body.account_name = (document.getElementById('csMpesaAccName').value || '').trim();
                 if (!/^\d{5,10}$/.test(body.paybill_number)) { csMpesaErr('{{ __('Enter a valid Paybill number (5–10 digits).') }}'); return; }
-                if (!body.account_name) { csMpesaErr('{{ __('Enter the account / business name.') }}'); return; }
+                if (!body.account_name) { csMpesaErr('{{ __('Enter the account number.') }}'); return; }
             }
             csMpesaErr('');
 
