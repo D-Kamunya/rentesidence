@@ -337,6 +337,9 @@ Route::group(['prefix' => 'owner', 'as' => 'owner.', 'middleware' => ['auth', 'o
         Route::group(['prefix' => 'gateway', 'as' => 'gateway.'], function () {
             Route::get('/', [GatewayController::class, 'index'])->name('index');
             Route::post('store', [GatewayController::class, 'store'])->name('store');
+            // Inline one-field M-Pesa setup used by the dashboard "get paid" checklist step — lets an
+            // owner activate their Till/Paybill without leaving the dashboard (the #1 onboarding wall).
+            Route::post('quick-mpesa', [GatewayController::class, 'quickMpesa'])->name('quick-mpesa');
             Route::get('get-info', [GatewayController::class, 'getInfo'])->name('get.info');
             Route::get('delete/{gateway}', [GatewayController::class, 'delete'])->name('delete');
         });
