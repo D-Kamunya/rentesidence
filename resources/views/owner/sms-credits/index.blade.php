@@ -121,6 +121,13 @@
                             @endif
                         </p>
 
+                        @if (!isset($globalSmsPrice) || $pricePerSms >= $globalSmsPrice)
+                            @include('owner.partials.upgrade-upsell', [
+                                'uTitle' => __('Cheaper SMS on a paid plan'),
+                                'uBody'  => __('Upgrade and SMS drops to KSh 0.90 per credit, plus a monthly grant that covers your reminders.'),
+                            ])
+                        @endif
+
                         <div class="sms-quickpick mb-3">
                             @foreach([50, 100, 250, 500, 1000, 1500, 2000] as $pack)
                                 <button type="button" class="sms-pack-btn" data-qty="{{ $pack }}">

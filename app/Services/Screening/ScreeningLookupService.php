@@ -46,7 +46,7 @@ class ScreeningLookupService
 
         // Free plan: a MONTHLY free allowance (use-it-or-lose-it, counted from this month's
         // free-billed lookups — no cron), then PURCHASED credits (roll over).
-        $quota    = max(0, (int) getOption('screening_free_quota', 3));
+        $quota    = max(0, (int) getOption('screening_free_quota', 5));
         $freeUsed = TenantScreeningLookup::where('owner_user_id', $ownerUserId)
             ->where('billed_as', 'free')
             ->whereYear('created_at', now()->year)

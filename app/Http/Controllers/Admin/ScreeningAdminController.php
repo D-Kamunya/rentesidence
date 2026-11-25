@@ -23,7 +23,7 @@ class ScreeningAdminController extends Controller
     {
         $data['pageTitle'] = __('Tenant Screening');
         $data['price']     = (float) getOption('screening_price', 30);
-        $data['freeQuota'] = (int) getOption('screening_free_quota', 3);
+        $data['freeQuota'] = (int) getOption('screening_free_quota', 5);
 
         $data['stats'] = [
             'lookups_total' => TenantScreeningLookup::where('billed_as', '!=', 'none')->count(),
