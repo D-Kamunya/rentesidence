@@ -109,10 +109,12 @@ class OwnerAdvisorTest extends TestCase
         // Value exposure ranks ABOVE the transaction push in the ordering.
         $this->assertLessThan(array_search('upgrade_transaction', $keys), array_search('try_marketplace', $keys));
 
-        // Using a feature silences its nudge; SMS needs tenants; a paid owner sees no value nudges.
+        // Using a feature silences its nudge; SMS needs tenants.
         $this->assertNotContains('try_sms', $this->keys($this->svc()->rules($this->st(['usedSms' => true, 'hasProducts' => false]))));
         $this->assertNotContains('try_sms', $this->keys($this->svc()->rules($this->st(['hasTenants' => false, 'usedSms' => false]))));
-        $this->assertNotContains('try_marketplace', $this->keys($this->svc()->rules($this->st(['pricingModel' => 'transaction', 'hasProducts' => false]))));
+        // The marketplace nudge is NOT tier-gated — a paid/transaction owner who hasn't opened a shop
+        // still gets it (selling to tenants is a good income stream on every plan).
+        $this->assertContains('try_marketplace', $this->keys($this->svc()->rules($this->st(['pricingModel' => 'transaction', 'hasProducts' => false]))));
     }
 
     public function test_dismiss_hides_a_suggestion_and_snooze_expiry_reveals_it(): void

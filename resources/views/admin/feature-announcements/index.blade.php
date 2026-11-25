@@ -36,11 +36,16 @@
           .fam-flash{border-radius:10px;padding:11px 14px;font-size:13.5px;margin-bottom:16px;}
           .fam-flash--ok{background:#E1F5EE;border:1px solid #9ad9c4;color:#0F6E56;} .fam-flash--err{background:#FBE9E7;border:1px solid #f0b8b0;color:#B42318;}
           .fam-empty{padding:26px;text-align:center;color:#9aa2ad;font-size:13.5px;}
+          .fam-reach{height:6px;background:#eef0f3;border-radius:999px;overflow:hidden;margin-top:4px;width:88px;}
+          .fam-reach span{display:block;height:100%;border-radius:999px;background:linear-gradient(90deg,#185FA5,#3B82C4);}
+          .fam-reach span.is-high{background:linear-gradient(90deg,#0F6E56,#1D9E75);}
+          .fam-reach__pct{font-size:12.5px;font-weight:700;color:#1b1e22;}
+          .fam-reach__n{font-size:11px;color:#9aa2ad;margin-top:3px;}
         </style>
 
         <div class="fam-head">
           <h1>{{ __('Feature Announcements') }}</h1>
-          <p>{{ __('Publish a "what\'s new" note. Each targeted account sees it once in a modal on their next visit — link it to a Knowledge Base article for a full walkthrough (with video).') }}</p>
+          <p>{{ __('Publish a "what\'s new" note. Each targeted account sees it once in a modal on their next visit — link it to a Knowledge Base article for a full walkthrough (with video). The Reach column shows how many of the targeted people have seen it, so you know when to pause it.') }}</p>
         </div>
 
         @if (session('success'))<div class="fam-flash fam-flash--ok">{{ session('success') }}</div>@endif
@@ -109,7 +114,7 @@
               <div class="fam-empty">{{ __('No announcements yet. Create one on the left.') }}</div>
             @else
               <table class="fam-table">
-                <thead><tr><th>{{ __('Announcement') }}</th><th>{{ __('Audience') }}</th><th>{{ __('Status') }}</th><th>{{ __('Action') }}</th></tr></thead>
+                <thead><tr><th>{{ __('Announcement') }}</th><th>{{ __('Audience') }}</th><th>{{ __('Reach') }}</th><th>{{ __('Status') }}</th><th>{{ __('Action') }}</th></tr></thead>
                 <tbody>
                   @foreach ($announcements as $a)
                     @php
@@ -131,6 +136,15 @@
                         @elseif ($a->link_url)<div style="font-size:11.5px;color:#185FA5;margin-top:3px;">🔗 {{ $a->link_label ?: __('Learn more') }}</div>@endif
                       </td>
                       <td style="font-size:12.5px;color:#6b7280;">{{ implode(', ', $audLabels) }}</td>
+                      <td style="min-width:116px;">
+                        @if (($a->reach_target ?? 0) > 0)
+                          <div class="fam-reach__pct">{{ $a->reach_pct }}%</div>
+                          <div class="fam-reach"><span class="{{ $a->reach_pct >= 80 ? 'is-high' : '' }}" style="width:{{ max(2, $a->reach_pct) }}%"></span></div>
+                          <div class="fam-reach__n">{{ number_format($a->reach_seen) }}/{{ number_format($a->reach_target) }} {{ __('seen') }}</div>
+                        @else
+                          <span style="font-size:12px;color:#9aa2ad;">{{ __('No audience yet') }}</span>
+                        @endif
+                      </td>
                       <td>
                         @if ($isLive)<span class="fam-pill fam-pill--live">{{ __('Live') }}</span>
                         @elseif (! $a->published_at)<span class="fam-pill fam-pill--draft">{{ __('Draft') }}</span>
