@@ -28,6 +28,7 @@ class SitemapController extends Controller
 
         // Stable public marketing / policy pages (only if the front end is enabled).
         $named = [
+            'about'             => '0.7',
             'affiliate.apply'   => '0.7',
             'get-started'       => '0.6',
             'terms-conditions'  => '0.3',
