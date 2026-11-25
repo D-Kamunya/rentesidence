@@ -13,6 +13,30 @@ class OwnerSubscriptionOrderService
 {
     use ResponseTrait;
 
+    /**
+     * The owner label for an order row. ESCAPED (this column is rendered raw by DataTables, so an
+     * owner-set name/email must never inject markup into the admin table) and graceful: a missing or
+     * blank user — e.g. an orphaned order whose user was hard-deleted — shows a traceable
+     * "Unknown owner (#id)" instead of a bare "()".
+     */
+    private function ownerLabel($order): string
+    {
+        $name  = trim((string) ($order->first_name ?? '') . ' ' . (string) ($order->last_name ?? ''));
+        $email = trim((string) ($order->email ?? ''));
+
+        if ($name !== '' && $email !== '') {
+            return e($name) . ' <span class="text-muted">(' . e($email) . ')</span>';
+        }
+        if ($name !== '') {
+            return e($name);
+        }
+        if ($email !== '') {
+            return e($email);
+        }
+
+        return '<span class="text-muted">' . __('Unknown owner') . ' (#' . (int) ($order->user_id ?? 0) . ')</span>';
+    }
+
     public function getAllData($request)
     {
         $orders = SubscriptionOrder::query()
@@ -29,7 +53,7 @@ class OwnerSubscriptionOrderService
                 return '<h6>' . $order->packageName . '</h6>';
             })
             ->addColumn('name', function ($order) {
-                return $order->first_name . ' ' . $order->last_name . '(' . $order->email . ')';
+                return $this->ownerLabel($order);
             })
             ->addColumn('date', function ($order) {
                 return $order->created_at->format('Y-m-d h:i');
@@ -106,7 +130,7 @@ class OwnerSubscriptionOrderService
         if ($request->status == 'bank') {
             $orders->whereNotNull('subscription_orders.deposit_slip_id');
         }
-        $orders = $orders->select(['subscription_orders.*', 'packages.name as packageName', 'gateways.title as gatewayTitle', 'gateways.slug as gatewaySlug', 'file_managers.file_name', 'file_managers.folder_name', 'users.last_name', 'users.email'])
+        $orders = $orders->select(['subscription_orders.*', 'packages.name as packageName', 'gateways.title as gatewayTitle', 'gateways.slug as gatewaySlug', 'file_managers.file_name', 'file_managers.folder_name', 'users.first_name', 'users.last_name', 'users.email'])
             ->where('subscription_orders.payment_status', $status);
 
         return datatables($orders)
@@ -115,7 +139,7 @@ class OwnerSubscriptionOrderService
                 return '<h6>' . $order->packageName . '</h6>';
             })
             ->addColumn('name', function ($order) {
-                return $order->first_name . ' ' . $order->last_name . '(' . $order->email . ')';
+                return $this->ownerLabel($order);
             })
             ->addColumn('date', function ($order) {
                 return $order->created_at->format('Y-m-d h:i');
