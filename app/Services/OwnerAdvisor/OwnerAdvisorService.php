@@ -54,6 +54,7 @@ class OwnerAdvisorService
             $this->ruleTrySms($state),
             $this->ruleTryAgreements($state),
             $this->ruleTryScreening($state),
+            $this->ruleUpgradeForUsage($state),
             $this->ruleUpgradeTransaction($state),
             $this->ruleFinancing($state),
             $this->ruleApproachingCap($state),
@@ -110,6 +111,7 @@ class OwnerAdvisorService
             'pricingModel' => 'free', 'unitCap' => 30, 'unitsUsed' => 0, 'rentGmv' => 0.0,
             'hasModule' => false, 'hasProperty' => false, 'hasTenants' => false,
             'hasProducts' => true, 'hasAgreements' => true, 'hasScreened' => true, 'usedSms' => true,
+            'screeningMetered' => false, 'agreementMetered' => false,
         ];
 
         try {
@@ -139,6 +141,23 @@ class OwnerAdvisorService
             $hasScreened   = $has('tenant_screening_lookups', fn () => \Illuminate\Support\Facades\DB::table('tenant_screening_lookups')->where('owner_user_id', $userId)->exists());
             $usedSms       = $has('owner_credit_transactions', fn () => \Illuminate\Support\Facades\DB::table('owner_credit_transactions')->where('owner_user_id', $userId)->where('bucket', 'sms')->exists());
 
+            // "Has the owner HIT a free-tier meter this month?" — the realized-usage upgrade signals
+            // (distinct from the "has tried X" flags above). Counts this calendar month's free-billed
+            // use against the config quota; 0 quota or a missing table → not metered (safe).
+            $monthMeter = function (string $table, string $quotaOpt, int $quotaDefault) use ($userId): bool {
+                $quota = (int) getOption($quotaOpt, $quotaDefault);
+                if ($quota <= 0 || ! Schema::hasTable($table)) {
+                    return false;
+                }
+                $used = \Illuminate\Support\Facades\DB::table($table)
+                    ->where('owner_user_id', $userId)->where('billed_as', 'free')
+                    ->whereYear('created_at', now()->year)->whereMonth('created_at', now()->month)->count();
+
+                return $used >= $quota;
+            };
+            $screeningMetered = $monthMeter('tenant_screening_lookups', 'screening_free_quota', 5);
+            $agreementMetered = $monthMeter('agreements', 'agreement_free_quota', 10);
+
             return [
                 'pricingModel' => $plan->pricing_model ?? 'free',
                 'unitCap'      => (int) ($plan->max_unit ?? 30),
@@ -151,6 +170,8 @@ class OwnerAdvisorService
                 'hasAgreements'=> (bool) $hasAgreements,
                 'hasScreened'  => (bool) $hasScreened,
                 'usedSms'      => (bool) $usedSms,
+                'screeningMetered' => $screeningMetered,
+                'agreementMetered' => $agreementMetered,
             ];
         } catch (\Throwable $e) {
             return $default;
@@ -244,6 +265,59 @@ class OwnerAdvisorService
     }
 
     // ── Upgrade / growth rules ──────────────────────────────────────────────────
+
+    /**
+     * Free owner who is ACTIVELY feeling a free-tier meter — screening or agreement cap hit this
+     * month, or using SMS at the premium free rate → upgrade, where those are unlimited / cheaper.
+     * The outcome-based complement to the on-page upsells: it fires only once the owner has shown
+     * the usage, so it never nags a light user, and it's distinct from the "try X" value nudges
+     * (which fire when the feature is UNUSED). High priority when a hard meter is actually blocking.
+     */
+    private function ruleUpgradeForUsage(array $s): ?OwnerSuggestion
+    {
+        if (($s['pricingModel'] ?? 'free') !== 'free') {
+            return null;
+        }
+
+        $hits = [];
+        if (! empty($s['screeningMetered'])) { $hits[] = __('unlimited tenant screening'); }
+        if (! empty($s['agreementMetered'])) { $hits[] = __('unlimited agreements'); }
+        if (! empty($s['usedSms']))          { $hits[] = __('SMS at about a third of the price'); }
+
+        if (empty($hits)) {
+            return null;
+        }
+
+        // A hit screening/agreement cap is a hard block ("can't do more without paying"); SMS alone
+        // is a softer standing-saving nudge.
+        $hardHit = ! empty($s['screeningMetered']) || ! empty($s['agreementMetered']);
+        $list    = $this->humanJoin($hits);
+
+        return new OwnerSuggestion(
+            key: 'upgrade_for_usage',
+            category: 'upgrade',
+            priority: $hardHit ? 'high' : 'medium',
+            title: $hardHit ? __('You\'ve hit a free-plan limit') : __('You\'re paying more than you need to'),
+            body: $hardHit
+                ? __('You\'re making real use of the platform. A paid plan unlocks :list — no monthly caps, no per-use fees.', ['list' => $list])
+                : __('On a paid plan you get :list. Upgrade and your usage is covered.', ['list' => $list]),
+            ctaLabel: __('See plans'),
+            ctaUrl: $this->url('owner.subscription.index', ['current_plan' => 'no']),
+            meta: ['hits' => $hits]
+        );
+    }
+
+    /** Join phrases naturally: "a", "a and b", "a, b and c". */
+    private function humanJoin(array $items): string
+    {
+        $items = array_values(array_filter($items));
+        if (count($items) <= 1) {
+            return $items[0] ?? '';
+        }
+        $last = array_pop($items);
+
+        return implode(', ', $items) . ' ' . __('and') . ' ' . $last;
+    }
 
     /** Free owner with real rent → the Transaction pull (their 1% cost, plus what it unlocks). */
     private function ruleUpgradeTransaction(array $s): ?OwnerSuggestion

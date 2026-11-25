@@ -117,6 +117,30 @@ class OwnerAdvisorTest extends TestCase
         $this->assertContains('try_marketplace', $this->keys($this->svc()->rules($this->st(['pricingModel' => 'transaction', 'hasProducts' => false]))));
     }
 
+    public function test_meter_hit_fires_an_outcome_based_upgrade_nudge(): void
+    {
+        // Free owner who hit the screening cap this month → HIGH-priority upgrade nudge.
+        $out = $this->svc()->rules($this->st(['screeningMetered' => true, 'usedSms' => false]));
+        $this->assertContains('upgrade_for_usage', $this->keys($out));
+        $this->assertSame('high', collect($out)->firstWhere('key', 'upgrade_for_usage')->priority);
+
+        // SMS usage alone (no hard meter) → softer MEDIUM standing-saving nudge.
+        $out2 = $this->svc()->rules($this->st(['screeningMetered' => false, 'agreementMetered' => false, 'usedSms' => true]));
+        $hit2 = collect($out2)->firstWhere('key', 'upgrade_for_usage');
+        $this->assertNotNull($hit2);
+        $this->assertSame('medium', $hit2->priority);
+
+        // A light free owner (no meter hit, no SMS) → no usage nudge.
+        $this->assertNotContains('upgrade_for_usage', $this->keys($this->svc()->rules($this->st([
+            'screeningMetered' => false, 'agreementMetered' => false, 'usedSms' => false,
+        ]))));
+
+        // Paid owners never get it (they already have unlimited/cheaper).
+        $this->assertNotContains('upgrade_for_usage', $this->keys($this->svc()->rules($this->st([
+            'pricingModel' => 'subscription', 'screeningMetered' => true, 'agreementMetered' => true,
+        ]))));
+    }
+
     public function test_dismiss_hides_a_suggestion_and_snooze_expiry_reveals_it(): void
     {
         $svc = $this->svc();
