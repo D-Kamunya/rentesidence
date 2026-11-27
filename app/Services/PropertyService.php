@@ -805,7 +805,7 @@ class PropertyService
             /*File Manager Call upload*/
             if ($request->hasFile('file') && $request->file('file')->isValid()) {
                 $new_file = new FileManager();
-                $upload = $new_file->upload('PropertyImage', $request->file);
+                $upload = $new_file->upload('PropertyImage', downscaledUpload($request->file('file')));
 
                 if ($upload['status']) {
                     $propertyImage = new PropertyImage();
