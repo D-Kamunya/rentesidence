@@ -216,6 +216,14 @@
     padding:12px;border:1px solid var(--line);border-radius:11px;cursor:pointer}
   .sf-close:hover{border-color:var(--stone-400);color:var(--stone-900) !important}
   #imageLightboxModal .modal-content{background:#0B0F15;border:1px solid var(--line);border-radius:16px}
+  /* brighter, obviously-tappable prev/next so tenants know the gallery scrolls */
+  #imageLightboxModal .carousel-control-prev,
+  #imageLightboxModal .carousel-control-next{opacity:1;width:11%}
+  #imageLightboxModal .carousel-control-prev-icon,
+  #imageLightboxModal .carousel-control-next-icon{width:52px;height:52px;background-size:44% 44%;border-radius:50%;
+    background-color:rgba(12,18,28,.62);border:1px solid rgba(255,255,255,.45);box-shadow:0 6px 18px rgba(0,0,0,.45);transition:.15s}
+  #imageLightboxModal .carousel-control-prev:hover .carousel-control-prev-icon,
+  #imageLightboxModal .carousel-control-next:hover .carousel-control-next-icon{background-color:var(--cs-blue);border-color:#fff;transform:scale(1.06)}
 </style>
 
 <div class="sf">
@@ -567,6 +575,10 @@ function openImageModal(unitId, images) {
         </div>`;
     }).join('');
     document.getElementById('lightboxTitle').textContent = 'Unit photos (' + images.length + ')';
+    // Only show the scroll arrows when there's more than one photo.
+    const multi = images.length > 1;
+    document.querySelectorAll('#lightboxCarousel .carousel-control-prev, #lightboxCarousel .carousel-control-next')
+        .forEach(c => { c.style.display = multi ? '' : 'none'; });
     const carousel = bootstrap.Carousel.getOrCreateInstance(document.getElementById('lightboxCarousel'));
     carousel.to(0);
     new bootstrap.Modal(document.getElementById('imageLightboxModal')).show();
