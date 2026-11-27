@@ -23,7 +23,7 @@
         </div>
       </div>
 
-      <div class="page-content-wrapper bg-white p-3 p-md-4 radius-20 vsh">
+      <div id="vshRoot" class="page-content-wrapper bg-white p-3 p-md-4 radius-20 vsh">
       <style>
         .vsh{--cs-blue:#185FA5;--cs-blue-2:#1c72c2;--amber:#E7A339;--line:#E6E1D8;--ink:#1B1E22;--muted:#6B7280}
         .vsh-intro{color:var(--muted);font-size:14.5px;max-width:720px;line-height:1.6;margin:0 0 22px}
@@ -45,7 +45,18 @@
         .vsh-btn--light{background:#fff;color:var(--cs-blue)}
         .vsh-btn--ghost{background:rgba(255,255,255,.14);color:#fff;border:1px solid rgba(255,255,255,.3)}
         .vsh-btn--blue{background:var(--cs-blue);color:#fff}
-        .vsh-btn--blue:hover{background:var(--cs-blue-2);color:#fff}
+        .vsh-btn--outline{background:#fff;color:var(--cs-blue);border:1px solid var(--line)}
+        /* The theme's global a:hover{color:primary} rule carries ~16-class specificity (its long
+           :not() chain), which can beat plain class rules even though these carry "btn". An ID
+           out-specifies any number of classes, so this pins each button's own text colour in every
+           state and the links never flip to blue on hover. */
+        #vshRoot .vsh-btn--light,  #vshRoot .vsh-btn--light:hover  {color:var(--cs-blue) !important;background:#fff}
+        #vshRoot .vsh-btn--ghost,  #vshRoot .vsh-btn--ghost:hover  {color:#fff !important}
+        #vshRoot .vsh-btn--ghost:hover{background:rgba(255,255,255,.24)}
+        #vshRoot .vsh-btn--blue,   #vshRoot .vsh-btn--blue:hover   {color:#fff !important}
+        #vshRoot .vsh-btn--blue:hover{background:var(--cs-blue-2)}
+        #vshRoot .vsh-btn--outline,#vshRoot .vsh-btn--outline:hover{color:var(--cs-blue) !important}
+        #vshRoot .vsh-btn--outline:hover{background:#f2f6fb}
         .vsh-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:18px}
         .vsh-prop{display:flex;gap:18px;align-items:flex-start}
         .vsh-prop .vsh-qr{background:#fff;border:1px solid var(--line);border-radius:12px;padding:8px;width:110px;height:110px;flex:0 0 auto}
@@ -132,7 +143,7 @@
                       <button type="button" class="vsh-btn vsh-btn--blue" onclick="vshCopy('{{ $card->url }}')">
                         <i class="ri-file-copy-line"></i> {{ __('Copy') }}
                       </button>
-                      <a class="vsh-btn vsh-btn--ghost" style="color:var(--cs-blue);border-color:var(--line)" href="{{ $card->url }}" target="_blank" rel="noopener">
+                      <a class="vsh-btn vsh-btn--outline" href="{{ $card->url }}" target="_blank" rel="noopener">
                         <i class="ri-external-link-line"></i> {{ __('Preview') }}
                       </a>
                     </div>

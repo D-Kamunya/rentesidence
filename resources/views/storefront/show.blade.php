@@ -37,8 +37,11 @@
      image = no collision with its baked-in branding, and it crops cleanly on any screen.
      Swap the band by replacing public/assets/images/storefront-cover.png; the dark fallback shows
      if the asset is ever missing. */
-  .sf-hero{position:relative;width:100%;height:clamp(190px,29vw,340px);overflow:hidden;
-    background:#0A0E14 url('{{ asset('assets/images/storefront-cover.png') }}') center/cover no-repeat}
+  /* Height grows with viewport width so a wide screen doesn't crop the image into a thin letterbox
+     (which was clipping the CS logo). background-position favours the upper-left branding block. */
+  .sf-hero{position:relative;width:100%;height:clamp(210px,20vw,480px);overflow:hidden;
+    background:#0A0E14 url('{{ asset('assets/images/storefront-cover.png') }}') 30% 32%/cover no-repeat}
+  @media(max-width:640px){.sf-hero{background-position:38% 34%}}
   .sf-herobar{color:#F4F1EA;padding:26px 0 30px;background:
       radial-gradient(820px 300px at 86% -50%, rgba(231,163,57,.20), transparent 60%),
       linear-gradient(135deg,#17487A 0%,#0E2E52 70%,#0B2342 100%)}
@@ -263,9 +266,31 @@
               </div>
             </div>
           @else
-            <div class="sf-sec-head">
-              <h2>{{ __('Available units') }}</h2>
-              <p>{{ __('Browse the vacant units below and apply in a couple of minutes.') }}</p>
+            {{-- Property-scope: show the building's OWN main photo over its units (the name is already
+                 in the hero strip, so this banner leads with "Available units"). --}}
+            @php
+                $thumb    = trim($property->thumbnail_image ?? '');
+                $noImg    = asset('assets/images/no-image.jpg');
+                $hasBanner = $thumb && $thumb !== $noImg;
+                $vCount   = $group->units->count();
+            @endphp
+            <div class="sf-propbanner">
+              @if($hasBanner)
+                <img src="{{ $thumb }}" alt="{{ $property->name }}" loading="lazy" onerror="this.style.display='none'">
+                <div class="sf-propbanner__scrim"></div>
+              @else
+                <div class="sf-propbanner__noimg">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-8 9 8"/><path d="M5 10v10h14V10"/><path d="M9 21V13h6v8"/></svg>
+                </div>
+                <div class="sf-propbanner__scrim"></div>
+              @endif
+              <div class="sf-propbanner__body">
+                <h3 class="sf-propbanner__name">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>
+                  {{ __('Available units') }}
+                </h3>
+                <span class="sf-propbanner__meta">{{ $vCount }} {{ trans_choice('vacancy|vacancies', $vCount) }} {{ __('available') }}</span>
+              </div>
             </div>
           @endif
 
