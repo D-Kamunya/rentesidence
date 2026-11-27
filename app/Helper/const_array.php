@@ -59,6 +59,22 @@ function imageExtensionList()
     return $output;
 }
 
+/**
+ * Optional room labels for unit photos (slug => display label). Used by the mobile "tap a room →
+ * snap" flow and shown on the storefront. Tagging is always optional; 'other' is the catch-all.
+ */
+function unitPhotoCategories()
+{
+    return [
+        'living_room' => __('Living room'),
+        'bedroom'     => __('Bedroom'),
+        'kitchen'     => __('Kitchen'),
+        'bathroom'    => __('Bathroom'),
+        'exterior'    => __('Exterior / view'),
+        'other'       => __('Other'),
+    ];
+}
+
 function month($input = null)
 {
     $output = [

@@ -69,7 +69,14 @@ class VacancyPhotoController extends Controller
             'unit_id'   => 'required|integer',
             'images'    => 'required|array|max:12',
             'images.*'  => 'required|image|max:8192', // 8MB each; image rule = server-side type guard
+            'category'  => 'nullable|string|max:30',
         ]);
+
+        // Only accept a known room slug; anything else is treated as untagged.
+        $category = $request->input('category');
+        if (! array_key_exists((string) $category, unitPhotoCategories())) {
+            $category = null;
+        }
 
         $unit = PropertyUnit::with('property')->find($request->unit_id);
 
@@ -103,9 +110,10 @@ class VacancyPhotoController extends Controller
                 'unit_id'     => $unit->id,
                 'folder_name' => $stored['folder_name'],
                 'file_name'   => $stored['file_name'],
+                'category'    => $category,
             ]);
 
-            $saved[] = ['id' => $row->id, 'url' => $row->file_url];
+            $saved[] = ['id' => $row->id, 'url' => $row->file_url, 'category' => $category, 'category_label' => $row->category_label];
         }
 
         if (empty($saved)) {

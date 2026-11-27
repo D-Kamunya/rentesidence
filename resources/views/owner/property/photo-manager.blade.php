@@ -61,6 +61,17 @@
           #pmRoot .pm-add--done{background:#fff !important;color:#166534 !important;border:1.5px solid #9BD9B2 !important}
           #pmRoot .pm-add--done:hover{background:#F1FBF4 !important;color:#166534 !important}
           .pm-tip{font-size:12px;color:var(--muted);margin-top:9px}
+          /* room chips — tap a room, the camera opens, the photo is tagged with that room */
+          .pm-rooms{display:flex;flex-wrap:wrap;gap:9px;align-items:center;margin-top:4px}
+          .pm-rooms__label{font-size:12.5px;font-weight:700;color:var(--muted);margin-right:2px}
+          .pm-room{display:inline-flex;align-items:center;gap:7px;background:#F2F5F9;border:1px solid #DEE6EF;color:#2A3642;
+            font-weight:650;font-size:13px;padding:9px 14px;border-radius:99px;cursor:pointer;transition:.15s;margin:0}
+          .pm-room:hover{background:#E7EEF7;border-color:var(--cs-blue)}
+          .pm-room.busy{opacity:.5;pointer-events:none}
+          .pm-room svg{width:15px;height:15px;color:var(--cs-blue)}
+          .pm-room input{display:none}
+          .pm-thumb__cat{position:absolute;left:5px;bottom:5px;background:rgba(17,20,26,.74);color:#fff;font-size:10px;
+            font-weight:700;padding:2px 7px;border-radius:6px;max-width:86px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
           /* each unit is its own spaced card (left accent = progress at a glance) */
           .pm-unit{border:1px solid var(--line);border-left:4px solid var(--line);border-radius:14px;
             padding:18px 18px 20px;margin-bottom:18px;background:#FCFBF9;transition:border-color .2s,background .2s}
@@ -165,16 +176,24 @@
                 @foreach($unit->images as $img)
                   <div class="pm-thumb" data-img="{{ $img->id }}">
                     <img src="{{ $img->file_url }}" alt="{{ __('Unit photo') }}">
+                    @if($img->category_label)<span class="pm-thumb__cat">{{ $img->category_label }}</span>@endif
                     <button type="button" class="pm-thumb__del" title="{{ __('Remove') }}" onclick="pmDeleteUnitImage({{ $img->id }}, this)">×</button>
                   </div>
                 @endforeach
               </div>
 
-              <label class="pm-add pm-add--unit {{ $unit->needs_photos ? '' : 'pm-add--done' }}">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
-                <span class="pm-add__label">{{ $unit->needs_photos ? __('Add unit photos') : __('Add more photos') }}</span>
-                <input type="file" accept="image/*" multiple onchange="pmUploadUnitImages({{ $unit->id }}, this)">
-              </label>
+              {{-- Tap a room → the camera opens → the photo is tagged with that room. Optional: an
+                   owner can just use any chip; tagging is never required. --}}
+              <div class="pm-rooms">
+                <span class="pm-rooms__label">📷 {{ __('Snap a room:') }}</span>
+                @foreach(unitPhotoCategories() as $slug => $label)
+                  <label class="pm-room">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+                    {{ $label }}
+                    <input type="file" accept="image/*" multiple data-category="{{ $slug }}" onchange="pmUploadUnitImages({{ $unit->id }}, this)">
+                  </label>
+                @endforeach
+              </div>
             </div>
           @empty
             <p class="pm-empty">{{ __('This property has no units yet. Add units first, then come back to photograph them.') }}</p>
@@ -234,14 +253,18 @@ document.getElementById('pmBuildingInput').addEventListener('change', function (
 });
 
 // ── Unit photos (multi) ──────────────────────────────────────────────────────
+function pmEsc(s) { const d = document.createElement('div'); d.textContent = s == null ? '' : s; return d.innerHTML; }
+
 function pmUploadUnitImages(unitId, input) {
   const files = input.files;
   if (!files || !files.length) return;
-  const label = input.closest('.pm-add');
-  label.classList.add('busy');
+  const chip = input.closest('.pm-room') || input.closest('.pm-add');
+  if (chip) chip.classList.add('busy');
   const fd = new FormData();
   fd.append('unit_id', unitId);
   fd.append('_token', PM_CSRF);
+  const category = input.dataset ? (input.dataset.category || '') : '';
+  if (category) fd.append('category', category);
   for (const f of files) fd.append('images[]', f);
 
   fetch(PM_UNIT_STORE, { method: 'POST', body: fd, headers: { 'X-CSRF-TOKEN': PM_CSRF, 'X-Requested-With': 'XMLHttpRequest' } })
@@ -254,6 +277,7 @@ function pmUploadUnitImages(unitId, input) {
           const div = document.createElement('div');
           div.className = 'pm-thumb'; div.setAttribute('data-img', img.id);
           div.innerHTML = '<img src="' + img.url + '" alt="unit photo">' +
+            (img.category_label ? '<span class="pm-thumb__cat">' + pmEsc(img.category_label) + '</span>' : '') +
             '<button type="button" class="pm-thumb__del" onclick="pmDeleteUnitImage(' + img.id + ', this)">×</button>';
           thumbs.appendChild(div);
         });
@@ -264,7 +288,7 @@ function pmUploadUnitImages(unitId, input) {
       }
     })
     .catch(() => pmToast(@json(__('Upload failed.')), true))
-    .finally(() => { label.classList.remove('busy'); input.value = ''; });
+    .finally(() => { if (chip) chip.classList.remove('busy'); input.value = ''; });
 }
 
 function pmDeleteUnitImage(imgId, btn) {
