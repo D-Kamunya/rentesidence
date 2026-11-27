@@ -145,11 +145,8 @@
 
           <div class="pm-thumbs">
             <div class="pm-thumb pm-thumb--big" id="pmBuildingThumb">
-              @if($buildingPhotoUrl)
-                <img src="{{ $buildingPhotoUrl }}" alt="{{ $property->name }}">
-              @else
-                <span class="pm-empty" style="margin:auto">{{ __('No building photo yet') }}</span>
-              @endif
+              {{-- Same branded "No photo available" placeholder as the unit images, for consistency --}}
+              <img src="{{ $buildingPhotoUrl ?? asset('assets/images/property.png') }}" alt="{{ $property->name }}">
             </div>
           </div>
 

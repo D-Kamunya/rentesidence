@@ -563,7 +563,7 @@ function openImageModal(unitId, images) {
             ${cap}
         </div>`;
     }).join('');
-    document.getElementById('lightboxTitle').textContent = 'Unit photos (' + imageUrls.length + ')';
+    document.getElementById('lightboxTitle').textContent = 'Unit photos (' + images.length + ')';
     const carousel = bootstrap.Carousel.getOrCreateInstance(document.getElementById('lightboxCarousel'));
     carousel.to(0);
     new bootstrap.Modal(document.getElementById('imageLightboxModal')).show();

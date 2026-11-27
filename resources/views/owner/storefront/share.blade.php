@@ -142,7 +142,7 @@
                 @if($hasPt)
                   <div class="vsh-propthumb"><img src="{{ $pt }}" alt="{{ $card->property->name }}" loading="lazy"></div>
                 @else
-                  <div class="vsh-propthumb vsh-propthumb--none">{{ __('No building photo yet') }}</div>
+                  <div class="vsh-propthumb"><img src="{{ asset('assets/images/property.png') }}" alt="{{ $card->property->name }}"></div>
                 @endif
                 <div class="vsh-prop">
                   <div class="vsh-qr">{!! $card->qr !!}</div>
