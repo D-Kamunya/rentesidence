@@ -121,6 +121,9 @@ Route::group(['prefix' => 'owner', 'as' => 'owner.', 'middleware' => ['auth', 'o
         Route::get('{property}/photos', [\App\Http\Controllers\Owner\VacancyPhotoController::class, 'index'])->whereNumber('property')->name('photos');
         Route::post('unit-images/store', [\App\Http\Controllers\Owner\VacancyPhotoController::class, 'storeUnitImages'])
             ->middleware('throttle:40,1')->name('unit-image.store');
+        // Set/change the ROOM tag on an existing photo (tag bulk-uploaded photos without re-snapping).
+        Route::post('unit-image/{id}/category', [\App\Http\Controllers\Owner\VacancyPhotoController::class, 'setUnitImageCategory'])
+            ->whereNumber('id')->middleware('throttle:60,1')->name('unit-image.category');
         // Printable per-property tenant onboarding card (QR → get-started).
         Route::get('{property}/onboarding-card', [\App\Http\Controllers\Owner\OnboardingCardController::class, 'show'])->name('onboarding-card');
         Route::get('all-property', [PropertyController::class, 'allProperty'])->name('allProperty');

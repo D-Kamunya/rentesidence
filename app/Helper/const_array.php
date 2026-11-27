@@ -92,7 +92,12 @@ function unitPhotoCategoriesFor($unit)
         $cats['bedroom'] = __('Bedroom');
     }
 
-    $cats['kitchen'] = __('Kitchen');
+    $kitchen = (int) ($unit->kitchen ?? 0);
+    if ($kitchen >= 2) {
+        for ($i = 1; $i <= min($kitchen, $cap); $i++) $cats["kitchen_$i"] = __('Kitchen :n', ['n' => $i]);
+    } else {
+        $cats['kitchen'] = __('Kitchen');
+    }
 
     $bath = (int) ($unit->bath ?? 0);
     if ($bath >= 2) {
@@ -120,6 +125,9 @@ function photoCategoryLabel($slug)
     }
     if (preg_match('/^bathroom_(\d+)$/', $slug, $m)) {
         return __('Bathroom :n', ['n' => $m[1]]);
+    }
+    if (preg_match('/^kitchen_(\d+)$/', $slug, $m)) {
+        return __('Kitchen :n', ['n' => $m[1]]);
     }
     return unitPhotoCategories()[$slug] ?? null;
 }

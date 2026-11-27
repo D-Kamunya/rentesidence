@@ -171,4 +171,31 @@ class VacancyPhotoController extends Controller
 
         return $this->success(['images' => $saved], __('Photos added.'));
     }
+
+    /**
+     * Set / change / clear the ROOM tag on an existing photo — so bulk-uploaded (untagged) photos
+     * can be labelled without deleting and re-snapping. Owner-scoped; the room must be valid for
+     * that photo's unit (its bedroom/bath/kitchen counts bound the numbered slots).
+     */
+    public function setUnitImageCategory($id, Request $request)
+    {
+        $request->validate(['category' => 'nullable|string|max:30']);
+
+        $img = PropertyUnitImage::with('unit.property')->find($id);
+
+        if (! $img || ! $img->unit || ! $img->unit->property
+            || (int) $img->unit->property->owner_user_id !== (int) auth()->id()) {
+            return $this->error([], __('Photo not found.'));
+        }
+
+        $category = $request->input('category');
+        if ($category === '' || ! array_key_exists((string) $category, unitPhotoCategoriesFor($img->unit))) {
+            $category = null;
+        }
+
+        $img->category = $category;
+        $img->save();
+
+        return $this->success(['category' => $category, 'category_label' => $img->category_label], __('Room updated.'));
+    }
 }

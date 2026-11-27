@@ -76,8 +76,12 @@
           .pm-room__check{display:none;color:#2EA563}
           .pm-room--has .pm-room__check{display:inline-block}
           .pm-room--has .pm-room__cam{display:none}
-          .pm-thumb__cat{position:absolute;left:5px;bottom:5px;background:rgba(17,20,26,.74);color:#fff;font-size:10px;
-            font-weight:700;padding:2px 7px;border-radius:6px;max-width:86px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+          /* per-thumbnail room picker — tag/re-tag any photo (incl. bulk-uploaded) without re-snapping */
+          .pm-thumb__tag{position:absolute;left:5px;bottom:5px;max-width:calc(100% - 12px);background:rgba(17,20,26,.80);
+            color:#fff;font-size:10px;font-weight:700;padding:3px 7px;border:none;border-radius:6px;cursor:pointer;
+            -webkit-appearance:none;appearance:none;text-overflow:ellipsis}
+          .pm-thumb__tag:hover{background:rgba(17,20,26,.94)}
+          .pm-thumb__tag option{color:#111}
           /* each unit is its own spaced card (left accent = progress at a glance) */
           .pm-unit{border:1px solid var(--line);border-left:4px solid var(--line);border-radius:14px;
             padding:18px 18px 20px;margin-bottom:18px;background:#FCFBF9;transition:border-color .2s,background .2s}
@@ -175,11 +179,17 @@
                 @endif
               </div>
 
-              <div class="pm-thumbs" data-role="thumbs">
+              @php $unitRooms = unitPhotoCategoriesFor($unit); @endphp
+              <div class="pm-thumbs" data-role="thumbs" data-cats="{{ json_encode($unitRooms) }}">
                 @foreach($unit->images as $img)
                   <div class="pm-thumb" data-img="{{ $img->id }}" data-cat="{{ $img->category }}">
                     <img src="{{ $img->file_url }}" alt="{{ __('Unit photo') }}">
-                    @if($img->category_label)<span class="pm-thumb__cat">{{ $img->category_label }}</span>@endif
+                    <select class="pm-thumb__tag" title="{{ __('Tag the room') }}" onchange="pmSetCategory({{ $img->id }}, this)">
+                      <option value="">{{ __('＋ Tag room') }}</option>
+                      @foreach($unitRooms as $slug => $label)
+                        <option value="{{ $slug }}" @selected($img->category === $slug)>{{ $label }}</option>
+                      @endforeach
+                    </select>
                     <button type="button" class="pm-thumb__del" title="{{ __('Remove') }}" onclick="pmDeleteUnitImage({{ $img->id }}, this)">×</button>
                   </div>
                 @endforeach
@@ -224,6 +234,36 @@ const PM_CSRF = @json(csrf_token());
 const PM_THUMB_UPDATE = @json(route('owner.property.thumbnailImage.update', $property->id));
 const PM_UNIT_STORE   = @json(route('owner.property.unit-image.store'));
 const PM_UNIT_DELETE  = @json(url('owner/unit-image')); // + /{id}
+const PM_UNIT_CATEGORY = @json(url('owner/property/unit-image')); // + /{id}/category
+
+function pmTagSelectHtml(thumbsEl, imgId, cat) {
+  let cats = {};
+  try { cats = JSON.parse(thumbsEl.getAttribute('data-cats') || '{}'); } catch (e) {}
+  let opts = '<option value="">' + @json(__('＋ Tag room')) + '</option>';
+  for (const slug in cats) {
+    opts += '<option value="' + slug + '"' + (slug === cat ? ' selected' : '') + '>' + pmEsc(cats[slug]) + '</option>';
+  }
+  return '<select class="pm-thumb__tag" title="' + @json(__('Tag the room')) + '" onchange="pmSetCategory(' + imgId + ', this)">' + opts + '</select>';
+}
+
+function pmSetCategory(imgId, sel) {
+  const fd = new FormData();
+  fd.append('_token', PM_CSRF);
+  fd.append('category', sel.value);
+  fetch(PM_UNIT_CATEGORY + '/' + imgId + '/category', { method: 'POST', body: fd, headers: { 'X-CSRF-TOKEN': PM_CSRF, 'X-Requested-With': 'XMLHttpRequest' } })
+    .then(r => r.json())
+    .then(data => {
+      if (data.status === true || data.status === 'success') {
+        const thumb = sel.closest('.pm-thumb');
+        thumb.setAttribute('data-cat', (data.data && data.data.category) || '');
+        pmRefreshRoomChips(sel.closest('.pm-unit'));
+        pmToast(@json(__('Room updated.')));
+      } else {
+        pmToast(data.message || @json(__('Could not update.')), true);
+      }
+    })
+    .catch(() => pmToast(@json(__('Could not update.')), true));
+}
 
 function pmToast(msg, isErr) {
   const t = document.getElementById('pmToast');
@@ -283,7 +323,7 @@ function pmUploadUnitImages(unitId, input) {
           div.className = 'pm-thumb'; div.setAttribute('data-img', img.id);
           div.setAttribute('data-cat', img.category || '');
           div.innerHTML = '<img src="' + img.url + '" alt="unit photo">' +
-            (img.category_label ? '<span class="pm-thumb__cat">' + pmEsc(img.category_label) + '</span>' : '') +
+            pmTagSelectHtml(thumbs, img.id, img.category || '') +
             '<button type="button" class="pm-thumb__del" onclick="pmDeleteUnitImage(' + img.id + ', this)">×</button>';
           thumbs.appendChild(div);
         });
