@@ -51,8 +51,10 @@ class VacancyStorefrontController extends Controller
         return view('storefront.show', [
             'scope'          => 'owner',
             'ownerName'      => $this->ownerName($owner),
-            'headline'       => __('Homes available from :name', ['name' => $this->ownerName($owner)]),
-            'subheadline'    => __('Live vacancies — apply online in a couple of minutes.'),
+            'propertyName'   => null,
+            'location'       => null,
+            'headline'       => __('Homes available to rent'),
+            'subheadline'    => __('Live vacancies across every property — browse and apply online in minutes.'),
             'groups'         => $groups,
             'totalUnits'     => $groups->sum(fn ($g) => $g->units->count()),
             'notifyScope'    => [
@@ -90,8 +92,10 @@ class VacancyStorefrontController extends Controller
         return view('storefront.show', [
             'scope'          => 'property',
             'ownerName'      => $owner ? $this->ownerName($owner) : __('the owner'),
-            'headline'       => $property->name,
-            'subheadline'    => $location ?: __('Live vacancies — apply online in a couple of minutes.'),
+            'propertyName'   => $property->name,
+            'location'       => $location,
+            'headline'       => __('Vacant units available for rent'),
+            'subheadline'    => __('Browse the available units, see the details and apply in minutes.'),
             'groups'         => $groups,
             'totalUnits'     => $units->count(),
             'notifyScope'    => [

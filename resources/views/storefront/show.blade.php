@@ -32,28 +32,34 @@
   .sf a{text-decoration:none}
   .sf-wrap{max-width:1200px;margin:0 auto;padding:0 24px}
 
-  /* Hero — a full-bleed Centresidence brand band (the image already carries the logo + tagline),
-     with the LIVE owner/property name in the CS strip directly beneath it. No text overlaid on the
-     image = no collision with its baked-in branding, and it crops cleanly on any screen.
-     Swap the band by replacing public/assets/images/storefront-cover.png; the dark fallback shows
-     if the asset is ever missing. */
-  /* Height grows with viewport width so a wide screen doesn't crop the image into a thin letterbox
-     (which was clipping the CS logo). background-position favours the upper-left branding block. */
-  .sf-hero{position:relative;width:100%;height:clamp(210px,20vw,480px);overflow:hidden;
-    background:#0A0E14 url('{{ asset('assets/images/storefront-cover.png') }}') 30% 32%/cover no-repeat}
-  @media(max-width:640px){.sf-hero{background-position:38% 34%}}
-  .sf-herobar{color:#F4F1EA;padding:26px 0 30px;background:
-      radial-gradient(820px 300px at 86% -50%, rgba(231,163,57,.20), transparent 60%),
-      linear-gradient(135deg,#17487A 0%,#0E2E52 70%,#0B2342 100%)}
-  .sf-herobar__inner{max-width:1200px;margin:0 auto;padding:0 24px}
-  .sf-eyebrow{display:inline-flex;align-items:center;gap:8px;font-size:12px;font-weight:700;letter-spacing:.1em;
+  /* Unified hero — the Centresidence brand image FILLS the hero and the live details are overlaid
+     on a blended scrim, so image + details read as one piece (not an image with a strip bolted
+     beneath). The image already carries the CS logo + tagline; our dynamic content sits lower-left
+     over the darkened zone. Swap the scene by replacing public/assets/images/storefront-cover.png. */
+  .sf-hero{position:relative;width:100%;min-height:clamp(330px,38vw,560px);overflow:hidden;display:flex;
+    background:#0A1526 url('{{ asset('assets/images/storefront-cover.png') }}') center 24%/cover no-repeat}
+  @media(max-width:640px){.sf-hero{background-position:42% 24%;min-height:360px}}
+  .sf-hero__scrim{position:absolute;inset:0;z-index:1;pointer-events:none;background:
+      linear-gradient(90deg, rgba(7,16,30,.88) 0%, rgba(7,16,30,.58) 36%, rgba(7,16,30,.14) 62%, rgba(7,16,30,0) 82%),
+      linear-gradient(180deg, rgba(7,16,30,0) 38%, rgba(7,16,30,.50) 74%, rgba(7,16,30,.93) 100%)}
+  .sf-hero__inner{position:relative;z-index:2;width:100%;max-width:1200px;margin:0 auto;padding:118px 24px 30px;
+    display:flex;flex-direction:column;justify-content:flex-end}
+  .sf-eyebrow{display:inline-flex;align-items:center;gap:8px;font-size:12px;font-weight:700;letter-spacing:.12em;
     text-transform:uppercase;color:var(--amber);margin-bottom:12px}
   .sf-eyebrow svg{width:15px;height:15px}
-  .sf-herobar h1{font-family:var(--serif);font-weight:600;letter-spacing:-.015em;color:#FBF8F2;
-    font-size:clamp(28px,4.2vw,46px);margin:0;text-wrap:balance}
-  .sf-herobar p{margin-top:10px;color:#D7DEE7;font-size:16.5px;max-width:620px}
-  .sf-count{display:inline-flex;align-items:center;gap:8px;margin-top:18px;background:rgba(255,255,255,.10);
-    border:1px solid rgba(255,255,255,.18);border-radius:99px;padding:8px 16px;font-size:14px;font-weight:600;color:#EAF1FA}
+  .sf-hero h1{font-family:var(--serif);font-weight:600;letter-spacing:-.015em;color:#FBF8F2;
+    font-size:clamp(28px,4.4vw,48px);margin:0;text-wrap:balance;text-shadow:0 3px 26px rgba(0,0,0,.6)}
+  .sf-hero__sub{margin-top:11px;color:#E6ECF4;font-size:16.5px;max-width:560px;text-shadow:0 1px 12px rgba(0,0,0,.6)}
+  /* Overlaid info row — the per-page specifics (property / owner / location / count) */
+  .sf-inforow{display:flex;flex-wrap:wrap;align-items:center;gap:14px 26px;margin-top:22px;
+    padding-top:20px;border-top:1px solid rgba(255,255,255,.16);max-width:900px}
+  .sf-info{display:flex;align-items:center;gap:11px;min-width:0}
+  .sf-info__ic{width:36px;height:36px;border-radius:10px;background:rgba(255,255,255,.12);
+    border:1px solid rgba(255,255,255,.20);display:flex;align-items:center;justify-content:center;color:#CFE1F5;flex:0 0 auto}
+  .sf-info__ic svg{width:18px;height:18px}
+  .sf-info__k{font-size:10.5px;font-weight:800;letter-spacing:.11em;text-transform:uppercase;color:#A9C0DB;line-height:1}
+  .sf-info__v{font-size:14.5px;font-weight:750;color:#fff;line-height:1.25;margin-top:4px;
+    white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:240px}
 
   /* Section head */
   .sf-sec-head{margin:38px 0 4px}
@@ -198,22 +204,41 @@
 
 <div class="sf">
 
-  {{-- Hero — branded image band (untouched) + a CS strip carrying the live owner/property name --}}
-  <div class="sf-hero" role="img" aria-label="{{ getOption('app_name') ?: 'Centresidence' }}"></div>
-  <div class="sf-herobar">
-    <div class="sf-herobar__inner">
+  {{-- Unified hero — the brand image fills it; the live details are overlaid on a blended scrim --}}
+  <div class="sf-hero">
+    <div class="sf-hero__scrim"></div>
+    <div class="sf-hero__inner">
       <span class="sf-eyebrow">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-8 9 8"/><path d="M5 10v10h14V10"/></svg>
         {{ __('Available to rent') }}
       </span>
       <h1>{{ $headline }}</h1>
-      <p>{{ $subheadline }}</p>
-      @if($totalUnits > 0)
-        <span class="sf-count">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>
-          {{ $totalUnits }} {{ trans_choice('vacancy|vacancies', $totalUnits) }} {{ __('available now') }}
-        </span>
-      @endif
+      <p class="sf-hero__sub">{{ $subheadline }}</p>
+
+      <div class="sf-inforow">
+        @if(!empty($propertyName))
+          <div class="sf-info">
+            <span class="sf-info__ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-8 9 8"/><path d="M5 10v10h14V10"/></svg></span>
+            <span><span class="sf-info__k">{{ __('Property') }}</span><span class="sf-info__v" title="{{ $propertyName }}">{{ $propertyName }}</span></span>
+          </div>
+        @endif
+        <div class="sf-info">
+          <span class="sf-info__ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 7a4 4 0 1 1-8 0 4 4 0 0 1 8 0zM4 21v-1a6 6 0 0 1 6-6h4a6 6 0 0 1 6 6v1"/></svg></span>
+          <span><span class="sf-info__k">{{ __('Managed by') }}</span><span class="sf-info__v" title="{{ $ownerName }}">{{ $ownerName }}</span></span>
+        </div>
+        @if(!empty($location))
+          <div class="sf-info">
+            <span class="sf-info__ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg></span>
+            <span><span class="sf-info__k">{{ __('Location') }}</span><span class="sf-info__v" title="{{ $location }}">{{ $location }}</span></span>
+          </div>
+        @endif
+        @if($totalUnits > 0)
+          <div class="sf-info">
+            <span class="sf-info__ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg></span>
+            <span><span class="sf-info__k">{{ __('Available now') }}</span><span class="sf-info__v">{{ $totalUnits }} {{ trans_choice('vacancy|vacancies', $totalUnits) }}</span></span>
+          </div>
+        @endif
+      </div>
     </div>
   </div>
 
