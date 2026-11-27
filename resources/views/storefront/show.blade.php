@@ -32,18 +32,24 @@
   .sf a{text-decoration:none}
   .sf-wrap{max-width:1200px;margin:0 auto;padding:0 24px}
 
-  /* Unified hero — the Centresidence brand image FILLS the hero and the live details are overlaid
-     on a blended scrim, so image + details read as one piece (not an image with a strip bolted
-     beneath). The image already carries the CS logo + tagline; our dynamic content sits lower-left
-     over the darkened zone. Swap the scene by replacing public/assets/images/storefront-cover.png. */
-  .sf-hero{position:relative;width:100%;min-height:clamp(330px,38vw,560px);overflow:hidden;display:flex;
-    background:#0A1526 url('{{ asset('assets/images/storefront-cover.png') }}') center 24%/cover no-repeat}
-  @media(max-width:640px){.sf-hero{background-position:42% 24%;min-height:360px}}
+  /* Unified hero — a CLEAN (text-free) brand scene fills the hero; OUR own crisp lockup + the live
+     details are overlaid on the dark-sky left over a left-weighted scrim, leaving the lit house clear
+     on the right. No baked text = no ghosting. Swap the scene via assets/images/storefront-cover.jpg. */
+  .sf-hero{position:relative;width:100%;min-height:clamp(380px,42vw,600px);overflow:hidden;display:flex;
+    background:#06101F url('{{ asset('assets/images/storefront-cover.jpg') }}') center center/cover no-repeat}
+  @media(max-width:640px){.sf-hero{background-position:72% center;min-height:420px}}
   .sf-hero__scrim{position:absolute;inset:0;z-index:1;pointer-events:none;background:
-      linear-gradient(90deg, rgba(7,16,30,.94) 0%, rgba(7,16,30,.80) 30%, rgba(7,16,30,.42) 52%, rgba(7,16,30,.08) 74%, rgba(7,16,30,0) 88%),
-      linear-gradient(180deg, rgba(7,16,30,.30) 0%, rgba(7,16,30,0) 34%, rgba(7,16,30,.50) 72%, rgba(7,16,30,.94) 100%)}
-  .sf-hero__inner{position:relative;z-index:2;width:100%;max-width:1200px;margin:0 auto;padding:118px 24px 30px;
-    display:flex;flex-direction:column;justify-content:flex-end}
+      linear-gradient(90deg, rgba(5,11,22,.92) 0%, rgba(5,11,22,.74) 26%, rgba(5,11,22,.36) 48%, rgba(5,11,22,.06) 70%, rgba(5,11,22,0) 86%),
+      linear-gradient(180deg, rgba(5,11,22,.34) 0%, rgba(5,11,22,0) 28%, rgba(5,11,22,0) 68%, rgba(5,11,22,.55) 100%)}
+  .sf-hero__inner{position:relative;z-index:2;width:100%;max-width:1200px;margin:0 auto;padding:44px 24px;
+    display:flex;flex-direction:column;justify-content:center;align-items:flex-start}
+  .sf-hero__inner > *{max-width:600px}
+  /* Our OWN brand lockup (crisp, not baked into the photo) */
+  .sf-lockup{display:flex;align-items:center;gap:13px;margin-bottom:24px}
+  .sf-lockup__icon{height:50px;width:auto;display:block;filter:drop-shadow(0 6px 16px rgba(0,0,0,.45))}
+  .sf-lockup__wm{display:flex;flex-direction:column;line-height:1}
+  .sf-lockup__name{font-size:25px;font-weight:700;letter-spacing:-.01em;color:#fff}
+  .sf-lockup__tag{font-size:10px;font-weight:700;letter-spacing:.15em;text-transform:uppercase;color:#7FB2E6;margin-top:6px}
   .sf-eyebrow{display:inline-flex;align-items:center;gap:8px;font-size:12px;font-weight:700;letter-spacing:.12em;
     text-transform:uppercase;color:var(--amber);margin-bottom:12px}
   .sf-eyebrow svg{width:15px;height:15px}
@@ -210,6 +216,14 @@
   <div class="sf-hero">
     <div class="sf-hero__scrim"></div>
     <div class="sf-hero__inner">
+      <div class="sf-lockup">
+        <img class="sf-lockup__icon" src="{{ asset('assets/images/cs-icon.png') }}" alt="Centresidence"
+             onerror="this.style.display='none'">
+        <span class="sf-lockup__wm">
+          <span class="sf-lockup__name">{{ getOption('app_name') ?: 'centresidence' }}</span>
+          <span class="sf-lockup__tag">{{ __('Real Estate. Simplified. Connected.') }}</span>
+        </span>
+      </div>
       <span class="sf-eyebrow">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-8 9 8"/><path d="M5 10v10h14V10"/></svg>
         {{ __('Available to rent') }}
