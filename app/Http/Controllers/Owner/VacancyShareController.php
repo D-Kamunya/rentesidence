@@ -30,7 +30,7 @@ class VacancyShareController extends Controller
         $vacantByProperty = $this->propertyService->getVacantUnitsGroupedForOwner($owner->id);
 
         $properties = Property::where('owner_user_id', $owner->id)
-            ->with('propertyDetail')
+            ->with(['propertyDetail', 'fileAttachThumbnail'])
             ->orderBy('id')
             ->get();
 
@@ -38,14 +38,19 @@ class VacancyShareController extends Controller
             $vacant        = $vacantByProperty->get($property->id) ?? collect();
             $missingPhotos = $vacant->filter(fn ($u) => $u->images->isEmpty());
 
+            // Two photo levels: the BUILDING photo (property thumbnail) vs each UNIT's interior photos.
+            $buildingPhoto = $property->thumbnail_image ?? '';
+            $hasBuilding   = $buildingPhoto !== '' && ! str_contains($buildingPhoto, 'no-image');
+
             $url = route('storefront.property', $property->id);
 
             return (object) [
-                'property'       => $property,
-                'vacant_count'   => $vacant->count(),
-                'missing_photos' => $missingPhotos->count(),
-                'url'            => $url,
-                'qr'             => $this->qr($url),
+                'property'            => $property,
+                'vacant_count'        => $vacant->count(),
+                'missing_photos'      => $missingPhotos->count(),
+                'has_building_photo'  => $hasBuilding,
+                'url'                 => $url,
+                'qr'                  => $this->qr($url),
             ];
         });
 
@@ -58,6 +63,8 @@ class VacancyShareController extends Controller
             'cards'             => $cards,
             'totalVacant'       => $vacantByProperty->sum(fn ($u) => $u->count()),
             'totalMissingPhoto' => $cards->sum('missing_photos'),
+            // Buildings (with a live vacancy) that still have no exterior/building photo.
+            'totalMissingBuilding' => $cards->filter(fn ($c) => $c->vacant_count > 0 && ! $c->has_building_photo)->count(),
             'appName'           => getOption('app_name') ?: 'Centresidence',
         ]);
     }

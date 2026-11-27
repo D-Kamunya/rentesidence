@@ -109,11 +109,16 @@
           </div>
         </div>
 
-        @if($totalMissingPhoto > 0)
+        @if($totalMissingBuilding > 0 || $totalMissingPhoto > 0)
           <div class="vsh-nudge" style="margin-bottom:22px">
-            📸 {{ trans_choice(
-                ':count vacant unit has no photos yet — listings with real photos get far more applications.|:count vacant units have no photos yet — listings with real photos get far more applications.',
-                $totalMissingPhoto, ['count' => $totalMissingPhoto]) }}
+            📸 <strong>{{ __('Photos sell your vacancies.') }}</strong>
+            @if($totalMissingBuilding > 0)
+              {{ trans_choice(':count building still needs an exterior photo.|:count buildings still need an exterior photo.', $totalMissingBuilding, ['count' => $totalMissingBuilding]) }}
+            @endif
+            @if($totalMissingPhoto > 0)
+              {{ trans_choice(':count vacant unit still needs interior photos.|:count vacant units still need interior photos.', $totalMissingPhoto, ['count' => $totalMissingPhoto]) }}
+            @endif
+            {{ __('Listings with real photos get far more applications.') }}
           </div>
         @endif
 
@@ -135,8 +140,11 @@
                     @else
                       <span class="vsh-pill vsh-pill--none">{{ __('No vacancies') }}</span>
                     @endif
+                    @if($card->vacant_count > 0 && ! $card->has_building_photo)
+                      <span class="vsh-pill vsh-pill--warn">🏢 {{ __('no building photo') }}</span>
+                    @endif
                     @if($card->missing_photos > 0)
-                      <span class="vsh-pill vsh-pill--warn">📸 {{ $card->missing_photos }} {{ __('need photos') }}</span>
+                      <span class="vsh-pill vsh-pill--warn">📸 {{ $card->missing_photos }} {{ __('units need photos') }}</span>
                     @endif
 
                     <div class="vsh-prop__links">
@@ -148,10 +156,19 @@
                       </a>
                     </div>
 
-                    @if($card->missing_photos > 0)
+                    @if($card->vacant_count > 0 && (! $card->has_building_photo || $card->missing_photos > 0))
                       <div class="vsh-nudge">
-                        {{ __('Add real photos to this property’s vacant units so they actually sell.') }}
-                        <a class="vsh-photos-btn" href="{{ route('owner.property.show', $card->property->id) }}">{{ __('Add photos →') }}</a>
+                        @if(! $card->has_building_photo)
+                          <div><strong>{{ __('Building photo:') }}</strong> {{ __('add one clear exterior shot of the whole building — it heads the listing.') }}</div>
+                        @endif
+                        @if($card->missing_photos > 0)
+                          <div @if(! $card->has_building_photo) style="margin-top:6px" @endif>
+                            <strong>{{ __('Unit photos:') }}</strong>
+                            {{ trans_choice(':count unit needs interior photos (rooms, kitchen, bathroom).|:count units need interior photos (rooms, kitchen, bathroom).', $card->missing_photos, ['count' => $card->missing_photos]) }}
+                          </div>
+                        @endif
+                        <a class="vsh-photos-btn" href="{{ route('owner.property.show', $card->property->id) }}" style="display:inline-block;margin-top:8px">{{ __('Add photos →') }}</a>
+                        <div style="font-size:11.5px;color:#9A7A3A;margin-top:5px">📷 {{ __('On your phone you can snap them straight from the camera.') }}</div>
                       </div>
                     @endif
                   </div>
