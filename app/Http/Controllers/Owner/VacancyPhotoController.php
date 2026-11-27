@@ -198,4 +198,23 @@ class VacancyPhotoController extends Controller
 
         return $this->success(['category' => $category, 'category_label' => $img->category_label], __('Room updated.'));
     }
+
+    /** Set / clear a short free-text caption on an existing photo. Owner-scoped. */
+    public function setUnitImageCaption($id, Request $request)
+    {
+        $request->validate(['caption' => 'nullable|string|max:140']);
+
+        $img = PropertyUnitImage::with('unit.property')->find($id);
+
+        if (! $img || ! $img->unit || ! $img->unit->property
+            || (int) $img->unit->property->owner_user_id !== (int) auth()->id()) {
+            return $this->error([], __('Photo not found.'));
+        }
+
+        $caption = trim((string) $request->input('caption'));
+        $img->caption = $caption !== '' ? $caption : null;
+        $img->save();
+
+        return $this->success(['caption' => $img->caption], __('Note saved.'));
+    }
 }

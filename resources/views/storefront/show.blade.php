@@ -352,8 +352,9 @@
                       ? asset('storage/' . $unitImages->first()->folder_name . '/' . $unitImages->first()->file_name)
                       : null;
                   $imageData  = $unitImages->map(fn($img) => [
-                      'url'   => asset('storage/' . $img->folder_name . '/' . $img->file_name),
-                      'label' => $img->category_label,
+                      'url'     => asset('storage/' . $img->folder_name . '/' . $img->file_name),
+                      'label'   => $img->category_label,
+                      'caption' => $img->caption,
                   ])->toJson();
                   $firstLabel = $hasImages ? $unitImages->first()->category_label : null;
                   $unitLabel  = $unit->unit_name ?? ('Unit ' . $unit->id);
@@ -555,9 +556,11 @@ function openImageModal(unitId, images) {
     if (!images || images.length === 0) return;
     const inner = document.getElementById('lightboxInner');
     inner.innerHTML = images.map((item, i) => {
-        const url = (item && item.url) ? item.url : item;         // supports {url,label} or a bare url
+        const url = (item && item.url) ? item.url : item;         // supports {url,label,caption} or a bare url
         const label = (item && item.label) ? item.label : '';
-        const cap = label ? '<div class="sf-lightbox-cap">' + label.replace(/[<>&]/g, '') + '</div>' : '';
+        const note = (item && item.caption) ? item.caption : '';
+        const parts = [label, note].filter(Boolean).map(s => String(s).replace(/[<>&]/g, ''));
+        const cap = parts.length ? '<div class="sf-lightbox-cap">' + parts.join(' · ') + '</div>' : '';
         return `<div class="carousel-item ${i === 0 ? 'active' : ''}">
             <img src="${url}" class="d-block w-100" style="max-height:75vh;object-fit:contain;" alt="Unit image ${i + 1}" loading="lazy">
             ${cap}

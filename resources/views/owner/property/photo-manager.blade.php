@@ -43,6 +43,13 @@
           .pm-thumbs{display:flex;flex-wrap:wrap;gap:12px;margin-bottom:16px}
           .pm-thumb{position:relative;width:104px;height:104px;border-radius:12px;overflow:hidden;border:1px solid var(--line);background:#F4F1EC;flex:0 0 auto}
           .pm-thumb img{width:100%;height:100%;object-fit:cover;display:block}
+          /* unit thumbnails grow to fit an optional caption input below the image */
+          .pm-thumbs .pm-thumb{height:auto;display:flex;flex-direction:column;background:#fff}
+          .pm-thumb__img{position:relative;width:104px;height:104px;background:#F4F1EC}
+          .pm-thumb__cap{width:104px;border:none;border-top:1px solid var(--line);font-size:10px;padding:5px 7px;
+            outline:none;color:#1B1E22;background:#fff;font-family:inherit}
+          .pm-thumb__cap::placeholder{color:#AAB0B8}
+          .pm-thumb__cap:focus{background:#F7FAFD}
           .pm-thumb__del{position:absolute;top:5px;right:5px;width:26px;height:26px;border:none;border-radius:50%;
             background:rgba(17,20,26,.72);color:#fff;font-size:15px;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center}
           .pm-thumb__del:hover{background:#c0392b}
@@ -183,14 +190,18 @@
               <div class="pm-thumbs" data-role="thumbs" data-cats="{{ json_encode($unitRooms) }}">
                 @foreach($unit->images as $img)
                   <div class="pm-thumb" data-img="{{ $img->id }}" data-cat="{{ $img->category }}">
-                    <img src="{{ $img->file_url }}" alt="{{ __('Unit photo') }}">
-                    <select class="pm-thumb__tag" title="{{ __('Tag the room') }}" onchange="pmSetCategory({{ $img->id }}, this)">
-                      <option value="">{{ __('＋ Tag room') }}</option>
-                      @foreach($unitRooms as $slug => $label)
-                        <option value="{{ $slug }}" @selected($img->category === $slug)>{{ $label }}</option>
-                      @endforeach
-                    </select>
-                    <button type="button" class="pm-thumb__del" title="{{ __('Remove') }}" onclick="pmDeleteUnitImage({{ $img->id }}, this)">×</button>
+                    <div class="pm-thumb__img">
+                      <img src="{{ $img->file_url }}" alt="{{ __('Unit photo') }}">
+                      <select class="pm-thumb__tag" title="{{ __('Tag the room') }}" onchange="pmSetCategory({{ $img->id }}, this)">
+                        <option value="">{{ __('＋ Tag room') }}</option>
+                        @foreach($unitRooms as $slug => $label)
+                          <option value="{{ $slug }}" @selected($img->category === $slug)>{{ $label }}</option>
+                        @endforeach
+                      </select>
+                      <button type="button" class="pm-thumb__del" title="{{ __('Remove') }}" onclick="pmDeleteUnitImage({{ $img->id }}, this)">×</button>
+                    </div>
+                    <input class="pm-thumb__cap" type="text" maxlength="140" value="{{ $img->caption }}"
+                           placeholder="{{ __('Add a note…') }}" onchange="pmSetCaption({{ $img->id }}, this)">
                   </div>
                 @endforeach
               </div>
@@ -244,6 +255,19 @@ function pmTagSelectHtml(thumbsEl, imgId, cat) {
     opts += '<option value="' + slug + '"' + (slug === cat ? ' selected' : '') + '>' + pmEsc(cats[slug]) + '</option>';
   }
   return '<select class="pm-thumb__tag" title="' + @json(__('Tag the room')) + '" onchange="pmSetCategory(' + imgId + ', this)">' + opts + '</select>';
+}
+
+function pmSetCaption(imgId, input) {
+  const fd = new FormData();
+  fd.append('_token', PM_CSRF);
+  fd.append('caption', input.value);
+  fetch(PM_UNIT_CATEGORY + '/' + imgId + '/caption', { method: 'POST', body: fd, headers: { 'X-CSRF-TOKEN': PM_CSRF, 'X-Requested-With': 'XMLHttpRequest' } })
+    .then(r => r.json())
+    .then(data => {
+      if (data.status === true || data.status === 'success') { pmToast(@json(__('Note saved.'))); }
+      else { pmToast(data.message || @json(__('Could not save.')), true); }
+    })
+    .catch(() => pmToast(@json(__('Could not save.')), true));
 }
 
 function pmSetCategory(imgId, sel) {
@@ -322,9 +346,13 @@ function pmUploadUnitImages(unitId, input) {
           const div = document.createElement('div');
           div.className = 'pm-thumb'; div.setAttribute('data-img', img.id);
           div.setAttribute('data-cat', img.category || '');
-          div.innerHTML = '<img src="' + img.url + '" alt="unit photo">' +
-            pmTagSelectHtml(thumbs, img.id, img.category || '') +
-            '<button type="button" class="pm-thumb__del" onclick="pmDeleteUnitImage(' + img.id + ', this)">×</button>';
+          div.innerHTML =
+            '<div class="pm-thumb__img">' +
+              '<img src="' + img.url + '" alt="unit photo">' +
+              pmTagSelectHtml(thumbs, img.id, img.category || '') +
+              '<button type="button" class="pm-thumb__del" onclick="pmDeleteUnitImage(' + img.id + ', this)">×</button>' +
+            '</div>' +
+            '<input class="pm-thumb__cap" type="text" maxlength="140" placeholder="' + @json(__('Add a note…')) + '" onchange="pmSetCaption(' + img.id + ', this)">';
           thumbs.appendChild(div);
         });
         pmRefreshUnitBadge(wrap);
