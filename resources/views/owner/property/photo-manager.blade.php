@@ -111,7 +111,7 @@
           {{ __('Add real photos so this property’s vacancies actually sell. Snap them right here from your phone — a clear building photo heads the listing, and interior photos of each unit do the rest.') }}
         </p>
 
-        <div style="margin-bottom:22px"><span class="pm-autosave">✓ {{ __('Photos save automatically as you add them — no save button needed.') }}</span></div>
+        <div style="margin-bottom:22px"><span class="pm-autosave">✓ {{ __('Photos save automatically as you add them') }}</span></div>
 
         @php $buildingMissing = ! $buildingPhotoUrl; @endphp
         @if($buildingMissing || $vacantNeedPhotos > 0)
@@ -190,7 +190,7 @@
               @php $unitCats = $unit->images->pluck('category')->filter()->unique()->all(); @endphp
               <div class="pm-rooms">
                 <span class="pm-rooms__label">📷 {{ __('Snap a room:') }}</span>
-                @foreach(unitPhotoCategories() as $slug => $label)
+                @foreach(unitPhotoCategoriesFor($unit) as $slug => $label)
                   <label class="pm-room {{ in_array($slug, $unitCats, true) ? 'pm-room--has' : '' }}" data-cat="{{ $slug }}">
                     <svg class="pm-room__cam" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
                     <svg class="pm-room__check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>

@@ -60,8 +60,8 @@ function imageExtensionList()
 }
 
 /**
- * Optional room labels for unit photos (slug => display label). Used by the mobile "tap a room →
- * snap" flow and shown on the storefront. Tagging is always optional; 'other' is the catch-all.
+ * Base room labels for unit photos (slug => display label). Used for label lookup and as the
+ * default chip set. Tagging is always optional; 'other' is the catch-all.
  */
 function unitPhotoCategories()
 {
@@ -73,6 +73,55 @@ function unitPhotoCategories()
         'exterior'    => __('Exterior / view'),
         'other'       => __('Other'),
     ];
+}
+
+/**
+ * Per-UNIT room categories — expands Bedroom/Bathroom into numbered slots using the unit's own
+ * bedroom/bath counts (e.g. a 2-bed unit gets "Bedroom 1" + "Bedroom 2"). Counts are capped so a
+ * bad value can't explode the list, and a count of 0/1 keeps the simple single chip.
+ */
+function unitPhotoCategoriesFor($unit)
+{
+    $cap = 12;
+    $cats = ['living_room' => __('Living room')];
+
+    $bed = (int) ($unit->bedroom ?? 0);
+    if ($bed >= 2) {
+        for ($i = 1; $i <= min($bed, $cap); $i++) $cats["bedroom_$i"] = __('Bedroom :n', ['n' => $i]);
+    } else {
+        $cats['bedroom'] = __('Bedroom');
+    }
+
+    $cats['kitchen'] = __('Kitchen');
+
+    $bath = (int) ($unit->bath ?? 0);
+    if ($bath >= 2) {
+        for ($i = 1; $i <= min($bath, $cap); $i++) $cats["bathroom_$i"] = __('Bathroom :n', ['n' => $i]);
+    } else {
+        $cats['bathroom'] = __('Bathroom');
+    }
+
+    $cats['exterior'] = __('Exterior / view');
+    $cats['other']    = __('Other');
+
+    return $cats;
+}
+
+/**
+ * Human label for a photo category slug, incl. the dynamic numbered ones (bedroom_2 → "Bedroom 2").
+ */
+function photoCategoryLabel($slug)
+{
+    if (! $slug) {
+        return null;
+    }
+    if (preg_match('/^bedroom_(\d+)$/', $slug, $m)) {
+        return __('Bedroom :n', ['n' => $m[1]]);
+    }
+    if (preg_match('/^bathroom_(\d+)$/', $slug, $m)) {
+        return __('Bathroom :n', ['n' => $m[1]]);
+    }
+    return unitPhotoCategories()[$slug] ?? null;
 }
 
 function month($input = null)

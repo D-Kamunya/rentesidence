@@ -11,10 +11,10 @@ class PropertyUnitImage extends Model
 
     protected $fillable = ['unit_id', 'folder_name', 'file_name', 'category'];
 
-    /** Human-readable room label for this photo's category, or null if untagged. */
+    /** Human-readable room label for this photo's category (incl. "Bedroom 2"), or null if untagged. */
     public function getCategoryLabelAttribute(): ?string
     {
-        return $this->category ? (unitPhotoCategories()[$this->category] ?? null) : null;
+        return photoCategoryLabel($this->category);
     }
 
     // Delete image from storage when record is deleted

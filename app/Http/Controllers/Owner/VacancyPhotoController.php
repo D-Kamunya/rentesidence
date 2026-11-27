@@ -120,16 +120,17 @@ class VacancyPhotoController extends Controller
             'category'  => 'nullable|string|max:30',
         ]);
 
-        // Only accept a known room slug; anything else is treated as untagged.
-        $category = $request->input('category');
-        if (! array_key_exists((string) $category, unitPhotoCategories())) {
-            $category = null;
-        }
-
         $unit = PropertyUnit::with('property')->find($request->unit_id);
 
         if (! $unit || ! $unit->property || (int) $unit->property->owner_user_id !== (int) auth()->id()) {
             return $this->error([], __('Unit not found.'));
+        }
+
+        // Only accept a room slug valid FOR THIS UNIT (its bedroom/bath counts bound the numbered
+        // slots, e.g. bedroom_3 is rejected on a 2-bed unit); anything else is treated as untagged.
+        $category = $request->input('category');
+        if (! array_key_exists((string) $category, unitPhotoCategoriesFor($unit))) {
+            $category = null;
         }
 
         $saved = [];
