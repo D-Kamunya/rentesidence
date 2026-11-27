@@ -69,6 +69,42 @@ class VacancyShareController extends Controller
         ]);
     }
 
+    /**
+     * A printable A-frame poster carrying a big QR — the owner prints it and posts it on the
+     * property wall / at the gate. No property id = the whole-portfolio link; with one = that
+     * building's storefront. The QR is permanent, so it's print-once-post-forever.
+     */
+    public function poster($propertyId = null)
+    {
+        $owner = auth()->user();
+
+        if ($propertyId) {
+            $property = Property::where('owner_user_id', $owner->id)->findOrFail($propertyId);
+            $url      = route('storefront.property', $property->id);
+            $title    = $property->name;
+            $subtitle = __('Scan to see the available units');
+        } else {
+            $token = $owner->ensureStorefrontToken();
+            abort_if($token === null, 404);
+            $property = null;
+            $name     = trim(($owner->first_name ?? '') . ' ' . ($owner->last_name ?? ''));
+            $url      = route('storefront.owner', $token);
+            $title    = $name !== '' ? $name : (getOption('app_name') ?: 'Centresidence');
+            $subtitle = __('Scan to see our available homes');
+        }
+
+        $qr = QrCode::format('svg')->size(520)->margin(0)->errorCorrection('M')->generate($url);
+
+        return view('owner.storefront.poster', [
+            'qrSvg'    => $qr,
+            'url'      => $url,
+            'title'    => $title,
+            'subtitle' => $subtitle,
+            'property' => $property,
+            'appName'  => getOption('app_name') ?: 'Centresidence',
+        ]);
+    }
+
     private function qr(string $url): string
     {
         return QrCode::format('svg')->size(220)->margin(0)->errorCorrection('M')->generate($url);

@@ -58,6 +58,9 @@
         #vshRoot .vsh-btn--outline,#vshRoot .vsh-btn--outline:hover{color:var(--cs-blue) !important}
         #vshRoot .vsh-btn--outline:hover{background:#f2f6fb}
         .vsh-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:18px}
+        .vsh-propthumb{height:122px;border-radius:12px;overflow:hidden;margin-bottom:14px;background:#EFEDE8;position:relative}
+        .vsh-propthumb img{width:100%;height:100%;object-fit:cover;display:block}
+        .vsh-propthumb--none{display:flex;align-items:center;justify-content:center;color:#A7AEB8;font-size:12.5px;font-weight:600}
         .vsh-prop{display:flex;gap:18px;align-items:flex-start}
         .vsh-prop .vsh-qr{background:#fff;border:1px solid var(--line);border-radius:12px;padding:8px;width:110px;height:110px;flex:0 0 auto}
         .vsh-prop .vsh-qr svg{width:100%;height:100%;display:block}
@@ -105,6 +108,9 @@
               <a class="vsh-btn vsh-btn--ghost" href="https://wa.me/?text={{ urlencode(__('Here are the homes I have available: ') . $ownerUrl) }}" target="_blank" rel="noopener">
                 <i class="ri-whatsapp-line"></i> {{ __('WhatsApp') }}
               </a>
+              <a class="vsh-btn vsh-btn--ghost" href="{{ route('owner.vacancy.poster') }}" target="_blank" rel="noopener">
+                <i class="ri-printer-line"></i> {{ __('Print poster') }}
+              </a>
             </div>
           </div>
         </div>
@@ -131,6 +137,12 @@
           <div class="vsh-grid">
             @foreach($cards as $card)
               <div class="vsh-card">
+                @php $pt = trim($card->property->thumbnail_image ?? ''); $hasPt = $pt && ! str_contains($pt, 'no-image'); @endphp
+                @if($hasPt)
+                  <div class="vsh-propthumb"><img src="{{ $pt }}" alt="{{ $card->property->name }}" loading="lazy"></div>
+                @else
+                  <div class="vsh-propthumb vsh-propthumb--none">{{ __('No building photo yet') }}</div>
+                @endif
                 <div class="vsh-prop">
                   <div class="vsh-qr">{!! $card->qr !!}</div>
                   <div class="vsh-prop__body">
@@ -153,6 +165,9 @@
                       </button>
                       <a class="vsh-btn vsh-btn--outline" href="{{ $card->url }}" target="_blank" rel="noopener">
                         <i class="ri-external-link-line"></i> {{ __('Preview') }}
+                      </a>
+                      <a class="vsh-btn vsh-btn--outline" href="{{ route('owner.vacancy.poster', $card->property->id) }}" target="_blank" rel="noopener">
+                        <i class="ri-printer-line"></i> {{ __('Poster') }}
                       </a>
                     </div>
 
