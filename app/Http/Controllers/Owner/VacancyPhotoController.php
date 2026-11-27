@@ -59,7 +59,7 @@ class VacancyPhotoController extends Controller
                 'vacant_no_photos' => $vacantNoPhotos->count(),
                 'total_photos'     => $totalPhotos,
                 'complete'         => $hasBuilding && $unitsNoPhotos->isEmpty() && $units->count() > 0,
-                'url'              => route('owner.property.photos', $p->id),
+                'url'              => route('owner.property.photos', ['property' => $p->id, 'from' => 'overview']),
             ];
         })->sortBy(fn ($r) => $r->complete ? 1 : 0)->values();
 
@@ -93,12 +93,17 @@ class VacancyPhotoController extends Controller
         $buildingPhoto = $property->thumbnail_image ?? '';
         $hasBuilding   = $buildingPhoto !== '' && ! str_contains($buildingPhoto, 'no-image');
 
+        // Return the owner to WHERE THEY CAME FROM: the Property Photos dashboard, or Share Vacancies.
+        $fromOverview = request('from') === 'overview';
+
         return view('owner.property.photo-manager', [
-            'pageTitle'       => __('Add Photos'),
-            'property'        => $property,
-            'units'           => $units,
+            'pageTitle'        => __('Add Photos'),
+            'property'         => $property,
+            'units'            => $units,
             'buildingPhotoUrl' => $hasBuilding ? $buildingPhoto : null,
             'vacantNeedPhotos' => $units->where('is_vacant', true)->where('needs_photos', true)->count(),
+            'backRoute'        => $fromOverview ? route('owner.property.photos-overview') : route('owner.vacancy.share'),
+            'backLabel'        => $fromOverview ? __('Back to Property Photos') : __('Back to Share Vacancies'),
         ]);
     }
 

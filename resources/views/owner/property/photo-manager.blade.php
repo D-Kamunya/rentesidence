@@ -70,6 +70,12 @@
           .pm-room.busy{opacity:.5;pointer-events:none}
           .pm-room svg{width:15px;height:15px;color:var(--cs-blue)}
           .pm-room input{display:none}
+          /* green once that room has a photo (progress at a glance) */
+          .pm-room--has{background:#E7F6EC;border-color:#9BD9B2;color:#166534}
+          .pm-room--has:hover{background:#DCF1E3;border-color:#2EA563}
+          .pm-room__check{display:none;color:#2EA563}
+          .pm-room--has .pm-room__check{display:inline-block}
+          .pm-room--has .pm-room__cam{display:none}
           .pm-thumb__cat{position:absolute;left:5px;bottom:5px;background:rgba(17,20,26,.74);color:#fff;font-size:10px;
             font-weight:700;padding:2px 7px;border-radius:6px;max-width:86px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
           /* each unit is its own spaced card (left accent = progress at a glance) */
@@ -96,9 +102,9 @@
           .pm-toast.err{background:#c0392b}
         </style>
 
-        <a href="{{ route('owner.vacancy.share') }}" class="pm-back">
+        <a href="{{ $backRoute }}" class="pm-back">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M11 18l-6-6 6-6"/></svg>
-          {{ __('Back to Share Vacancies') }}
+          {{ $backLabel }}
         </a>
 
         <p class="pm-intro">
@@ -174,7 +180,7 @@
 
               <div class="pm-thumbs" data-role="thumbs">
                 @foreach($unit->images as $img)
-                  <div class="pm-thumb" data-img="{{ $img->id }}">
+                  <div class="pm-thumb" data-img="{{ $img->id }}" data-cat="{{ $img->category }}">
                     <img src="{{ $img->file_url }}" alt="{{ __('Unit photo') }}">
                     @if($img->category_label)<span class="pm-thumb__cat">{{ $img->category_label }}</span>@endif
                     <button type="button" class="pm-thumb__del" title="{{ __('Remove') }}" onclick="pmDeleteUnitImage({{ $img->id }}, this)">×</button>
@@ -182,13 +188,15 @@
                 @endforeach
               </div>
 
-              {{-- Tap a room → the camera opens → the photo is tagged with that room. Optional: an
-                   owner can just use any chip; tagging is never required. --}}
+              {{-- Tap a room → the camera opens → the photo is tagged with that room. A chip turns
+                   green once that room has a photo. Optional: tagging is never required. --}}
+              @php $unitCats = $unit->images->pluck('category')->filter()->unique()->all(); @endphp
               <div class="pm-rooms">
                 <span class="pm-rooms__label">📷 {{ __('Snap a room:') }}</span>
                 @foreach(unitPhotoCategories() as $slug => $label)
-                  <label class="pm-room">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+                  <label class="pm-room {{ in_array($slug, $unitCats, true) ? 'pm-room--has' : '' }}" data-cat="{{ $slug }}">
+                    <svg class="pm-room__cam" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+                    <svg class="pm-room__check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>
                     {{ $label }}
                     <input type="file" accept="image/*" multiple data-category="{{ $slug }}" onchange="pmUploadUnitImages({{ $unit->id }}, this)">
                   </label>
@@ -201,8 +209,8 @@
         </div>
 
         <div class="pm-done-row">
-          <a href="{{ route('owner.vacancy.share') }}" class="pm-done">
-            {{ __('Done — back to Share Vacancies') }}
+          <a href="{{ $backRoute }}" class="pm-done">
+            {{ __('Done') }} — {{ $backLabel }}
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
           </a>
         </div>
@@ -276,12 +284,14 @@ function pmUploadUnitImages(unitId, input) {
         data.data.images.forEach(img => {
           const div = document.createElement('div');
           div.className = 'pm-thumb'; div.setAttribute('data-img', img.id);
+          div.setAttribute('data-cat', img.category || '');
           div.innerHTML = '<img src="' + img.url + '" alt="unit photo">' +
             (img.category_label ? '<span class="pm-thumb__cat">' + pmEsc(img.category_label) + '</span>' : '') +
             '<button type="button" class="pm-thumb__del" onclick="pmDeleteUnitImage(' + img.id + ', this)">×</button>';
           thumbs.appendChild(div);
         });
         pmRefreshUnitBadge(wrap);
+        pmRefreshRoomChips(wrap);
         pmToast(@json(__('Photos added.')));
       } else {
         pmToast(data.message || @json(__('Upload failed.')), true);
@@ -292,21 +302,46 @@ function pmUploadUnitImages(unitId, input) {
 }
 
 function pmDeleteUnitImage(imgId, btn) {
-  if (!confirm(@json(__('Remove this photo?')))) return;
-  fetch(PM_UNIT_DELETE + '/' + imgId, { method: 'DELETE', headers: { 'X-CSRF-TOKEN': PM_CSRF, 'X-Requested-With': 'XMLHttpRequest' } })
-    .then(r => r.json())
-    .then(data => {
-      if (data.status === 'success' || data.status === true) {
-        const thumb = btn.closest('.pm-thumb');
-        const wrap = thumb.closest('.pm-unit');
-        thumb.remove();
-        pmRefreshUnitBadge(wrap);
-        pmToast(@json(__('Photo removed.')));
-      } else {
-        pmToast(data.message || @json(__('Could not remove.')), true);
-      }
-    })
-    .catch(() => pmToast(@json(__('Could not remove.')), true));
+  const doDelete = function () {
+    fetch(PM_UNIT_DELETE + '/' + imgId, { method: 'DELETE', headers: { 'X-CSRF-TOKEN': PM_CSRF, 'X-Requested-With': 'XMLHttpRequest' } })
+      .then(r => r.json())
+      .then(data => {
+        if (data.status === 'success' || data.status === true) {
+          const thumb = btn.closest('.pm-thumb');
+          const wrap = thumb.closest('.pm-unit');
+          thumb.remove();
+          pmRefreshUnitBadge(wrap);
+          pmRefreshRoomChips(wrap);
+          pmToast(@json(__('Photo removed.')));
+        } else {
+          pmToast(data.message || @json(__('Could not remove.')), true);
+        }
+      })
+      .catch(() => pmToast(@json(__('Could not remove.')), true));
+  };
+  // Use the app's CS confirm dialog for destructive actions (never the native browser alert).
+  if (window.csConfirm) {
+    window.csConfirm({
+      title: @json(__('Remove this photo?')),
+      message: @json(__('This permanently deletes the photo from the listing.')),
+      confirmText: @json(__('Remove')), cancelText: @json(__('Cancel')), tone: 'danger'
+    }).then(function (ok) { if (ok) doDelete(); });
+  } else if (confirm(@json(__('Remove this photo?')))) {
+    doDelete();
+  }
+}
+
+// Recompute which room chips are 'has photos' (green) from the unit's current thumbnails.
+function pmRefreshRoomChips(wrap) {
+  const cats = new Set();
+  wrap.querySelectorAll('[data-role="thumbs"] .pm-thumb').forEach(t => {
+    const c = t.getAttribute('data-cat');
+    if (c) cats.add(c);
+  });
+  wrap.querySelectorAll('.pm-room').forEach(chip => {
+    const c = chip.getAttribute('data-cat');
+    chip.classList.toggle('pm-room--has', !!c && cats.has(c));
+  });
 }
 
 function pmRefreshUnitBadge(wrap) {

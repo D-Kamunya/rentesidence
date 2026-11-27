@@ -94,6 +94,10 @@
   .sf-photos{position:absolute;bottom:10px;right:10px;z-index:2;background:rgba(0,0,0,.55);backdrop-filter:blur(4px);
     color:#fff;font-size:11.5px;font-weight:600;padding:5px 10px;border-radius:99px;display:inline-flex;align-items:center;gap:6px}
   .sf-photos svg{width:13px;height:13px}
+  .sf-roomtag{position:absolute;top:10px;left:10px;z-index:2;background:rgba(10,16,26,.62);backdrop-filter:blur(4px);
+    color:#fff;font-size:11.5px;font-weight:700;padding:5px 11px;border-radius:99px}
+  .sf-lightbox-cap{position:absolute;left:50%;bottom:14px;transform:translateX(-50%);background:rgba(10,16,26,.72);
+    color:#fff;font-size:13px;font-weight:700;padding:6px 15px;border-radius:99px}
   .sf-card__body{padding:20px;display:flex;flex-direction:column;flex:1}
   .sf-card__title{font-size:18px;font-weight:750;color:var(--stone-900);margin:0}
   .sf-card__prop{display:flex;align-items:center;gap:7px;color:var(--stone-500);font-size:13.5px;margin-top:6px}
@@ -347,17 +351,20 @@
                   $firstImage = $hasImages
                       ? asset('storage/' . $unitImages->first()->folder_name . '/' . $unitImages->first()->file_name)
                       : null;
-                  $imageUrls  = $unitImages->map(fn($img) =>
-                      asset('storage/' . $img->folder_name . '/' . $img->file_name)
-                  )->toJson();
+                  $imageData  = $unitImages->map(fn($img) => [
+                      'url'   => asset('storage/' . $img->folder_name . '/' . $img->file_name),
+                      'label' => $img->category_label,
+                  ])->toJson();
+                  $firstLabel = $hasImages ? $unitImages->first()->category_label : null;
                   $unitLabel  = $unit->unit_name ?? ('Unit ' . $unit->id);
               @endphp
 
               <div class="sf-card">
-                <div class="sf-card__media" @if($hasImages) onclick="openImageModal({{ $unit->id }}, {{ $imageUrls }})" @endif>
+                <div class="sf-card__media" @if($hasImages) onclick="openImageModal({{ $unit->id }}, {{ $imageData }})" @endif>
                   @if($hasImages)
                     <img src="{{ $firstImage }}" alt="{{ $unitLabel }}" loading="lazy"
                          onerror="this.onerror=null;this.src='{{ asset('assets/images/unit.png') }}';">
+                    @if($firstLabel)<span class="sf-roomtag">{{ $firstLabel }}</span>@endif
                     @if($unitImages->count() > 1)
                       <span class="sf-photos">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
@@ -544,14 +551,18 @@
 
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script>
-function openImageModal(unitId, imageUrls) {
-    if (!imageUrls || imageUrls.length === 0) return;
+function openImageModal(unitId, images) {
+    if (!images || images.length === 0) return;
     const inner = document.getElementById('lightboxInner');
-    inner.innerHTML = imageUrls.map((url, i) => `
-        <div class="carousel-item ${i === 0 ? 'active' : ''}">
+    inner.innerHTML = images.map((item, i) => {
+        const url = (item && item.url) ? item.url : item;         // supports {url,label} or a bare url
+        const label = (item && item.label) ? item.label : '';
+        const cap = label ? '<div class="sf-lightbox-cap">' + label.replace(/[<>&]/g, '') + '</div>' : '';
+        return `<div class="carousel-item ${i === 0 ? 'active' : ''}">
             <img src="${url}" class="d-block w-100" style="max-height:75vh;object-fit:contain;" alt="Unit image ${i + 1}" loading="lazy">
-        </div>
-    `).join('');
+            ${cap}
+        </div>`;
+    }).join('');
     document.getElementById('lightboxTitle').textContent = 'Unit photos (' + imageUrls.length + ')';
     const carousel = bootstrap.Carousel.getOrCreateInstance(document.getElementById('lightboxCarousel'));
     carousel.to(0);
