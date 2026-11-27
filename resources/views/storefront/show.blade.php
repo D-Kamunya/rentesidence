@@ -35,19 +35,18 @@
   /* Unified hero — a CLEAN (text-free) brand scene fills the hero; OUR own crisp lockup + the live
      details are overlaid on the dark-sky left over a left-weighted scrim, leaving the lit house clear
      on the right. No baked text = no ghosting. Swap the scene via assets/images/storefront-cover.jpg. */
-  /* NOTE: .sf-hero is block (not flex) on purpose — a flex parent stretch-locks the inner to
-     min-height, so taller content (property scope: 4 info items + 2-line headline) overflowed and
-     overflow:hidden clipped the logo at the top. The inner carries its OWN min-height + flex so it
-     GROWS with content instead of clipping. */
-  .sf-hero{position:relative;width:100%;min-height:clamp(380px,40vw,580px);overflow:hidden;
+  /* The content is TOP-aligned (flex-start), not centered — centering pushed any content taller
+     than the band out the top, and overflow:hidden then ate the logo. Top-align pins the lockup to
+     padding-top no matter how tall the content grows; the band just extends below if needed. */
+  .sf-hero{position:relative;width:100%;min-height:clamp(360px,38vw,540px);overflow:hidden;
     background:#06101F url('{{ asset('assets/images/storefront-cover.jpg') }}') center center/cover no-repeat}
   @media(max-width:640px){.sf-hero{background-position:72% center;min-height:420px}}
   .sf-hero__scrim{position:absolute;inset:0;z-index:1;pointer-events:none;background:
       linear-gradient(90deg, rgba(5,11,22,.92) 0%, rgba(5,11,22,.74) 26%, rgba(5,11,22,.36) 48%, rgba(5,11,22,.06) 70%, rgba(5,11,22,0) 86%),
       linear-gradient(180deg, rgba(5,11,22,.34) 0%, rgba(5,11,22,0) 28%, rgba(5,11,22,0) 68%, rgba(5,11,22,.55) 100%)}
   .sf-hero__inner{position:relative;z-index:2;width:100%;max-width:1200px;margin:0 auto;
-    min-height:clamp(380px,40vw,580px);padding:52px 24px 46px;box-sizing:border-box;
-    display:flex;flex-direction:column;justify-content:center;align-items:flex-start}
+    padding:52px 24px 46px;box-sizing:border-box;
+    display:flex;flex-direction:column;justify-content:flex-start;align-items:flex-start}
   .sf-hero__inner > *{max-width:600px}
   /* Our OWN brand lockup (crisp, not baked into the photo) */
   .sf-lockup{display:flex;align-items:center;gap:13px;margin-bottom:24px}
