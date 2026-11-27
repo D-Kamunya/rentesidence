@@ -164,6 +164,16 @@ Route::get('/get-cities', [HouseHuntController::class, 'getCitiesByState'])->nam
 Route::get('/house-hunt', [HouseHuntController::class, 'index'])->name('house.hunt');
 Route::get('/house-hunt/view/{propertyId}', [HouseHuntController::class, 'viewProperty'])->name('house-hunt.view');
 
+// Vacancy Storefront (Layer 1) — the owner's permanent, shareable, self-updating vacancy page.
+// House Hunt scoped to one owner or one property, with a "notify me" funnel on the empty state.
+// Public + token/id-addressed; the notify POST is throttled against lead-pipeline flooding.
+Route::prefix('vacancies')->group(function () {
+    Route::get('o/{token}', [\App\Http\Controllers\Storefront\VacancyStorefrontController::class, 'owner'])->name('storefront.owner');
+    Route::get('p/{property}', [\App\Http\Controllers\Storefront\VacancyStorefrontController::class, 'property'])->whereNumber('property')->name('storefront.property');
+    Route::post('notify', [\App\Http\Controllers\Storefront\VacancyStorefrontController::class, 'notify'])
+        ->middleware('throttle:10,10')->name('storefront.notify');
+});
+
 // Invite-a-landlord funnel — public landing an invited landlord opens + the intake form.
 // The submit is throttled so a leaked code can't be used to flood the lead pipeline.
 Route::get('/invite/{code}', [\App\Http\Controllers\PublicReferralController::class, 'landing'])->name('referral.invite');

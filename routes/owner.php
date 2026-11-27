@@ -108,6 +108,10 @@ Route::group(['prefix' => 'owner', 'as' => 'owner.', 'middleware' => ['auth', 'o
     // intentionally NOT in the gated action list).
     Route::post('infrastructure-bill/pay', [\App\Http\Controllers\Owner\InfraBillController::class, 'pay'])->name('infra-bill.pay');
 
+    // Vacancy Storefront share hub — the owner's permanent share links + QR (owner-level +
+    // per-property) and the photo-upload nudge for vacant units that have no pictures yet.
+    Route::get('vacancy-share', [\App\Http\Controllers\Owner\VacancyShareController::class, 'index'])->name('vacancy.share');
+
     Route::group(['prefix' => 'property', 'as' => 'property.'], function () {
         // Printable per-property tenant onboarding card (QR → get-started).
         Route::get('{property}/onboarding-card', [\App\Http\Controllers\Owner\OnboardingCardController::class, 'show'])->name('onboarding-card');

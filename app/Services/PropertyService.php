@@ -227,6 +227,38 @@ class PropertyService
         return $paginate ? $data->paginate(10) : $data->get();
     }
 
+    /**
+     * Vacant units for the public Vacancy Storefront, scoped to ONE owner, eager-loaded and
+     * grouped by property for the owner-level share page ("what vacancies do you have?").
+     * Reuses the same "no active tenant" vacancy definition as House Hunt — same engine, scoped.
+     */
+    public function getVacantUnitsGroupedForOwner($ownerUserId)
+    {
+        return PropertyUnit::query()
+            ->with(['images', 'property.propertyDetail'])
+            ->whereHas('property', fn ($q) => $q->where('owner_user_id', $ownerUserId))
+            ->whereDoesntHave('activeTenant')
+            ->orderBy('property_id')
+            ->orderBy('id')
+            ->get()
+            ->groupBy('property_id');
+    }
+
+    /**
+     * Vacant units for a single property's public storefront. Unlike House Hunt's viewProperty
+     * (which 404s on no vacancies), the storefront returns an empty collection so the permanent
+     * QR can still render a "No vacancies right now → notify me" funnel.
+     */
+    public function getVacantUnitsForProperty($propertyId)
+    {
+        return PropertyUnit::query()
+            ->with(['images', 'property.propertyDetail'])
+            ->where('property_id', $propertyId)
+            ->whereDoesntHave('activeTenant')
+            ->orderBy('id')
+            ->get();
+    }
+
     public function getEmptyUnitsByProperty($propertyId)
     {
         return PropertyUnit::query()

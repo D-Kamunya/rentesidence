@@ -79,6 +79,10 @@
                             <a href="{{ route('owner.property.leaseProperty') }}"
                                 class="{{ @$subNavLeasePropertyActiveClass }}">{{ __('Lease Property') }}</a>
                         </li>
+                        <li class="{{ @$subNavVacancyShareMMActiveClass }}">
+                            <a href="{{ route('owner.vacancy.share') }}"
+                                class="{{ @$subNavVacancyShareActiveClass }}">{{ __('Share Vacancies') }}</a>
+                        </li>
                     </ul>
                 </li>
 
