@@ -715,14 +715,20 @@ class PropertyService
                             continue;
                         }
 
-                        $filename = uniqid() . '-' . time() . '.' . $extension;
                         $folder = "PropertyUnit/{$property_unit->id}";
-                        $image->storeAs("public/$folder", $filename);
+                        // Downscale + re-encode before storing (storage hygiene); fall back to the
+                        // original if GD can't process it, so an upload is never lost.
+                        $stored = storeResizedImage($image, $folder);
+                        if (! $stored) {
+                            $filename = uniqid() . '-' . time() . '.' . $extension;
+                            $image->storeAs("public/$folder", $filename);
+                            $stored = ['folder_name' => $folder, 'file_name' => $filename];
+                        }
 
                         PropertyUnitImage::create([
                             'unit_id' => $property_unit->id,
-                            'folder_name' => $folder,
-                            'file_name' => $filename,
+                            'folder_name' => $stored['folder_name'],
+                            'file_name' => $stored['file_name'],
                         ]);
                     }
                 }
@@ -858,7 +864,9 @@ class PropertyService
             $property = Property::where('owner_user_id', auth()->id())->findOrFail($id);
             if ($request->file) {
                 $new_file = new FileManager();
-                $upload = $new_file->upload('Property', $request->file);
+                // Downscale the building photo before it goes to the FileManager store (degrades to
+                // the original if GD can't process it).
+                $upload = $new_file->upload('Property', downscaledUpload($request->file));
 
                 if ($upload['status']) {
                     $property->thumbnail_image_id = $upload['file']->id;

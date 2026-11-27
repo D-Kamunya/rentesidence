@@ -89,14 +89,20 @@ class VacancyPhotoController extends Controller
                 continue;
             }
 
-            $filename = uniqid() . '-' . time() . '.' . $extension;
-            $folder   = "PropertyUnit/{$unit->id}";
-            $image->storeAs("public/$folder", $filename);
+            $folder = "PropertyUnit/{$unit->id}";
+            // Downscale + re-encode before storing (storage hygiene). Never lose the upload: if GD
+            // is unavailable, fall back to storing the original.
+            $stored = storeResizedImage($image, $folder);
+            if (! $stored) {
+                $filename = uniqid() . '-' . time() . '.' . $extension;
+                $image->storeAs("public/$folder", $filename);
+                $stored = ['folder_name' => $folder, 'file_name' => $filename];
+            }
 
             $row = PropertyUnitImage::create([
                 'unit_id'     => $unit->id,
-                'folder_name' => $folder,
-                'file_name'   => $filename,
+                'folder_name' => $stored['folder_name'],
+                'file_name'   => $stored['file_name'],
             ]);
 
             $saved[] = ['id' => $row->id, 'url' => $row->file_url];
