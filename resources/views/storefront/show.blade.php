@@ -32,34 +32,25 @@
   .sf a{text-decoration:none}
   .sf-wrap{max-width:1200px;margin:0 auto;padding:0 24px}
 
-  /* Hero — Centresidence-branded cover band. A fixed brand image sits under a dark scrim so the
-     owner/property name is always legible; if the cover asset is absent the rich gradient carries it. */
-  .sf-hero{position:relative;overflow:hidden;color:#F4F1EA;padding:74px 0 62px;
-    background:
-      linear-gradient(180deg, rgba(9,12,17,.70) 0%, rgba(9,12,17,.86) 100%),
-      radial-gradient(1000px 480px at 84% -24%, rgba(231,163,57,.26), transparent 58%),
-      linear-gradient(135deg,#17487A 0%,#0E2E52 46%,#0A0E14 100%);
-    background-size:cover;background-position:center}
-  /* optional branded cover photo — drop a file at public/assets/images/storefront-cover.jpg to use it */
-  .sf-hero__cover{position:absolute;inset:0;z-index:0;background-image:url('{{ asset('assets/images/storefront-cover.jpg') }}');
-    background-size:cover;background-position:center;opacity:.22;mix-blend-mode:luminosity;pointer-events:none}
-  /* faint CS grid + a skyline silhouette so an empty hero never feels blank */
-  .sf-hero__grid{position:absolute;inset:0;z-index:0;pointer-events:none;opacity:.5;
-    background-image:linear-gradient(rgba(255,255,255,.045) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.045) 1px,transparent 1px);
-    background-size:46px 46px;mask-image:linear-gradient(180deg,transparent,#000 40%,transparent)}
-  .sf-hero__skyline{position:absolute;left:0;right:0;bottom:-1px;z-index:0;width:100%;height:120px;opacity:.5;pointer-events:none}
-  .sf-hero__inner{position:relative;z-index:2;max-width:1200px;margin:0 auto;padding:0 24px}
-  .sf-brandmark{display:inline-flex;align-items:center;gap:9px;font-size:13px;font-weight:800;letter-spacing:.14em;
-    text-transform:uppercase;color:#EAD9B6;margin-bottom:18px}
-  .sf-brandmark .dot{width:9px;height:9px;border-radius:50%;background:var(--amber);box-shadow:0 0 0 4px rgba(231,163,57,.18)}
+  /* Hero — a full-bleed Centresidence brand band (the image already carries the logo + tagline),
+     with the LIVE owner/property name in the CS strip directly beneath it. No text overlaid on the
+     image = no collision with its baked-in branding, and it crops cleanly on any screen.
+     Swap the band by replacing public/assets/images/storefront-cover.png; the dark fallback shows
+     if the asset is ever missing. */
+  .sf-hero{position:relative;width:100%;height:clamp(190px,29vw,340px);overflow:hidden;
+    background:#0A0E14 url('{{ asset('assets/images/storefront-cover.png') }}') center/cover no-repeat}
+  .sf-herobar{color:#F4F1EA;padding:26px 0 30px;background:
+      radial-gradient(820px 300px at 86% -50%, rgba(231,163,57,.20), transparent 60%),
+      linear-gradient(135deg,#17487A 0%,#0E2E52 70%,#0B2342 100%)}
+  .sf-herobar__inner{max-width:1200px;margin:0 auto;padding:0 24px}
   .sf-eyebrow{display:inline-flex;align-items:center;gap:8px;font-size:12px;font-weight:700;letter-spacing:.1em;
-    text-transform:uppercase;color:var(--amber);margin-bottom:14px}
+    text-transform:uppercase;color:var(--amber);margin-bottom:12px}
   .sf-eyebrow svg{width:15px;height:15px}
-  .sf-hero h1{font-family:var(--serif);font-weight:600;letter-spacing:-.015em;color:#FBF8F2;
-    font-size:clamp(30px,4.6vw,50px);margin:0;text-wrap:balance;text-shadow:0 2px 20px rgba(0,0,0,.45)}
-  .sf-hero p{margin-top:12px;color:#D7DEE7;font-size:17px;max-width:620px}
-  .sf-count{display:inline-flex;align-items:center;gap:8px;margin-top:22px;background:rgba(255,255,255,.08);
-    border:1px solid rgba(255,255,255,.14);border-radius:99px;padding:8px 16px;font-size:14px;font-weight:600;color:#EAF1FA}
+  .sf-herobar h1{font-family:var(--serif);font-weight:600;letter-spacing:-.015em;color:#FBF8F2;
+    font-size:clamp(28px,4.2vw,46px);margin:0;text-wrap:balance}
+  .sf-herobar p{margin-top:10px;color:#D7DEE7;font-size:16.5px;max-width:620px}
+  .sf-count{display:inline-flex;align-items:center;gap:8px;margin-top:18px;background:rgba(255,255,255,.10);
+    border:1px solid rgba(255,255,255,.18);border-radius:99px;padding:8px 16px;font-size:14px;font-weight:600;color:#EAF1FA}
 
   /* Section head */
   .sf-sec-head{margin:38px 0 4px}
@@ -204,15 +195,10 @@
 
 <div class="sf">
 
-  {{-- Hero — Centresidence-branded cover band --}}
-  <div class="sf-hero">
-    <div class="sf-hero__cover"></div>
-    <div class="sf-hero__grid"></div>
-    <svg class="sf-hero__skyline" viewBox="0 0 1440 120" preserveAspectRatio="none" aria-hidden="true">
-      <path fill="#0A0E14" d="M0 120V70h70v-18h52v30h40V40h60v32h44V58h70v34h40V30h56v62h48V66h66v26h40V48h58v44h44V72h70v20h40V36h56v56h48V74h66v18h40V54h58v38h44V78h70V120z"/>
-    </svg>
-    <div class="sf-hero__inner">
-      <span class="sf-brandmark"><span class="dot"></span>{{ $appName ?? (getOption('app_name') ?: 'Centresidence') }}</span>
+  {{-- Hero — branded image band (untouched) + a CS strip carrying the live owner/property name --}}
+  <div class="sf-hero" role="img" aria-label="{{ getOption('app_name') ?: 'Centresidence' }}"></div>
+  <div class="sf-herobar">
+    <div class="sf-herobar__inner">
       <span class="sf-eyebrow">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-8 9 8"/><path d="M5 10v10h14V10"/></svg>
         {{ __('Available to rent') }}
