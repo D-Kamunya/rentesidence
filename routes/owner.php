@@ -113,6 +113,10 @@ Route::group(['prefix' => 'owner', 'as' => 'owner.', 'middleware' => ['auth', 'o
     Route::get('vacancy-share', [\App\Http\Controllers\Owner\VacancyShareController::class, 'index'])->name('vacancy.share');
 
     Route::group(['prefix' => 'property', 'as' => 'property.'], function () {
+        // Vacancy PHOTO MANAGER — mobile-first building + per-unit photo surface (the "Add photos" nudge target).
+        Route::get('{property}/photos', [\App\Http\Controllers\Owner\VacancyPhotoController::class, 'index'])->name('photos');
+        Route::post('unit-images/store', [\App\Http\Controllers\Owner\VacancyPhotoController::class, 'storeUnitImages'])
+            ->middleware('throttle:40,1')->name('unit-image.store');
         // Printable per-property tenant onboarding card (QR → get-started).
         Route::get('{property}/onboarding-card', [\App\Http\Controllers\Owner\OnboardingCardController::class, 'show'])->name('onboarding-card');
         Route::get('all-property', [PropertyController::class, 'allProperty'])->name('allProperty');

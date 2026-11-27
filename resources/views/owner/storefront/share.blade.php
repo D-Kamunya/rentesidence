@@ -167,7 +167,7 @@
                             {{ trans_choice(':count unit needs interior photos (rooms, kitchen, bathroom).|:count units need interior photos (rooms, kitchen, bathroom).', $card->missing_photos, ['count' => $card->missing_photos]) }}
                           </div>
                         @endif
-                        <a class="vsh-photos-btn" href="{{ route('owner.property.show', $card->property->id) }}" style="display:inline-block;margin-top:8px">{{ __('Add photos →') }}</a>
+                        <a class="vsh-photos-btn" href="{{ route('owner.property.photos', $card->property->id) }}" style="display:inline-block;margin-top:8px">{{ __('Add photos →') }}</a>
                         <div style="font-size:11.5px;color:#9A7A3A;margin-top:5px">📷 {{ __('On your phone you can snap them straight from the camera.') }}</div>
                       </div>
                     @endif

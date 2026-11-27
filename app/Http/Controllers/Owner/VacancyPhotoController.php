@@ -1,0 +1,111 @@
+<?php
+
+namespace App\Http\Controllers\Owner;
+
+use App\Http\Controllers\Controller;
+use App\Models\Property;
+use App\Models\PropertyUnit;
+use App\Models\PropertyUnitImage;
+use App\Traits\ResponseTrait;
+use Illuminate\Http\Request;
+
+/**
+ * Vacancy PHOTO MANAGER — a mobile-first "listing completeness" surface for one property. The
+ * owner, standing in the building with their phone, adds the two photo levels that make a vacancy
+ * sell: the BUILDING photo (exterior/common, = the property thumbnail that heads the storefront)
+ * and per-UNIT interior photos. It's deliberately NOT the heavy stepped property editor — just
+ * snap/upload, see thumbnails, delete.
+ *
+ * Reuses the existing storage rails: the building photo rides owner.property.thumbnailImage.update
+ * (FileManager), unit photos get their own thin endpoint here (same security as the stepped form:
+ * whitelisted extension AND a sniffed image/* MIME), deletes ride owner.unit.image.delete.
+ *
+ * This is the first instance of the broader completeness-nudge surface — size/other per-vertical
+ * fields (e.g. measured m² for the storage vertical / Verified Listing) can slot in here later.
+ */
+class VacancyPhotoController extends Controller
+{
+    use ResponseTrait;
+
+    public function index($propertyId)
+    {
+        $property = Property::where('owner_user_id', auth()->id())
+            ->with(['fileAttachThumbnail', 'propertyDetail'])
+            ->findOrFail($propertyId);
+
+        // Units with their photos; flag which are currently vacant (no active tenant) + which lack photos.
+        $units = PropertyUnit::where('property_id', $property->id)
+            ->with(['images', 'activeTenant'])
+            ->orderBy('id')
+            ->get()
+            ->map(function (PropertyUnit $u) {
+                $u->is_vacant     = $u->activeTenant === null;
+                $u->needs_photos  = $u->images->isEmpty();
+                return $u;
+            });
+
+        // Sort so the units that need attention (vacant + no photos) surface first.
+        $units = $units->sortByDesc(fn ($u) => ($u->is_vacant ? 2 : 0) + ($u->needs_photos ? 1 : 0))->values();
+
+        $buildingPhoto = $property->thumbnail_image ?? '';
+        $hasBuilding   = $buildingPhoto !== '' && ! str_contains($buildingPhoto, 'no-image');
+
+        return view('owner.property.photo-manager', [
+            'pageTitle'       => __('Add Photos'),
+            'property'        => $property,
+            'units'           => $units,
+            'buildingPhotoUrl' => $hasBuilding ? $buildingPhoto : null,
+            'vacantNeedPhotos' => $units->where('is_vacant', true)->where('needs_photos', true)->count(),
+        ]);
+    }
+
+    /**
+     * Add one or more photos to a single unit (owner-scoped). Returns the stored images so the page
+     * can append thumbnails without a reload.
+     */
+    public function storeUnitImages(Request $request)
+    {
+        $request->validate([
+            'unit_id'   => 'required|integer',
+            'images'    => 'required|array|max:12',
+            'images.*'  => 'required|image|max:8192', // 8MB each; image rule = server-side type guard
+        ]);
+
+        $unit = PropertyUnit::with('property')->find($request->unit_id);
+
+        if (! $unit || ! $unit->property || (int) $unit->property->owner_user_id !== (int) auth()->id()) {
+            return $this->error([], __('Unit not found.'));
+        }
+
+        $saved = [];
+        foreach ($request->file('images', []) as $image) {
+            if (! $image) {
+                continue;
+            }
+            // Defence in depth (mirrors the stepped form): whitelisted extension AND sniffed image/* MIME.
+            $extension = strtolower($image->getClientOriginalExtension());
+            if (! in_array($extension, imageExtensionList(), true)
+                || strpos((string) $image->getMimeType(), 'image/') !== 0) {
+                continue;
+            }
+
+            $filename = uniqid() . '-' . time() . '.' . $extension;
+            $folder   = "PropertyUnit/{$unit->id}";
+            $image->storeAs("public/$folder", $filename);
+
+            $row = PropertyUnitImage::create([
+                'unit_id'     => $unit->id,
+                'folder_name' => $folder,
+                'file_name'   => $filename,
+            ]);
+
+            $saved[] = ['id' => $row->id, 'url' => $row->file_url];
+        }
+
+        if (empty($saved)) {
+            return $this->error([], __('No valid image was uploaded. Please use a JPG or PNG photo.'));
+        }
+
+        return $this->success(['images' => $saved], __('Photos added.'));
+    }
+}
