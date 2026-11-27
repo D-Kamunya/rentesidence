@@ -40,8 +40,8 @@
     background:#0A1526 url('{{ asset('assets/images/storefront-cover.png') }}') center 24%/cover no-repeat}
   @media(max-width:640px){.sf-hero{background-position:42% 24%;min-height:360px}}
   .sf-hero__scrim{position:absolute;inset:0;z-index:1;pointer-events:none;background:
-      linear-gradient(90deg, rgba(7,16,30,.88) 0%, rgba(7,16,30,.58) 36%, rgba(7,16,30,.14) 62%, rgba(7,16,30,0) 82%),
-      linear-gradient(180deg, rgba(7,16,30,0) 38%, rgba(7,16,30,.50) 74%, rgba(7,16,30,.93) 100%)}
+      linear-gradient(90deg, rgba(7,16,30,.94) 0%, rgba(7,16,30,.80) 30%, rgba(7,16,30,.42) 52%, rgba(7,16,30,.08) 74%, rgba(7,16,30,0) 88%),
+      linear-gradient(180deg, rgba(7,16,30,.30) 0%, rgba(7,16,30,0) 34%, rgba(7,16,30,.50) 72%, rgba(7,16,30,.94) 100%)}
   .sf-hero__inner{position:relative;z-index:2;width:100%;max-width:1200px;margin:0 auto;padding:118px 24px 30px;
     display:flex;flex-direction:column;justify-content:flex-end}
   .sf-eyebrow{display:inline-flex;align-items:center;gap:8px;font-size:12px;font-weight:700;letter-spacing:.12em;
@@ -57,7 +57,9 @@
   .sf-info__ic{width:36px;height:36px;border-radius:10px;background:rgba(255,255,255,.12);
     border:1px solid rgba(255,255,255,.20);display:flex;align-items:center;justify-content:center;color:#CFE1F5;flex:0 0 auto}
   .sf-info__ic svg{width:18px;height:18px}
-  .sf-info__k{font-size:10.5px;font-weight:800;letter-spacing:.11em;text-transform:uppercase;color:#A9C0DB;line-height:1}
+  /* label stacks ABOVE value (was jamming inline → "Managed byMr Owner") */
+  .sf-info__txt{display:flex;flex-direction:column;min-width:0}
+  .sf-info__k{font-size:10.5px;font-weight:800;letter-spacing:.11em;text-transform:uppercase;color:#A9C0DB;line-height:1.1}
   .sf-info__v{font-size:14.5px;font-weight:750;color:#fff;line-height:1.25;margin-top:4px;
     white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:240px}
 
@@ -219,23 +221,23 @@
         @if(!empty($propertyName))
           <div class="sf-info">
             <span class="sf-info__ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-8 9 8"/><path d="M5 10v10h14V10"/></svg></span>
-            <span><span class="sf-info__k">{{ __('Property') }}</span><span class="sf-info__v" title="{{ $propertyName }}">{{ $propertyName }}</span></span>
+            <span class="sf-info__txt"><span class="sf-info__k">{{ __('Property') }}</span><span class="sf-info__v" title="{{ $propertyName }}">{{ $propertyName }}</span></span>
           </div>
         @endif
         <div class="sf-info">
           <span class="sf-info__ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 7a4 4 0 1 1-8 0 4 4 0 0 1 8 0zM4 21v-1a6 6 0 0 1 6-6h4a6 6 0 0 1 6 6v1"/></svg></span>
-          <span><span class="sf-info__k">{{ __('Managed by') }}</span><span class="sf-info__v" title="{{ $ownerName }}">{{ $ownerName }}</span></span>
+          <span class="sf-info__txt"><span class="sf-info__k">{{ __('Managed by') }}</span><span class="sf-info__v" title="{{ $ownerName }}">{{ $ownerName }}</span></span>
         </div>
         @if(!empty($location))
           <div class="sf-info">
             <span class="sf-info__ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg></span>
-            <span><span class="sf-info__k">{{ __('Location') }}</span><span class="sf-info__v" title="{{ $location }}">{{ $location }}</span></span>
+            <span class="sf-info__txt"><span class="sf-info__k">{{ __('Location') }}</span><span class="sf-info__v" title="{{ $location }}">{{ $location }}</span></span>
           </div>
         @endif
         @if($totalUnits > 0)
           <div class="sf-info">
             <span class="sf-info__ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg></span>
-            <span><span class="sf-info__k">{{ __('Available now') }}</span><span class="sf-info__v">{{ $totalUnits }} {{ trans_choice('vacancy|vacancies', $totalUnits) }}</span></span>
+            <span class="sf-info__txt"><span class="sf-info__k">{{ __('Available now') }}</span><span class="sf-info__v">{{ $totalUnits }} {{ trans_choice('vacancy|vacancies', $totalUnits) }}</span></span>
           </div>
         @endif
       </div>
