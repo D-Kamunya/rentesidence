@@ -70,7 +70,7 @@ class VacancyStorefrontController extends Controller
     /** Property-scope: one building. Does NOT 404 on no vacancies — the QR must stay live. */
     public function property($propertyId)
     {
-        $property = Property::with('propertyDetail')->find($propertyId);
+        $property = Property::with(['propertyDetail', 'fileAttachThumbnail'])->find($propertyId);
 
         abort_if(! $property, 404);
 

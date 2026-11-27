@@ -23,6 +23,7 @@
         </div>
       </div>
 
+      <div class="page-content-wrapper bg-white p-3 p-md-4 radius-20 vsh">
       <style>
         .vsh{--cs-blue:#185FA5;--cs-blue-2:#1c72c2;--amber:#E7A339;--line:#E6E1D8;--ink:#1B1E22;--muted:#6B7280}
         .vsh-intro{color:var(--muted);font-size:14.5px;max-width:720px;line-height:1.6;margin:0 0 22px}
@@ -33,7 +34,7 @@
         .vsh-owner .vsh-qr svg{width:100%;height:100%;display:block}
         .vsh-owner__body{flex:1;min-width:280px}
         .vsh-owner__body .eyebrow{font-size:12px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#BcD8F3;margin:0 0 6px}
-        .vsh-owner__body h4{font-size:21px;font-weight:800;margin:0 0 8px}
+        .vsh-owner__body h4{font-size:21px;font-weight:800;margin:0 0 8px;color:#fff}
         .vsh-owner__body p{color:#DCE8F5;font-size:14px;margin:0 0 16px;max-width:480px;line-height:1.55}
         .vsh-linkrow{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
         .vsh-link{flex:1;min-width:220px;background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.25);
@@ -58,7 +59,9 @@
         .vsh-prop__links{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
         .vsh-nudge{background:#FDF6EA;border:1px solid #F4E3C4;border-radius:10px;padding:10px 12px;margin-top:10px;
           font-size:12.5px;color:#7A5200;line-height:1.5}
-        .vsh-nudge a{color:#9A5B00;font-weight:700;text-decoration:underline}
+        /* "-btn" suffix keeps it out of the global a:hover blue-ify rule (class*="btn" exclusion) */
+        .vsh-photos-btn{color:#9A5B00;font-weight:700;text-decoration:underline}
+        .vsh-photos-btn:hover{color:#7A4200}
         .vsh-copytoast{position:fixed;bottom:26px;left:50%;transform:translateX(-50%);background:#1B1E22;color:#fff;
           padding:11px 20px;border-radius:10px;font-size:13.5px;font-weight:600;opacity:0;pointer-events:none;transition:.2s;z-index:9999}
         .vsh-copytoast.show{opacity:1}
@@ -137,7 +140,7 @@
                     @if($card->missing_photos > 0)
                       <div class="vsh-nudge">
                         {{ __('Add real photos to this property’s vacant units so they actually sell.') }}
-                        <a href="{{ route('owner.property.show', $card->property->id) }}">{{ __('Add photos →') }}</a>
+                        <a class="vsh-photos-btn" href="{{ route('owner.property.show', $card->property->id) }}">{{ __('Add photos →') }}</a>
                       </div>
                     @endif
                   </div>
@@ -147,6 +150,7 @@
           </div>
         @endif
       @endif
+      </div>{{-- /.page-content-wrapper --}}
 
     </div>
   </div>

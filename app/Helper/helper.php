@@ -636,12 +636,15 @@ if (!function_exists('getCustomerAddonBuildVersion')) {
 if (!function_exists('isAddonInstalled')) {
     function isAddonInstalled($code)
     {
-        $buildVersion = getOption($code . '_build_version', 0);
-        $codeBuildVersion = getAddonCodeBuildVersion($code);
-        if (is_null($buildVersion) || $codeBuildVersion == 0) {
-            return 0;
-        }
-        return (int) $buildVersion;
+        // Centresidence OWNS every module (this is no longer code-for-sale), so the CODE manifest
+        // is authoritative — a module that's present in the codebase is always "installed".
+        // Previously this gated on a DB option ($code.'_build_version') that the (now removed)
+        // vendor update gateway used to set; a blank/absent flag silently switched whole route
+        // groups OFF (House Hunt apply, /join, agreements, bulk SMS) with no error — and any
+        // fresh/restored DB could boot with modules dark. Trusting the code build_version removes
+        // that drift + silent-failure surface entirely. The remaining `if (isAddonInstalled(...))`
+        // guards are now always-true in our world; strip them later under heavy test.
+        return (int) getAddonCodeBuildVersion($code);
     }
 }
 

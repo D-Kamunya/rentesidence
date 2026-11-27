@@ -32,17 +32,32 @@
   .sf a{text-decoration:none}
   .sf-wrap{max-width:1200px;margin:0 auto;padding:0 24px}
 
-  /* Hero */
-  .sf-hero{position:relative;background:
-      radial-gradient(900px 420px at 80% -20%, rgba(231,163,57,.16), transparent 60%),
-      linear-gradient(180deg,#12161C,#0B0F15);color:#F2EFEA;padding:64px 0 54px}
-  .sf-hero__inner{max-width:1200px;margin:0 auto;padding:0 24px}
+  /* Hero — Centresidence-branded cover band. A fixed brand image sits under a dark scrim so the
+     owner/property name is always legible; if the cover asset is absent the rich gradient carries it. */
+  .sf-hero{position:relative;overflow:hidden;color:#F4F1EA;padding:74px 0 62px;
+    background:
+      linear-gradient(180deg, rgba(9,12,17,.70) 0%, rgba(9,12,17,.86) 100%),
+      radial-gradient(1000px 480px at 84% -24%, rgba(231,163,57,.26), transparent 58%),
+      linear-gradient(135deg,#17487A 0%,#0E2E52 46%,#0A0E14 100%);
+    background-size:cover;background-position:center}
+  /* optional branded cover photo — drop a file at public/assets/images/storefront-cover.jpg to use it */
+  .sf-hero__cover{position:absolute;inset:0;z-index:0;background-image:url('{{ asset('assets/images/storefront-cover.jpg') }}');
+    background-size:cover;background-position:center;opacity:.22;mix-blend-mode:luminosity;pointer-events:none}
+  /* faint CS grid + a skyline silhouette so an empty hero never feels blank */
+  .sf-hero__grid{position:absolute;inset:0;z-index:0;pointer-events:none;opacity:.5;
+    background-image:linear-gradient(rgba(255,255,255,.045) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.045) 1px,transparent 1px);
+    background-size:46px 46px;mask-image:linear-gradient(180deg,transparent,#000 40%,transparent)}
+  .sf-hero__skyline{position:absolute;left:0;right:0;bottom:-1px;z-index:0;width:100%;height:120px;opacity:.5;pointer-events:none}
+  .sf-hero__inner{position:relative;z-index:2;max-width:1200px;margin:0 auto;padding:0 24px}
+  .sf-brandmark{display:inline-flex;align-items:center;gap:9px;font-size:13px;font-weight:800;letter-spacing:.14em;
+    text-transform:uppercase;color:#EAD9B6;margin-bottom:18px}
+  .sf-brandmark .dot{width:9px;height:9px;border-radius:50%;background:var(--amber);box-shadow:0 0 0 4px rgba(231,163,57,.18)}
   .sf-eyebrow{display:inline-flex;align-items:center;gap:8px;font-size:12px;font-weight:700;letter-spacing:.1em;
     text-transform:uppercase;color:var(--amber);margin-bottom:14px}
   .sf-eyebrow svg{width:15px;height:15px}
-  .sf-hero h1{font-family:var(--serif);font-weight:600;letter-spacing:-.015em;
-    font-size:clamp(30px,4.6vw,50px);margin:0;text-wrap:balance}
-  .sf-hero p{margin-top:12px;color:#CBD2DA;font-size:17px;max-width:620px}
+  .sf-hero h1{font-family:var(--serif);font-weight:600;letter-spacing:-.015em;color:#FBF8F2;
+    font-size:clamp(30px,4.6vw,50px);margin:0;text-wrap:balance;text-shadow:0 2px 20px rgba(0,0,0,.45)}
+  .sf-hero p{margin-top:12px;color:#D7DEE7;font-size:17px;max-width:620px}
   .sf-count{display:inline-flex;align-items:center;gap:8px;margin-top:22px;background:rgba(255,255,255,.08);
     border:1px solid rgba(255,255,255,.14);border-radius:99px;padding:8px 16px;font-size:14px;font-weight:600;color:#EAF1FA}
 
@@ -90,6 +105,23 @@
   .sf-propgroup > h3{font-size:18px;font-weight:800;color:var(--stone-900);margin:26px 0 2px;
     display:flex;align-items:center;gap:9px}
   .sf-propgroup > h3 svg{width:18px;height:18px;color:var(--cs-blue)}
+
+  /* Property banner — the building photo partitions one property's units from the next */
+  .sf-propbanner{position:relative;border-radius:16px;overflow:hidden;margin:38px 0 18px;min-height:156px;
+    display:flex;align-items:flex-end;background:#13263d;box-shadow:var(--shadow-sm)}
+  .sf-propbanner img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+  .sf-propbanner__scrim{position:absolute;inset:0;background:linear-gradient(180deg,rgba(10,20,32,.12),rgba(10,20,32,.84))}
+  .sf-propbanner__noimg{position:absolute;inset:0;background:
+      radial-gradient(600px 220px at 85% -30%, rgba(231,163,57,.20), transparent 60%),
+      linear-gradient(135deg,#17487A,#0E2E52);display:flex;align-items:center;justify-content:center}
+  .sf-propbanner__noimg svg{width:56px;height:56px;color:rgba(255,255,255,.20)}
+  .sf-propbanner__body{position:relative;z-index:2;padding:22px 24px;color:#fff}
+  .sf-propbanner__name{font-size:clamp(20px,3vw,24px);font-weight:800;margin:0;color:#fff;text-shadow:0 2px 14px rgba(0,0,0,.5);
+    display:flex;align-items:center;gap:9px}
+  .sf-propbanner__name svg{width:19px;height:19px;color:var(--amber)}
+  .sf-propbanner__loc{display:block;margin-top:7px;font-size:13.5px;color:#e4eaf2;text-shadow:0 1px 8px rgba(0,0,0,.5)}
+  .sf-propbanner__meta{display:inline-flex;align-items:center;gap:7px;margin-top:11px;font-size:12.5px;font-weight:700;
+    background:rgba(255,255,255,.16);border:1px solid rgba(255,255,255,.24);border-radius:99px;padding:5px 13px;color:#fff}
 
   /* Funnel panels */
   .sf-panel{background:var(--card);border:1px solid var(--line);border-radius:18px;box-shadow:var(--shadow-sm);
@@ -172,9 +204,15 @@
 
 <div class="sf">
 
-  {{-- Hero --}}
+  {{-- Hero — Centresidence-branded cover band --}}
   <div class="sf-hero">
+    <div class="sf-hero__cover"></div>
+    <div class="sf-hero__grid"></div>
+    <svg class="sf-hero__skyline" viewBox="0 0 1440 120" preserveAspectRatio="none" aria-hidden="true">
+      <path fill="#0A0E14" d="M0 120V70h70v-18h52v30h40V40h60v32h44V58h70v34h40V30h56v62h48V66h66v26h40V48h58v44h44V72h70v20h40V36h56v56h48V74h66v18h40V54h58v38h44V78h70V120z"/>
+    </svg>
     <div class="sf-hero__inner">
+      <span class="sf-brandmark"><span class="dot"></span>{{ $appName ?? (getOption('app_name') ?: 'Centresidence') }}</span>
       <span class="sf-eyebrow">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-8 9 8"/><path d="M5 10v10h14V10"/></svg>
         {{ __('Available to rent') }}
@@ -210,10 +248,34 @@
         @php $property = $group->property; @endphp
         <div class="sf-propgroup">
           @if($scope === 'owner')
-            <h3>
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-8 9 8"/><path d="M5 10v10h14V10"/></svg>
-              {{ $property->name }}
-            </h3>
+            @php
+                $thumb    = trim($property->thumbnail_image ?? '');
+                $noImg    = asset('assets/images/no-image.jpg');
+                $hasBanner = $thumb && $thumb !== $noImg;
+                $detail   = $property->propertyDetail;
+                $loc      = collect([optional($detail)->city_id, optional($detail)->state_id])
+                                ->filter()->map(fn($x) => ucfirst(strtolower($x)))->implode(', ');
+                $vCount   = $group->units->count();
+            @endphp
+            <div class="sf-propbanner">
+              @if($hasBanner)
+                <img src="{{ $thumb }}" alt="{{ $property->name }}" loading="lazy" onerror="this.style.display='none'">
+                <div class="sf-propbanner__scrim"></div>
+              @else
+                <div class="sf-propbanner__noimg">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-8 9 8"/><path d="M5 10v10h14V10"/><path d="M9 21V13h6v8"/></svg>
+                </div>
+                <div class="sf-propbanner__scrim"></div>
+              @endif
+              <div class="sf-propbanner__body">
+                <h3 class="sf-propbanner__name">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-8 9 8"/><path d="M5 10v10h14V10"/></svg>
+                  {{ $property->name }}
+                </h3>
+                @if($loc)<span class="sf-propbanner__loc">{{ $loc }}</span>@endif
+                <span class="sf-propbanner__meta">{{ $vCount }} {{ trans_choice('vacancy|vacancies', $vCount) }} {{ __('available') }}</span>
+              </div>
+            </div>
           @else
             <div class="sf-sec-head">
               <h2>{{ __('Available units') }}</h2>

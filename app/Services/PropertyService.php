@@ -235,7 +235,7 @@ class PropertyService
     public function getVacantUnitsGroupedForOwner($ownerUserId)
     {
         return PropertyUnit::query()
-            ->with(['images', 'property.propertyDetail'])
+            ->with(['images', 'property.propertyDetail', 'property.fileAttachThumbnail'])
             ->whereHas('property', fn ($q) => $q->where('owner_user_id', $ownerUserId))
             ->whereDoesntHave('activeTenant')
             ->orderBy('property_id')
@@ -252,7 +252,7 @@ class PropertyService
     public function getVacantUnitsForProperty($propertyId)
     {
         return PropertyUnit::query()
-            ->with(['images', 'property.propertyDetail'])
+            ->with(['images', 'property.propertyDetail', 'property.fileAttachThumbnail'])
             ->where('property_id', $propertyId)
             ->whereDoesntHave('activeTenant')
             ->orderBy('id')
