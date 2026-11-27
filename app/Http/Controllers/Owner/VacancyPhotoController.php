@@ -27,6 +27,49 @@ class VacancyPhotoController extends Controller
 {
     use ResponseTrait;
 
+    /**
+     * Portfolio-wide photo completeness dashboard — the go-to place for all image work. Every
+     * property with its building-photo + unit-photo status, needs-attention first, each linking
+     * into the per-property manager.
+     */
+    public function overview()
+    {
+        $properties = Property::where('owner_user_id', auth()->id())
+            ->with(['fileAttachThumbnail', 'propertyUnits.images', 'propertyUnits.activeTenant'])
+            ->orderBy('id')
+            ->get();
+
+        $rows = $properties->map(function (Property $p) {
+            $units          = $p->propertyUnits;
+            $vacant         = $units->filter(fn ($u) => $u->activeTenant === null);
+            $unitsNoPhotos  = $units->filter(fn ($u) => $u->images->isEmpty());
+            $vacantNoPhotos = $vacant->filter(fn ($u) => $u->images->isEmpty());
+
+            $bp          = $p->thumbnail_image ?? '';
+            $hasBuilding = $bp !== '' && ! str_contains($bp, 'no-image');
+            $totalPhotos = $units->sum(fn ($u) => $u->images->count()) + ($hasBuilding ? 1 : 0);
+
+            return (object) [
+                'property'         => $p,
+                'thumb'            => $hasBuilding ? $bp : null,
+                'has_building'     => $hasBuilding,
+                'units'            => $units->count(),
+                'vacant'           => $vacant->count(),
+                'units_no_photos'  => $unitsNoPhotos->count(),
+                'vacant_no_photos' => $vacantNoPhotos->count(),
+                'total_photos'     => $totalPhotos,
+                'complete'         => $hasBuilding && $unitsNoPhotos->isEmpty() && $units->count() > 0,
+                'url'              => route('owner.property.photos', $p->id),
+            ];
+        })->sortBy(fn ($r) => $r->complete ? 1 : 0)->values();
+
+        return view('owner.property.photos-overview', [
+            'pageTitle'     => __('Property Photos'),
+            'rows'          => $rows,
+            'needAttention' => $rows->where('complete', false)->count(),
+        ]);
+    }
+
     public function index($propertyId)
     {
         $property = Property::where('owner_user_id', auth()->id())
