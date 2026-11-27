@@ -55,18 +55,46 @@
           .pm-add input{display:none}
           .pm-add.busy{opacity:.6;pointer-events:none}
           .pm-add svg{width:18px;height:18px}
+          .pm-add--unit{background:#2A3642}
+          .pm-add--unit:hover{background:#3a4857}
+          /* progress state — once a unit has a photo the button goes green ("done, add more") */
+          #pmRoot .pm-add--done{background:#fff !important;color:#166534 !important;border:1.5px solid #9BD9B2 !important}
+          #pmRoot .pm-add--done:hover{background:#F1FBF4 !important;color:#166534 !important}
           .pm-tip{font-size:12px;color:var(--muted);margin-top:9px}
-          .pm-unit{border-top:1px solid var(--line);padding-top:20px;margin-top:4px}
-          .pm-unit:first-of-type{border-top:none;padding-top:0}
+          /* each unit is its own spaced card (left accent = progress at a glance) */
+          .pm-unit{border:1px solid var(--line);border-left:4px solid var(--line);border-radius:14px;
+            padding:18px 18px 20px;margin-bottom:18px;background:#FCFBF9;transition:border-color .2s,background .2s}
+          .pm-unit:last-child{margin-bottom:0}
+          .pm-unit.has-photos{border-left-color:#2EA563;background:#FAFDFB}
+          .pm-unit.needs-photos{border-left-color:var(--amber)}
+          /* top back-link + bottom done-button + autosave reassurance */
+          .pm-back{display:inline-flex;align-items:center;gap:8px;color:var(--cs-blue);font-weight:700;font-size:14px;margin-bottom:16px}
+          .pm-back svg{width:16px;height:16px}
+          #pmRoot .pm-back,#pmRoot .pm-back:hover{color:var(--cs-blue) !important}
+          .pm-autosave{display:inline-flex;align-items:center;gap:7px;color:#166534;font-size:12.5px;font-weight:700;
+            background:#E7F6EC;border:1px solid #BfE8CB;border-radius:99px;padding:5px 13px}
+          .pm-done-row{display:flex;justify-content:flex-end;margin-top:26px;padding-top:20px;border-top:1px solid var(--line)}
+          .pm-done{display:inline-flex;align-items:center;justify-content:center;gap:9px;background:var(--cs-blue);
+            color:#fff !important;font-weight:700;font-size:15px;padding:13px 26px;border-radius:12px;text-decoration:none}
+          .pm-done:hover{background:var(--cs-blue-2)}
+          #pmRoot .pm-done,#pmRoot .pm-done:hover{color:#fff !important}
+          .pm-done svg{width:17px;height:17px}
           .pm-toast{position:fixed;bottom:26px;left:50%;transform:translateX(-50%);background:#1B1E22;color:#fff;
             padding:11px 20px;border-radius:10px;font-size:13.5px;font-weight:600;opacity:0;pointer-events:none;transition:.2s;z-index:9999}
           .pm-toast.show{opacity:1}
           .pm-toast.err{background:#c0392b}
         </style>
 
+        <a href="{{ route('owner.vacancy.share') }}" class="pm-back">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M11 18l-6-6 6-6"/></svg>
+          {{ __('Back to Share Vacancies') }}
+        </a>
+
         <p class="pm-intro">
           {{ __('Add real photos so this property’s vacancies actually sell. Snap them right here from your phone — a clear building photo heads the listing, and interior photos of each unit do the rest.') }}
         </p>
+
+        <div style="margin-bottom:22px"><span class="pm-autosave">✓ {{ __('Photos save automatically as you add them — no save button needed.') }}</span></div>
 
         @php $buildingMissing = ! $buildingPhotoUrl; @endphp
         @if($buildingMissing || $vacantNeedPhotos > 0)
@@ -122,7 +150,7 @@
           <p class="pm-sec__hint">{{ __('Interior photos of each unit — living room, bedrooms, kitchen, bathroom. Vacant units with no photos are shown first.') }}</p>
 
           @forelse($units as $unit)
-            <div class="pm-unit" data-unit="{{ $unit->id }}">
+            <div class="pm-unit {{ $unit->needs_photos ? 'needs-photos' : 'has-photos' }}" data-unit="{{ $unit->id }}">
               <div class="pm-sec__head">
                 <h5 style="font-size:15px">{{ __('Unit') }} {{ $unit->unit_name ?? $unit->id }}</h5>
                 @if($unit->is_vacant)<span class="pm-pill pm-pill--vacant">{{ __('vacant') }}</span>@endif
@@ -142,15 +170,22 @@
                 @endforeach
               </div>
 
-              <label class="pm-add" style="background:#2A3642">
+              <label class="pm-add pm-add--unit {{ $unit->needs_photos ? '' : 'pm-add--done' }}">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
-                {{ __('Add unit photos') }}
+                <span class="pm-add__label">{{ $unit->needs_photos ? __('Add unit photos') : __('Add more photos') }}</span>
                 <input type="file" accept="image/*" multiple onchange="pmUploadUnitImages({{ $unit->id }}, this)">
               </label>
             </div>
           @empty
             <p class="pm-empty">{{ __('This property has no units yet. Add units first, then come back to photograph them.') }}</p>
           @endforelse
+        </div>
+
+        <div class="pm-done-row">
+          <a href="{{ route('owner.vacancy.share') }}" class="pm-done">
+            {{ __('Done — back to Share Vacancies') }}
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+          </a>
         </div>
 
       </div>
@@ -255,12 +290,20 @@ function pmRefreshUnitBadge(wrap) {
   const head = wrap.querySelector('.pm-sec__head');
   let badge = head.querySelector('[data-role="need"], [data-role="count"]');
   if (!badge) { badge = document.createElement('span'); head.appendChild(badge); }
+  const addBtn = wrap.querySelector('.pm-add--unit');
+  const addLabel = addBtn ? addBtn.querySelector('.pm-add__label') : null;
   if (count === 0) {
     badge.className = 'pm-pill pm-pill--need'; badge.setAttribute('data-role', 'need');
     badge.textContent = @json(__('needs photos'));
+    wrap.classList.add('needs-photos'); wrap.classList.remove('has-photos');
+    if (addBtn) addBtn.classList.remove('pm-add--done');
+    if (addLabel) addLabel.textContent = @json(__('Add unit photos'));
   } else {
     badge.className = 'pm-pill pm-pill--ok'; badge.setAttribute('data-role', 'count');
     badge.textContent = count + ' ' + (count === 1 ? @json(__('photo')) : @json(__('photos')));
+    wrap.classList.add('has-photos'); wrap.classList.remove('needs-photos');
+    if (addBtn) addBtn.classList.add('pm-add--done');
+    if (addLabel) addLabel.textContent = @json(__('Add more photos'));
   }
 }
 </script>
