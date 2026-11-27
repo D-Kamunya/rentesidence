@@ -70,7 +70,8 @@
         .vsh-pill--live{background:#E7F6EC;color:#166534}
         .vsh-pill--none{background:#F1F0EC;color:#6B7280}
         .vsh-pill--warn{background:#FDF1DD;color:#9A5B00;margin-left:6px}
-        .vsh-prop__links{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+        .vsh-prop__links{display:flex;gap:8px;margin-top:16px}
+        .vsh-prop__links .vsh-btn{flex:1 1 0;justify-content:center;padding:10px 10px;font-size:13px;white-space:nowrap}
         .vsh-nudge{background:#FDF6EA;border:1px solid #F4E3C4;border-radius:10px;padding:10px 12px;margin-top:10px;
           font-size:12.5px;color:#7A5200;line-height:1.5}
         /* "-btn" suffix keeps it out of the global a:hover blue-ify rule (class*="btn" exclusion) */
@@ -158,36 +159,37 @@
                     @if($card->missing_photos > 0)
                       <span class="vsh-pill vsh-pill--warn">📸 {{ $card->missing_photos }} {{ __('units need photos') }}</span>
                     @endif
-
-                    <div class="vsh-prop__links">
-                      <button type="button" class="vsh-btn vsh-btn--blue" onclick="vshCopy('{{ $card->url }}')">
-                        <i class="ri-file-copy-line"></i> {{ __('Copy') }}
-                      </button>
-                      <a class="vsh-btn vsh-btn--outline" href="{{ $card->url }}" target="_blank" rel="noopener">
-                        <i class="ri-external-link-line"></i> {{ __('Preview') }}
-                      </a>
-                      <a class="vsh-btn vsh-btn--outline" href="{{ route('owner.vacancy.poster', $card->property->id) }}" target="_blank" rel="noopener">
-                        <i class="ri-printer-line"></i> {{ __('Poster') }}
-                      </a>
-                    </div>
-
-                    @if($card->vacant_count > 0 && (! $card->has_building_photo || $card->missing_photos > 0))
-                      <div class="vsh-nudge">
-                        @if(! $card->has_building_photo)
-                          <div><strong>{{ __('Building photo:') }}</strong> {{ __('add one clear exterior shot of the whole building — it heads the listing.') }}</div>
-                        @endif
-                        @if($card->missing_photos > 0)
-                          <div @if(! $card->has_building_photo) style="margin-top:6px" @endif>
-                            <strong>{{ __('Unit photos:') }}</strong>
-                            {{ trans_choice(':count unit needs interior photos (rooms, kitchen, bathroom).|:count units need interior photos (rooms, kitchen, bathroom).', $card->missing_photos, ['count' => $card->missing_photos]) }}
-                          </div>
-                        @endif
-                        <a class="vsh-photos-btn" href="{{ route('owner.property.photos', $card->property->id) }}" style="display:inline-block;margin-top:8px">{{ __('Add photos →') }}</a>
-                        <div style="font-size:11.5px;color:#9A7A3A;margin-top:5px">📷 {{ __('On your phone you can snap them straight from the camera.') }}</div>
-                      </div>
-                    @endif
                   </div>
                 </div>
+
+                {{-- Actions as a full-width inline row (more room than the narrow body column) --}}
+                <div class="vsh-prop__links">
+                  <button type="button" class="vsh-btn vsh-btn--blue" onclick="vshCopy('{{ $card->url }}')">
+                    <i class="ri-file-copy-line"></i> {{ __('Copy') }}
+                  </button>
+                  <a class="vsh-btn vsh-btn--outline" href="{{ $card->url }}" target="_blank" rel="noopener">
+                    <i class="ri-external-link-line"></i> {{ __('Preview') }}
+                  </a>
+                  <a class="vsh-btn vsh-btn--outline" href="{{ route('owner.vacancy.poster', $card->property->id) }}" target="_blank" rel="noopener">
+                    <i class="ri-printer-line"></i> {{ __('Poster') }}
+                  </a>
+                </div>
+
+                @if($card->vacant_count > 0 && (! $card->has_building_photo || $card->missing_photos > 0))
+                  <div class="vsh-nudge">
+                    @if(! $card->has_building_photo)
+                      <div><strong>{{ __('Building photo:') }}</strong> {{ __('add one clear exterior shot of the whole building — it heads the listing.') }}</div>
+                    @endif
+                    @if($card->missing_photos > 0)
+                      <div @if(! $card->has_building_photo) style="margin-top:6px" @endif>
+                        <strong>{{ __('Unit photos:') }}</strong>
+                        {{ trans_choice(':count unit needs interior photos (rooms, kitchen, bathroom).|:count units need interior photos (rooms, kitchen, bathroom).', $card->missing_photos, ['count' => $card->missing_photos]) }}
+                      </div>
+                    @endif
+                    <a class="vsh-photos-btn" href="{{ route('owner.property.photos', $card->property->id) }}" style="display:inline-block;margin-top:8px">{{ __('Add photos →') }}</a>
+                    <div style="font-size:11.5px;color:#9A7A3A;margin-top:5px">📷 {{ __('On your phone you can snap them straight from the camera.') }}</div>
+                  </div>
+                @endif
               </div>
             @endforeach
           </div>
