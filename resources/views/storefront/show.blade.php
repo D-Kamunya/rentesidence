@@ -532,18 +532,18 @@
                 <input type="number" name="family_member" class="form-control" value="{{ old('family_member', $user?->tenant?->family_member) }}"></div>
             </div>
 
-            <p class="sf-formsec">{{ __('Address Information') }}</p>
+            <p class="sf-formsec">{{ __('Address Information') }} <span style="text-transform:none;font-weight:600;color:var(--stone-400)">— {{ __('optional') }}</span></p>
             <div class="hd-grid3">
-              <div class="sf-field hd-col-full"><label>{{ __('Address') }} <span class="req">*</span></label>
-                <input type="text" name="permanent_address" class="form-control" required></div>
-              <div class="sf-field"><label>{{ __('Country') }} <span class="req">*</span></label>
-                <input type="text" name="permanent_country_id" class="form-control" required></div>
-              <div class="sf-field"><label>{{ __('State') }} <span class="req">*</span></label>
-                <input type="text" name="permanent_state_id" class="form-control" required></div>
-              <div class="sf-field"><label>{{ __('City') }} <span class="req">*</span></label>
-                <input type="text" name="permanent_city_id" class="form-control" required></div>
-              <div class="sf-field hd-col-full"><label>{{ __('Zip Code') }} <span class="req">*</span></label>
-                <input type="text" name="permanent_zip_code" class="form-control" required></div>
+              <div class="sf-field hd-col-full"><label>{{ __('Address') }}</label>
+                <input type="text" name="permanent_address" class="form-control"></div>
+              <div class="sf-field"><label>{{ __('Country') }}</label>
+                <input type="text" name="permanent_country_id" class="form-control"></div>
+              <div class="sf-field"><label>{{ __('State') }}</label>
+                <input type="text" name="permanent_state_id" class="form-control"></div>
+              <div class="sf-field"><label>{{ __('City') }}</label>
+                <input type="text" name="permanent_city_id" class="form-control"></div>
+              <div class="sf-field hd-col-full"><label>{{ __('Zip Code') }}</label>
+                <input type="text" name="permanent_zip_code" class="form-control"></div>
             </div>
           </div>
           <div class="modal-footer">

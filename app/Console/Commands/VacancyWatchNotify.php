@@ -72,6 +72,24 @@ class VacancyWatchNotify extends Command
                 ]
             );
 
+            // If this prospect has a Centresidence account (they signed up after capturing), also
+            // fire the alert IN-APP. The bell inner-joins on sender_id, so use a system admin sender.
+            $user = User::where('email', $watcher->email)->whereNull('deleted_at')->first();
+            if ($user) {
+                $systemSenderId = (int) (User::where('role', USER_ROLE_ADMIN)->min('id') ?? $user->id);
+                addNotification(
+                    __('A home just opened up'),
+                    __(':label — :count available now.', ['label' => $match['label'], 'count' => $match['count']]),
+                    $match['url'],
+                    null,
+                    $user->id,
+                    $systemSenderId
+                );
+                if (empty($watcher->converted_user_id)) {
+                    $watcher->converted_user_id = $user->id;
+                }
+            }
+
             $watcher->notified_at = now();
             $watcher->save();
             $sent++;

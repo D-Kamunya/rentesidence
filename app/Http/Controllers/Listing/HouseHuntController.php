@@ -9,8 +9,11 @@ use App\Models\PropertyUnit;
 use App\Models\PropertyDetail;
 use App\Models\HouseHuntApplication;
 use App\Http\Requests\HouseApplicationRequest;
+use App\Models\User;
+use App\Mail\Concerns\SendsCsMail;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Pagination\LengthAwarePaginator;
 use App\Traits\ResponseTrait;
 use Exception;
@@ -18,6 +21,7 @@ use Exception;
 class HouseHuntController extends Controller
 {
     use ResponseTrait;
+    use SendsCsMail;
 
     public function index(Request $request)
     {
@@ -253,10 +257,56 @@ class HouseHuntController extends Controller
             ]);
 
             DB::commit();
+
+            // Tell the owner a tenant applied — otherwise the application sits unseen behind a nav
+            // badge. In-app + email are free; never let a notification failure break the submit.
+            $this->notifyOwnerOfApplication($application);
+
             return $this->success($application, __(APPLICATION_SENT_SUCCESSFULLY));
         } catch (Exception $e) {
             DB::rollBack();
             return $this->error([], getErrorMessage($e, $e->getMessage()));
+        }
+    }
+
+    /** Notify the property owner (in-app + email) that a new tenant application arrived. */
+    private function notifyOwnerOfApplication(HouseHuntApplication $application): void
+    {
+        try {
+            $unit = PropertyUnit::with('property')->find($application->property_unit_id);
+            $owner = $unit && $unit->property ? User::find($unit->property->owner_user_id) : null;
+            if (! $owner) {
+                return;
+            }
+
+            $applicant = trim($application->first_name . ' ' . $application->last_name);
+            $unitLabel = $unit->unit_name ?? ('Unit ' . $unit->id);
+            $propName  = $unit->property->name ?? '';
+            $url       = route('owner.tenant.applications.index');
+
+            // In-app bell inner-joins on sender_id, so a null sender is never shown — use a system admin.
+            $systemSenderId = (int) (User::where('role', USER_ROLE_ADMIN)->min('id') ?? $owner->id);
+            addNotification(
+                __('New tenant application'),
+                __(':applicant applied for :unit at :property.', ['applicant' => $applicant, 'unit' => $unitLabel, 'property' => $propName]),
+                $url,
+                null,
+                $owner->id,
+                $systemSenderId
+            );
+
+            $this->sendCs([$owner->email], __('A tenant applied for your vacancy'), [
+                'eyebrow' => __('New application'),
+                'title'   => __('A tenant applied for your vacancy'),
+                'blocks'  => [
+                    ['type' => 'text', 'html' => __(':applicant applied for <strong>:unit</strong> at <strong>:property</strong>.', ['applicant' => e($applicant), 'unit' => e($unitLabel), 'property' => e($propName)])],
+                    ['type' => 'text', 'html' => __('Contact: :email · :phone', ['email' => e($application->email), 'phone' => e($application->contact_number)])],
+                    ['type' => 'button', 'label' => __('Review the application'), 'url' => $url],
+                ],
+                'footnote' => __('Review applicants in your dashboard under Tenants → Tenant Applications.'),
+            ]);
+        } catch (\Throwable $e) {
+            Log::channel('sms-mail')->info('House-hunt owner notify failed: ' . $e->getMessage());
         }
     }
 }
