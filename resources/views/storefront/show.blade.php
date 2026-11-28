@@ -40,7 +40,20 @@
      padding-top no matter how tall the content grows; the band just extends below if needed. */
   .sf-hero{position:relative;width:100%;min-height:clamp(360px,38vw,540px);overflow:hidden;
     background:#06101F url('{{ asset('assets/images/storefront-cover.jpg') }}') center center/cover no-repeat}
-  @media(max-width:640px){.sf-hero{background-position:72% center;min-height:420px}}
+  @media(max-width:640px){
+    .sf-hero{background-position:72% center;min-height:380px}
+    .sf-hero__inner{padding:36px 20px 30px}
+    .sf-lockup{gap:10px;margin-bottom:18px}
+    .sf-lockup__icon{height:40px}
+    .sf-lockup__name{font-size:21px}
+    .sf-lockup__tag{font-size:9px;letter-spacing:.1em}
+    .sf-hero h1{font-size:clamp(26px,7vw,34px)}
+    .sf-hero__sub{font-size:15px;text-shadow:0 1px 10px rgba(0,0,0,.85)}
+    /* stack the info items so they never clip on the right */
+    .sf-inforow{flex-direction:column;align-items:flex-start;gap:12px;margin-top:18px;padding-top:16px}
+    .sf-info{width:100%}
+    .sf-info__v{max-width:none;white-space:normal}
+  }
   .sf-hero__scrim{position:absolute;inset:0;z-index:1;pointer-events:none;background:
       linear-gradient(90deg, rgba(5,11,22,.92) 0%, rgba(5,11,22,.74) 26%, rgba(5,11,22,.36) 48%, rgba(5,11,22,.06) 70%, rgba(5,11,22,0) 86%),
       linear-gradient(180deg, rgba(5,11,22,.34) 0%, rgba(5,11,22,0) 28%, rgba(5,11,22,0) 68%, rgba(5,11,22,.55) 100%)}
