@@ -29,11 +29,14 @@ class HouseApplicationRequest extends FormRequest
             'last_name' => 'required|string',
             'email' => 'required|email',
             'contact_number' => 'required|string',
-            'permanent_address' => 'required|string',
-            'permanent_country_id' => 'required|string',
-            'permanent_state_id' => 'required|string',
-            'permanent_city_id' => 'required|string',
-            'permanent_zip_code' => 'required|string',
+            // Parity with the onboarding flow: these are OPTIONAL at apply time (the owner collects
+            // what's needed at move-in). Zip stays in the schema/form for ZIP-code markets — just not
+            // required here (don't drop it; re-require per-market when we expand to ZIP markets).
+            'permanent_address' => 'nullable|string',
+            'permanent_country_id' => 'nullable|string',
+            'permanent_state_id' => 'nullable|string',
+            'permanent_city_id' => 'nullable|string',
+            'permanent_zip_code' => 'nullable|string',
         ];
     }
 

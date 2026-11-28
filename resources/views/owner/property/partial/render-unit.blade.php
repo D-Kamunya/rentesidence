@@ -367,6 +367,10 @@
                                     accept="image/*">
                             </div>
 
+                            <p class="unt-image-upload__hint" style="margin-top:8px">
+                                💡 {{ __('Tip: after saving, you can tag each photo by room (bedroom, kitchen…) from your phone in Property Photos.') }}
+                            </p>
+
                             {{-- Existing Images --}}
                             @if($unit && $unit->images->count())
                                 <div class="unt-images-grid">

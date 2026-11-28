@@ -27,6 +27,8 @@ use Illuminate\Support\Facades\Artisan;
 Route::group(['prefix' => 'admin', 'as' => 'admin.', 'middleware' => ['auth', 'admin']], function () {
     Route::get('/', [DashboardController::class, 'dashboard'])->name('dashboard');
     Route::get('notification', [DashboardController::class, 'notification'])->name('notification');
+    // Aggregated vacancy demand pool (storefront "notify me" / House Watch captures).
+    Route::get('vacancy-demand', [\App\Http\Controllers\Admin\VacancyDemandController::class, 'index'])->name('vacancy-demand');
 
     // Centresidence — Infrastructure & Finance OS (read-only admin visibility).
     Route::group(['prefix' => 'centresidence', 'as' => 'centresidence.'], function () {

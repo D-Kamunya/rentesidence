@@ -636,12 +636,15 @@ if (!function_exists('getCustomerAddonBuildVersion')) {
 if (!function_exists('isAddonInstalled')) {
     function isAddonInstalled($code)
     {
-        $buildVersion = getOption($code . '_build_version', 0);
-        $codeBuildVersion = getAddonCodeBuildVersion($code);
-        if (is_null($buildVersion) || $codeBuildVersion == 0) {
-            return 0;
-        }
-        return (int) $buildVersion;
+        // Centresidence OWNS every module (this is no longer code-for-sale), so the CODE manifest
+        // is authoritative — a module that's present in the codebase is always "installed".
+        // Previously this gated on a DB option ($code.'_build_version') that the (now removed)
+        // vendor update gateway used to set; a blank/absent flag silently switched whole route
+        // groups OFF (House Hunt apply, /join, agreements, bulk SMS) with no error — and any
+        // fresh/restored DB could boot with modules dark. Trusting the code build_version removes
+        // that drift + silent-failure surface entirely. The remaining `if (isAddonInstalled(...))`
+        // guards are now always-true in our world; strip them later under heavy test.
+        return (int) getAddonCodeBuildVersion($code);
     }
 }
 
@@ -1980,4 +1983,142 @@ if (!function_exists('getYoutubeId')) {
         return $matches[2] ?? null;
     }
 
+}
+if (! function_exists('gdDownscaleImage')) {
+    /**
+     * Downscale an image on disk to fit within $maxEdge (long edge) and re-encode it, writing the
+     * result to $destPath. Uses GD (no extra dependency). Honours JPEG EXIF orientation and keeps
+     * PNG transparency. Returns true on success. Pure helper — callers decide where to store.
+     *
+     * Storage hygiene: phones shoot 3–12MP; without this, every upload keeps the full-res original,
+     * which balloons storage + slows the public storefront on mobile. ~1600px long edge at q82 is
+     * plenty for listing photos and lands around 200–350KB.
+     */
+    function gdDownscaleImage(string $srcPath, string $mime, string $destPath, int $maxEdge = 1600, int $quality = 82): bool
+    {
+        if (! function_exists('imagecreatetruecolor') || ! is_file($srcPath)) {
+            return false;
+        }
+        try {
+            $mime = strtolower($mime);
+            if (strpos($mime, 'jpeg') !== false || strpos($mime, 'jpg') !== false) {
+                $src = @imagecreatefromjpeg($srcPath);
+            } elseif (strpos($mime, 'png') !== false) {
+                $src = @imagecreatefrompng($srcPath);
+            } elseif (strpos($mime, 'gif') !== false) {
+                $src = @imagecreatefromgif($srcPath);
+            } elseif (strpos($mime, 'webp') !== false && function_exists('imagecreatefromwebp')) {
+                $src = @imagecreatefromwebp($srcPath);
+            } else {
+                return false;
+            }
+            if (! $src) {
+                return false;
+            }
+
+            // Respect JPEG EXIF orientation so portrait phone shots aren't stored sideways.
+            if ((strpos($mime, 'jpeg') !== false || strpos($mime, 'jpg') !== false) && function_exists('exif_read_data')) {
+                $exif = @exif_read_data($srcPath);
+                $o = $exif['Orientation'] ?? 0;
+                if ($o == 3) {
+                    $src = imagerotate($src, 180, 0);
+                } elseif ($o == 6) {
+                    $src = imagerotate($src, -90, 0);
+                } elseif ($o == 8) {
+                    $src = imagerotate($src, 90, 0);
+                }
+            }
+
+            $w = imagesx($src);
+            $h = imagesy($src);
+            if ($w < 1 || $h < 1) {
+                imagedestroy($src);
+                return false;
+            }
+            $scale = min(1.0, $maxEdge / max($w, $h));
+            $nw = max(1, (int) round($w * $scale));
+            $nh = max(1, (int) round($h * $scale));
+
+            $isPng = strpos($mime, 'png') !== false;
+            $dst = imagecreatetruecolor($nw, $nh);
+            if ($isPng) {
+                imagealphablending($dst, false);
+                imagesavealpha($dst, true);
+                $transparent = imagecolorallocatealpha($dst, 0, 0, 0, 127);
+                imagefilledrectangle($dst, 0, 0, $nw, $nh, $transparent);
+            }
+            imagecopyresampled($dst, $src, 0, 0, 0, 0, $nw, $nh, $w, $h);
+
+            $ok = $isPng ? imagepng($dst, $destPath, 6) : imagejpeg($dst, $destPath, $quality);
+
+            imagedestroy($src);
+            imagedestroy($dst);
+            return (bool) $ok;
+        } catch (\Throwable $e) {
+            return false;
+        }
+    }
+}
+
+if (! function_exists('storeResizedImage')) {
+    /**
+     * Resize an uploaded image and store it under the PUBLIC disk ($folder, e.g. "PropertyUnit/12").
+     * Returns ['folder_name' => ..., 'file_name' => ...] on success, or null (caller then falls back
+     * to the raw storeAs so an upload is never lost if GD is unavailable).
+     */
+    function storeResizedImage(\Illuminate\Http\UploadedFile $file, string $folder, int $maxEdge = 1600, int $quality = 82): ?array
+    {
+        try {
+            $mime = (string) $file->getMimeType();
+            if (strpos($mime, 'image/') !== 0) {
+                return null;
+            }
+            $isPng    = strpos($mime, 'png') !== false;
+            $ext      = $isPng ? 'png' : 'jpg';
+            $filename = uniqid() . '-' . time() . '.' . $ext;
+            $absDir   = storage_path('app/public/' . $folder);
+            if (! is_dir($absDir)) {
+                @mkdir($absDir, 0775, true);
+            }
+            $dest = $absDir . '/' . $filename;
+            if (gdDownscaleImage($file->getRealPath(), $mime, $dest, $maxEdge, $quality)) {
+                return ['folder_name' => $folder, 'file_name' => $filename];
+            }
+            return null;
+        } catch (\Throwable $e) {
+            return null;
+        }
+    }
+}
+
+if (! function_exists('downscaledUpload')) {
+    /**
+     * Return a resized copy of an uploaded image as a temp UploadedFile (for paths that hand the
+     * file to FileManager::upload). If the file isn't a resizable image or GD fails, the ORIGINAL
+     * file is returned unchanged, so behaviour degrades gracefully.
+     */
+    function downscaledUpload(\Illuminate\Http\UploadedFile $file, int $maxEdge = 1600, int $quality = 82): \Illuminate\Http\UploadedFile
+    {
+        try {
+            $mime = (string) $file->getMimeType();
+            if (strpos($mime, 'image/') !== 0) {
+                return $file;
+            }
+            $isPng = strpos($mime, 'png') !== false;
+            $tmp   = tempnam(sys_get_temp_dir(), 'csimg');
+            if ($tmp === false) {
+                return $file;
+            }
+            $tmp2 = $tmp . ($isPng ? '.png' : '.jpg');
+            @rename($tmp, $tmp2);
+            if (gdDownscaleImage($file->getRealPath(), $mime, $tmp2, $maxEdge, $quality)) {
+                $base = pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME) ?: 'photo';
+                return new \Illuminate\Http\UploadedFile($tmp2, $base . ($isPng ? '.png' : '.jpg'), $isPng ? 'image/png' : 'image/jpeg', null, true);
+            }
+            @unlink($tmp2);
+            return $file;
+        } catch (\Throwable $e) {
+            return $file;
+        }
+    }
 }

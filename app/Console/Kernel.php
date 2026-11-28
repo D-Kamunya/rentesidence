@@ -71,6 +71,11 @@ class Kernel extends ConsoleKernel
         // Escrow safety net: release held marketplace proceeds after the acceptance window.
         $schedule->command('marketplace:auto-release-settlements')->dailyAt('03:30')->withoutOverlapping();
 
+        // House Watch: email vacancy-storefront prospects when a home matching their watch opens up
+        // (a per-prospect cooldown inside the command keeps it to a real match, not a daily nag).
+        $schedule->command('vacancy:watch-notify')->dailyAt('08:15')->withoutOverlapping()
+        ->appendOutputTo(storage_path('logs/vacancy_watch_notify_scheduler.log'));
+
         // Invite-a-landlord: confirm rewards for referred owners who crossed the revenue
         // threshold without buying a subscription (the paid-subscription case is instant).
         $schedule->command('referrals:evaluate-revenue')->dailyAt('04:00')->withoutOverlapping();

@@ -9,7 +9,13 @@ class PropertyUnitImage extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['unit_id', 'folder_name', 'file_name'];
+    protected $fillable = ['unit_id', 'folder_name', 'file_name', 'category', 'caption'];
+
+    /** Human-readable room label for this photo's category (incl. "Bedroom 2"), or null if untagged. */
+    public function getCategoryLabelAttribute(): ?string
+    {
+        return photoCategoryLabel($this->category);
+    }
 
     // Delete image from storage when record is deleted
     protected static function booted()

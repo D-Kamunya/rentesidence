@@ -98,6 +98,9 @@ class SystemDefaultsSeeder extends Seeder
 
             // ── Tenancy lifecycle ──
             'vacation_notice_days' => 30, // required notice-to-vacate period (days) before move-out
+
+            // ── Vacancy storefront / House Watch ──
+            'vacancy_watch_cooldown_days' => 7, // min gap between House Watch match emails to the same prospect
         ];
 
         // Pull existing keys once so we only insert what's missing (never overwrite).
