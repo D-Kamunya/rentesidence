@@ -60,6 +60,12 @@
                         </a>
                     </li>
                     <li>
+                        <a href="{{ route('admin.vacancy-demand') }}">
+                            <i class="ri-eye-2-line"></i>
+                            <span>{{ __('Vacancy Demand') }}</span>
+                        </a>
+                    </li>
+                    <li>
                         <a href="{{ route('admin.support.index') }}">
                             <i class="ri-customer-service-2-line"></i>
                             <span>{{ __('Support') }}@include('partials.nav-count', ['n' => $navBadges['support'] ?? 0])</span>

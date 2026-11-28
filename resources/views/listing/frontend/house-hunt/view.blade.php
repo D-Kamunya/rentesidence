@@ -68,6 +68,8 @@
   .hd-photos{position:absolute;bottom:10px;right:10px;z-index:2;background:rgba(0,0,0,.55);backdrop-filter:blur(4px);
     color:#fff;font-size:11.5px;font-weight:600;padding:5px 10px;border-radius:99px;display:inline-flex;align-items:center;gap:6px}
   .hd-photos svg{width:13px;height:13px}
+  .hd-roomtag{position:absolute;top:10px;left:10px;z-index:2;background:rgba(10,16,26,.62);backdrop-filter:blur(4px);
+    color:#fff;font-size:11.5px;font-weight:700;padding:5px 11px;border-radius:99px}
   .hd-card__body{padding:20px;display:flex;flex-direction:column;flex:1}
   .hd-card__title{font-size:18px;font-weight:750;color:var(--stone-900);margin:0}
   .hd-card__prop{display:flex;align-items:center;gap:7px;color:var(--stone-500);font-size:13.5px;margin-top:6px}
@@ -98,7 +100,9 @@
   .hd-modal .modal-body{padding:22px 24px}
   .hd-modal .btn-close{filter:invert(1) grayscale(1) brightness(2)}
   .hd-unitinfo{background:var(--cs-blue-tint);border:1px solid color-mix(in srgb,var(--cs-blue) 40%,var(--line));
-    border-radius:12px;padding:14px 16px;color:var(--stone-700);font-size:14px;line-height:1.7;margin-bottom:22px}
+    border-radius:12px;padding:14px 16px;color:var(--stone-700);font-size:14px;line-height:1.7;margin-bottom:22px;
+    display:flex;gap:14px;align-items:center}
+  .hd-unitinfo__img{width:76px;height:76px;border-radius:10px;object-fit:cover;flex:0 0 auto;border:1px solid var(--line)}
   .hd-unitinfo strong{color:var(--stone-900)}
   .hd-formsec{font-size:12px;font-weight:750;letter-spacing:.08em;text-transform:uppercase;color:var(--cs-blue);
     margin:0 0 14px}
@@ -122,6 +126,15 @@
   .hd-close:hover{border-color:var(--stone-400);color:var(--stone-900) !important}
   /* lightbox stays dark */
   #imageLightboxModal .modal-content{background:#0B0F15;border:1px solid var(--line);border-radius:16px}
+  .hd-lightbox-cap{position:absolute;left:50%;bottom:14px;transform:translateX(-50%);background:rgba(10,16,26,.72);
+    color:#fff;font-size:13px;font-weight:700;padding:6px 15px;border-radius:99px}
+  #imageLightboxModal .carousel-control-prev,
+  #imageLightboxModal .carousel-control-next{opacity:1;width:11%}
+  #imageLightboxModal .carousel-control-prev-icon,
+  #imageLightboxModal .carousel-control-next-icon{width:52px;height:52px;background-size:44% 44%;border-radius:50%;
+    background-color:rgba(12,18,28,.62);border:1px solid rgba(255,255,255,.45);box-shadow:0 6px 18px rgba(0,0,0,.45);transition:.15s}
+  #imageLightboxModal .carousel-control-prev:hover .carousel-control-prev-icon,
+  #imageLightboxModal .carousel-control-next:hover .carousel-control-next-icon{background-color:var(--cs-blue);border-color:#fff;transform:scale(1.06)}
 
   /* ── Phone fitness ── shorter image hero on phone. */
   @media(max-width:640px){
@@ -185,9 +198,12 @@
             $firstImage = $hasImages
                 ? asset('storage/' . $unitImages->first()->folder_name . '/' . $unitImages->first()->file_name)
                 : asset('assets/images/unit.png');
-            $imageUrls  = $unitImages->map(fn($img) =>
-                asset('storage/' . $img->folder_name . '/' . $img->file_name)
-            )->toJson();
+            $imageData  = $unitImages->map(fn($img) => [
+                'url'     => asset('storage/' . $img->folder_name . '/' . $img->file_name),
+                'label'   => $img->category_label,
+                'caption' => $img->caption,
+            ])->toJson();
+            $firstLabel = $hasImages ? $unitImages->first()->category_label : null;
             $ownerName  = trim(($property['owner_first_name'] ?? 'Agent') . ' ' . ($property['owner_last_name'] ?? ''));
             $ownerPhoto = $unit->property?->owner?->profile_photo
                 ? asset($unit->property->owner->profile_photo)
@@ -195,9 +211,10 @@
         @endphp
 
         <div class="hd-card">
-          <div class="hd-card__media" onclick="openImageModal({{ $unit->id }}, {{ $imageUrls }})">
+          <div class="hd-card__media" onclick="openImageModal({{ $unit->id }}, {{ $imageData }})">
             <img src="{{ $firstImage }}" alt="Unit {{ $unit->unit_name ?? $unit->id }}" loading="lazy"
                  onerror="this.onerror=null;this.src='{{ asset('assets/images/unit.png') }}';">
+            @if($firstLabel)<span class="hd-roomtag">{{ $firstLabel }}</span>@endif
             @if($hasImages && $unitImages->count() > 1)
               <span class="hd-photos">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
@@ -251,7 +268,8 @@
                         {{ json_encode($property['name']) }},
                         {{ json_encode($property['owner_first_name'] . ' ' . $property['owner_last_name']) }},
                         {{ $unit->general_rent }},
-                        {{ $property['id'] }}
+                        {{ $property['id'] }},
+                        {{ json_encode($hasImages ? $firstImage : null) }}
                     )">
               {{ __('Apply for this unit') }}
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" width="15" height="15"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
@@ -318,18 +336,18 @@
                 <input type="number" name="family_member" class="form-control" value="{{ old('family_member', $user?->tenant?->family_member) }}"></div>
             </div>
 
-            <p class="hd-formsec">{{ __('Address Information') }}</p>
+            <p class="hd-formsec">{{ __('Address Information') }} <span style="text-transform:none;font-weight:600;color:var(--stone-400)">— {{ __('optional') }}</span></p>
             <div class="hd-grid3">
-              <div class="hd-field hd-col-full"><label>{{ __('Address') }} <span class="req">*</span></label>
-                <input type="text" name="permanent_address" class="form-control" required></div>
-              <div class="hd-field"><label>{{ __('Country') }} <span class="req">*</span></label>
-                <input type="text" name="permanent_country_id" class="form-control" required></div>
-              <div class="hd-field"><label>{{ __('State') }} <span class="req">*</span></label>
-                <input type="text" name="permanent_state_id" class="form-control" required></div>
-              <div class="hd-field"><label>{{ __('City') }} <span class="req">*</span></label>
-                <input type="text" name="permanent_city_id" class="form-control" required></div>
-              <div class="hd-field hd-col-full"><label>{{ __('Zip Code') }} <span class="req">*</span></label>
-                <input type="text" name="permanent_zip_code" class="form-control" required></div>
+              <div class="hd-field hd-col-full"><label>{{ __('Address') }}</label>
+                <input type="text" name="permanent_address" class="form-control"></div>
+              <div class="hd-field"><label>{{ __('Country') }}</label>
+                <input type="text" name="permanent_country_id" class="form-control"></div>
+              <div class="hd-field"><label>{{ __('State') }}</label>
+                <input type="text" name="permanent_state_id" class="form-control"></div>
+              <div class="hd-field"><label>{{ __('City') }}</label>
+                <input type="text" name="permanent_city_id" class="form-control"></div>
+              <div class="hd-field hd-col-full"><label>{{ __('Zip Code') }}</label>
+                <input type="text" name="permanent_zip_code" class="form-control"></div>
             </div>
           </div>
           <div class="modal-footer">
@@ -347,30 +365,45 @@
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script>
 // ── Shared image lightbox ────────────────────────────────────────────────────
-function openImageModal(unitId, imageUrls) {
-    if (!imageUrls || imageUrls.length === 0) return;
+function openImageModal(unitId, images) {
+    if (!images || images.length === 0) return;
     const inner = document.getElementById('lightboxInner');
-    inner.innerHTML = imageUrls.map((url, i) => `
-        <div class="carousel-item ${i === 0 ? 'active' : ''}">
+    inner.innerHTML = images.map((item, i) => {
+        const url = (item && item.url) ? item.url : item;          // supports {url,label,caption} or a bare url
+        const label = (item && item.label) ? item.label : '';
+        const note = (item && item.caption) ? item.caption : '';
+        const parts = [label, note].filter(Boolean).map(s => String(s).replace(/[<>&]/g, ''));
+        const cap = parts.length ? '<div class="hd-lightbox-cap">' + parts.join(' · ') + '</div>' : '';
+        return `<div class="carousel-item ${i === 0 ? 'active' : ''}">
             <img src="${url}" class="d-block w-100" style="max-height:75vh;object-fit:contain;" alt="Unit image ${i + 1}" loading="lazy">
-        </div>
-    `).join('');
-    document.getElementById('lightboxTitle').textContent = 'Unit photos (' + imageUrls.length + ')';
+            ${cap}
+        </div>`;
+    }).join('');
+    document.getElementById('lightboxTitle').textContent = 'Unit photos (' + images.length + ')';
+    const multi = images.length > 1;
+    document.querySelectorAll('#lightboxCarousel .carousel-control-prev, #lightboxCarousel .carousel-control-next')
+        .forEach(c => { c.style.display = multi ? '' : 'none'; });
     const carousel = bootstrap.Carousel.getOrCreateInstance(document.getElementById('lightboxCarousel'));
     carousel.to(0);
     new bootstrap.Modal(document.getElementById('imageLightboxModal')).show();
 }
 
 // ── Shared application modal ─────────────────────────────────────────────────
-function openApplyModal(unitId, unitName, propertyName, agentName, rent, propertyId) {
+function openApplyModal(unitId, unitName, propertyName, agentName, rent, propertyId, imageUrl) {
     document.getElementById('applyUnitId').value    = unitId;
     document.getElementById('applyPropertyId').value = propertyId;
     document.getElementById('applyModalTitle').textContent = 'Apply for Unit ' + unitName;
+    const imgHtml = imageUrl
+        ? '<img src="' + imageUrl + '" class="hd-unitinfo__img" alt="" onerror="this.style.display=\'none\'">'
+        : '';
     document.getElementById('applyUnitInfo').innerHTML =
-        '<strong>' + propertyName + '</strong><br>' +
-        'Unit: ' + unitName + '<br>' +
-        'Owner: ' + agentName + '<br>' +
-        'Rent: KES ' + Number(rent).toLocaleString() + ' / Month';
+        imgHtml +
+        '<div>' +
+          '<strong>' + propertyName + '</strong><br>' +
+          'Unit: ' + unitName + '<br>' +
+          'Owner: ' + agentName + '<br>' +
+          'Rent: KES ' + Number(rent).toLocaleString() + ' / Month' +
+        '</div>';
 
     const form = document.getElementById('sharedApplyForm');
     ['permanent_address','permanent_country_id','permanent_state_id',

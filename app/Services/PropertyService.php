@@ -227,6 +227,38 @@ class PropertyService
         return $paginate ? $data->paginate(10) : $data->get();
     }
 
+    /**
+     * Vacant units for the public Vacancy Storefront, scoped to ONE owner, eager-loaded and
+     * grouped by property for the owner-level share page ("what vacancies do you have?").
+     * Reuses the same "no active tenant" vacancy definition as House Hunt — same engine, scoped.
+     */
+    public function getVacantUnitsGroupedForOwner($ownerUserId)
+    {
+        return PropertyUnit::query()
+            ->with(['images', 'property.propertyDetail', 'property.fileAttachThumbnail'])
+            ->whereHas('property', fn ($q) => $q->where('owner_user_id', $ownerUserId))
+            ->whereDoesntHave('activeTenant')
+            ->orderBy('property_id')
+            ->orderBy('id')
+            ->get()
+            ->groupBy('property_id');
+    }
+
+    /**
+     * Vacant units for a single property's public storefront. Unlike House Hunt's viewProperty
+     * (which 404s on no vacancies), the storefront returns an empty collection so the permanent
+     * QR can still render a "No vacancies right now → notify me" funnel.
+     */
+    public function getVacantUnitsForProperty($propertyId)
+    {
+        return PropertyUnit::query()
+            ->with(['images', 'property.propertyDetail', 'property.fileAttachThumbnail'])
+            ->where('property_id', $propertyId)
+            ->whereDoesntHave('activeTenant')
+            ->orderBy('id')
+            ->get();
+    }
+
     public function getEmptyUnitsByProperty($propertyId)
     {
         return PropertyUnit::query()
@@ -683,14 +715,20 @@ class PropertyService
                             continue;
                         }
 
-                        $filename = uniqid() . '-' . time() . '.' . $extension;
                         $folder = "PropertyUnit/{$property_unit->id}";
-                        $image->storeAs("public/$folder", $filename);
+                        // Downscale + re-encode before storing (storage hygiene); fall back to the
+                        // original if GD can't process it, so an upload is never lost.
+                        $stored = storeResizedImage($image, $folder);
+                        if (! $stored) {
+                            $filename = uniqid() . '-' . time() . '.' . $extension;
+                            $image->storeAs("public/$folder", $filename);
+                            $stored = ['folder_name' => $folder, 'file_name' => $filename];
+                        }
 
                         PropertyUnitImage::create([
                             'unit_id' => $property_unit->id,
-                            'folder_name' => $folder,
-                            'file_name' => $filename,
+                            'folder_name' => $stored['folder_name'],
+                            'file_name' => $stored['file_name'],
                         ]);
                     }
                 }
@@ -767,7 +805,7 @@ class PropertyService
             /*File Manager Call upload*/
             if ($request->hasFile('file') && $request->file('file')->isValid()) {
                 $new_file = new FileManager();
-                $upload = $new_file->upload('PropertyImage', $request->file);
+                $upload = $new_file->upload('PropertyImage', downscaledUpload($request->file('file')));
 
                 if ($upload['status']) {
                     $propertyImage = new PropertyImage();
@@ -826,7 +864,9 @@ class PropertyService
             $property = Property::where('owner_user_id', auth()->id())->findOrFail($id);
             if ($request->file) {
                 $new_file = new FileManager();
-                $upload = $new_file->upload('Property', $request->file);
+                // Downscale the building photo before it goes to the FileManager store (degrades to
+                // the original if GD can't process it).
+                $upload = $new_file->upload('Property', downscaledUpload($request->file));
 
                 if ($upload['status']) {
                     $property->thumbnail_image_id = $upload['file']->id;

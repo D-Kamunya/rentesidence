@@ -57,6 +57,31 @@ class User extends Authenticatable
         return $this->hasOne(Maintainer::class, 'user_id', 'id');
     }
 
+    /**
+     * The owner's permanent Vacancy Storefront share token (lazily minted on first use, like
+     * Tenant::ensurePayToken). The URL /vacancies/o/{token} is stable forever — post the QR once
+     * and it always renders the owner's LIVE vacancy state. Degrades gracefully if the column
+     * hasn't been migrated yet (returns null; the caller shows an "apply the migration" notice).
+     */
+    public function ensureStorefrontToken(): ?string
+    {
+        if (! \Illuminate\Support\Facades\Schema::hasColumn('users', 'storefront_token')) {
+            return null;
+        }
+
+        if (empty($this->storefront_token)) {
+            // Loop-guarded against the (astronomically unlikely) unique collision.
+            do {
+                $candidate = \Illuminate\Support\Str::random(40);
+            } while (self::where('storefront_token', $candidate)->exists());
+
+            $this->storefront_token = $candidate;
+            $this->save();
+        }
+
+        return $this->storefront_token;
+    }
+
 
     public function affiliate()
     {

@@ -90,7 +90,7 @@
                         <label class="cs-fld__label">{{ __('Email') }}</label>
                         <div class="cs-fld__wrap">
                             <span class="cs-fld__ic">{!! '<svg width="17" height="17" viewBox="0 0 24 24" fill="none"><path d="M4 6h16v12H4zM4 7l8 6 8-6" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>' !!}</span>
-                            <input type="email" name="email" value="{{ old('email') }}" class="cs-fld__input @error('email') is-bad @enderror" placeholder="{{ __('you@email.com') }}">
+                            <input type="email" name="email" value="{{ old('email', request('email')) }}" class="cs-fld__input @error('email') is-bad @enderror" placeholder="{{ __('you@email.com') }}">
                         </div>
                         @error('email')<span class="cs-fld__err">{{ $message }}</span>@enderror
                     </div>

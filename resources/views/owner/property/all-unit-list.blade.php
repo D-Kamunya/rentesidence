@@ -132,7 +132,7 @@
                         <div class="profile-user position-relative d-inline-block">
                             <img id="unit-image" src="" class="ul-unit-avatar rounded-circle avatar-xl default-user-profile-image">
                             <div class="avatar-xs p-0 rounded-circle default-profile-photo-edit">
-                                <input id="default-profile-img-file-input" type="file" name="unit_image" class="default-profile-img-file-input">
+                                <input id="default-profile-img-file-input" type="file" name="unit_image" accept="image/*" class="default-profile-img-file-input">
                                 <label for="default-profile-img-file-input" class="default-profile-photo-edit avatar-xs">
                                     <span class="avatar-title rounded-circle" title="Change Image">
                                         <i class="ri-camera-fill"></i>
@@ -323,7 +323,7 @@
                         <div class="profile-user position-relative d-inline-block">
                             <img id="unit-image" src="{{ asset('assets/images/no-image.jpg') }}" class="ul-unit-avatar rounded-circle avatar-xl default-unit-profile-image">
                             <div class="avatar-xs p-0 rounded-circle default-profile-photo-edit">
-                                <input id="default-unit-img-file-input" type="file" name="unit_image" class="default-unit-img-file-input">
+                                <input id="default-unit-img-file-input" type="file" name="unit_image" accept="image/*" class="default-unit-img-file-input">
                                 <label for="default-unit-img-file-input" class="default-profile-photo-edit avatar-xs">
                                     <span class="avatar-title rounded-circle" title="Change Image">
                                         <i class="ri-camera-fill"></i>
