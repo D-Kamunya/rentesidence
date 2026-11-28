@@ -42,7 +42,7 @@
     background:#06101F url('{{ asset('assets/images/storefront-cover.jpg') }}') center center/cover no-repeat}
   @media(max-width:640px){
     .sf-hero{background-position:72% center;min-height:380px}
-    .sf-hero__inner{padding:36px 20px 30px}
+    .sf-hero__inner{padding:108px 20px 30px}
     .sf-lockup{gap:10px;margin-bottom:18px}
     .sf-lockup__icon{height:40px}
     .sf-lockup__name{font-size:21px}
@@ -58,7 +58,9 @@
       linear-gradient(90deg, rgba(5,11,22,.92) 0%, rgba(5,11,22,.74) 26%, rgba(5,11,22,.36) 48%, rgba(5,11,22,.06) 70%, rgba(5,11,22,0) 86%),
       linear-gradient(180deg, rgba(5,11,22,.34) 0%, rgba(5,11,22,0) 28%, rgba(5,11,22,0) 68%, rgba(5,11,22,.55) 100%)}
   .sf-hero__inner{position:relative;z-index:2;width:100%;max-width:1200px;margin:0 auto;
-    padding:52px 24px 46px;box-sizing:border-box;
+    /* top padding clears the site navbar (#mainNav is position:absolute and overlays the page top) —
+       same offsets House Hunt's hero uses (132px desktop / 98px mobile) plus a little air */
+    padding:140px 24px 46px;box-sizing:border-box;
     display:flex;flex-direction:column;justify-content:flex-start;align-items:flex-start}
   .sf-hero__inner > *{max-width:600px}
   /* Our OWN brand lockup (crisp, not baked into the photo) */
