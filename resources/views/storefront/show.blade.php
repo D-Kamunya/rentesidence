@@ -194,7 +194,9 @@
   .sf-modal .modal-body{padding:22px 24px}
   .sf-modal .btn-close{filter:none}
   .sf-unitinfo{background:var(--cs-blue-tint);border:1px solid color-mix(in srgb,var(--cs-blue) 40%,var(--line));
-    border-radius:12px;padding:14px 16px;color:var(--stone-700);font-size:14px;line-height:1.7;margin-bottom:22px}
+    border-radius:12px;padding:14px 16px;color:var(--stone-700);font-size:14px;line-height:1.7;margin-bottom:22px;
+    display:flex;gap:14px;align-items:center}
+  .sf-unitinfo__img{width:76px;height:76px;border-radius:10px;object-fit:cover;flex:0 0 auto;border:1px solid var(--line)}
   .sf-unitinfo strong{color:var(--stone-900)}
   .sf-formsec{font-size:12px;font-weight:750;letter-spacing:.08em;text-transform:uppercase;color:var(--cs-blue);margin:0 0 14px}
   .hd-grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:22px}
@@ -429,7 +431,8 @@
                               {{ json_encode($property->name) }},
                               {{ json_encode($ownerName) }},
                               {{ (float) $unit->general_rent }},
-                              {{ $property->id }}
+                              {{ $property->id }},
+                              {{ json_encode($firstImage) }}
                           )">
                     {{ __('Apply for this unit') }}
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" width="15" height="15"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
@@ -584,15 +587,21 @@ function openImageModal(unitId, images) {
     new bootstrap.Modal(document.getElementById('imageLightboxModal')).show();
 }
 
-function openApplyModal(unitId, unitName, propertyName, agentName, rent, propertyId) {
+function openApplyModal(unitId, unitName, propertyName, agentName, rent, propertyId, imageUrl) {
     document.getElementById('applyUnitId').value     = unitId;
     document.getElementById('applyPropertyId').value = propertyId;
     document.getElementById('applyModalTitle').textContent = 'Apply for Unit ' + unitName;
+    const imgHtml = imageUrl
+        ? '<img src="' + imageUrl + '" class="sf-unitinfo__img" alt="" onerror="this.style.display=\'none\'">'
+        : '';
     document.getElementById('applyUnitInfo').innerHTML =
-        '<strong>' + propertyName + '</strong><br>' +
-        'Unit: ' + unitName + '<br>' +
-        'Owner: ' + agentName + '<br>' +
-        'Rent: KES ' + Number(rent).toLocaleString() + ' / Month';
+        imgHtml +
+        '<div>' +
+          '<strong>' + propertyName + '</strong><br>' +
+          'Unit: ' + unitName + '<br>' +
+          'Owner: ' + agentName + '<br>' +
+          'Rent: KES ' + Number(rent).toLocaleString() + ' / Month' +
+        '</div>';
 
     const form = document.getElementById('sharedApplyForm');
     ['permanent_address','permanent_country_id','permanent_state_id',
